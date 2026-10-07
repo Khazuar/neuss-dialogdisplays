@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: MIT
+name: Pages
+
+# Erzeugt CSV und YAML aus den DSD-Dateien und veroeffentlicht die YAML-Auswertungen
+# (plus summary.csv fuer die Tabelle) zusammen mit site/index.html per GitHub Pages.
+# Die Einzelmessungen als CSV (rund 270 MB) gibt es nur im Release (release.yml).
+# Die abgeleiteten Daten liegen nie im Repository.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: CSV und YAML aus den DSD-Dateien erzeugen
+        run: python -I dsd2csv.py . -o _site
+      - name: Einzelmessungen als CSV entfernen (nur YAML und summary.csv bleiben)
+        run: find _site -name '*.csv' ! -name summary.csv -delete
+      - name: Startseite hinzufuegen
+        run: cp site/index.html _site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

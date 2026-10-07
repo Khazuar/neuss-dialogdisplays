@@ -1,0 +1,243 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neuss Dialogdisplays – Messdaten</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1c2024; --muted: #5d6670; --line: #d9dee3;
+    --head: #f1f4f6; --link: #0b5cad; --warn: #b45309; --focus: #0b5cad;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181c; --fg: #e6e9ec; --muted: #9aa4ae; --line: #2b333b;
+      --head: #1c2227; --link: #6cb2f2; --warn: #f0a24b; --focus: #6cb2f2;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--fg);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 8px; }
+  p { margin: 0 0 12px; max-width: 70ch; }
+  a { color: var(--link); }
+  a:focus-visible, input:focus-visible, th button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 16px 0 24px; padding: 0; list-style: none; }
+  .muted { color: var(--muted); font-size: 0.9rem; }
+  label { display: block; font-weight: 600; margin-bottom: 4px; }
+  input[type="search"] {
+    width: 100%; max-width: 360px; padding: 8px 10px; font: inherit;
+    color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  }
+  .tablewrap { overflow-x: auto; margin-top: 16px; border: 1px solid var(--line); border-radius: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  thead th { background: var(--head); position: sticky; top: 0; }
+  th button { all: unset; cursor: pointer; font-weight: 600; }
+  th button::after { content: " ↕"; color: var(--muted); }
+  th[aria-sort="ascending"] button::after { content: " ↑"; color: var(--fg); }
+  th[aria-sort="descending"] button::after { content: " ↓"; color: var(--fg); }
+  tbody tr:last-child td { border-bottom: 0; }
+  .warn { color: var(--warn); cursor: help; }
+  #status { margin-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Neuss Dialogdisplays – Messdaten</h1>
+  <p>
+    Geschwindigkeitsmessungen von Dialogdisplays im Stadtgebiet Neuss, per Informationsfreiheitsanfrage
+    erhalten und aus den Rohdaten (<code>.dsd</code>) ausgewertet. Zu jeder Messung gibt es eine
+    Auswertung (V85, V95, V99, Einhaltungsquote) als YAML. Die Einzelmessungen als CSV (ein Fahrzeug pro
+    Zeile, insgesamt rund 270 MB) gibt es als ZIP-Archiv im Release.
+  </p>
+  <ul class="links">
+    <li><a href="https://github.com/Khazuar/neuss-dialogdisplays#readme">Dokumentation (README)</a></li>
+    <li><a href="https://github.com/Khazuar/neuss-dialogdisplays/releases/latest">Alle Daten inkl. CSV als ZIP (Release)</a></li>
+    <li><a href="https://github.com/Khazuar/neuss-dialogdisplays">Rohdaten und Skripte auf GitHub</a></li>
+    <li><a href="auswertung.yaml">Alle Auswertungen als YAML</a></li>
+    <li><a href="summary.csv">Übersichtstabelle als CSV</a></li>
+  </ul>
+  <p class="muted">
+    Die Werte sind rechnerisch aus den Rohdaten ermittelt und nicht geprüft. Zeilen mit
+    <span class="warn" aria-hidden="true">⚠</span> enthalten fehlerhafte Zeitstempel oder einen
+    unplausibel langen Messzeitraum, Details stehen im README. Vor einer Interpretation bitte die
+    jeweilige Messung prüfen.
+  </p>
+
+  <label for="filter">Filter (Straße, Gerät, Datei)</label>
+  <input id="filter" type="search" autocomplete="off">
+
+  <p id="status" role="status">Lade Daten …</p>
+  <div class="tablewrap" hidden>
+    <table>
+      <thead><tr id="head"></tr></thead>
+      <tbody id="body"></tbody>
+    </table>
+  </div>
+  <p class="muted" style="margin-top: 24px">
+    Lizenz: Daten und Dokumentation <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a>,
+    Skripte und diese Seite <a href="https://github.com/Khazuar/neuss-dialogdisplays/blob/main/LICENSE">MIT</a>.
+  </p>
+</main>
+
+<script>
+// <parseCSV>
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = "", quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else { quoted = false; }
+      } else { field += c; }
+    } else if (c === '"') { quoted = true; }
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); field = "";
+      if (row.length > 1 || row[0] !== "") rows.push(row);
+      row = [];
+    } else { field += c; }
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+// </parseCSV>
+
+const COLUMNS = [
+  { key: "standort", label: "Standort" },
+  { key: "datei", label: "Datei" },
+  { key: "limit", label: "Limit km/h", num: true },
+  { key: "n", label: "Fahrzeuge", num: true },
+  { key: "start", label: "Beginn" },
+  { key: "ende", label: "Ende" },
+  { key: "v85", label: "V85", num: true },
+  { key: "v95", label: "V95", num: true },
+  { key: "v99", label: "V99", num: true },
+  { key: "quote", label: "Einhaltung %", num: true },
+  { key: "qual", label: "Qualifiziert %", num: true },
+  { key: "hinweis", label: "Hinweis" },
+  { key: "links", label: "Auswertung", nosort: true },
+];
+
+const MAX_TAGE = 400;
+let data = [];
+let sort = { key: "standort", dir: 1 };
+
+const num = (v) => (v === "" || v === undefined ? null : Number(v));
+const fmt = new Intl.NumberFormat("de-DE");
+const fmt2 = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pfad = (...teile) => teile.join("/").split("/").map(encodeURIComponent).join("/");
+
+function zeile(r, idx) {
+  const get = (name) => r[idx[name]];
+  const start = get("messzeitraum.start"), ende = get("messzeitraum.ende");
+  const tage = start && ende ? (new Date(ende.replace(" ", "T")) - new Date(start.replace(" ", "T"))) / 864e5 : null;
+  const warnungen = num(get("warnungen")) || 0;
+  const gruende = [];
+  if (warnungen > 0) gruende.push(warnungen + " Records mit ungültigem Zeitstempel übersprungen");
+  if (tage !== null && tage > MAX_TAGE) gruende.push("Messzeitraum von " + Math.round(tage) + " Tagen, vermutlich Daten außerhalb der eigentlichen Messung");
+  const basis = get("datei").replace(/\.dsd$/i, "");
+  return {
+    standort: get("standort"), datei: get("datei"),
+    limit: num(get("tempolimit_kmh")), n: num(get("anzahl_fahrzeuge")),
+    start: start ? start.slice(0, 10) : "", ende: ende ? ende.slice(0, 10) : "",
+    v85: num(get("geschwindigkeit_kmh.v85")), v95: num(get("geschwindigkeit_kmh.v95")), v99: num(get("geschwindigkeit_kmh.v99")),
+    quote: num(get("einhaltung.einhaltungsquote_prozent")),
+    qual: num(get("einhaltung.qualifizierte_einhaltungsquote_prozent")),
+    hinweis: gruende.join("; "),
+    yaml: pfad(get("standort"), basis + ".yaml"),
+  };
+}
+
+function cell(tr, col, row) {
+  const td = document.createElement("td");
+  if (col.num) td.className = "num";
+  if (col.key === "links") {
+    const a = document.createElement("a");
+    a.href = row.yaml; a.textContent = "YAML";
+    td.append(a);
+  } else if (col.key === "hinweis") {
+    if (row.hinweis) {
+      const s = document.createElement("span");
+      s.className = "warn"; s.textContent = "⚠"; s.title = row.hinweis;
+      s.setAttribute("aria-label", row.hinweis);
+      td.append(s);
+    }
+  } else {
+    const v = row[col.key];
+    td.textContent = v === null || v === "" ? "–" : col.key === "quote" || col.key === "qual" ? fmt2.format(v) : col.num ? fmt.format(v) : v;
+  }
+  tr.append(td);
+}
+
+function render() {
+  const q = document.getElementById("filter").value.trim().toLowerCase();
+  const rows = data.filter((r) => !q || (r.standort + " " + r.datei).toLowerCase().includes(q));
+  rows.sort((a, b) => {
+    const x = a[sort.key], y = b[sort.key];
+    if (x === y) return 0;
+    if (x === null || x === "") return 1;
+    if (y === null || y === "") return -1;
+    return (typeof x === "number" ? x - y : String(x).localeCompare(String(y), "de", { numeric: true })) * sort.dir;
+  });
+  const body = document.getElementById("body");
+  body.replaceChildren();
+  for (const r of rows) {
+    const tr = document.createElement("tr");
+    for (const col of COLUMNS) cell(tr, col, r);
+    body.append(tr);
+  }
+  document.getElementById("status").textContent = rows.length + " von " + data.length + " Messungen";
+  for (const th of document.querySelectorAll("#head th")) {
+    th.setAttribute("aria-sort", th.dataset.key === sort.key ? (sort.dir > 0 ? "ascending" : "descending") : "none");
+  }
+}
+
+function kopf() {
+  const head = document.getElementById("head");
+  for (const col of COLUMNS) {
+    const th = document.createElement("th");
+    th.dataset.key = col.key;
+    if (col.num) th.className = "num";
+    if (col.nosort) { th.textContent = col.label; }
+    else {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = col.label;
+      b.addEventListener("click", () => {
+        sort = { key: col.key, dir: sort.key === col.key ? -sort.dir : 1 };
+        render();
+      });
+      th.append(b);
+    }
+    head.append(th);
+  }
+}
+
+async function start() {
+  const status = document.getElementById("status");
+  try {
+    const res = await fetch("summary.csv");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const [header, ...rows] = parseCSV(await res.text());
+    const idx = Object.fromEntries(header.map((h, i) => [h, i]));
+    data = rows.map((r) => zeile(r, idx));
+    kopf();
+    document.querySelector(".tablewrap").hidden = false;
+    document.getElementById("filter").addEventListener("input", render);
+    render();
+  } catch (e) {
+    status.textContent = "Die Übersicht konnte nicht geladen werden (" + e.message + "). Die Dateien sind über die Links oben erreichbar.";
+  }
+}
+start();
+</script>
+</body>
+</html>
