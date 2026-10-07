@@ -9,11 +9,13 @@
   :root {
     --bg: #ffffff; --fg: #1c2024; --muted: #5d6670; --line: #d9dee3;
     --head: #f1f4f6; --link: #0b5cad; --warn: #b45309; --focus: #0b5cad;
+    --bad-bg: #f6c9c9; --mid-bg: #fbe9a6;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #14181c; --fg: #e6e9ec; --muted: #9aa4ae; --line: #2b333b;
       --head: #1c2227; --link: #6cb2f2; --warn: #f0a24b; --focus: #6cb2f2;
+      --bad-bg: #6b2a2d; --mid-bg: #5e4c14;
     }
   }
   * { box-sizing: border-box; }
@@ -43,6 +45,8 @@
   th[aria-sort="ascending"] button::after { content: " ↑"; color: var(--fg); }
   th[aria-sort="descending"] button::after { content: " ↓"; color: var(--fg); }
   tbody tr:last-child td { border-bottom: 0; }
+  td.bad { background: var(--bad-bg); }
+  td.mid { background: var(--mid-bg); }
   .warn { color: var(--warn); cursor: help; }
   #status { margin-top: 16px; }
 </style>
@@ -67,7 +71,7 @@
     Die Werte sind rechnerisch aus den Rohdaten ermittelt und nicht geprüft. Zeilen mit
     <span class="warn" aria-hidden="true">⚠</span> enthalten fehlerhafte Zeitstempel oder einen
     unplausibel langen Messzeitraum, Details stehen im README. Vor einer Interpretation bitte die
-    jeweilige Messung prüfen.
+    jeweilige Messung prüfen. Einhaltungsquoten unter 50&nbsp;% sind rot, unter 75&nbsp;% gelb hinterlegt.
   </p>
 
   <label for="filter">Filter (Straße, Gerät, Datei)</label>
@@ -115,14 +119,14 @@ const COLUMNS = [
   { key: "standort", label: "Standort" },
   { key: "datei", label: "Datei" },
   { key: "limit", label: "Limit km/h", num: true },
+  { key: "quote", label: "Einhaltung %", num: true },
+  { key: "qual", label: "Qualifiziert %", num: true },
   { key: "n", label: "Fahrzeuge", num: true },
   { key: "start", label: "Beginn" },
   { key: "ende", label: "Ende" },
   { key: "v85", label: "V85", num: true },
   { key: "v95", label: "V95", num: true },
   { key: "v99", label: "V99", num: true },
-  { key: "quote", label: "Einhaltung %", num: true },
-  { key: "qual", label: "Qualifiziert %", num: true },
   { key: "hinweis", label: "Hinweis" },
   { key: "links", label: "Auswertung", nosort: true },
 ];
@@ -160,6 +164,10 @@ function zeile(r, idx) {
 function cell(tr, col, row) {
   const td = document.createElement("td");
   if (col.num) td.className = "num";
+  if ((col.key === "quote" || col.key === "qual") && row[col.key] !== null) {
+    if (row[col.key] < 50) td.className += " bad";
+    else if (row[col.key] < 75) td.className += " mid";
+  }
   if (col.key === "links") {
     const a = document.createElement("a");
     a.href = row.yaml; a.textContent = "YAML";
