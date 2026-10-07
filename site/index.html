@@ -77,10 +77,9 @@ function parseCSV(text) {
 
 const COLUMNS = [
   { key: "standort", label: "Standort" },
-  { key: "datei", label: "Datei" },
   { key: "limit", label: "Limit km/h", num: true },
-  { key: "quote", label: "Einhaltung %", num: true },
-  { key: "qual", label: "Qualifiziert %", num: true },
+  { key: "quote", label: "Einhaltung", num: true },
+  { key: "qual", label: "Qualifiziert", num: true },
   { key: "n", label: "Fahrzeuge", num: true },
   { key: "start", label: "Beginn" },
   { key: "ende", label: "Ende" },
@@ -89,11 +88,12 @@ const COLUMNS = [
   { key: "v99", label: "V99", num: true },
   { key: "hinweis", label: "Hinweis" },
   { key: "links", label: "Auswertung", nosort: true },
+  { key: "datei", label: "Datei" },
 ];
 
 const MAX_TAGE = 400;
 let data = [];
-let sort = { key: "standort", dir: 1 };
+let sort = { key: "qual", dir: 1 };
 
 const num = (v) => (v === "" || v === undefined ? null : Number(v));
 const fmt = new Intl.NumberFormat("de-DE");
@@ -145,7 +145,7 @@ function cell(tr, col, row) {
     }
   } else {
     const v = row[col.key];
-    td.textContent = v === null || v === "" ? "–" : col.key === "quote" || col.key === "qual" ? fmt2.format(v) : col.num ? fmt.format(v) : v;
+    td.textContent = v === null || v === "" ? "–" : col.key === "quote" || col.key === "qual" ? fmt2.format(v) + " %" : col.num ? fmt.format(v) : v;
   }
   tr.append(td);
 }
