@@ -1,0 +1,15 @@
+# Whitelist: ins Repository gehoeren nur Skripte, Doku und die DSD-Rohdaten.
+# Alles andere (PDFs, E-Mails, abgeleitete CSV/YAML, Fremdformate) bleibt draussen.
+# Neue Dateitypen muessen hier bewusst freigegeben werden.
+*
+!*/
+!.gitignore
+!README.md
+!LICENSE
+!LICENSE-DATEN
+!*.py
+!*.dsd
+!docs/**
+!site/**
+!.github/**
+__pycache__/
