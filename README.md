@@ -4,6 +4,10 @@ Rohdaten (`.dsd`) von Geschwindigkeits-Dialogdisplays, die per Informationsfreih
 bei der Stadt Neuss angefragt wurden, dazu ein Skript, das sie in lesbare Formate umwandelt und je
 Messstelle auswertet.
 
+> **Hinweis:** Die Auswertungen (CSV, YAML und Kennzahlen wie V85 oder Einhaltungsquote) sind meine
+> eigenen Berechnungen aus den Rohdaten. Sie stammen weder von der Stadt Neuss noch vom Hersteller der
+> Geräte, sind nicht amtlich und nicht für Bußgeld- oder Gerichtsverfahren gedacht. – Fabian Grewing
+
 **Im Repository liegen nur die DSD-Rohdaten und die Skripte.** Die abgeleiteten Daten (CSV und YAML)
 werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Daten](#abgeleitete-daten).
 
@@ -12,7 +16,8 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `<Nr>_<Straße>/*.dsd` – je Ordner eine oder mehrere Messungen
 - `dsd2csv.py` – DSD → CSV und YAML-Auswertung
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
-- `site/index.html` – Startseite der GitHub Pages (Übersichtstabelle der YAML-Auswertungen)
+- `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz
+- `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
 - `LICENSE`, `LICENSE-DATEN` – Lizenzen für Software bzw. Daten und Dokumentation, siehe [Lizenz](#lizenz)
 - `.github/workflows/` – erzeugt die abgeleiteten Daten und veröffentlicht sie
 
@@ -80,3 +85,10 @@ Die Rohdaten stammen aus Messungen der Stadt Neuss. Der Betreiber dieses Reposit
 Urheber, beansprucht keine Rechte daran und geht davon aus, dass an reinen Messwerten keine Schutzrechte
 bestehen. Mit CC0 verzichtet er auf alle Rechte, die er selbst an den hier veröffentlichten Dateien haben
 könnte. Das ist keine Rechtsberatung.
+
+## Kontakt, Impressum und Datenschutz
+
+Fabian Grewing, <fabian.grewing@proton.me>
+
+- [Impressum](https://khazuar.github.io/neuss-dialogdisplays/impressum.html)
+- [Datenschutzerklärung](https://khazuar.github.io/neuss-dialogdisplays/datenschutz.html)
