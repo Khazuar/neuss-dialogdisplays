@@ -98,6 +98,10 @@ let sort = { key: "standort", dir: 1 };
 const num = (v) => (v === "" || v === undefined ? null : Number(v));
 const fmt = new Intl.NumberFormat("de-DE");
 const fmt2 = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// "07_2024_ Einsteinstraße" -> "Einsteinstraße", "Stationär_Villestraße/FR GV" -> "Stationär Villestraße / FR GV"
+const bereinige = (ordner) => ordner.split("/")
+  .map((t, i) => t.replace(i === 0 ? /^\d+(?:[-_]\d{4})?_\s*/ : /^\d{4}_/, "").replace(/_/g, " ").trim())
+  .join(" / ");
 const pfad = (...teile) => teile.join("/").split("/").map(encodeURIComponent).join("/");
 
 function zeile(r, idx) {
@@ -110,7 +114,7 @@ function zeile(r, idx) {
   if (tage !== null && tage > MAX_TAGE) gruende.push("Messzeitraum von " + Math.round(tage) + " Tagen, vermutlich Daten außerhalb der eigentlichen Messung");
   const basis = get("datei").replace(/\.dsd$/i, "");
   return {
-    standort: get("standort"), datei: get("datei"),
+    standort: bereinige(get("standort")), datei: get("standort") + "/" + get("datei"),
     limit: num(get("tempolimit_kmh")), n: num(get("anzahl_fahrzeuge")),
     start: start ? start.slice(0, 10) : "", ende: ende ? ende.slice(0, 10) : "",
     v85: num(get("geschwindigkeit_kmh.v85")), v95: num(get("geschwindigkeit_kmh.v95")), v99: num(get("geschwindigkeit_kmh.v99")),
