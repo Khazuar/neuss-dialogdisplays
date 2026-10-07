@@ -31,8 +31,14 @@ jobs:
         run: python -I dsd2csv.py . -o _site
       - name: Einzelmessungen als CSV entfernen (nur YAML und summary.csv bleiben)
         run: find _site -name '*.csv' ! -name summary.csv -delete
-      - name: Startseite hinzufuegen
-        run: cp site/index.html _site/index.html
+      - name: Seiten hinzufuegen
+        run: cp site/index.html site/datenschutz.html site/style.css _site/
+      - name: Impressum aus den Repository-Variablen erzeugen
+        env:
+          IMPRESSUM_STRASSE: ${{ vars.IMPRESSUM_STRASSE }}
+          IMPRESSUM_ORT: ${{ vars.IMPRESSUM_ORT }}
+          IMPRESSUM_TELEFON: ${{ vars.IMPRESSUM_TELEFON }}
+        run: python site/impressum_bauen.py site/impressum.html _site/impressum.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

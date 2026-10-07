@@ -1,0 +1,50 @@
+/* SPDX-License-Identifier: MIT */
+:root {
+  --bg: #ffffff; --fg: #1c2024; --muted: #5d6670; --line: #d9dee3;
+  --head: #f1f4f6; --link: #0b5cad; --warn: #b45309; --focus: #0b5cad;
+  --bad-bg: #f6c9c9; --mid-bg: #fbe9a6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181c; --fg: #e6e9ec; --muted: #9aa4ae; --line: #2b333b;
+    --head: #1c2227; --link: #6cb2f2; --warn: #f0a24b; --focus: #6cb2f2;
+    --bad-bg: #6b2a2d; --mid-bg: #5e4c14;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--fg);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main { max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 1.6rem; margin: 0 0 8px; }
+p { margin: 0 0 12px; max-width: 70ch; }
+a { color: var(--link); }
+a:focus-visible, input:focus-visible, th button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 16px 0 24px; padding: 0; list-style: none; }
+.muted { color: var(--muted); font-size: 0.9rem; }
+label { display: block; font-weight: 600; margin-bottom: 4px; }
+input[type="search"] {
+  width: 100%; max-width: 360px; padding: 8px 10px; font: inherit;
+  color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+}
+.tablewrap { overflow-x: auto; margin-top: 16px; border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+thead th { background: var(--head); position: sticky; top: 0; }
+th button { all: unset; cursor: pointer; font-weight: 600; }
+th button::after { content: " ↕"; color: var(--muted); }
+th[aria-sort="ascending"] button::after { content: " ↑"; color: var(--fg); }
+th[aria-sort="descending"] button::after { content: " ↓"; color: var(--fg); }
+tbody tr:last-child td { border-bottom: 0; }
+td.bad { background: var(--bad-bg); }
+td.mid { background: var(--mid-bg); }
+.warn { color: var(--warn); cursor: help; }
+#status { margin-top: 16px; }
+
+/* Fusszeile und Textseiten (Impressum, Datenschutz) */
+footer { margin-top: 32px; }
+footer a + a { margin-left: 16px; }
+.text h2 { font-size: 1.15rem; margin: 24px 0 8px; }
+.text ul { margin: 0 0 12px; padding-left: 1.2em; max-width: 70ch; }

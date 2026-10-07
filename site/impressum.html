@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Vorlage: Anschrift und Telefon werden beim Bauen der Seite aus den Repository-Variablen
+     IMPRESSUM_STRASSE, IMPRESSUM_ORT und IMPRESSUM_TELEFON eingesetzt (site/impressum_bauen.py),
+     damit sie nicht in der Git-Historie stehen. -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impressum – Neuss Dialogdisplays</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="text">
+  <h1>Impressum</h1>
+
+  <h2>Angaben gemäß § 5 DDG</h2>
+  <p>
+    Fabian Grewing<br>
+    {{STRASSE}}<br>
+    {{ORT}}
+  </p>
+
+  <h2>Kontakt</h2>
+  <p>
+    E-Mail: <a href="mailto:fabian.grewing@proton.me">fabian.grewing@proton.me</a>{{TELEFON_ZEILE}}
+  </p>
+
+  <h2>Verantwortlich für den Inhalt</h2>
+  <p>Fabian Grewing, Anschrift wie oben.</p>
+
+  <h2>Hinweis zu den Inhalten</h2>
+  <p>
+    Diese Seite stellt Messdaten der Stadt Neuss und eigene Berechnungen daraus zur Verfügung. Die
+    Berechnungen sind nicht amtlich. Einzelheiten und Einschränkungen stehen in der
+    <a href="https://github.com/Khazuar/neuss-dialogdisplays#readme">Dokumentation</a>.
+  </p>
+
+  <footer class="muted">
+    <p><a href="index.html">Zur Übersicht</a><a href="datenschutz.html">Datenschutz</a></p>
+  </footer>
+</main>
+</body>
+</html>
