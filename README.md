@@ -6,7 +6,9 @@ Messstelle auswertet.
 
 > **Hinweis:** Die Auswertungen (CSV, YAML und Kennzahlen wie V85 oder Einhaltungsquote) sind meine
 > eigenen Berechnungen aus den Rohdaten. Sie stammen weder von der Stadt Neuss noch vom Hersteller der
-> Geräte, sind nicht amtlich und nicht für Bußgeld- oder Gerichtsverfahren gedacht. – Fabian Grewing
+> Geräte, sind nicht amtlich und nicht für Bußgeld- oder Gerichtsverfahren gedacht. **Fehler in der Auswertung
+> (Skripte, Annahmen, Zuordnung der Angaben zu den Messungen) können nicht ausgeschlossen werden; alle Angaben
+> sind ohne Gewähr.** Gefährdung, Lärm und Ereignisse pro Nacht sind Schätzungen und kein Gutachten. – Fabian Grewing
 
 **Im Repository liegen nur die DSD-Rohdaten und die Skripte.** Die abgeleiteten Daten (CSV und YAML)
 werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Daten](#abgeleitete-daten).
@@ -27,6 +29,8 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
   (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`)
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
 - `docs/metadaten.md` – Herkunft, Zuordnung und Abdeckung der Metadaten
+- `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
+- `seiten_bauen.py` – baut je Standort eine Detailseite für die GitHub Pages (`standorte/<name>.html`)
 - `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py` – Tests (`python3 -m unittest -v`)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
 - `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz
@@ -74,7 +78,11 @@ sinnvoll.
     Uhr-Segmenten,
   - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit plausibler Uhr,
   - `teilzeitraeume` – dieselben Kennzahlen für `tags` (6–18 Uhr), `nachts` (18–6 Uhr) und `schulweg`
-    (Mo–Fr 7–8 Uhr), jeweils in Ortszeit
+    (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
+  - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: relativer Risikoindex nach Nilsson, Aufprallgeschwindigkeit
+    und Anteil der Fahrzeuge, die mit mehr als 30 bzw. 50 km/h aufträfen, Lärm gegenüber dem Tempolimit
+    (`docs/gefaehrdung.md`),
+  - `nacht_ereignisse` – Nächte (22–6 Uhr) mit Fahrten ab doppeltem Tempolimit, 100 und 120 km/h
 - `auswertung.yaml`, `summary.csv` – alle Messungen zusammengefasst
 
 Die Geräte stellen ihre Uhr nicht auf Sommerzeit um und sind teils zurückgesetzt oder verstellt. Die

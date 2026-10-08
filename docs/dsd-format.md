@@ -1,5 +1,7 @@
 # DSD-Dateiformat
 
+> Eigene Analyse; Fehler in der Beschreibung und in der Auswertung können nicht ausgeschlossen werden (ohne Gewähr).
+
 Das Format der `.dsd`-Dateien (Dialogdisplay / Geschwindigkeitsanzeigetafel) ist nicht offiziell
 dokumentiert. Die folgende Beschreibung wurde durch Analyse der Dateien ermittelt und mit den
 Kennzahlen aus DataCollect-Auswertungen gegengeprüft (Tempolimit, V85). Sie kann unvollständig sein.

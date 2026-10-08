@@ -1,5 +1,8 @@
 # Zuverlässigkeit der Geräteuhren
 
+> Eigene Einschätzung nach festen Regeln, nicht amtlich. Fehler im Verfahren und in der Auswertung können nicht
+> ausgeschlossen werden (ohne Gewähr).
+
 Die Auswertung nach Tageszeit steht und fällt mit der Geräteuhr. Die Uhren der Dialogdisplays sind
 nicht verlässlich: Sie werden nie auf Sommerzeit umgestellt, manchmal nach einem Stromausfall auf den
 2020-01-01 zurückgesetzt und teils um Stunden oder Tage verstellt. Dieses Dokument beschreibt, wie für

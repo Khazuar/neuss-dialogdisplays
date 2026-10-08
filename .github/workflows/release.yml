@@ -22,6 +22,11 @@ jobs:
         run: python -I dsd2csv.py . -o daten
       - name: Datenlizenz beilegen
         run: cp LICENSE-DATEN daten/LICENSE-DATEN
+      - name: Hinweis beilegen
+        run: |
+          printf '%s\n' 'Eigene Berechnungen aus den Rohdaten der Stadt Neuss, nicht amtlich.' \
+            'Fehler in der Auswertung (Skripte, Annahmen, Zuordnung der Angaben) koennen nicht ausgeschlossen werden;' \
+            'alle Angaben ohne Gewaehr. Siehe README und docs/ im Repository: https://github.com/Khazuar/neuss-dialogdisplays' > daten/HINWEIS.txt
       - name: ZIP packen
         run: zip -r -q "neuss-dialogdisplays-daten-${GITHUB_REF_NAME}.zip" daten
       - name: Release anlegen
