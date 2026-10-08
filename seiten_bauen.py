@@ -331,12 +331,41 @@ def nacht_abschnitt(row):
     return "".join(z)
 
 
+def widersprueche(row, meta_messung):
+    """Widersprueche und Auffaelligkeiten zwischen DSD-Datei und Angaben der Verwaltung als Liste von Saetzen."""
+    z = []
+    for v in (meta_messung or {}).get("verwaltung", []):
+        w = v.get("tempolimit_widerspruch")
+        if w:
+            if w["verwendet_kmh"] != w["dsd_kmh"]:
+                z.append(f'Tempolimit: Die Mitteilung nennt {w["mitteilung_kmh"]}&nbsp;km/h, die Anzeige-Schwelle in der DSD-Konfiguration '
+                         f'steht auf {w["dsd_kmh"]}&nbsp;km/h. Für die Einhaltungsquoten gilt {w["verwendet_kmh"]}&nbsp;km/h.')
+            else:
+                z.append(f'Tempolimit: Die Mitteilung nennt {w["mitteilung_kmh"]}&nbsp;km/h, die DSD-Konfiguration {w["dsd_kmh"]}&nbsp;km/h; '
+                         f'gerechnet wird mit {w["dsd_kmh"]}&nbsp;km/h ({e(w["grund"])}).')
+        ab = v.get("abgleich_dsd") or {}
+        for seite_, a in (ab.get("ausserhalb_des_erfassungszeitraums") or {}).items():
+            innen = f'V85 {ab.get("v85_kmh")}&nbsp;km/h, Ø {dez(ab.get("mittel_kmh"))}&nbsp;km/h'
+            z.append(f'Die Datei enthält {ganz(a["fahrzeuge"])} Fahrzeuge {seite_} dem Erfassungszeitraum der Mitteilung '
+                     f'({iso_de(a["von"])} bis {iso_de(a["bis"])}; V85 {a["v85_kmh"]}&nbsp;km/h, Ø {dez(a["mittel_kmh"])}&nbsp;km/h, innerhalb des Zeitraums '
+                     f'{innen}). Sie sind in den Kennzahlen unten enthalten; woher sie stammen, lässt sich aus den Daten nicht belegen.')
+        je_tag, dsd_tag = v.get("fahrzeuge_je_tag") or {}, ab.get("fahrzeuge_je_tag")
+        if len(je_tag) == 2 and dsd_tag and 0.4 <= dsd_tag / sum(je_tag.values()) <= 0.75:
+            z.append(f'Die Mitteilung nennt zwei Richtungen ({" + ".join(ganz(x) for x in je_tag.values())} Fahrzeuge je Tag), die DSD-Datei '
+                     f'hat {ganz(dsd_tag)} je Tag, etwa so viel wie eine Richtung. Möglicherweise liegt nur die Datei einer Richtung vor.')
+    for dd in (meta_messung or {}).get("doppelte_daten", []):
+        z.append(f'Diese Datei enthält dieselben Fahrzeugdaten wie {e(dd["datei"])} ({dez(dd["anteil_dieser_datei_prozent"], 0)}&nbsp;% dieser Datei '
+                 f'sind dort ebenfalls enthalten).')
+    return z
+
+
 def messung_abschnitt(row, meta_messung, abschnitte, rel):
     g = (meta_messung or {}).get("geraet", {})
     limit = row.get("tempolimit_kmh")
     verw = (meta_messung or {}).get("verwaltung", [])
     z = [f'<section class="messung" id="{e(standort_slug(row["datei"]))}"><h3>{e(row["datei"])}</h3>']
-    fakten = [("Tempolimit", f'{limit}&nbsp;km/h (aus der DSD-Konfiguration)' if limit else "unbekannt"),
+    quelle = {"mitteilung_verwaltung": "laut Mitteilung der Verwaltung", "parameter": "vorgegeben"}.get(row.get("tempolimit_quelle"), "aus der DSD-Konfiguration")
+    fakten = [("Tempolimit", f'{limit}&nbsp;km/h ({quelle}{"; DSD-Konfiguration " + str(row["tempolimit_dsd_kmh"]) + " km/h" if row.get("tempolimit_dsd_kmh") else ""})' if limit else "unbekannt"),
               ("Fahrzeuge in der Datei", ganz(row.get("anzahl_fahrzeuge")))]
     mz = row.get("messzeitraum")
     if mz:
@@ -353,6 +382,10 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel):
     if g.get("verdeckte_messung"):
         fakten.append(("Anzeige", "verdeckte Messung (Display zeigte nichts an)"))
     z.append('<dl class="facts">' + "".join(f"<dt>{e(k)}</dt><dd>{v}</dd>" for k, v in fakten) + "</dl>")
+    wid = widersprueche(row, meta_messung)
+    if wid:
+        z.append('<div class="notice" role="note"><strong>Widersprüche und Auffälligkeiten zwischen DSD und Mitteilung:</strong><ul>' +
+                 "".join(f"<li>{w}</li>" for w in wid) + "</ul></div>")
     if row.get("anzahl_fahrzeuge"):
         z.append(kennzahlen_tabelle(row))
         z.append(schaetzung_tabellen(row))

@@ -134,6 +134,27 @@ class Seite(unittest.TestCase):
         self.assertEqual(h.count("Fehler in der Auswertung"), 2)  # Hinweis oben und im Fuss
         self.assertIn("Schätzungen und kein Gutachten", h)
         self.assertIn('class="notice"', h)
+    def test_widersprueche_stehen_auf_der_seite(self):
+        e = eintrag(tempolimit_widerspruch={"dsd_kmh": 10, "mitteilung_kmh": 30, "verwendet_kmh": 30, "grund": "g"})
+        e["abgleich_dsd"]["ausserhalb_des_erfassungszeitraums"] = {
+            "davor": {"fahrzeuge": 19198, "v85_kmh": 32, "mittel_kmh": 20.6, "von": "2023-07-19", "bis": "2023-09-12"}}
+        meta = {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": [e],
+                               "doppelte_daten": [{"datei": "48_Lanzerather Dorfstraße/_7.dsd", "anteil_dieser_datei_prozent": 100.0}]}]}
+        row = zeile()
+        row["tempolimit_quelle"], row["tempolimit_dsd_kmh"] = "mitteilung_verwaltung", 10
+        h = s.seite("07_2024_ Einsteinstraße", [row], meta, {})
+        self.assertIn("Widersprüche und Auffälligkeiten zwischen DSD und Mitteilung", h)
+        self.assertIn("Die Mitteilung nennt 30&nbsp;km/h, die Anzeige-Schwelle in der DSD-Konfiguration steht auf 10&nbsp;km/h", h)
+        self.assertIn("Für die Einhaltungsquoten gilt 30&nbsp;km/h", h)
+        self.assertIn("laut Mitteilung der Verwaltung; DSD-Konfiguration 10 km/h", h)
+        self.assertIn("19.198 Fahrzeuge davor dem Erfassungszeitraum", h)
+        self.assertIn("Diese Datei enthält dieselben Fahrzeugdaten wie 48_Lanzerather Dorfstraße/_7.dsd", h)
+        self.assertIn("etwa so viel wie eine Richtung", h)  # 430 + 423 gegenueber 522 je Tag
+
+    def test_ohne_widerspruch_kein_hinweisblock(self):
+        h = self.html([eintrag(abgleich_dsd={"fahrzeuge_je_tag": 840, "v85_kmh": 31, "mittel_kmh": 25,
+                                             "abweichung_dsd_minus_verwaltung": {}})])
+        self.assertNotIn("Widersprüche und Auffälligkeiten", h)
     def test_kurze_abschnitte_werden_zusammengefasst(self):
         h = self.html([])
         self.assertIn("1 weitere kurze Abschnitte", h)

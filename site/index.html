@@ -142,6 +142,10 @@ function zeile(r, idx) {
       (anteil ? " (" + fmt1.format(Number(anteil)) + " % der Fahrzeuge mit gültiger Zeit)" : "") +
       (get("uhr.hinweise") ? ": " + get("uhr.hinweise") : ""));
   }
+  if (get("tempolimit_quelle") === "mitteilung_verwaltung") {
+    gruende.push("Tempolimit " + get("tempolimit_kmh") + " km/h laut Mitteilung der Verwaltung; die Anzeige-Schwelle in der DSD steht auf " +
+      get("tempolimit_dsd_kmh") + " km/h");
+  }
   // übersprungene Datensätze allein sind kein Warngrund (meist wenige Dutzend), nur Zusatzinfo
   if (gruende.length && warnungen > 0) gruende.push(warnungen + " Records mit ungültigem Zeitstempel übersprungen");
   const basis = get("datei").replace(/\.dsd$/i, "");
