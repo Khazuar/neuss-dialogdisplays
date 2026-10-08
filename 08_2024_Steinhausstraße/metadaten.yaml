@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "08_2024_Steinhausstraße"
 messungen:
   - datei: "DSD17386 Tempo30_3.dsd"
@@ -27,6 +29,9 @@ messungen:
         massnahmen_verwaltung: "nicht erforderlich"
         hinweise_verwaltung:
           - "Verwaltung nennt Baustelle oder Umleitung als Erklärung"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert mit 37 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch."
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
         quellen:
           - vorlage: "69/355/2025"
             ris_vorlage_id: 28340

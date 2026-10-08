@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "100_Norfer Kirchstraße"
 messungen:
   - datei: "DSD14178 Tempo30_4.dsd"
@@ -24,6 +26,10 @@ messungen:
           kmh: 40
         einstufung_verwaltung: "ueberdurchschnittlich_hoch"
         massnahmen_verwaltung: "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert ist mit 43 km/h, bei vorgeschriebenen 30 km/h, überdurchschnittlich hoch."
+          - "Der V85-Wert ist hier deutlich zu hoch."
+          - "Hier muss zusammen mit der Kreispolizeibehörde Neuss über verkehrslenkende Maßnahmen gesprochen werden."
         quellen:
           - vorlage: "69/0410/2025"
             ris_vorlage_id: 29229

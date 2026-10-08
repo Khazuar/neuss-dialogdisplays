@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "10_Holzbüttgener Straße"
 messungen:
   - datei: "_6.dsd"
@@ -22,6 +24,8 @@ messungen:
           gesamt: 39628
         v85_kmh: 40
         massnahmen_verwaltung: "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+        stellungnahme_verwaltung:
+          - "Daher werden mit der Kreispolizeibehörde mögliche Maßnahmen zur Geschwindigkeitsreduktion abgestimmt."
         quellen:
           - vorlage: "69/255/2024"
             ris_vorlage_id: 27089

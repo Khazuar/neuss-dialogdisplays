@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "17_Nordkanalallee"
 messungen:
   - datei: "DSD14178 Tempo30_2.dsd"
@@ -35,6 +37,9 @@ messungen:
           kmh: 40
         einstufung_verwaltung: "noch_akzeptabel"
         massnahmen_verwaltung: "nicht erforderlich"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert, der sich aus der Geschwindigkeit ergibt, die von 85 Prozent der erfassten Fahrzeuge nicht überschritten wird, ist mit 38 km/h bei vorgeschriebenen 30 km/h noch akzeptabel."
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
         quellen:
           - vorlage: "69/313/2024"
             ris_vorlage_id: 27942

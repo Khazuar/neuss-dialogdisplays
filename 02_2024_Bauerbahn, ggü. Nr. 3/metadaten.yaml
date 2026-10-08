@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "02_2024_Bauerbahn, ggü. Nr. 3"
 messungen:
   - datei: "20 km.dsd"
@@ -29,6 +31,11 @@ messungen:
         massnahmen_verwaltung: "nicht erforderlich"
         hinweise_verwaltung:
           - "Hoher Anteil Radfahrende erfasst, die Geräte unterscheiden nicht zwischen Rad und Kfz"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert ist mit 17 km/h bei vorgeschriebenen 20 km/h völlig unkritisch."
+          - "Es sollte berücksichtigt werden, dass hier ein hoher Prozentsatz von Radfahrer*innen erfasst ist."
+          - "Die Geräte können nicht zwischen Radfahrer*innen und Kraftfahrzeugen unterscheiden."
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
         quellen:
           - vorlage: "69/313/2024"
             ris_vorlage_id: 27942

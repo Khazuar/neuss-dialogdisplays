@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "105_An der Obererft"
 messungen:
   - datei: "_19.dsd"
@@ -30,6 +32,9 @@ messungen:
         massnahmen_verwaltung: "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
         hinweise_verwaltung:
           - "Weitergehende Kontrollen (Laserwagen) vorgesehen oder genannt"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert mit 39 km/h ist, bei vorgeschriebenen 30 km/h, überdurchschnittlich."
+          - "Hier muss mit der Kreispolizeibehörde Neuss über geeignete Maßnahmen für Geschwindigkeitskontrollen gesprochen werden (Einsatz von Laserwagen, Blitz-Anhängern, etc.)."
         quellen:
           - vorlage: "69/0459/2026"
             ris_vorlage_id: 29893

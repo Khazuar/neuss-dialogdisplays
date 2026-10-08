@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "88_Pomona (Eingang)"
 messungen:
   - datei: "_17.dsd"
@@ -29,6 +31,9 @@ messungen:
           kmh: 40
         einstufung_verwaltung: "voellig_unkritisch"
         massnahmen_verwaltung: "nicht erforderlich"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert mit 33 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch."
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
         quellen:
           - vorlage: "69/0459/2026"
             ris_vorlage_id: 29893

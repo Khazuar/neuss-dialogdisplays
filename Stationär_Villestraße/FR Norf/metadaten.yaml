@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "Stationär_Villestraße/FR Norf"
 messungen:
   - datei: "0000000000000000_4.dsd"
@@ -37,6 +39,10 @@ messungen:
         massnahmen_verwaltung: "nicht erforderlich"
         hinweise_verwaltung:
           - "Verdeckte Messung"
+        stellungnahme_verwaltung:
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+          - "Hinweis: Bei den Standorten auf der Villestraße wurde diesmal eine „verdeckte Messung“ vorgenommen."
+          - "Ein Unterschied zu den Ergebnissen der „offenen Messung“ vom Jahresanfang ist nicht festzustellen."
         quellen:
           - vorlage: null
             ris_vorlage_id: 27941
@@ -93,6 +99,8 @@ messungen:
         anteil_unter:
           prozent: 93.0
           kmh: 60
+        stellungnahme_verwaltung:
+          - "Hier fuhren knapp 93 Prozent der Fahrzeuge mit einer Geschwindigkeit von unter 60 km/h und damit den örtlichen Bedingungen und dem angeordneten Tempo angemessen."
         quellen:
           - vorlage: "69/288/2024"
             ris_vorlage_id: 27521
@@ -165,6 +173,10 @@ messungen:
         massnahmen_verwaltung: "nicht erforderlich"
         hinweise_verwaltung:
           - "Verdeckte Messung"
+        stellungnahme_verwaltung:
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+          - "Hinweis: Bei den Standorten auf der Villestraße wurde diesmal eine „verdeckte Messung“ vorgenommen."
+          - "Ein Unterschied zu den Ergebnissen der „offenen Messung“ vom Jahresanfang ist nicht festzustellen."
         quellen:
           - vorlage: null
             ris_vorlage_id: 27941

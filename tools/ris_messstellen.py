@@ -15,6 +15,7 @@ unter "nicht_ausgewertet" und geht nicht verloren.
 Die Mitteilungen sind amtliche Dokumente der Stadt Neuss (amtliche Werke, 5 UrhG). Es werden nur
 kurze Angaben und einzelne Saetze uebernommen, nicht die Dokumente.
 """
+import collections
 import json
 import os
 import re
@@ -41,6 +42,7 @@ ZEITRAUM_SATZ = re.compile(
 ZEITRAUM_BLOCK = re.compile(
     r"Erfassungs\s*zeitraum\s*(?:\(|vom\s+)(?P<von>\d\d\.\d\d\.(?:\d{4})?)\s*bis\s*(?P<bis>\d\d\.\d\d\.\d{4})")
 ZEITRAUM_IM = re.compile(rf"Im Zeitraum vom (?P<von>{DATUM}) bis (?P<bis>{DATUM})")
+NEBENSTRASSE = re.compile(r"[A-ZÄÖÜ][\wäöüß]+, Nebenstraße Hausnummer \d+")
 OHNE_DATEN = re.compile(r"Für die Messstelle (?P<ort>[^.]{2,60}?) liegen [^.]*keine Daten vor")
 SATZENDE = re.compile(r"(?<=[a-zäöü\d)%/]{3})\.\s+(?=[A-ZÄÖÜ])")  # nicht nach "ca.", "o. g.", "Nr."
 
@@ -80,6 +82,45 @@ def normalisiere(text):
     t = re.sub(r"(\d{2}\.\d{2}\.\d{3}) (\d)\b", r"\1\2", t)  # "202 4"
     t = re.sub(r"Erfassungsz\s+eitraum", "Erfassungszeitraum", t)
     return t.strip()
+
+
+WORT = re.compile(r"([A-Za-zÄÖÜäöüß]+)")
+VOKABULAR_MIN = 2  # so oft muss ein zusammengesetztes Wort im Wortschatz stehen, damit getrennte Stuecke verbunden werden
+
+
+def vokabular(texte):
+    """Haeufigkeit aller Woerter in den (normalisierten) Texten: Grundlage fuer die Reparatur von Trennfehlern."""
+    z = collections.Counter()
+    for t in texte:
+        z.update(WORT.findall(t))
+    return z
+
+
+def repariere_text(text, voc):
+    """Trennfehler des PDF-Textes ("durchschnittlic he", "Kreisp olizeibehörde") reparieren.
+
+    Zwei oder drei durch genau ein Leerzeichen getrennte Wortstuecke werden verbunden, wenn das verbundene Wort im
+    Wortschatz mindestens VOKABULAR_MIN-mal vorkommt und mindestens dreimal haeufiger ist als das seltenste Stueck.
+    Zwei gewoehnliche Woerter ("in dem") werden dadurch nie verbunden.
+    """
+    teile = WORT.split(text)  # [nichtwort, wort, nichtwort, wort, ...]
+    aus = [teile[0]]
+    i = 1
+    while i < len(teile):
+        genommen = 1
+        wort = teile[i]
+        for n in (3, 2):
+            if i + 2 * (n - 1) >= len(teile) or any(teile[i + 2 * k + 1] != " " for k in range(n - 1)):
+                continue
+            stuecke = [teile[i + 2 * k] for k in range(n)]
+            ab = "".join(stuecke)
+            if voc.get(ab, 0) >= VOKABULAR_MIN and min(voc.get(x, 0) for x in stuecke) * 3 <= voc[ab]:
+                wort, genommen = ab, n
+                break
+        aus.append(wort)
+        aus.append(teile[i + 2 * (genommen - 1) + 1] if i + 2 * (genommen - 1) + 1 < len(teile) else "")
+        i += 2 * genommen
+    return "".join(aus)
 
 
 def zahl(s):
@@ -138,8 +179,19 @@ def kopf_zerlegen(kopf):
     return ergebnis
 
 
+NACHREPARATUREN = {  # Trennfehler, die im Wortschatz nicht vorkommen (jeweils nur in einer Mitteilung)
+    "üb erhöht": "überhöht", "überdu rchschnittlich": "überdurchschnittlich", "Kr aftfahrzeugen": "Kraftfahrzeugen", "begrenz t": "begrenzt",
+}
+
+
 def sauber(satz):
-    return re.sub(r"\s+", " ", satz).strip()
+    """Satz fuer die Anzeige: Leerraum, Leerzeichen vor Satzzeichen und Bindestrichen, bekannte Restfehler."""
+    s = re.sub(r"\s+", " ", satz).strip()
+    for falsch, richtig in NACHREPARATUREN.items():
+        s = s.replace(falsch, richtig)
+    s = re.sub(r"\s+([.,;:!?])", r"\1", s)
+    s = re.sub(r"(?<=[A-Za-zäöüß0-9]) -(?=[A-ZÄÖÜ])", "-", s)  # "V85 -Wert", "Blitz -Anhängern"
+    return s
 
 
 def dicht(t):
@@ -210,14 +262,51 @@ def felder(text):
                 hinweise.append(text_)
     if hinweise:
         f["hinweise_verwaltung"] = hinweise
+    st = stellungnahme(t)
+    if st:
+        f["stellungnahme_verwaltung"] = st
     return f
 
-def zerlege(text):
-    """Text einer Mitteilung -> (bloecke, nicht_ausgewertet)."""
+
+# Saetze, die nur Messwerte mitteilen (und keine Einschaetzung): Fahrzeugzahlen, Anteile, mittleres Tempo, Zeitraeume
+DATENSATZ = re.compile(
+    r"Fahrzeugbeweg|^Der (?:überragende|überwiegende|größte) Anteil|^Der Anteil der Fahrzeuge|^Das durchschnittliche|"
+    r"^Die durchschnittliche|^Im (?:Erfassungszeitraum|Zeitraum vom)|^Folgende|^Fahrtrichtung|^Insgesamt wurden|^Es wurden|"
+    r"^In beiden Fahrtrichtungen|^Im o\. ?g\.", re.I)
+
+
+def stellungnahme(t):
+    """Saetze der Verwaltung mit Einschaetzung, Massnahmen und Erklaerungen im Wortlaut (ohne reine Messwerte)."""
+    saetze = []
+    for satz in SATZENDE.split(t):
+        satz = sauber(re.sub(r"^Folgende Messungen[^:]*:\s*", "", sauber(satz)))
+        satz = re.sub(r"(?<=[.!?]) [A-Za-z]\.?$", "", satz).rstrip(".") + "."
+        d = dicht(satz)
+        if len(satz) < 25 or re.search(r"Seite \d+ von \d+", satz):
+            continue
+        if "v85" in d:  # nur wenn der Satz eine Einstufung enthaelt
+            if not any(wort in d for wort, _ in EINSTUFUNG):
+                continue
+        elif DATENSATZ.search(satz) and "angemessen" not in d:
+            continue
+        if satz not in saetze:
+            saetze.append(satz)
+    return saetze
+
+
+def zerlege(text, voc=None):
+    """Text einer Mitteilung -> (bloecke, nicht_ausgewertet). Mit voc (vokabular) werden Trennfehler repariert."""
     t = normalisiere(text)
+    if voc:
+        t = repariere_text(t, voc)
     i = t.find("Inhalt der Mitteilung")
     inhalt = t[i + len("Inhalt der Mitteilung"):].lstrip(": ") if i >= 0 else t
     inhalt = re.sub(r"\d{2}/\d+(?:/\d{4})? Seite \d+ von \d+ ?", "", inhalt)  # Fusszeile "69/313/2024 Seite 2 von 2"
+    # Abschnitt ohne Messwerte ("X, Nebenstraße Hausnummer 323 ..."): gehoert nicht zum Block davor
+    neben = NEBENSTRASSE.search(inhalt)
+    nebenteil = inhalt[neben.end():] if neben else ""
+    if neben:
+        inhalt = inhalt[:neben.start()]
     marken = []  # (start, ende_des_kopfes, art, match)
     for m in KOPF_ALT.finditer(inhalt):
         marken.append((m.start(), m.end(), "alt", m))
@@ -269,9 +358,9 @@ def zerlege(text):
                 bloecke.append(b)
     for m in OHNE_DATEN.finditer(inhalt):
         offen.append({"kopf": sauber(m.group("ort")), "grund": "technischer Defekt, keine Daten vorhanden"})
-    if re.search(r"Nebenfahrbahn des Berghäuschensweg", inhalt):
-        offen.append({"kopf": "Berghäuschensweg, Nebenstraße Hausnummer 323",
-                      "grund": "Messung auf der Nebenfahrbahn nicht möglich, Gerät erfasst auch die Hauptfahrbahn"})
+    if neben:
+        offen.append({"kopf": sauber(neben.group(0)), "grund": "keine Messung möglich oder ausgewertet",
+                      "stellungnahme_verwaltung": stellungnahme(nebenteil)})
     return bloecke, offen
 
 
@@ -283,7 +372,14 @@ def main():
         from pypdf import PdfReader
     except ImportError:
         sys.exit("pypdf fehlt: pip install --target <Ordner> pypdf und PYPDF_PFAD=<Ordner> setzen")
-    index = json.load(open(os.path.join(roh, "index.json"), encoding="utf-8"))
+    with open(os.path.join(roh, "index.json"), encoding="utf-8") as fh:
+        index = json.load(fh)
+    # Wortschatz aus allen geladenen Dokumenten: damit werden die Trennfehler des PDF-Textes repariert
+    texte = {}
+    for datei in sorted(os.listdir(roh)):
+        if datei.startswith("do_") and datei.endswith(".pdf"):
+            texte[datei] = "\n".join((p.extract_text() or "") for p in PdfReader(os.path.join(roh, datei)).pages)
+    voc = vokabular(normalisiere(t) for t in texte.values())
     sitzung = re.compile(r"(Bezirksausschuss[^0-9\n]{3,70}?)\s+(\d{2})\.(\d{2})\.(\d{4})")
     vorlage = re.compile(r"\b(\d{2}/\d{1,4}/\d{4})\b")
     dokumente = []
@@ -291,9 +387,9 @@ def main():
         if not v["titel"].startswith("Ergebnisse von Verkehrs"):
             continue
         for dok in v["dokumente"]:
-            text = "\n".join((p.extract_text() or "") for p in PdfReader(os.path.join(roh, f"do_{dok}.pdf")).pages)
-            bloecke, offen = zerlege(text)
-            s = sitzung.search(normalisiere(text))
+            text = texte[f"do_{dok}.pdf"]
+            bloecke, offen = zerlege(text, voc)
+            s = sitzung.search(repariere_text(normalisiere(text), voc))
             vl = vorlage.search(text)
             dokumente.append({
                 "vorlage": vl.group(1) if vl else None, "ris_vorlage_id": int(kvonr), "betreff": v["titel"],

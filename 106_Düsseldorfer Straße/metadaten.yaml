@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "106_Düsseldorfer Straße"
 messungen:
   - datei: "DSD17400 Tempo50_2.dsd"
@@ -30,6 +32,10 @@ messungen:
         massnahmen_verwaltung: "nicht erforderlich"
         hinweise_verwaltung:
           - "Bereich soll weiter beobachtet werden"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert mit 59 km/h ist, bei vorgeschriebenen 50 km/h, noch akzeptabel."
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+          - "Der Bereich sollte aber weiterhin unter Beobachtung bleiben."
         quellen:
           - vorlage: "69/0460/2026"
             ris_vorlage_id: 29894

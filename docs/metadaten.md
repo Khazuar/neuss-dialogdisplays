@@ -1,5 +1,8 @@
 # Zusätzlich erhobene Metadaten
 
+> Eigene Zusammenstellung, nicht amtlich. Fehler beim Zerlegen der Mitteilungen und bei der Zuordnung zu den DSD-Dateien
+> können nicht ausgeschlossen werden (ohne Gewähr); die verlinkten Originaldokumente sind maßgeblich.
+
 Die DSD-Dateien enthalten nur Zeit und Geschwindigkeit je Fahrzeug und die Gerätekonfiguration. Wo genau
 gemessen wurde, in welcher Fahrtrichtung und was die Verwaltung dazu mitgeteilt hat, steht nicht darin. Diese
 Angaben stammen aus den **Mitteilungen der Verwaltung** („Ergebnisse von Verkehrsmessungen durch Dialog Displays“)

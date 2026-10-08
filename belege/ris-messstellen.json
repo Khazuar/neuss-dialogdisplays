@@ -22,7 +22,10 @@
      "fahrzeuge_im_zeitraum": {
       "gesamt": 51490
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "Nievenheimer Straße",
@@ -38,7 +41,11 @@
       "gesamt": 48256
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 53 km/h ist völlig unkritisch.",
+      "Auch hier sind verkehrslenkende Maßnahmen nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -63,7 +70,10 @@
      "fahrzeuge_im_zeitraum": {
       "gesamt": 39628
      },
-     "massnahmen_verwaltung": "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+     "massnahmen_verwaltung": "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt",
+     "stellungnahme_verwaltung": [
+      "Daher werden mit der Kreispolizeibehörde mögliche Maßnahmen zur Geschwindigkeitsreduktion abgestimmt."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -86,7 +96,10 @@
      "fahrzeuge_im_zeitraum": {
       "gesamt": 39257
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -112,7 +125,10 @@
      "fahrzeuge_im_zeitraum": {
       "gesamt": 144979
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -141,6 +157,11 @@
      },
      "hinweise_verwaltung": [
       "Wiederholung der Messung vorgesehen"
+     ],
+     "stellungnahme_verwaltung": [
+      "Hier ist zu berücksichtigen, dass der verkehrsberuhigte Bereich erst vor einiger Zeit angeordnet wurde.",
+      "Auffällig ist, dass viele Kraftfahrzeuge noch mit 30 km/h unterwegs sind.",
+      "Eine Messung wird daher in 2025 wiederholt."
      ]
     }
    ],
@@ -170,7 +191,10 @@
      "anteil_unter": {
       "prozent": 95.0,
       "kmh": 60
-     }
+     },
+     "stellungnahme_verwaltung": [
+      "Knapp 95 Prozent der Fahrzeuge fuhren mit einer Geschwindigkeit von unter 60 km/h und damit den örtlichen Bedingungen und dem angeordneten Tempo angemessen."
+     ]
     },
     {
      "bezeichnung": "Villestraße, Fahrtrichtung Grevenbroich",
@@ -203,7 +227,10 @@
      "anteil_unter": {
       "prozent": 93.0,
       "kmh": 60
-     }
+     },
+     "stellungnahme_verwaltung": [
+      "Hier fuhren knapp 93 Prozent der Fahrzeuge mit einer Geschwindigkeit von unter 60 km/h und damit den örtlichen Bedingungen und dem angeordneten Tempo angemessen."
+     ]
     },
     {
      "bezeichnung": "Villestraße, Fahrtrichtung Norf",
@@ -234,7 +261,10 @@
       "kommend": 111089,
       "gehend": 139858
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -257,7 +287,10 @@
      "fahrzeuge_im_zeitraum": {
       "gesamt": 48524
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -287,7 +320,10 @@
       "prozent": 99.5,
       "kmh": 40
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "Lanzerather Buschweg",
@@ -305,6 +341,11 @@
      "massnahmen_verwaltung": "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt",
      "hinweise_verwaltung": [
       "Möglichkeiten für Maßnahmen im verkehrsberuhigten Bereich begrenzt"
+     ],
+     "stellungnahme_verwaltung": [
+      "Etwa 70% der Fahrzeuge fuhr eine Geschwindigkeit von ca. 20 km/h.",
+      "Hier muss nach Absprache mit der Kreispolizeibehörde über verkehrslenkende Maßnahmen nachgedacht werden.",
+      "Die Möglichkeiten in einem verkehrsberuhigten Bereich sind dazu allerdings begrenzt."
      ]
     }
    ],
@@ -337,7 +378,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert, der sich aus der Geschwindigkeit ergibt, die von 85 Prozent der erfassten Fahrzeuge nicht überschritten wird, ist mit 34 km/h bei vorgeschriebenen 30 km/h unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -368,7 +413,10 @@
       "prozent": 98.0,
       "kmh": 40
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "Cyriakusstraße",
@@ -387,7 +435,10 @@
       "prozent": 99.0,
       "kmh": 40
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -417,7 +468,10 @@
       "prozent": 98.0,
       "kmh": 40
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -448,7 +502,10 @@
       "prozent": 95.0,
       "kmh": 60
      },
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "Villestraße (FR Norf)",
@@ -471,6 +528,11 @@
      "massnahmen_verwaltung": "nicht erforderlich",
      "hinweise_verwaltung": [
       "Verdeckte Messung"
+     ],
+     "stellungnahme_verwaltung": [
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich.",
+      "Hinweis: Bei den Standorten auf der Villestraße wurde diesmal eine „verdeckte Messung“ vorgenommen.",
+      "Ein Unterschied zu den Ergebnissen der „offenen Messung“ vom Jahresanfang ist nicht festzustellen."
      ]
     }
    ],
@@ -502,7 +564,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "noch_akzeptabel",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert, der sich aus der Geschwindigkeit ergibt, die von 85 Prozent der erfassten Fahrzeuge nicht überschritten wird, ist mit 38 km/h bei vorgeschriebenen 30 km/h noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "Im Tal",
@@ -523,7 +589,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert ist mit 37 km/h bei vorgeschriebenen 30 km/h unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "Bauerbahn",
@@ -546,6 +616,12 @@
      "massnahmen_verwaltung": "nicht erforderlich",
      "hinweise_verwaltung": [
       "Hoher Anteil Radfahrende erfasst, die Geräte unterscheiden nicht zwischen Rad und Kfz"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert ist mit 17 km/h bei vorgeschriebenen 20 km/h völlig unkritisch.",
+      "Es sollte berücksichtigt werden, dass hier ein hoher Prozentsatz von Radfahrer*innen erfasst ist.",
+      "Die Geräte können nicht zwischen Radfahrer*innen und Kraftfahrzeugen unterscheiden.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
      ]
     }
    ],
@@ -577,7 +653,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 31 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "Salzstraße, FR Neumarkt",
@@ -595,7 +675,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 28 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -624,7 +708,11 @@
       "kmh": 50
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert, der sich aus der Geschwindigkeit ergibt, die von 85 Prozent der erfassten Fahrzeuge nicht überschritten wird, ist mit 45 km/h, bei vorgeschriebenen 40 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -656,6 +744,10 @@
      "massnahmen_verwaltung": "nicht erforderlich",
      "hinweise_verwaltung": [
       "Verwaltung hat für das Verkehrsaufkommen keine Erklärung"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 38 km/h ist, bei vorgeschriebenen 30 km/h, noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
      ]
     }
    ],
@@ -688,7 +780,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "noch_akzeptabel",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert, der sich aus der Geschwindigkeit ergibt, die von 85 Prozent der erfassten Fahrzeuge nicht überschritten wird, ist mit 39 km/h, bei vorgeschriebenen 30 km/h, noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -717,7 +813,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 28 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -749,6 +849,10 @@
      "massnahmen_verwaltung": "nicht erforderlich",
      "hinweise_verwaltung": [
       "Verwaltung nennt Baustelle oder Umleitung als Erklärung"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 37 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
      ]
     }
    ],
@@ -790,7 +894,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 32 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -821,7 +929,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "noch_akzeptabel",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 38 km/h ist, bei vorgeschriebenen 30 km/h, noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "Gohrer Straße, FR Maximlian-Kolbe-Straße",
@@ -839,7 +951,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 35 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -868,7 +984,11 @@
       "kmh": 60
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 46 km/h ist, bei vorgeschriebenen 50 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -898,6 +1018,9 @@
      },
      "hinweise_verwaltung": [
       "Weitergehende Kontrollen (Laserwagen) vorgesehen oder genannt"
+     ],
+     "stellungnahme_verwaltung": [
+      "Weitergehende Kontrollen mittels Laserwagen, der allerdings erst ab einer Geschwindigkeit von 19 km/h blitzen kann, sind vorgesehen."
      ]
     }
    ],
@@ -930,6 +1053,11 @@
      "massnahmen_verwaltung": "nicht erforderlich",
      "hinweise_verwaltung": [
       "Verwaltung hat für das Verkehrsaufkommen keine Erklärung"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 39 km/h ist, bei vorgeschriebenen 50 km/h, völlig unkritisch.",
+      "Für diesen hohen Wert gibt es keine Erklärung.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
      ]
     }
    ],
@@ -960,15 +1088,22 @@
      },
      "einstufung_verwaltung": "voellig_unkritisch",
      "massnahmen_verwaltung": "nicht erforderlich",
-     "hinweise_verwaltung": [
-      "Gerät erfasst auch Fahrzeuge der Hauptfahrbahn"
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 50 km/h ist, bei vorgeschriebenen 50 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
      ]
     }
    ],
    "nicht_ausgewertet": [
     {
      "kopf": "Berghäuschensweg, Nebenstraße Hausnummer 323",
-     "grund": "Messung auf der Nebenfahrbahn nicht möglich, Gerät erfasst auch die Hauptfahrbahn"
+     "grund": "keine Messung möglich oder ausgewertet",
+     "stellungnahme_verwaltung": [
+      "Wie im Bezirksausschuss beschlossen wurde das Dialog Display zu Beginn des Monats Mai auf der Nebenfahrbahn des Berghäuschensweg aufgehangen.",
+      "Dabei hat sich herausgestellt, dass das Gerät immer auch einen großen Teil der Fahrzeuge auf der Hauptfahrbahn misst und somit kein realistisches Ergebnis erzielt werden kann.",
+      "Eine Messung ist in diesem Bereich nicht möglich.",
+      "Aufgrund dessen wurde das Display nun am nächsten Standort auf der Konradschule in Höhe der Grundschule aufgehangen."
+     ]
     }
    ]
   },
@@ -998,7 +1133,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 35 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -1027,7 +1166,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "noch_akzeptabel",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 38 km/h, bei vorgeschriebenen 30 km/h, ist noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -1070,7 +1213,11 @@
       "kmh": 60
      },
      "einstufung_verwaltung": "unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 40 km/h ist, bei vorgeschriebenen 50 km/h, unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -1099,7 +1246,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 30 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -1127,7 +1278,12 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "ueberdurchschnittlich_hoch",
-     "massnahmen_verwaltung": "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+     "massnahmen_verwaltung": "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert ist mit 43 km/h, bei vorgeschriebenen 30 km/h, überdurchschnittlich hoch.",
+      "Der V85-Wert ist hier deutlich zu hoch.",
+      "Hier muss zusammen mit der Kreispolizeibehörde Neuss über verkehrslenkende Maßnahmen gesprochen werden."
+     ]
     },
     {
      "bezeichnung": "Nievenheimer Straße",
@@ -1144,7 +1300,11 @@
       "kmh": 60
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert ist mit 49 km/h, bei vorgeschriebenen 50 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -1175,6 +1335,11 @@
      "hinweise_verwaltung": [
       "Geschwindigkeitsbegrenzung erst kürzlich angeordnet",
       "Wiederholung der Messung vorgesehen"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert ist mit 53 km/h, bei vorgeschriebenen 40 km/h, überhöht.",
+      "Der überhöhte V85-Wert ist dadurch zu erklären, dass die Geschwindigkeitsbegrenzung von 40 km/h noch nicht lange existiert.",
+      "Ggfls. sollte im nächsten Jahr die Messung wiederholt werden."
      ]
     }
    ],
@@ -1207,7 +1372,11 @@
       "kmh": 60
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert ist mit 48 km/h, bei vorgeschriebenen 50 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -1235,7 +1404,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "noch_akzeptabel",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert ist mit 37 km/h, bei vorgeschriebenen 30 km/h, noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -1268,6 +1441,9 @@
      },
      "hinweise_verwaltung": [
       "Weitergehende Kontrollen (Laserwagen) vorgesehen oder genannt"
+     ],
+     "stellungnahme_verwaltung": [
+      "Weitergehende Kontrollen mittels Laserwagen, der allerdings erst ab einer Geschwindigkeit von 19 km/h blitzen kann, sind vorgesehen."
      ]
     },
     {
@@ -1290,7 +1466,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 33 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "Preußenstraße",
@@ -1311,7 +1491,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "noch_akzeptabel",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 38 km/h ist, bei vorgeschriebenen 30 km/h, noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     },
     {
      "bezeichnung": "An der Obererft (Tempo 30)",
@@ -1336,6 +1520,10 @@
      "massnahmen_verwaltung": "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt",
      "hinweise_verwaltung": [
       "Weitergehende Kontrollen (Laserwagen) vorgesehen oder genannt"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 39 km/h ist, bei vorgeschriebenen 30 km/h, überdurchschnittlich.",
+      "Hier muss mit der Kreispolizeibehörde Neuss über geeignete Maßnahmen für Geschwindigkeitskontrollen gesprochen werden (Einsatz von Laserwagen, Blitz-Anhängern, etc.)."
      ]
     }
    ],
@@ -1372,6 +1560,11 @@
      "massnahmen_verwaltung": "nicht erforderlich",
      "hinweise_verwaltung": [
       "Bereich soll weiter beobachtet werden"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 59 km/h ist, bei vorgeschriebenen 50 km/h, noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich.",
+      "Der Bereich sollte aber weiterhin unter Beobachtung bleiben."
      ]
     }
    ],
@@ -1408,6 +1601,10 @@
      "massnahmen_verwaltung": "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt",
      "hinweise_verwaltung": [
       "Weitergehende Kontrollen (Laserwagen) vorgesehen oder genannt"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 41 km/h ist, bei vorgeschriebenen 30 km/h, überdurchschnittlich hoch.",
+      "Hier muss mit der Kreispolizeibehörde Neuss über geeignete Maßnahmen für Geschwindigkeitskontrollen gesprochen werden (Einsatz von Laserwagen, Blitz-Anhängern, etc.)."
      ]
     }
    ],
@@ -1440,7 +1637,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "deutlich_zu_hoch",
-     "massnahmen_verwaltung": "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+     "massnahmen_verwaltung": "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 44 km/h ist, bei vorgeschriebenen 30 km/h, deutlich zu hoch.",
+      "Hier ist Handlungsbedarf, in Abstimmung mit der Kreispolizeibehörde Neuss, geboten."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -1472,7 +1673,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "noch_akzeptabel",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 36 km/h, bei vorgeschriebenen 30 km/h, noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []
@@ -1504,7 +1709,11 @@
       "kmh": 40
      },
      "einstufung_verwaltung": "voellig_unkritisch",
-     "massnahmen_verwaltung": "nicht erforderlich"
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 32 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
     }
    ],
    "nicht_ausgewertet": []

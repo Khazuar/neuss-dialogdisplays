@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "87_Mühlenstraße"
 messungen:
   - datei: "DSD 14178 325er_3.dsd"
@@ -28,6 +30,8 @@ messungen:
           kmh: 20
         hinweise_verwaltung:
           - "Weitergehende Kontrollen (Laserwagen) vorgesehen oder genannt"
+        stellungnahme_verwaltung:
+          - "Weitergehende Kontrollen mittels Laserwagen, der allerdings erst ab einer Geschwindigkeit von 19 km/h blitzen kann, sind vorgesehen."
         quellen:
           - vorlage: "69/0381/2025"
             ris_vorlage_id: 28745

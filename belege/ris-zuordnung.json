@@ -746,7 +746,13 @@
   {
    "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=227985&type=do",
    "kopf": "Berghäuschensweg, Nebenstraße Hausnummer 323",
-   "grund": "Messung auf der Nebenfahrbahn nicht möglich, Gerät erfasst auch die Hauptfahrbahn"
+   "grund": "keine Messung möglich oder ausgewertet",
+   "stellungnahme_verwaltung": [
+    "Wie im Bezirksausschuss beschlossen wurde das Dialog Display zu Beginn des Monats Mai auf der Nebenfahrbahn des Berghäuschensweg aufgehangen.",
+    "Dabei hat sich herausgestellt, dass das Gerät immer auch einen großen Teil der Fahrzeuge auf der Hauptfahrbahn misst und somit kein realistisches Ergebnis erzielt werden kann.",
+    "Eine Messung ist in diesem Bereich nicht möglich.",
+    "Aufgrund dessen wurde das Display nun am nächsten Standort auf der Konradschule in Höhe der Grundschule aufgehangen."
+   ]
   },
   {
    "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=240218&type=do",

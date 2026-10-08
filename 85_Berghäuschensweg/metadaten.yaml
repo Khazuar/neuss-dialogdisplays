@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "85_Berghäuschensweg"
 messungen:
   - datei: "DSD17350 Tempo50_2.dsd"
@@ -25,8 +27,9 @@ messungen:
           kmh: 60
         einstufung_verwaltung: "voellig_unkritisch"
         massnahmen_verwaltung: "nicht erforderlich"
-        hinweise_verwaltung:
-          - "Gerät erfasst auch Fahrzeuge der Hauptfahrbahn"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert mit 50 km/h ist, bei vorgeschriebenen 50 km/h, völlig unkritisch."
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
         quellen:
           - vorlage: "69/0383/2025"
             ris_vorlage_id: 28747

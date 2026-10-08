@@ -284,7 +284,7 @@ SCHLUESSEL_VERWALTUNG = ("bezeichnung", "strasse", "fahrtrichtung", "beidseitig"
                          "zeitraum_in_mitteilung", "zeitraum_hinweis",
                          "tempolimit_kmh", "tempolimit_deutlich_unter", "fahrzeuge_je_tag", "fahrzeuge_im_zeitraum",
                          "v85_kmh", "mittel_kmh", "anteil_unter", "anteil_ueber", "einstufung_verwaltung",
-                         "massnahmen_verwaltung", "hinweise_verwaltung")
+                         "massnahmen_verwaltung", "hinweise_verwaltung", "stellungnahme_verwaltung")
 
 
 def wert_byte(meta, key):
@@ -327,36 +327,47 @@ def eintrag(block, bew):
 
 
 def schreibe(wurzel, dateien, zugeordnet):
+    """Schreibt je Standortordner metadaten.yaml und gibt alle Daten als Dict zurueck (fuer belege/metadaten.json)."""
     je_ordner = collections.defaultdict(list)
     for f in dateien:
         je_ordner[f["rel"]].append(f)
-    for rel, liste in je_ordner.items():
+    alle = {}
+    for rel, liste in sorted(je_ordner.items()):
         zeilen = ["# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.",
                   "# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem",
                   "# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der",
                   "# DSD stammt unter 'geraet' und 'abgleich_dsd'.",
+                  "# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den",
+                  "# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.",
                   f"ordner: {d.yaml_skalar(rel)}", "messungen:"]
+        messungen = []
         for f in sorted(liste, key=lambda x: x["datei"]):
             eintraege = [eintrag(b, e) for b, e in sorted(zugeordnet.get((rel, f["datei"]), []),
                                                           key=lambda x: (x[0].get("zeitraum") or ["9"])[0])]
             m = {"datei": f["datei"], "geraet": geraet(f), "verwaltung": eintraege}
+            messungen.append(m)
             teil = d.yaml_zeilen(m, 2)
             teil[0] = "  - " + teil[0].lstrip()
             zeilen += teil
         d.schreibe_yaml(os.path.join(wurzel, *rel.split("/"), "metadaten.yaml"), zeilen)
-
+        alle[rel] = {"ordner": rel, "messungen": messungen}
+    return alle
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("eingabe", help="Ordner mit den DSD-Dateien")
     ap.add_argument("--messstellen", default="belege/ris-messstellen.json")
     ap.add_argument("--zuordnung", default="belege/ris-zuordnung.json")
+    ap.add_argument("--json", default="belege/metadaten.json", help="alle Metadaten in einer Datei (fuer die Seiten)")
     a = ap.parse_args()
 
     bloecke, quelle = lade_bloecke(a.messstellen)
     dateien = lade_dsd(a.eingabe)
     zugeordnet, offen = zuordnen(bloecke, dateien)
-    schreibe(a.eingabe, dateien, zugeordnet)
+    alle = schreibe(a.eingabe, dateien, zugeordnet)
+    with open(a.json, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump({"erzeugt_von": "metadaten.py", "standorte": alle}, fh, ensure_ascii=False, indent=1)
+        fh.write("\n")
 
     nicht_ausgewertet = [{"dokument": doc["dokument"], **x} for doc in quelle["dokumente"] for x in doc["nicht_ausgewertet"]]
     os.makedirs(os.path.dirname(a.zuordnung) or ".", exist_ok=True)

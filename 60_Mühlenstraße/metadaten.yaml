@@ -2,6 +2,8 @@
 # Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
 # der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
+# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
+# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
 ordner: "60_Mühlenstraße"
 messungen:
   - datei: "DSD 14180 325er.dsd"
@@ -25,6 +27,10 @@ messungen:
         mittel_kmh: 24
         hinweise_verwaltung:
           - "Wiederholung der Messung vorgesehen"
+        stellungnahme_verwaltung:
+          - "Hier ist zu berücksichtigen, dass der verkehrsberuhigte Bereich erst vor einiger Zeit angeordnet wurde."
+          - "Auffällig ist, dass viele Kraftfahrzeuge noch mit 30 km/h unterwegs sind."
+          - "Eine Messung wird daher in 2025 wiederholt."
         quellen:
           - vorlage: "69/281/2024"
             ris_vorlage_id: 27475
