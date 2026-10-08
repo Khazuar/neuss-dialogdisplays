@@ -15,6 +15,19 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 
 - `<Nr>_<Straße>/*.dsd` – je Ordner eine oder mehrere Messungen
 - `dsd2csv.py` – DSD → CSV und YAML-Auswertung
+- `uhr_belege.py` – prüft für jeden Abschnitt einer Aufzeichnung, ob man der Geräteuhr glauben darf
+  (`plausibel`, `eingeschraenkt`, `unbrauchbar`), mit Belegen
+- `<Standortordner>/uhr-analyse.md` – je Standort eine lesbare Fassung der Urteile mit allen Belegen
+- `metadaten.py` – ordnet die Angaben der Verwaltung (Messstelle, Fahrtrichtung, Zeitraum, Tempolimit, V85 …) den
+  DSD-Dateien zu und schreibt je Standort eine `metadaten.yaml` mit Quellen
+- `<Standortordner>/metadaten.yaml` – zusätzlich erhobene Metadaten, siehe [docs/metadaten.md](docs/metadaten.md)
+- `belege/` – Ergebnisse der Prüfung (`uhr-bewertung.json`) und der Auswertung der Mitteilungen der
+  Verwaltung (`ris.json`, `ris-messstellen.json`, `ris-zuordnung.json`)
+- `tools/` – holt die Mitteilungen der Verwaltung aus dem Ratsinformationssystem und zerlegt sie
+  (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`)
+- `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
+- `docs/metadaten.md` – Herkunft, Zuordnung und Abdeckung der Metadaten
+- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py` – Tests (`python3 -m unittest -v`)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
 - `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
@@ -56,8 +69,18 @@ sinnvoll.
 - `<name>.csv` – ein Fahrzeug pro Zeile: `zeitstempel`, `geschwindigkeit_kmh`
 - `<name>.yaml` – Auswertung je Messung: Standort (relativer Ordnerpfad), Tempolimit samt Quelle,
   Anzahl Fahrzeuge, Messzeitraum, mittlere/maximale Geschwindigkeit, V85/V95/V99, Einhaltungsquote und
-  qualifizierte Einhaltungsquote
+  qualifizierte Einhaltungsquote, außerdem
+  - `uhr` – Bewertung der Geräteuhr (`plausibel`, `eingeschraenkt`, `unbrauchbar`) mit Hinweisen und den
+    Uhr-Segmenten,
+  - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit plausibler Uhr,
+  - `teilzeitraeume` – dieselben Kennzahlen für `tags` (6–18 Uhr), `nachts` (18–6 Uhr) und `schulweg`
+    (Mo–Fr 7–8 Uhr), jeweils in Ortszeit
 - `auswertung.yaml`, `summary.csv` – alle Messungen zusammengefasst
+
+Die Geräte stellen ihre Uhr nicht auf Sommerzeit um und sind teils zurückgesetzt oder verstellt. Die
+Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit um und lassen Fahrzeuge mit unplausibler Uhr aus.
+Das Verfahren und die Belege dafür stehen in `docs/dsd-format.md`. Die Kennzahlen auf der obersten Ebene der
+YAML enthalten weiterhin alle Fahrzeuge der Datei.
 
 Das **Tempolimit** wird aus der DSD gelesen (`safety_speed`), siehe `docs/dsd-format.md`.
 **Einhaltungsquote** = Anteil der Fahrzeuge mit v ≤ Limit. **Qualifizierte Einhaltungsquote** = Anteil mit
@@ -76,10 +99,12 @@ In diesem Repository gelten zwei Lizenzen:
 
 | Was | Lizenz |
 |-----|--------|
-| Software: `dsd2csv.py`, `site/`, `.github/` | [MIT](LICENSE) |
-| Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `README.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
+| Software: `dsd2csv.py`, `uhr_belege.py`, `metadaten.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
+| Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `metadaten.yaml`, `uhr-analyse.md`, `belege/`, `README.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
 
-Die Quelldateien der Software tragen zusätzlich eine `SPDX-License-Identifier`-Zeile.
+Die Quelldateien der Software tragen zusätzlich eine `SPDX-License-Identifier`-Zeile. Die Angaben in
+`metadaten.yaml` und `belege/` stammen aus öffentlichen Mitteilungen der Verwaltung im Ratsinformationssystem der Stadt
+Neuss und nennen jeweils ihre Quelle.
 
 Die Rohdaten stammen aus Messungen der Stadt Neuss. Der Betreiber dieses Repositories ist nicht ihr
 Urheber, beansprucht keine Rechte daran und geht davon aus, dass an reinen Messwerten keine Schutzrechte
