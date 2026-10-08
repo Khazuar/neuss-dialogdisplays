@@ -22,9 +22,11 @@ Dateiformat (durch Analyse ermittelt, nicht offiziell dokumentiert):
 
 Tempolimit (fuer die Quoten), in dieser Reihenfolge:
   1. --limit N                        (erzwingt N fuer alle Dateien)
-  2. Konfigurationswert "safety_speed" (damit schaltet das Display Smiley/Frowny; stimmt in
-                                       allen Dateien mit "Vmax StVO" der DataCollect-PDFs ueberein)
-  3. Zahl im Geraetenamen ("Tempo30", "Ville Norf 30", ...)
+  2. Korrektur aus belege/korrekturen.json: nennt die Mitteilung der Verwaltung ein anderes Limit als die DSD
+                                       (metadaten.py, siehe docs/metadaten.md), gilt das Limit der Mitteilung
+  3. Konfigurationswert "safety_speed" (damit schaltet das Display Smiley/Frowny; das ist eine Anzeige-Schwelle und
+                                       nicht immer das vorgeschriebene Limit; stimmt mit "Vmax StVO" der DataCollect-PDFs ueberein)
+  4. Zahl im Geraetenamen ("Tempo30", "Ville Norf 30", ...)
 
 Auswertung je Datei (als <name>.yaml neben der CSV):
   V85/V95/V99   kleinste Geschwindigkeit, bei der mind. 85/95/99 % der Fahrzeuge <= v
@@ -163,10 +165,16 @@ def byte_wert(txt):
         return None
 
 
-def tempolimit(meta, override=None):
-    """Gibt (limit, quelle) zurueck: --limit, sonst safety_speed der DSD, sonst Zahl im Namen."""
+def tempolimit(meta, override=None, korrektur=None):
+    """Gibt (limit, quelle) zurueck: --limit, sonst Korrektur aus den Mitteilungen, sonst safety_speed der DSD, sonst Zahl im Namen.
+
+    Die Korrektur (belege/korrekturen.json, von metadaten.py) gilt nur, wo die Mitteilung der Verwaltung ein anderes Limit
+    nennt als die Anzeige-Schwelle in der DSD-Konfiguration.
+    """
     if override:
         return override, "parameter"
+    if korrektur:
+        return korrektur["tempolimit_kmh"], "mitteilung_verwaltung"
     v = byte_wert(meta.get("safety_speed"))
     if v and 10 <= v <= 120:
         return v, "dsd_konfiguration"
@@ -710,7 +718,7 @@ HINWEIS_AUSWERTUNG = ("Eigene Berechnung aus den Rohdaten, nicht amtlich. Fehler
                       "Zuordnung) können nicht ausgeschlossen werden; ohne Gewähr.")
 
 
-def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0):
+def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None):
     buf = open(path, "rb").read()
     meta, veh, status, warn = parse(buf)
     base = os.path.splitext(os.path.basename(path))[0]
@@ -731,7 +739,8 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0):
             print(f"  {k} = {v}", file=sys.stderr)
     for wmsg in warn[:10]:
         print(f"  WARNUNG {base}: {wmsg}", file=sys.stderr)
-    lim, quelle = tempolimit(meta, limit)
+    kor = (korrekturen or {}).get(f"{standort}/{os.path.basename(path)}")
+    lim, quelle = tempolimit(meta, limit, kor)
     res = {
         "standort": standort,
         "datei": os.path.basename(path),
@@ -739,6 +748,7 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0):
         "geraetename": meta.get("name") or None,
         "tempolimit_kmh": lim,
         "tempolimit_quelle": quelle,
+        **({"tempolimit_dsd_kmh": kor["tempolimit_dsd_kmh"]} if kor and quelle == "mitteilung_verwaltung" else {}),
         "erfassung_ab_kmh": byte_wert(meta.get("capture_min_speed")),
         "auswertung_ab_kmh": min_kmh,
         "warnungen": len(warn),
@@ -774,6 +784,8 @@ def main():
                     help="Tempolimit (km/h) fuer alle Dateien erzwingen (Standard: aus der DSD ableiten)")
     ap.add_argument("--min-kmh", type=int, default=0,
                     help="Werte unter dieser Geschwindigkeit aus der Auswertung nehmen (CSV bleibt vollstaendig)")
+    ap.add_argument("--korrekturen", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "belege", "korrekturen.json"),
+                    help="Korrekturen des Tempolimits aus den Mitteilungen (Standard: belege/korrekturen.json, falls vorhanden)")
     ap.add_argument("--meta", action="store_true")
     ap.add_argument("--status", action="store_true")
     a = ap.parse_args()
@@ -785,6 +797,10 @@ def main():
         wurzel = os.path.dirname(os.path.abspath(a.eingabe))
         files = [a.eingabe]
 
+    korrekturen = {}
+    if os.path.exists(a.korrekturen):
+        with open(a.korrekturen, encoding="utf-8") as fh:
+            korrekturen = json.load(fh).get("tempolimit", {})
     rows = []
     for f in files:
         # ohne -o neben der DSD, mit -o dieselbe Ordnerstruktur unter dem Ausgabeordner
@@ -794,7 +810,7 @@ def main():
         outdir = os.path.join(a.out, rel) if a.out else dsd_ordner
         os.makedirs(outdir, exist_ok=True)
         try:
-            s = convert(f, outdir, standort, a.limit, a.meta, a.status, a.min_kmh)
+            s = convert(f, outdir, standort, a.limit, a.meta, a.status, a.min_kmh, korrekturen)
         except Exception as e:
             print(f"FEHLER {f}: {e}", file=sys.stderr)
             continue

@@ -24,7 +24,8 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
   DSD-Dateien zu und schreibt je Standort eine `metadaten.yaml` mit Quellen
 - `<Standortordner>/metadaten.yaml` – zusätzlich erhobene Metadaten, siehe [docs/metadaten.md](docs/metadaten.md)
 - `belege/` – Ergebnisse der Prüfung (`uhr-bewertung.json`) und der Auswertung der Mitteilungen der
-  Verwaltung (`ris.json`, `ris-messstellen.json`, `ris-zuordnung.json`)
+  Verwaltung (`ris.json`, `ris-messstellen.json`, `ris-zuordnung.json`, `metadaten.json`) sowie die
+  Korrekturen des Tempolimits, wo die Mitteilung ein anderes Limit nennt als die DSD (`korrekturen.json`)
 - `tools/` – holt die Mitteilungen der Verwaltung aus dem Ratsinformationssystem und zerlegt sie
   (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`)
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
@@ -90,7 +91,9 @@ Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit um und lassen Fahrzeuge
 Das Verfahren und die Belege dafür stehen in `docs/dsd-format.md`. Die Kennzahlen auf der obersten Ebene der
 YAML enthalten weiterhin alle Fahrzeuge der Datei.
 
-Das **Tempolimit** wird aus der DSD gelesen (`safety_speed`), siehe `docs/dsd-format.md`.
+Das **Tempolimit** wird aus der DSD gelesen (`safety_speed`, eine Anzeige-Schwelle des Geräts), siehe `docs/dsd-format.md`.
+Nennt die Mitteilung der Verwaltung ein deutlich anderes Limit, gilt dieses (`belege/korrekturen.json`, vier Messungen,
+siehe `docs/metadaten.md`).
 **Einhaltungsquote** = Anteil der Fahrzeuge mit v ≤ Limit. **Qualifizierte Einhaltungsquote** = Anteil mit
 v − Toleranz ≤ Limit; die Toleranz beträgt 3 km/h unter 100 km/h und ab 100 km/h 3 % (aufgerundet).
 

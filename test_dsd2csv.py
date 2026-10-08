@@ -198,5 +198,19 @@ class NachtEreignisse(unittest.TestCase):
         self.assertEqual([x["ab_kmh"] for x in e["schwellen"]], [100, 120])
         self.assertTrue(e["schwellen"][0]["doppeltes_tempolimit"])
 
+class TempolimitQuellen(unittest.TestCase):
+    META = {"safety_speed": "0a", "name": "DSD 14178 325er"}  # Anzeige-Schwelle 10 km/h
+
+    def test_dsd_konfiguration(self):
+        self.assertEqual(d.tempolimit(self.META), (10, "dsd_konfiguration"))
+
+    def test_korrektur_aus_der_mitteilung_hat_vorrang_vor_der_dsd(self):
+        kor = {"tempolimit_kmh": 30, "tempolimit_dsd_kmh": 10}
+        self.assertEqual(d.tempolimit(self.META, None, kor), (30, "mitteilung_verwaltung"))
+
+    def test_parameter_hat_vorrang_vor_allem(self):
+        kor = {"tempolimit_kmh": 30, "tempolimit_dsd_kmh": 10}
+        self.assertEqual(d.tempolimit(self.META, 50, kor), (50, "parameter"))
+
 if __name__ == "__main__":
     unittest.main()

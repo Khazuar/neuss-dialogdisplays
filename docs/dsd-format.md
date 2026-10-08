@@ -28,8 +28,25 @@ Die Bedeutung der Statuswerte ist unbekannt; `--status` schreibt sie roh als Hex
 
 ## Tempolimit
 
-Die Anzeige schaltet Smiley/Frowny anhand des Konfigurationswerts **`safety_speed`**. Er entspricht
-in allen geprüften Dateien dem Tempolimit der Messstelle (20, 30, 40, 50 km/h).
+Die Anzeige schaltet Smiley/Frowny anhand des Konfigurationswerts **`safety_speed`**. Das ist eine
+**Anzeige-Schwelle** des Geräts. Sie stimmt bei den meisten Messungen mit dem vorgeschriebenen Tempolimit überein (20, 30,
+40, 50 km/h), aber nicht immer. Gegen die Mitteilungen der Verwaltung ([metadaten.md](metadaten.md)) weichen sechs
+Dateien ab:
+
+| Messung | `safety_speed` | Mitteilung | Beobachtung |
+|---|---|---|---|
+| `15_2024_Martinusstraße` | 10 | 30 | Profil „325er“ für verkehrsberuhigte Bereiche, gemessen wurde vor dem Beginn des Bereichs |
+| `46_Matthiasstraße` | 50 | 30 | Gerät ohne Namen, kein PDF der Stadt zum Vergleich |
+| `Stationär_Villestraße/FR GV/L 142 FR Speck20_3` | 20 | 50 | Im Gerät steht „verdeckte Messung“, die Mitteilung nennt für die Villestraße eine verdeckte Messung |
+| `Stationär_Villestraße/FR Norf/Ville Norf 30` | 30 | 50 | wie oben |
+| `36_Lanzerather Buschweg` | 10 | 12 | verkehrsberuhigter Bereich, kleine Abweichung |
+| `60_Mühlenstraße` | 10 | „deutlich unter 20“ | verkehrsberuhigter Bereich |
+
+Alle vier Messungen mit dem Gerätenamen „325er“ (Martinusstraße, Lanzerather Buschweg, zweimal Mühlenstraße) haben 10 km/h
+und liegen in verkehrsberuhigten Bereichen; dazu passt, dass die PDFs der Stadt dort ebenfalls 10 km/h als „Vmax StVO“ führen.
+Die beiden Villestraße-Dateien sind die einzigen mit `hidden_measurement_on = 01`. `dsd2csv.py` verwendet für die
+Kennzahlen deshalb das Limit der Mitteilung, wo es mindestens 5 km/h abweicht und die Zuordnung belastbar ist
+(`belege/korrekturen.json`, vier Dateien); bei den verkehrsberuhigten Bereichen bleibt es bei der DSD-Konfiguration.
 
 Fallstrick: Einbyte-Werte werden vom Parser als Text gelesen, wenn das Byte druckbar ist. Das Limit
 50 km/h (Byte `0x32`) erscheint daher als Zeichen `2`, 30 km/h (`0x1e`) als Hex `1e`.
