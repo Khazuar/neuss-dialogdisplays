@@ -10,6 +10,8 @@
 !*.py
 !*.dsd
 !docs/**
+!belege/**
+!uhr-analyse.md
 !site/**
 !.github/**
 __pycache__/

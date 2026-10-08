@@ -1,0 +1,326 @@
+{
+ "quelle": "Ratsinformationssystem der Stadt Neuss (ris-neuss.itk-rheinland.de), Mitteilungen der Verwaltung zu den Dialog Displays; erzeugt von tools/ris_auswerten.py",
+ "hinweis": "Zeitraeume gelten fuer das ganze Dokument, Orte sind Namensvergleiche (siehe Skript)",
+ "dokumente": [
+  {
+   "vorlage": "69/251/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss V - Norf",
+   "sitzung": "2024-02-27",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=202481&type=do",
+   "zeitraeume": [
+    [
+     "2023-09-13",
+     "2024-11-16"
+    ],
+    [
+     "2023-09-11",
+     "2023-10-26"
+    ]
+   ],
+   "orte": [
+    "Nievenheimer Straße",
+    "Norfer Kirchstraße"
+   ]
+  },
+  {
+   "vorlage": "69/255/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss II - Nordstadt",
+   "sitzung": "2024-03-07",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=203194&type=do",
+   "zeitraeume": [
+    [
+     "2023-09-13",
+     "2023-11-16"
+    ]
+   ],
+   "orte": [
+    "Holzbüttgener Straße"
+   ]
+  },
+  {
+   "vorlage": "69/280/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss VII - Uedesheim",
+   "sitzung": "2024-06-18",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209026&type=do",
+   "zeitraeume": [
+    [
+     "2023-11-16",
+     "2024-03-19"
+    ]
+   ],
+   "orte": [
+    "Matthiasstraße"
+   ]
+  },
+  {
+   "vorlage": "69/281/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss I - Innenstadt",
+   "sitzung": "2024-06-19",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209217&type=do",
+   "zeitraeume": [
+    [
+     "2023-12-12",
+     "2024-03-19"
+    ]
+   ],
+   "orte": [
+    "Mühlenstraße"
+   ]
+  },
+  {
+   "vorlage": "69/288/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+   "sitzung": "2024-06-27",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209702&type=do",
+   "zeitraeume": [
+    [
+     "2023-03-15",
+     "2024-01-11"
+    ],
+    [
+     "2024-01-11",
+     "2024-03-19"
+    ],
+    [
+     "2023-12-18",
+     "2024-03-19"
+    ]
+   ],
+   "orte": [
+    "Lupinen",
+    "Villestraße"
+   ]
+  },
+  {
+   "vorlage": "69/309/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss IV - Holzheim",
+   "sitzung": "2024-11-05",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=215168&type=do",
+   "zeitraeume": [
+    [
+     "2024-04-22",
+     "2024-07-24"
+    ]
+   ],
+   "orte": [
+    "Hauptstraße",
+    "Lanzerather Buschweg"
+   ]
+  },
+  {
+   "vorlage": "69/310/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss II - Nordstadt",
+   "sitzung": "2024-11-06",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=215167&type=do",
+   "zeitraeume": [
+    [
+     "2024-04-22",
+     "2024-07-24"
+    ]
+   ],
+   "orte": [
+    "Daimlerstraße"
+   ]
+  },
+  {
+   "vorlage": "69/311/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss VI - Gnadental, Grimlinghausen, Erfttal",
+   "sitzung": "2024-11-28",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217330&type=do",
+   "zeitraeume": [
+    [
+     "2024-03-19",
+     "2024-07-24"
+    ],
+    [
+     "2024-04-22",
+     "2024-07-04"
+    ]
+   ],
+   "orte": [
+    "Cyriakusstraße",
+    "Quinheimer Straße"
+   ]
+  },
+  {
+   "vorlage": "69/312/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss VIII - Rosellen",
+   "sitzung": "2024-11-26",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217254&type=do",
+   "zeitraeume": [
+    [
+     "2024-05-06",
+     "2024-07-24"
+    ]
+   ],
+   "orte": [
+    "Aloysiusstraße"
+   ]
+  },
+  {
+   "vorlage": null,
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+   "sitzung": "2024-11-14",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=216549&type=do",
+   "zeitraeume": [
+    [
+     "2024-03-27",
+     "2024-07-24"
+    ],
+    [
+     "2024-01-11",
+     "2024-07-24"
+    ]
+   ],
+   "orte": [
+    "Villestraße"
+   ]
+  },
+  {
+   "vorlage": "69/313/2024",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss I - Innenstadt",
+   "sitzung": "2024-12-04",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217893&type=do",
+   "zeitraeume": [
+    [
+     "2024-04-23",
+     "2024-07-23"
+    ],
+    [
+     "2024-05-06",
+     "2024-07-24"
+    ],
+    [
+     "2024-04-25",
+     "2024-07-24"
+    ]
+   ],
+   "orte": [
+    "Bauerbahn",
+    "Nordkanalallee"
+   ]
+  },
+  {
+   "vorlage": "69/0459/2026",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss I - Innenstadt",
+   "sitzung": "2026-06-17",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245735&type=do",
+   "zeitraeume": [
+    [
+     "2024-12-04",
+     "2025-03-19"
+    ],
+    [
+     "2025-03-19",
+     "2025-07-06"
+    ],
+    [
+     "2025-07-06",
+     "2025-10-26"
+    ],
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "orte": [
+    "An der Obererft",
+    "Mühlenstraße",
+    "Pomona",
+    "Preußenstraße"
+   ]
+  },
+  {
+   "vorlage": "69/0460/2026",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss II - Nordstadt",
+   "sitzung": "2026-06-24",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245759&type=do",
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "orte": [
+    "Düsseldorfer Straße"
+   ]
+  },
+  {
+   "vorlage": "69/0462/2026",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss VIII - Rosellen",
+   "sitzung": "2026-07-07",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=246955&type=do",
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "orte": [
+    "Rosellener Kirchstraße"
+   ]
+  },
+  {
+   "vorlage": "69/0463/2026",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss IV - Holzheim",
+   "sitzung": "2026-06-16",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245761&type=do",
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "orte": [
+    "Liedberger Straße"
+   ]
+  },
+  {
+   "vorlage": "69/0464/2026",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss V - Norf",
+   "sitzung": "2026-07-02",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=246992&type=do",
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "orte": [
+    "Ruhrstraße"
+   ]
+  },
+  {
+   "vorlage": "69/0466/2026",
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss VII - Uedesheim",
+   "sitzung": "2026-06-25",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=246544&type=do",
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "orte": [
+    "Deichstraße"
+   ]
+  }
+ ]
+}
