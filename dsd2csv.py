@@ -35,7 +35,7 @@ Auswertung je Datei (als <name>.yaml neben der CSV):
 Aufruf:
   python3 -I dsd2csv.py datei.dsd                  -> datei.csv + datei.yaml (Kurzstatistik auf stderr)
   python3 -I dsd2csv.py ordner/                    -> rekursiv je DSD eine CSV + YAML daneben,
-                                                      dazu auswertung.yaml und summary.csv im Ordner
+                                                      dazu auswertung.yaml, auswertung.json und summary.csv
   python3 -I dsd2csv.py ordner/ -o ausgabe_ordner  -> Ergebnisse unter ausgabe_ordner (Unterordner bleiben erhalten)
   Optionen: --limit 30   Tempolimit fuer alle Dateien erzwingen
             --min-kmh N  Werte unter N km/h komplett aus der Auswertung nehmen (CSV bleibt vollstaendig)
@@ -47,6 +47,7 @@ Quelle stammen.
 """
 import argparse
 import bisect
+import collections
 import csv
 import datetime as dt
 import functools
@@ -243,6 +244,14 @@ def yaml_zeilen(obj, einzug=0):
 def schreibe_yaml(pfad, zeilen):
     with open(pfad, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(zeilen) + "\n")
+
+
+def standort_slug(standort):
+    """Dateiname der Detailseite eines Standortordners: "Stationär_Villestraße/FR GV" -> "stationaer-villestrasse-fr-gv"."""
+    t = standort.lower()
+    for a, b in (("ä", "ae"), ("ö", "oe"), ("ü", "ue"), ("ß", "ss")):
+        t = t.replace(a, b)
+    return re.sub(r"[^a-z0-9]+", "-", t).strip("-")
 
 
 def flach(obj, prefix=""):
@@ -479,19 +488,22 @@ def bewerte_segmente(segs, veh):
                 s["umstellung_auffaellig"] = [u for u in s["zeitumstellung"] if abs(u["abweichung_min"]) >= UMSTELLUNG_MAX_MIN]
 
 
-def analysiere_uhr(veh, status):
-    """Gibt (uhr, bereinigt, teilzeitraeume) zurueck.
+def analysiere_uhr(veh, status, mit_spannen=False):
+    """Gibt (uhr, bereinigt, teilzeitraeume) zurueck, mit mit_spannen=True zusaetzlich die Spannen.
 
     uhr: Bewertung der Geraeteuhr (Dict fuer die YAML), bereinigt: [(Ortszeit, v)] aller Fahrzeuge
-    in Segmenten mit plausibler Uhr, teilzeitraeume: dasselbe getrennt nach TEILZEITRAEUME.
+    in Segmenten mit plausibler Uhr, teilzeitraeume: dasselbe getrennt nach TEILZEITRAEUME,
+    spannen: [(erste, letzte Ortszeit)] je Abschnitt mit plausibler Uhr (fuer die Auswertung je Nacht).
     """
     segs = uhr_segmente(veh, status)
     bewerte_segmente(segs, veh)
     teil = {k: [] for k in TEILZEITRAEUME}
     bereinigt = []
+    spannen = []
     for s in segs:
         if s["bewertung"] != "gueltig":
             continue
+        spannen.append((min(s["ortszeit"]), max(s["ortszeit"])))
         for c, i in zip(s["ortszeit"], s["idx"]):
             v = veh[i][1]
             bereinigt.append((c, v))
@@ -552,7 +564,150 @@ def analysiere_uhr(veh, status):
         "segmente_mit_fahrzeugen": len(mit),
         "segmente": [segment_yaml(s) for s in segs if id(s) in groesste],
     }
-    return uhr, bereinigt, teil
+    return (uhr, bereinigt, teil, spannen) if mit_spannen else (uhr, bereinigt, teil)
+
+
+# --- Gefaehrdung, Laerm und Ereignisse je Nacht --------------------------------------------------
+# Alles Schaetzungen aus der Geschwindigkeitsverteilung einer Messstelle (siehe docs/gefaehrdung.md). Sie ersetzen
+# weder eine Unfallanalyse noch eine Laermmessung. Die Annahmen stehen hier und in der Dokumentation.
+GEFAEHRDUNG = {
+    "exponent": 4,  # Potenzmodell nach Nilsson: Unfallschwere (Tote) waechst mit der 4. Potenz der Geschwindigkeit
+    "reaktionszeit_s": 1.0,  # Zeit, bis die Bremsung beginnt
+    "verzoegerung_m_s2": 7.0,  # Bremsverzoegerung auf trockener Fahrbahn
+    "aufprall_schwellen_kmh": (30, 50),  # Anteil der Fahrzeuge, die mit mehr als so viel auftreffen wuerden
+}
+NACHT = (22, 6)  # Nacht: 22:00 bis 06:00 Uhr Ortszeit
+NACHT_SCHWELLEN_KMH = (100, 120)  # zusaetzlich zum doppelten Tempolimit
+
+
+def anhaltestrecke_m(v_kmh, a=None, t=None):
+    a = a or GEFAEHRDUNG["verzoegerung_m_s2"]
+    t = GEFAEHRDUNG["reaktionszeit_s"] if t is None else t
+    v = v_kmh / 3.6
+    return v * t + v * v / (2 * a)
+
+
+def aufprall_kmh(v_kmh, limit):
+    """Tempo, mit dem ein Fahrzeug mit v_kmh auftrifft, wo ein Fahrzeug mit dem Tempolimit gerade noch zum Stehen kommt.
+
+    Beide haben dieselbe Reaktionszeit und Verzoegerung. Vom Fahrzeug mit v_kmh bleibt nach der Reaktionsstrecke
+    nur noch die Reststrecke zum Bremsen; ist sie aufgebraucht, trifft es mit voller Geschwindigkeit.
+    """
+    a, t = GEFAEHRDUNG["verzoegerung_m_s2"], GEFAEHRDUNG["reaktionszeit_s"]
+    v = v_kmh / 3.6
+    rest = anhaltestrecke_m(limit) - v * t
+    if rest <= 0:
+        return float(v_kmh)
+    return 3.6 * math.sqrt(max(0.0, v * v - 2 * a * rest))
+
+
+def gefaehrdung(vehs, limit):
+    """Relativer Risikoindex (Nilsson) und Aufprallgeschwindigkeiten. None ohne Fahrzeuge oder Tempolimit.
+
+    aufprall_*: Tempo, mit dem die gemessenen Fahrzeuge auf das Hindernis treffen (0 = steht vorher). Die Perzentile
+    gelten fuer alle Fahrzeuge; weil die Aufprallgeschwindigkeit mit dem Tempo steigt, ist das P95 der Aufprallgeschwindigkeit
+    die Aufprallgeschwindigkeit des Fahrzeugs bei der V95.
+    """
+    if not limit:
+        return None
+    zaehler = collections.Counter(v for _, v in vehs if v > 0)
+    n = sum(zaehler.values())
+    if not n:
+        return None
+    index = sum(c * (v / limit) ** GEFAEHRDUNG["exponent"] for v, c in zaehler.items()) / n
+    auf = {v: aufprall_kmh(v, limit) for v in zaehler}
+    treffer = sum(c for v, c in zaehler.items() if auf[v] > 0.05)
+    erg = {"risikoindex_nilsson": round(index, 2),
+           "aufprall_anteil_prozent": round(100 * treffer / n, 2),
+           "aufprall_mittel_kmh": round(sum(c * auf[v] for v, c in zaehler.items()) / n, 1)}
+    if treffer:
+        erg["aufprall_mittel_der_aufprallenden_kmh"] = round(sum(c * auf[v] for v, c in zaehler.items() if auf[v] > 0.05) / treffer, 1)
+    kumul, perz = 0, {}
+    for v, c in sorted(zaehler.items()):
+        kumul += c
+        for q in (95, 99):
+            if q not in perz and kumul >= q / 100 * n:
+                perz[q] = v
+    for q in (95, 99):
+        erg[f"aufprall_p{q}_kmh"] = round(auf[perz[q]], 1)
+    for schwelle in GEFAEHRDUNG["aufprall_schwellen_kmh"]:
+        erg[f"aufprall_ueber_{schwelle}_kmh_prozent"] = round(100 * sum(c for v, c in zaehler.items() if auf[v] > schwelle) / n, 2)
+    erg["anhaltestrecke_bei_limit_m"] = round(anhaltestrecke_m(limit), 1)
+    return erg
+
+def pegel_pkw_db(v_kmh):
+    """Geschwindigkeitsterm des Pkw-Emissionspegels nach RLS-90: 27,7 + 10 lg(1 + (0,02 v)^3) in dB(A)."""
+    return 27.7 + 10 * math.log10(1 + (0.02 * v_kmh) ** 3)
+
+
+def laerm(vehs, limit):
+    """Grobe Laermschaetzung relativ zu einem Fahrzeug mit Tempolimit. None ohne Fahrzeuge oder Tempolimit."""
+    if not limit:
+        return None
+    zaehler = collections.Counter(v for _, v in vehs if v > 0)
+    n = sum(zaehler.values())
+    if not n:
+        return None
+    ref = pegel_pkw_db(limit)
+    delta = {v: pegel_pkw_db(v) - ref for v in zaehler}
+    energie = sum(c * 10 ** (delta[v] / 10) for v, c in zaehler.items()) / n
+    sortiert = sorted(zaehler.items())
+    kumul, v99 = 0, sortiert[-1][0]
+    for v, c in sortiert:
+        kumul += c
+        if kumul >= 0.99 * n:
+            v99 = v
+            break
+    return {
+        "mittelungspegel_gegenueber_limit_db": round(10 * math.log10(energie), 1),
+        "spitzenpegel_p99_gegenueber_limit_db": round(delta[v99], 1),
+        "anteil_mind_3_db_lauter_prozent": round(100 * sum(c for v, c in zaehler.items() if delta[v] >= 3) / n, 2),
+        "anteil_mind_6_db_lauter_prozent": round(100 * sum(c for v, c in zaehler.items() if delta[v] >= 6) / n, 2),
+    }
+
+
+def nacht_ereignisse(fahrten, spannen, limit):
+    """Wie oft faehrt in einer Nacht (22-6 Uhr Ortszeit) ein Fahrzeug mit doppeltem Tempo, ab 100 oder ab 120 km/h?
+
+    Gezaehlt werden nur vollstaendig aufgezeichnete Naechte (Beginn und Ende innerhalb eines Abschnitts mit plausibler
+    Uhr); Naechte, in denen das Geraet ausfiel, zaehlen als Naechte ohne Ereignis.
+    """
+    von, bis = NACHT
+    dauer = dt.timedelta(hours=(bis - von) % 24)
+    naechte = set()
+    for a, b in spannen:
+        tag = a.date() - dt.timedelta(days=1)
+        while True:
+            anfang = dt.datetime.combine(tag, dt.time(von))
+            if anfang > b:
+                break
+            if anfang >= a and anfang + dauer <= b + dt.timedelta(hours=2):  # letzte Nacht darf knapp ueber das Ende ragen
+                naechte.add(tag)
+            tag += dt.timedelta(days=1)
+    erg = {"definition": f"{von}:00 bis {bis:02d}:00 Uhr Ortszeit, nur vollständig aufgezeichnete Nächte", "naechte": len(naechte)}
+    if not naechte:
+        return erg
+    schwellen = sorted({*NACHT_SCHWELLEN_KMH, *([2 * limit] if limit else [])})
+    je_nacht = {s: collections.Counter() for s in schwellen}
+    for c, v in fahrten:
+        if not (c.hour >= von or c.hour < bis):
+            continue
+        tag = c.date() if c.hour >= von else c.date() - dt.timedelta(days=1)
+        if tag not in naechte:
+            continue
+        for s in schwellen:
+            if v >= s:
+                je_nacht[s][tag] += 1
+    erg["schwellen"] = [{
+        "ab_kmh": s, "doppeltes_tempolimit": bool(limit) and s == 2 * limit,
+        "naechte_mit_fahrt": len(je_nacht[s]), "anteil_naechte_prozent": round(100 * len(je_nacht[s]) / len(naechte), 1),
+        "fahrten_gesamt": sum(je_nacht[s].values()), "fahrten_je_nacht": round(sum(je_nacht[s].values()) / len(naechte), 2),
+    } for s in schwellen]
+    return erg
+
+
+HINWEIS_AUSWERTUNG = ("Eigene Berechnung aus den Rohdaten, nicht amtlich. Fehler in der Auswertung (Skripte, Annahmen, "
+                      "Zuordnung) können nicht ausgeschlossen werden; ohne Gewähr.")
 
 
 def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0):
@@ -589,16 +744,25 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0):
         "warnungen": len(warn),
     }
     res.update(stats(veh, lim, min_kmh) or {"anzahl_fahrzeuge": 0})
-    uhr, bereinigt, teil = analysiere_uhr(veh, status)
+    uhr, bereinigt, teil, spannen = analysiere_uhr(veh, status, mit_spannen=True)
+
+    def zusatz(vehs):
+        """Gefaehrdung und Laerm fuer eine Auswahl von Fahrzeugen (nur wenn Tempolimit und Fahrzeuge bekannt)."""
+        vehs = [x for x in vehs if x[1] >= min_kmh]
+        return {k: x for k, x in (("gefaehrdung", gefaehrdung(vehs, lim)), ("laerm", laerm(vehs, lim))) if x}
+
+    res.update(zusatz(veh))
     res["uhr"] = uhr
     b = stats(bereinigt, lim, min_kmh) or {"anzahl_fahrzeuge": 0}
-    res["bereinigt"] = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit plausibler Geräteuhr (siehe uhr), Zeiten in Ortszeit", **b}
+    res["bereinigt"] = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit plausibler Geräteuhr (siehe uhr), Zeiten in Ortszeit",
+                        **b, **zusatz(bereinigt)}
     res["teilzeitraeume"] = {}
     for name, (definition, _) in TEILZEITRAEUME.items():
         t = stats(teil[name], lim, min_kmh) or {"anzahl_fahrzeuge": 0}
         t.pop("messzeitraum", None)
-        res["teilzeitraeume"][name] = {"definition": definition, **t}
-    schreibe_yaml(os.path.join(outdir, base + ".yaml"), yaml_zeilen(res))
+        res["teilzeitraeume"][name] = {"definition": definition, **t, **zusatz(teil[name])}
+    res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt if x[1] >= min_kmh], spannen, lim)
+    schreibe_yaml(os.path.join(outdir, base + ".yaml"), ["# " + HINWEIS_AUSWERTUNG] + yaml_zeilen(res))
     return res
 
 
@@ -634,6 +798,7 @@ def main():
         except Exception as e:
             print(f"FEHLER {f}: {e}", file=sys.stderr)
             continue
+        s["seite"] = f"standorte/{standort_slug(standort)}.html"  # Detailseite (seiten_bauen.py), nicht in der Einzel-YAML
         rows.append(s)
         g, e = s.get("geschwindigkeit_kmh", {}), s.get("einhaltung", {})
         print(f"{s['standort']} / {s['datei']}: limit={s['tempolimit_kmh']} n={s['anzahl_fahrzeuge']} "
@@ -648,7 +813,10 @@ def main():
             teil = yaml_zeilen(res, 2)
             teil[0] = "  - " + teil[0].lstrip()
             z += teil
-        schreibe_yaml(os.path.join(summe, "auswertung.yaml"), ["standorte:"] + z)
+        schreibe_yaml(os.path.join(summe, "auswertung.yaml"), ["# " + HINWEIS_AUSWERTUNG, "standorte:"] + z)
+        with open(os.path.join(summe, "auswertung.json"), "w", encoding="utf-8", newline="\n") as f:
+            json.dump({"standorte": rows}, f, ensure_ascii=False, indent=1)
+            f.write("\n")
         flache = [flach(r) for r in rows]
         keys = list(dict.fromkeys(k for r in flache for k in r))
         with open(os.path.join(summe, "summary.csv"), "w", newline="", encoding="utf-8") as f:
