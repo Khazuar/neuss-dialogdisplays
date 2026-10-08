@@ -25,14 +25,25 @@
   </ul>
   <p class="muted">
     Die Auswertungen sind eigene Berechnungen von Fabian Grewing aus den Rohdaten der Stadt Neuss.
-    Sie sind nicht amtlich und nicht geprüft. Zeilen mit
-    <span class="warn" aria-hidden="true">⚠</span> enthalten fehlerhafte Zeitstempel oder einen
-    unplausibel langen Messzeitraum, Details stehen im README. Vor einer Interpretation bitte die
-    jeweilige Messung prüfen. Einhaltungsquoten unter 50&nbsp;% sind rot, unter 75&nbsp;% gelb hinterlegt.
+    Sie sind nicht amtlich und nicht geprüft. Die Geräteuhren werden nie auf Sommerzeit umgestellt und
+    sind teils zurückgesetzt oder verstellt; die Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit
+    um und verwenden nur Fahrzeuge mit plausibler Uhr. Zeilen mit
+    <span class="warn" aria-hidden="true">⚠</span> haben eine auffällige Geräteuhr oder übersprungene
+    Datensätze, der Tooltip nennt den Grund. Das Verfahren steht im README. Einhaltungsquoten unter
+    50&nbsp;% sind rot, unter 75&nbsp;% gelb hinterlegt.
   </p>
 
-  <label for="filter">Filter (Straße, Gerät, Datei)</label>
-  <input id="filter" type="search" autocomplete="off">
+  <div class="controls">
+    <div>
+      <label for="zeitraum">Zeitraum</label>
+      <select id="zeitraum"></select>
+    </div>
+    <div>
+      <label for="filter">Filter (Straße, Gerät, Datei)</label>
+      <input id="filter" type="search" autocomplete="off">
+    </div>
+  </div>
+  <p id="zeitraum-info" class="muted"></p>
 
   <p id="status" role="status">Lade Daten …</p>
   <div class="tablewrap" hidden>
@@ -92,8 +103,21 @@ const COLUMNS = [
   { key: "datei", label: "Datei" },
 ];
 
-const MAX_TAGE = 400;
+// Zeitraeume der Auswertung: Praefix der Spalten in summary.csv
+const ZEITRAEUME = [
+  { id: "roh", label: "Alle Fahrzeuge (Rohdaten)", praefix: "",
+    info: "Alle Fahrzeuge der Datei, unabhängig von der Uhrzeit. Enthält auch Fahrzeuge mit falsch datierter Geräteuhr." },
+  { id: "bereinigt", label: "Alle Fahrzeuge mit plausibler Uhr", praefix: "bereinigt.",
+    info: "Nur Fahrzeuge aus Abschnitten mit plausibler Geräteuhr; schließt zurückgesetzte Uhren (Datum 2020-01-01) und unplausible Zeitstempel aus." },
+  { id: "tags", label: "Tags (6–18 Uhr)", praefix: "teilzeitraeume.tags.",
+    info: "06:00 bis 18:00 Uhr Ortszeit, alle Tage, nur Fahrzeuge mit plausibler Uhr." },
+  { id: "nachts", label: "Nachts (18–6 Uhr)", praefix: "teilzeitraeume.nachts.",
+    info: "18:00 bis 06:00 Uhr Ortszeit, alle Tage, nur Fahrzeuge mit plausibler Uhr." },
+  { id: "schulweg", label: "Schulweg (Mo–Fr, 7–8 Uhr)", praefix: "teilzeitraeume.schulweg.",
+    info: "07:00 bis 08:00 Uhr Ortszeit, Montag bis Freitag, nur Fahrzeuge mit plausibler Uhr. Schulferien sind nicht herausgerechnet." },
+];
 let data = [];
+let zeitraum = ZEITRAEUME[0];
 let sort = { key: "qual", dir: 1 };
 
 const num = (v) => (v === "" || v === undefined ? null : Number(v));
@@ -109,23 +133,45 @@ const pfad = (...teile) => teile.join("/").split("/").map(encodeURIComponent).jo
 function zeile(r, idx) {
   const get = (name) => r[idx[name]];
   const start = get("messzeitraum.start"), ende = get("messzeitraum.ende");
-  const tage = start && ende ? (new Date(ende.replace(" ", "T")) - new Date(start.replace(" ", "T"))) / 864e5 : null;
   const warnungen = num(get("warnungen")) || 0;
   const gruende = [];
-  if (warnungen > 0) gruende.push(warnungen + " Records mit ungültigem Zeitstempel übersprungen");
-  if (tage !== null && tage > MAX_TAGE) gruende.push("Messzeitraum von " + Math.round(tage) + " Tagen, vermutlich Daten außerhalb der eigentlichen Messung");
+  const uhr = get("uhr.bewertung");
+  if (uhr && uhr !== "plausibel") {
+    const anteil = get("uhr.fahrzeuge_mit_gueltiger_zeit_prozent");
+    gruende.push("Geräteuhr " + (uhr === "unbrauchbar" ? "unbrauchbar" : "eingeschränkt plausibel") +
+      (anteil ? " (" + fmt1.format(Number(anteil)) + " % der Fahrzeuge mit gültiger Zeit)" : "") +
+      (get("uhr.hinweise") ? ": " + get("uhr.hinweise") : ""));
+  }
+  // übersprungene Datensätze allein sind kein Warngrund (meist wenige Dutzend), nur Zusatzinfo
+  if (gruende.length && warnungen > 0) gruende.push(warnungen + " Records mit ungültigem Zeitstempel übersprungen");
   const basis = get("datei").replace(/\.dsd$/i, "");
+  // Kennzahlen je Zeitraum, damit die Auswahl ohne neues Laden umschalten kann
+  const metriken = {};
+  for (const z of ZEITRAEUME) {
+    const k = (name) => get(z.praefix + name);
+    metriken[z.id] = {
+      n: num(k("anzahl_fahrzeuge")),
+      mittel: num(k("geschwindigkeit_kmh.mittel")),
+      v85: num(k("geschwindigkeit_kmh.v85")), v95: num(k("geschwindigkeit_kmh.v95")), v99: num(k("geschwindigkeit_kmh.v99")),
+      quote: num(k("einhaltung.einhaltungsquote_prozent")),
+      qual: num(k("einhaltung.qualifizierte_einhaltungsquote_prozent")),
+    };
+  }
   return {
     standort: bereinige(get("standort")), datei: get("standort") + "/" + get("datei"),
-    limit: num(get("tempolimit_kmh")), n: num(get("anzahl_fahrzeuge")),
+    limit: num(get("tempolimit_kmh")),
     start: start ? start.slice(0, 10) : "", ende: ende ? ende.slice(0, 10) : "",
-    mittel: num(get("geschwindigkeit_kmh.mittel")),
-    v85: num(get("geschwindigkeit_kmh.v85")), v95: num(get("geschwindigkeit_kmh.v95")), v99: num(get("geschwindigkeit_kmh.v99")),
-    quote: num(get("einhaltung.einhaltungsquote_prozent")),
-    qual: num(get("einhaltung.qualifizierte_einhaltungsquote_prozent")),
-    hinweis: gruende.join("; "),
+    hinweis: gruende.join(" | "),
     yaml: pfad(get("standort"), basis + ".yaml"),
+    metriken,
+    ...metriken[zeitraum.id],
   };
+}
+
+function waehleZeitraum(z) {
+  zeitraum = z;
+  for (const r of data) Object.assign(r, r.metriken[z.id]);
+  document.getElementById("zeitraum-info").textContent = z.info;
 }
 
 function cell(tr, col, row) {
@@ -205,6 +251,17 @@ async function start() {
     const idx = Object.fromEntries(header.map((h, i) => [h, i]));
     data = rows.map((r) => zeile(r, idx));
     kopf();
+    const auswahl = document.getElementById("zeitraum");
+    for (const z of ZEITRAEUME) {
+      const o = document.createElement("option");
+      o.value = z.id; o.textContent = z.label;
+      auswahl.append(o);
+    }
+    auswahl.addEventListener("change", () => {
+      waehleZeitraum(ZEITRAEUME.find((z) => z.id === auswahl.value));
+      render();
+    });
+    waehleZeitraum(zeitraum);
     document.querySelector(".tablewrap").hidden = false;
     document.getElementById("filter").addEventListener("input", render);
     render();
