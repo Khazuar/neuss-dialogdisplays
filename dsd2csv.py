@@ -46,8 +46,10 @@ Nur Standardbibliothek. Mit "python3 -I" starten, wenn Dateien aus unsicherer
 Quelle stammen.
 """
 import argparse
+import bisect
 import csv
 import datetime as dt
+import functools
 import json
 import math
 import os
@@ -133,7 +135,8 @@ def parse(buf):
                     ts = dt.datetime(2000 + yy, mo, d, h, mi, s)
                 except ValueError:
                     ts = None  # z.B. Geraeteuhr noch nicht gestellt
-                status.append((ts, t, r[7:-1].hex()))
+                # vierter Wert: Anzahl der bis hier gelesenen Fahrzeuge (Reihenfolge in der Datei)
+                status.append((ts, t, r[7:-1].hex(), len(veh)))
         except ValueError:
             warn.append(f"Ungueltiger Zeitstempel bei Offset {p}: {r.hex()}")
         p += L
@@ -221,6 +224,17 @@ def yaml_zeilen(obj, einzug=0):
         if isinstance(x, dict):
             zeilen.append(f"{pad}{k}:")
             zeilen += yaml_zeilen(x, einzug + 1)
+        elif isinstance(x, list) and not x:
+            zeilen.append(f"{pad}{k}: []")
+        elif isinstance(x, list):
+            zeilen.append(f"{pad}{k}:")
+            for item in x:
+                if isinstance(item, dict):
+                    sub = yaml_zeilen(item)
+                    zeilen.append(f"{pad}  - {sub[0]}")
+                    zeilen += [f"{pad}    {z}" for z in sub[1:]]
+                else:
+                    zeilen.append(f"{pad}  - {yaml_skalar(item)}")
         else:
             zeilen.append(f"{pad}{k}: {yaml_skalar(x)}")
     return zeilen
@@ -237,9 +251,308 @@ def flach(obj, prefix=""):
     for k, x in obj.items():
         if isinstance(x, dict):
             out.update(flach(x, f"{prefix}{k}."))
+        elif isinstance(x, list):
+            # Listen aus Text als eine Zelle; Listen aus Dicts (z.B. Uhr-Segmente) nur in der YAML
+            if all(not isinstance(i, dict) for i in x):
+                out[prefix + k] = "; ".join(str(i) for i in x)
         else:
             out[prefix + k] = x
     return out
+
+
+# --- Geraeteuhr: Zeitumstellung, Uhr-Segmente, Plausibilitaet ------------------------------
+# Befund (siehe docs/dsd-format.md): Die Geraete stellen nie auf Sommerzeit um, auch nicht bei
+# dst_on=01. Die Uhr wird bei der Inbetriebnahme auf Ortszeit gestellt und laeuft danach durch.
+# Ortszeit = Geraetezeit + (Versatz der Ortszeit zu UTC am Fahrzeugzeitpunkt - Versatz bei Segmentbeginn).
+
+EPOCHE = dt.datetime(2000, 1, 1)
+WERKSDATUM = dt.datetime(2020, 1, 1, 12, 0, 0)  # Standarduhr nach Reset (Toleranz 10 Minuten)
+UHR_JAHRE = (2020, 2030)  # Zeitstempel ausserhalb gelten als unplausibel
+SPRUNG_TOLERANZ = dt.timedelta(seconds=120)  # kleinere Rueckspruenge zaehlen nicht als Uhrsprung
+LUECKE_MAX = dt.timedelta(days=3)  # laengere Luecke in der Aufzeichnung beginnt ein neues Segment
+NACHT_MAX = 0.15  # mehr Fahrzeuge zwischen 0 und 5 Uhr Ortszeit: Uhr vermutlich um Stunden verstellt
+UMSTELLUNG_MAX_MIN = 45  # Tagesgang nach der Korrektur um mehr verschoben: Korrektur passt nicht
+MIN_FAHRZEUGE_PRUEFUNG = 3000  # darunter keine Tagesgang-Pruefung
+TEILZEITRAEUME = {
+    "tags": ("06:00 bis 18:00 Uhr Ortszeit, alle Tage", lambda c: 6 <= c.hour < 18),
+    "nachts": ("18:00 bis 06:00 Uhr Ortszeit, alle Tage", lambda c: c.hour < 6 or c.hour >= 18),
+    "schulweg": ("07:00 bis 08:00 Uhr Ortszeit, Montag bis Freitag", lambda c: c.hour == 7 and c.weekday() < 5),
+}
+
+
+@functools.lru_cache(maxsize=None)
+def _sommerzeit_utc(jahr):
+    """Beginn und Ende der Sommerzeit (EU-Regel): letzter Sonntag im Maerz/Oktober, 01:00 UTC."""
+    def sonntag(monat):
+        d = dt.date(jahr, monat, 31)
+        while d.weekday() != 6:
+            d -= dt.timedelta(days=1)
+        return dt.datetime(d.year, d.month, d.day, 1)
+    return sonntag(3), sonntag(10)
+
+
+def utc_versatz_h(utc):
+    """Versatz der deutschen Ortszeit zu UTC in Stunden: 2 (MESZ) oder 1 (MEZ)."""
+    beginn, ende = _sommerzeit_utc(utc.year)
+    return 2 if beginn <= utc < ende else 1
+
+
+def ortszeit_zu_utc(lokal):
+    for off in (2, 1):
+        u = lokal - dt.timedelta(hours=off)
+        if utc_versatz_h(u) == off:
+            return u
+    return lokal - dt.timedelta(hours=1)  # nicht existierende Stunde beim Vorstellen
+
+
+def geraet_zu_ortszeit(versatz_h):
+    """Funktion Geraetezeit -> Ortszeit fuer eine Uhr, die mit dem UTC-Versatz versatz_h gestellt wurde."""
+    start_off = dt.timedelta(hours=versatz_h)
+    h1, h2 = dt.timedelta(hours=1), dt.timedelta(hours=2)
+
+    def f(geraet):
+        u = geraet - start_off
+        return u + (h2 if utc_versatz_h(u) == 2 else h1)
+    return f
+
+
+def _fremd_im_nachbarn(secs, fenster=50, schwelle=86400):
+    """True = Zeitstempel liegt hoechstens einen Tag neben dem gleitenden Median seiner Nachbarn."""
+    n = len(secs)
+    ok = [True] * n
+    if not n:
+        return ok
+    win = sorted(secs[:fenster + 1])
+    for i in range(n):
+        ok[i] = abs(secs[i] - win[len(win) // 2]) <= schwelle
+        j = i + fenster + 1
+        if j < n:
+            bisect.insort(win, secs[j])
+        k = i - fenster
+        if k >= 0:
+            del win[bisect.bisect_left(win, secs[k])]
+    return ok
+
+
+def uhr_segmente(veh, status):
+    """Zerlegt die Aufzeichnung (Dateireihenfolge, Fahrzeuge + 10-Minuten-Heartbeats) in Uhr-Segmente."""
+    beats = [(pos, ts) for ts, t, _, pos in status if t == 0x33 and ts]
+    seq = []  # (Zeitstempel, Fahrzeugindex oder -1 fuer Heartbeat)
+    b = 0
+    for i, (ts, _) in enumerate(veh):
+        while b < len(beats) and beats[b][0] <= i:
+            seq.append((beats[b][1], -1))
+            b += 1
+        seq.append((ts, i))
+    seq += [(ts, -1) for _, ts in beats[b:]]
+    ok = _fremd_im_nachbarn([(ts - EPOCHE).total_seconds() for ts, _ in seq])
+    segs, cur, prev = [], None, None
+    for (ts, idx), gut in zip(seq, ok):
+        if not gut:
+            continue  # einzelne Ausreisser-Zeitstempel (z.B. Jahr 2255) bilden kein Segment
+        if prev is not None and (ts < prev - SPRUNG_TOLERANZ or ts > prev + LUECKE_MAX):
+            segs.append(cur)
+            cur = None
+        if cur is None:
+            cur = {"start": ts, "ende": ts, "idx": [], "heartbeats": 0}
+        cur["start"], cur["ende"] = min(cur["start"], ts), max(cur["ende"], ts)
+        if idx >= 0:
+            cur["idx"].append(idx)
+        else:
+            cur["heartbeats"] += 1
+        prev = ts
+    if cur:
+        segs.append(cur)
+    return segs
+
+
+def tagesgang(zeiten):
+    """Werktags-Tagesgang in 96 Viertelstunden (Anteile, leicht geglaettet) und Anzahl Werktage."""
+    c, tage = [0] * 96, set()
+    for t in zeiten:
+        if t.weekday() < 5:
+            c[(t.hour * 60 + t.minute) // 15] += 1
+            tage.add(t.date())
+    s = sum(c)
+    if not s:
+        return None, 0
+    c = [x / s for x in c]
+    return [(c[i - 1] + 2 * c[i] + c[(i + 1) % 96]) / 4 for i in range(96)], len(tage)
+
+
+def _pearson(x, y):
+    mx, my = sum(x) / len(x), sum(y) / len(y)
+    sxy = sum((a - mx) * (b - my) for a, b in zip(x, y))
+    sx = math.sqrt(sum((a - mx) ** 2 for a in x))
+    sy = math.sqrt(sum((b - my) ** 2 for b in y))
+    return sxy / (sx * sy) if sx and sy else 0
+
+
+def tagesgang_verschiebung_min(vorher, nachher):
+    """Um wie viele Minuten liegt der Werktags-Tagesgang 'nachher' spaeter als 'vorher' (None: zu wenig Daten)."""
+    if len(vorher) < MIN_FAHRZEUGE_PRUEFUNG or len(nachher) < MIN_FAHRZEUGE_PRUEFUNG:
+        return None
+    pv, dv = tagesgang(vorher)
+    pn, dn = tagesgang(nachher)
+    if pv is None or pn is None or dv < 10 or dn < 10:
+        return None
+    beste = max(range(-8, 9), key=lambda k: _pearson([pv[(i - k) % 96] for i in range(96)], pn))
+    return beste * 15
+
+
+def letzter_sonntag(jahr, monat):
+    d = dt.date(jahr, monat, 31)
+    while d.weekday() != 6:
+        d -= dt.timedelta(days=1)
+    return d
+
+
+def umstellungs_pruefung(ortszeiten, start, ende):
+    """Tagesgang 35 Tage vor/nach jeder Zeitumstellung im Segment (in Ortszeit, sollte ~0 min Versatz haben)."""
+    erg = []
+    for jahr in range(start.year, ende.year + 1):
+        for monat in (3, 10):
+            tag = letzter_sonntag(jahr, monat)
+            if not (start.date() + dt.timedelta(days=7) < tag < ende.date() - dt.timedelta(days=7)):
+                continue
+            t0 = dt.datetime(tag.year, tag.month, tag.day)
+            w = dt.timedelta(days=35)
+            vor = [c for c in ortszeiten if t0 - w <= c < t0]
+            nach = [c for c in ortszeiten if t0 + dt.timedelta(days=1) <= c < t0 + dt.timedelta(days=1) + w]
+            abw = tagesgang_verschiebung_min(vor, nach)
+            if abw is not None:
+                erg.append({"datum": tag.isoformat(), "abweichung_min": abw})
+    return erg
+
+
+def bewerte_segmente(segs, veh):
+    """Erste Einstufung der Uhr-Segmente (veraendert segs).
+
+    Setzt je Segment: bewertung (None = nur Heartbeats, "werksdatum", "ungueltiges_datum", "gueltig",
+    "auffaellig"), grund, sprung_min (Abstand zum vorigen glaubwuerdigen Segment) und fuer Segmente
+    mit gueltigem Datum utc_versatz_h, ortszeit (umgerechnete Zeiten), nachtanteil_prozent und
+    zeitumstellung (Pruefung des Tagesgangs vor und nach jeder Umstellung).
+    """
+    vorher = None  # letztes glaubwuerdiges Segment: Datum plausibel, keine zurueckgesetzte Standarduhr
+    anker_h = None  # UTC-Versatz, mit dem die Uhr zuletzt auf Ortszeit gestellt wurde
+    for s in segs:
+        n = len(s["idx"])
+        s["bewertung"], s["sprung_min"] = None, None  # Bewertung None: nur Heartbeats, keine Fahrzeuge
+        if WERKSDATUM <= s["start"] < WERKSDATUM + dt.timedelta(minutes=10):
+            if n:
+                s["bewertung"], s["grund"] = "werksdatum", "Uhr nach Reset nicht gestellt (Standarddatum 2020-01-01 12:00)"
+            anker_h = None  # Reset: eine spaeter wieder plausible Uhr wurde neu gestellt
+            continue
+        if not UHR_JAHRE[0] <= s["start"].year <= UHR_JAHRE[1]:
+            if n:
+                s["bewertung"], s["grund"] = "ungueltiges_datum", f"Zeitstempel im Jahr {s['start'].year}"
+            continue
+        if vorher is not None:
+            s["sprung_min"] = round((s["start"] - vorher["ende"]).total_seconds() / 60)
+            if s["sprung_min"] < -24 * 60:
+                # kein Nachstellen der Uhr, sondern ein Block mit versprungenem Datum mitten in der Aufzeichnung
+                if n:
+                    s["bewertung"] = "ungueltiges_datum"
+                    s["grund"] = f"Zeitstempel springen um {round(-s['sprung_min'] / 1440)} Tage zurück"
+                continue
+        # Uhr gilt als neu gestellt (Beginn, Reset, Rueckwaertssprung); nach einer reinen Luecke
+        # ohne Aufzeichnung (Sprung vorwaerts) laeuft sie mit dem alten Versatz weiter.
+        weiter = (vorher is not None and anker_h is not None and s["sprung_min"] >= 0
+                  and vorher.get("bewertung") in ("gueltig", "auffaellig"))
+        vorher = s
+        if not n:
+            continue
+        if not weiter:
+            anker_h = utc_versatz_h(ortszeit_zu_utc(s["start"]))
+        umrechnen = geraet_zu_ortszeit(anker_h)
+        s["utc_versatz_h"] = anker_h
+        s["ortszeit"] = [umrechnen(veh[i][0]) for i in s["idx"]]
+        s["bewertung"] = "gueltig"
+        if n >= MIN_FAHRZEUGE_PRUEFUNG:
+            s["nachtanteil_prozent"] = round(100 * sum(1 for c in s["ortszeit"] if c.hour < 5) / n, 1)
+            s["zeitumstellung"] = umstellungs_pruefung(s["ortszeit"], s["start"], s["ende"])
+            if s["nachtanteil_prozent"] > 100 * NACHT_MAX:
+                s["bewertung"] = "auffaellig"
+                s["grund"] = f"{s['nachtanteil_prozent']} % der Fahrzeuge zwischen 0 und 5 Uhr, Uhr vermutlich um Stunden verstellt"
+            else:
+                # nur Hinweis: auch Ferien oder Baustellen verschieben den Tagesgang vor/nach dem Stichtag
+                s["umstellung_auffaellig"] = [u for u in s["zeitumstellung"] if abs(u["abweichung_min"]) >= UMSTELLUNG_MAX_MIN]
+
+
+def analysiere_uhr(veh, status):
+    """Gibt (uhr, bereinigt, teilzeitraeume) zurueck.
+
+    uhr: Bewertung der Geraeteuhr (Dict fuer die YAML), bereinigt: [(Ortszeit, v)] aller Fahrzeuge
+    in Segmenten mit plausibler Uhr, teilzeitraeume: dasselbe getrennt nach TEILZEITRAEUME.
+    """
+    segs = uhr_segmente(veh, status)
+    bewerte_segmente(segs, veh)
+    teil = {k: [] for k in TEILZEITRAEUME}
+    bereinigt = []
+    for s in segs:
+        if s["bewertung"] != "gueltig":
+            continue
+        for c, i in zip(s["ortszeit"], s["idx"]):
+            v = veh[i][1]
+            bereinigt.append((c, v))
+            for name, (_, in_zeitraum) in TEILZEITRAEUME.items():
+                if in_zeitraum(c):
+                    teil[name].append((c, v))
+
+    mit = [s for s in segs if s["idx"]]
+    gesamt = len(veh)
+    nutzbar = sum(len(s["idx"]) for s in mit if s["bewertung"] == "gueltig")
+    anteil = nutzbar / gesamt if gesamt else 0
+    hinweise = []
+    for bew, text in (("werksdatum", "Fahrzeuge mit zurückgesetzter Geräteuhr (Standarddatum 2020-01-01), ohne gültige Uhrzeit"),
+                      ("ungueltiges_datum", "Fahrzeuge mit unplausiblem Datum")):
+        k = sum(len(s["idx"]) for s in mit if s["bewertung"] == bew)
+        if k:
+            hinweise.append(f"{k} {text}")
+    einzeln = gesamt - sum(len(s["idx"]) for s in segs)
+    if einzeln:
+        hinweise.append(f"{einzeln} Fahrzeuge mit einzelnem Ausreißer-Zeitstempel")
+    pruefen = False
+    for s in mit:
+        if s["bewertung"] == "auffaellig":
+            hinweise.append(f"Segment ab {s['start'].isoformat(sep=' ')} ({len(s['idx'])} Fahrzeuge): {s['grund']}")
+        for u in s.get("umstellung_auffaellig", []):
+            pruefen = True
+            hinweise.append(f"Tagesgang weicht nach der Zeitumstellung am {u['datum']} um {u['abweichung_min']} Minuten ab "
+                            f"(Ferien, Baustelle oder verstellte Uhr möglich)")
+    spruenge = [s for s in mit if s["bewertung"] == "gueltig" and s["sprung_min"] is not None and s["sprung_min"] <= -5]
+    for s in spruenge[:3]:
+        hinweise.append(f"Uhr um {-s['sprung_min']} Minuten zurückgestellt (Segment ab {s['start'].isoformat(sep=' ')})")
+    if len(spruenge) > 3:
+        hinweise.append(f"{len(spruenge) - 3} weitere Uhrsprünge")
+
+    def segment_yaml(s):
+        d = {"start": s["start"].isoformat(sep=" "), "ende": s["ende"].isoformat(sep=" "),
+             "fahrzeuge": len(s["idx"]), "bewertung": s["bewertung"]}
+        if s.get("grund"):
+            d["grund"] = s["grund"]
+        if "utc_versatz_h" in s:
+            d["geraeteuhr_utc_versatz_h"] = s["utc_versatz_h"]
+        if s.get("nachtanteil_prozent") is not None:
+            d["nachtanteil_0_bis_5_uhr_prozent"] = s["nachtanteil_prozent"]
+        if s.get("zeitumstellung"):
+            d["zeitumstellung_abweichung_min"] = {u["datum"]: u["abweichung_min"] for u in s["zeitumstellung"]}
+        if s["sprung_min"] is not None and abs(s["sprung_min"]) >= 5:
+            d["abstand_zum_vorigen_segment_min"] = s["sprung_min"]  # negativ: Uhr zurueckgesprungen
+        return d
+
+    groesste = {id(s) for s in sorted(mit, key=lambda s: -len(s["idx"]))[:8]}
+    uhr = {
+        "zeitmodell": "Geräteuhr ohne Sommerzeitumstellung, Teilzeiträume in Ortszeit (Europe/Berlin) umgerechnet",
+        "bewertung": ("unbrauchbar" if anteil < 0.5 else
+                      "plausibel" if anteil >= 0.99 and not pruefen else "eingeschraenkt"),
+        "fahrzeuge_mit_gueltiger_zeit_prozent": round(100 * anteil, 2) if gesamt else None,
+        "fahrzeuge_ohne_gueltige_zeit": gesamt - nutzbar,
+        "hinweise": list(dict.fromkeys(hinweise)),
+        "segmente_mit_fahrzeugen": len(mit),
+        "segmente": [segment_yaml(s) for s in segs if id(s) in groesste],
+    }
+    return uhr, bereinigt, teil
 
 
 def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0):
@@ -256,7 +569,7 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0):
         with open(os.path.join(outdir, base + "_status.csv"), "w", newline="") as f:
             w = csv.writer(f)
             w.writerow(["zeitstempel", "typ", "nutzlast_hex"])
-            for ts, t, pl in status:
+            for ts, t, pl, _ in status:
                 w.writerow([ts.isoformat(sep=" ") if ts else "", hex(t), pl])
     if show_meta:
         for k, v in meta.items():
@@ -276,6 +589,15 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0):
         "warnungen": len(warn),
     }
     res.update(stats(veh, lim, min_kmh) or {"anzahl_fahrzeuge": 0})
+    uhr, bereinigt, teil = analysiere_uhr(veh, status)
+    res["uhr"] = uhr
+    b = stats(bereinigt, lim, min_kmh) or {"anzahl_fahrzeuge": 0}
+    res["bereinigt"] = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit plausibler Geräteuhr (siehe uhr), Zeiten in Ortszeit", **b}
+    res["teilzeitraeume"] = {}
+    for name, (definition, _) in TEILZEITRAEUME.items():
+        t = stats(teil[name], lim, min_kmh) or {"anzahl_fahrzeuge": 0}
+        t.pop("messzeitraum", None)
+        res["teilzeitraeume"][name] = {"definition": definition, **t}
     schreibe_yaml(os.path.join(outdir, base + ".yaml"), yaml_zeilen(res))
     return res
 

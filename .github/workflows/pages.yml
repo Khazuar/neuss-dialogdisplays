@@ -27,6 +27,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Tests (Zeitumrechnung, Uhr-Auswertung)
+        run: python -m unittest -v
       - name: CSV und YAML aus den DSD-Dateien erzeugen
         run: python -I dsd2csv.py . -o _site
       - name: Einzelmessungen als CSV entfernen (nur YAML und summary.csv bleiben)
