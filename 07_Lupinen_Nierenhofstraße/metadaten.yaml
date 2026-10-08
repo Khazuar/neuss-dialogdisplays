@@ -46,3 +46,11 @@ messungen:
           abweichung_dsd_minus_verwaltung:
             v85_kmh: -2
             mittel_kmh: -6.3
+          ausserhalb_des_erfassungszeitraums:
+            davor:
+              fahrzeuge: 20721
+              v85_kmh: 30
+              mittel_kmh: 15.4
+              fahrzeuge_je_tag: 648
+              von: "2023-11-16"
+              bis: "2023-12-17"

@@ -78,13 +78,53 @@ mit glaubwürdiger Uhr. Bei den 32 Zuordnungen über den Zeitraum (`name_zeitrau
 - **Mittleres Tempo:** Die DSD liegt in 26 von 31 Fällen niedriger (Median −1,3 km/h), in Einzelfällen um mehr als
   10 km/h (z. B. `Ruhrstraße` 109: DSD 18 km/h, Mitteilung 29 km/h).
 - **Fahrzeuge je Tag:** Sie weichen in beide Richtungen ab, bei 18 von 23 um mehr als 5 % (nach oben und unten gleich
-  häufig). Warum, ist nicht geklärt; die Verwaltungssoftware filtert offenbar nach Geschwindigkeit
-  (siehe [dsd-format.md](dsd-format.md)).
+  häufig). Bei Messungen, für die die Mitteilung zwei Richtungen nennt, gibt es eine Erklärung, siehe unten.
+  Außerdem filtert die Verwaltungssoftware offenbar nach Geschwindigkeit ([dsd-format.md](dsd-format.md)).
 
 Wo die Abweichung groß ist, kann auch die Mitteilung selbst Fehler enthalten: Bei `Villestraße (FR Norf)` nennt sie als
 mittleres Tempo 58 km/h bei einer V85 von ebenfalls 58 km/h, was nicht zusammenpasst. Die Fahrzeuge je Tag rechnet die
 Verwaltung vermutlich als Fahrzeuge geteilt durch (Ende minus Beginn) des Erfassungszeitraums: 47.453 Fahrzeuge geteilt
 durch 90 Tage sind die 527 der Mitteilung zur Bauerbahn, `metadaten.py` rechnet deshalb ebenso.
+
+## Widersprüche zwischen DSD und Mitteilung
+
+Beim Abgleich fallen fünf Arten von Widersprüchen auf. Sie stehen in `metadaten.yaml` und auf den Detailseiten.
+
+**1. Tempolimit.** Die Anzeige-Schwelle `safety_speed` in der DSD stimmt nicht immer mit dem vorgeschriebenen Limit überein
+(sechs Dateien, Tabelle in [dsd-format.md](dsd-format.md)). Alle vier Messungen mit dem Gerätenamen „325er“ haben 10 km/h und
+liegen in verkehrsberuhigten Bereichen; offenbar ist das ein Geräteprofil für solche Bereiche. In der Martinusstraße wurde
+laut Mitteilung „vor dem Beginn des verkehrsberuhigten Bereiches“ gemessen, dort gilt Tempo 30. Das Profil blieb im Gerät,
+obwohl die Messstelle davor lag. Die Daten bestätigen das: Die V85 beträgt dort 28 km/h und das mittlere Tempo 21 km/h,
+wie bei normalem Verkehr in einer 30er-Zone, nicht wie in einem Bereich mit Schrittgeschwindigkeit.
+`metadaten.py` verwendet das Limit der Mitteilung, wenn es mindestens 5 km/h abweicht, eine feste Zahl ist (nicht „deutlich
+unter 20 km/h“) und die Zuordnung über den Zeitraum oder die Werte läuft. Das trifft vier Dateien (Martinusstraße 30,
+Matthiasstraße 30, Villestraße FR Speck 50, Villestraße FR Norf 50); sie stehen mit Begründung und Quelle in
+`belege/korrekturen.json`, `dsd2csv.py` liest sie und nennt die DSD-Konfiguration weiter als `tempolimit_dsd_kmh`. Bei den
+verkehrsberuhigten Bereichen (Lanzerather Buschweg, Mühlenstraße) bleibt es bei 10 km/h. Wer die Korrektur nicht will, löscht
+den Eintrag in `belege/korrekturen.json` oder startet `dsd2csv.py` mit `--limit`.
+
+**2. Fahrzeuge außerhalb des Erfassungszeitraums.** Zwei Dateien enthalten Fahrzeuge vor dem Zeitraum der Mitteilung, die
+sich statistisch deutlich unterscheiden: `10_Holzbüttgener Straße` 19.198 Fahrzeuge vom 19.07. bis 12.09.2023 (V85 32 km/h,
+Ø 20,6) gegenüber 40.659 Fahrzeugen im genannten Zeitraum (V85 40, Ø 29,8; die Mitteilung nennt 39.628), und
+`07_Lupinen_Nierenhofstraße` 20.721 Fahrzeuge vom 16.11. bis 17.12.2023 (V85 30, Ø 15,4) gegenüber V85 32 und Ø 21,7 im
+Zeitraum. Woher sie stammen, lässt sich aus den Daten nicht belegen; ein früherer Einsatz des Geräts ist möglich. Sie sind in
+den Kennzahlen der Datei enthalten, die Abgleichszahlen in `abgleich_dsd` gelten nur für den genannten Zeitraum. Bei acht
+weiteren Messungen decken die Daten nur einen Teil des genannten Zeitraums ab (Beginn 18 bis 38 Tage später oder Ende 26 bis 71
+Tage früher), vermutlich Ausfälle der Geräte. Die beiden Dateien `Villestraße/FR Norf` teilen sich einen Zeitraum der
+Mitteilung und sind hier nicht mitgezählt.
+
+**3. Eine statt zwei Richtungen.** Nennt die Mitteilung Fahrzeuge je Tag für „kommend“ und „gehend“, liegt die DSD bei
+11 von 13 Messungen zwischen 41 und 63 % der Summe beider Richtungen, im Median bei 108 % der stärkeren Richtung. Die Datei
+enthält also offenbar nur eine Richtung, die Datei der Gegenrichtung liegt nicht vor (Ausnahmen: `110_Rosellener Kirchstraße`
+147 %, `84_Am Alten Bach` 88 %). Die Seiten weisen darauf hin.
+
+**4. Doppelte Dateien.** `06_Rosellener Schulstraße/_7.dsd` und `48_Lanzerather Dorfstraße/_7.dsd` enthalten dieselben 34.609
+Fahrzeuge, `12_Berghäuschensweg/DSD_16735_7.dsd` ist vollständig in `_8.dsd` enthalten. Wohin die Daten tatsächlich gehören, ist
+offen; die Auswertungen zählen beide Dateien.
+
+**5. Widersprüche innerhalb der Mitteilungen.** Bei `Villestraße (FR Norf)` steht als mittleres Tempo 58 km/h bei einer V85 von
+ebenfalls 58 km/h. Dieselbe Mitteilung nennt dort 2.029 Fahrzeuge je Tag, eine ältere (15.03.2023 bis 11.01.2024) 899.118
+Fahrzeuge in 302 Tagen, also rund 2.980 je Tag; die DSD liegt bei etwa 3.160 bis 3.330.
 
 ## Reproduktion
 

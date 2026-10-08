@@ -8,7 +8,10 @@
   "undatiert_abstand_zum_zweiten": 1.0,
   "abweichend_v85_max_abw": 1,
   "abweichend_mittel_max_abw": 2,
-  "sitzung_max_monate": 15
+  "sitzung_max_monate": 15,
+  "limit_abweichung_min": 5,
+  "aussen_min_fahrzeuge": 1000,
+  "doppelt_min_proben": 100
  },
  "zugeordnet": {
   "02_2024_Bauerbahn, ggü. Nr. 3/20 km.dsd": [

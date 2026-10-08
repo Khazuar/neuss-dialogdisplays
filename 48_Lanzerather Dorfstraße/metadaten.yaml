@@ -22,3 +22,8 @@ messungen:
       erfassung_ab_kmh: 7
       verdeckte_messung: false
     verwaltung: []
+    doppelte_daten:
+      - datei: "06_Rosellener Schulstraße/_7.dsd"
+        gemeinsame_fahrzeuge: 34609
+        anteil_dieser_datei_prozent: 100.0
+        anteil_der_anderen_prozent: 100.0

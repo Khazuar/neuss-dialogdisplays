@@ -49,6 +49,9 @@ SCHWELLEN = {
     "abweichend_v85_max_abw": 1,
     "abweichend_mittel_max_abw": 2,
     "sitzung_max_monate": 15,  # Messende hoechstens so lange vor der Sitzung der Mitteilung
+    "limit_abweichung_min": 5,  # ab so vielen km/h Unterschied zwischen DSD-Konfiguration und Mitteilung gilt das Limit der Mitteilung
+    "aussen_min_fahrzeuge": 1000,  # Fahrzeuge ausserhalb des Zeitraums der Mitteilung werden ab dieser Zahl vermerkt
+    "doppelt_min_proben": 100,  # so viele gemeinsame Stichproben-Fahrzeuge: die Dateien enthalten dieselben Daten
 }
 GUELTIG = ("gueltig", "auffaellig")
 ALIAS_RICHTUNG = {"gv": "grevenbroich"}
@@ -178,6 +181,19 @@ def zeit_passt(block, datei):
     return sitzung - dt.timedelta(days=SCHWELLEN["sitzung_max_monate"] * 30.5) <= ende <= sitzung + dt.timedelta(days=3)
 
 
+def ausserhalb(datei, von, bis):
+    """Fahrzeuge der Datei (glaubwuerdige Uhr) vor bzw. nach dem Erfassungszeitraum der Mitteilung, falls es viele sind."""
+    erg = {}
+    davor = [x for x in datei["gueltig"] if x[0].date() < von]
+    danach = [x for x in datei["gueltig"] if x[0].date() > bis]
+    for name, vehs in (("davor", davor), ("danach", danach)):
+        if len(vehs) >= SCHWELLEN["aussen_min_fahrzeuge"]:
+            tage = (max(t for t, _ in vehs).date() - min(t for t, _ in vehs).date()).days + 1
+            erg[name] = {**kennzahlen(vehs, tage), "von": min(t for t, _ in vehs).date().isoformat(),
+                         "bis": max(t for t, _ in vehs).date().isoformat()}
+    return erg
+
+
 def bewerte_kandidat(block, datei, einzige=False):
     """Eine Datei als Kandidat fuer einen Block bewerten. Gibt dict mit 'methode' oder None zurueck."""
     z = block.get("zeitraum")
@@ -188,7 +204,7 @@ def bewerte_kandidat(block, datei, einzige=False):
             vehs = im_zeitraum(datei["gueltig"], von, bis)
             k = kennzahlen(vehs, tage_der_datei(vehs, block))
             return {"methode": "name_zeitraum", "k": k, "a": vergleich(block, k) if k else {},
-                    "zeitraum_ueberlappung_tage": ueber}
+                    "zeitraum_ueberlappung_tage": ueber, "aussen": ausserhalb(datei, von, bis)}
     if not zeit_passt(block, datei):
         return None
     # keine oder nicht passende Zeitangabe: Werte der Datei (glaubwuerdige Uhr, sonst alle Fahrzeuge)
@@ -301,7 +317,61 @@ def geraet(datei):
     return g
 
 
-def eintrag(block, bew):
+def tempolimit_pruefung(block, datei, bew):
+    """Widerspruch zwischen dem Tempolimit der DSD-Konfiguration und dem der Mitteilung. None, wenn es keinen gibt.
+
+    Verwendet wird das Limit der Mitteilung, wenn es mindestens limit_abweichung_min km/h abweicht, die Zuordnung ueber den
+    Zeitraum oder die Werte laeuft und die Mitteilung eine feste Zahl nennt (nicht "deutlich unter 20 km/h").
+    """
+    dsd = d.byte_wert(datei["meta"].get("safety_speed"))
+    mdv = block.get("tempolimit_kmh") or block.get("tempo_im_kopf_kmh")
+    if not dsd or not mdv or mdv == dsd:
+        return None
+    erg = {"dsd_kmh": dsd, "mitteilung_kmh": mdv}
+    if abs(mdv - dsd) < SCHWELLEN["limit_abweichung_min"]:
+        erg.update(verwendet_kmh=dsd, grund="Abweichung klein; verkehrsberuhigter Bereich o. ä., die DSD-Konfiguration bleibt")
+    elif block.get("tempolimit_deutlich_unter"):
+        erg.update(verwendet_kmh=dsd, grund="Mitteilung nennt kein festes Limit (\"deutlich unter\"), die DSD-Konfiguration bleibt")
+    elif bew["methode"] not in ("name_zeitraum", "name_werte"):
+        erg.update(verwendet_kmh=dsd, grund="Zuordnung zu unsicher für eine Korrektur, die DSD-Konfiguration bleibt")
+    else:
+        erg.update(verwendet_kmh=mdv, grund="Die Mitteilung nennt das vorgeschriebene Limit; die DSD-Konfiguration (Anzeige-Schwelle) weicht ab")
+    return erg
+
+
+def doppelte_daten(dateien):
+    """Dateien, die dieselben Fahrzeugdaten enthalten: {(rel, datei): [{...}]}. Stichprobe, dann genauer Vergleich."""
+    epoche = dt.datetime(2000, 1, 1)
+    proben = collections.defaultdict(set)
+    for f in dateien:
+        for t, v in f["alle"]:
+            k = int((t - epoche).total_seconds())
+            if k % 47 == 0:
+                proben[(k, v)].add((f["rel"], f["datei"]))
+    paare = collections.Counter()
+    for schluessel_, dat in proben.items():
+        dat = sorted(dat)
+        for i in range(len(dat)):
+            for j in range(i + 1, len(dat)):
+                paare[(dat[i], dat[j])] += 1
+    nach_id = {(f["rel"], f["datei"]): f for f in dateien}
+    erg = collections.defaultdict(list)
+    for (a, b), c in paare.items():
+        if c < SCHWELLEN["doppelt_min_proben"]:
+            continue
+        sa = set(nach_id[a]["alle"])
+        sb = set(nach_id[b]["alle"])
+        gemeinsam = len(sa & sb)
+        erg[a].append({"datei": f"{b[0]}/{b[1]}", "gemeinsame_fahrzeuge": gemeinsam,
+                       "anteil_dieser_datei_prozent": round(100 * gemeinsam / len(sa), 1),
+                       "anteil_der_anderen_prozent": round(100 * gemeinsam / len(sb), 1)})
+        erg[b].append({"datei": f"{a[0]}/{a[1]}", "gemeinsame_fahrzeuge": gemeinsam,
+                       "anteil_dieser_datei_prozent": round(100 * gemeinsam / len(sb), 1),
+                       "anteil_der_anderen_prozent": round(100 * gemeinsam / len(sa), 1)})
+    return erg
+
+
+def eintrag(block, bew, datei=None):
     e = {k: block[k] for k in SCHLUESSEL_VERWALTUNG if block.get(k) is not None}
     e["quellen"] = block["quellen"]
     z = {"methode": bew["methode"]}
@@ -323,11 +393,18 @@ def eintrag(block, bew):
     if bew["k"]:
         e["abgleich_dsd"] = {"hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung",
                              **bew["k"], "abweichung_dsd_minus_verwaltung": bew["a"]}
+        if bew.get("aussen"):
+            e["abgleich_dsd"]["ausserhalb_des_erfassungszeitraums"] = bew["aussen"]
+    if datei is not None:
+        w = tempolimit_pruefung(block, datei, bew)
+        if w:
+            e["tempolimit_widerspruch"] = w
     return e
 
 
-def schreibe(wurzel, dateien, zugeordnet):
+def schreibe(wurzel, dateien, zugeordnet, doppelt=None):
     """Schreibt je Standortordner metadaten.yaml und gibt alle Daten als Dict zurueck (fuer belege/metadaten.json)."""
+    doppelt = doppelt or {}
     je_ordner = collections.defaultdict(list)
     for f in dateien:
         je_ordner[f["rel"]].append(f)
@@ -342,9 +419,11 @@ def schreibe(wurzel, dateien, zugeordnet):
                   f"ordner: {d.yaml_skalar(rel)}", "messungen:"]
         messungen = []
         for f in sorted(liste, key=lambda x: x["datei"]):
-            eintraege = [eintrag(b, e) for b, e in sorted(zugeordnet.get((rel, f["datei"]), []),
-                                                          key=lambda x: (x[0].get("zeitraum") or ["9"])[0])]
+            eintraege = [eintrag(b, e, f) for b, e in sorted(zugeordnet.get((rel, f["datei"]), []),
+                                                             key=lambda x: (x[0].get("zeitraum") or ["9"])[0])]
             m = {"datei": f["datei"], "geraet": geraet(f), "verwaltung": eintraege}
+            if doppelt.get((rel, f["datei"])):
+                m["doppelte_daten"] = doppelt[(rel, f["datei"])]
             messungen.append(m)
             teil = d.yaml_zeilen(m, 2)
             teil[0] = "  - " + teil[0].lstrip()
@@ -353,18 +432,42 @@ def schreibe(wurzel, dateien, zugeordnet):
         alle[rel] = {"ordner": rel, "messungen": messungen}
     return alle
 
+
+def korrekturen(alle):
+    """Korrekturen des Tempolimits aus den Mitteilungen: {"Standort/Datei": {...}} (Eingabe fuer dsd2csv.py)."""
+    erg = {}
+    for rel, s in alle.items():
+        for m in s["messungen"]:
+            for v in m["verwaltung"]:
+                w = v.get("tempolimit_widerspruch")
+                if w and w["verwendet_kmh"] != w["dsd_kmh"]:
+                    q, datei = v["quellen"][0], m["datei"]
+                    erg[f"{rel}/{datei}"] = {
+                        "tempolimit_kmh": w["verwendet_kmh"], "tempolimit_dsd_kmh": w["dsd_kmh"], "grund": w["grund"],
+                        "messstelle": v["bezeichnung"], "zuordnung": v["zuordnung"]["methode"],
+                        "quelle": {k: q.get(k) for k in ("vorlage", "gremium", "sitzung", "dokument")}}
+    return erg
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("eingabe", help="Ordner mit den DSD-Dateien")
     ap.add_argument("--messstellen", default="belege/ris-messstellen.json")
     ap.add_argument("--zuordnung", default="belege/ris-zuordnung.json")
     ap.add_argument("--json", default="belege/metadaten.json", help="alle Metadaten in einer Datei (fuer die Seiten)")
+    ap.add_argument("--korrekturen", default="belege/korrekturen.json", help="Korrekturen des Tempolimits (fuer dsd2csv.py)")
     a = ap.parse_args()
 
     bloecke, quelle = lade_bloecke(a.messstellen)
     dateien = lade_dsd(a.eingabe)
     zugeordnet, offen = zuordnen(bloecke, dateien)
-    alle = schreibe(a.eingabe, dateien, zugeordnet)
+    doppelt = doppelte_daten(dateien)
+    alle = schreibe(a.eingabe, dateien, zugeordnet, doppelt)
+    kor = korrekturen(alle)
+    with open(a.korrekturen, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump({"erzeugt_von": "metadaten.py", "hinweis": "Korrekturen aus den Mitteilungen der Verwaltung, siehe docs/metadaten.md",
+                   "tempolimit": kor}, fh, ensure_ascii=False, indent=1)
+        fh.write("\n")
     with open(a.json, "w", encoding="utf-8", newline="\n") as fh:
         json.dump({"erzeugt_von": "metadaten.py", "standorte": alle}, fh, ensure_ascii=False, indent=1)
         fh.write("\n")

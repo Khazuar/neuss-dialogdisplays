@@ -49,3 +49,8 @@ messungen:
             v85_kmh: 0
             mittel_kmh: 0.0
             fahrzeuge_je_tag_prozent: 0
+        tempolimit_widerspruch:
+          dsd_kmh: 10
+          mitteilung_kmh: 30
+          verwendet_kmh: 30
+          grund: "Die Mitteilung nennt das vorgeschriebene Limit; die DSD-Konfiguration (Anzeige-Schwelle) weicht ab"

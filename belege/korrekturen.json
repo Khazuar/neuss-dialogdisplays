@@ -1,0 +1,58 @@
+{
+ "erzeugt_von": "metadaten.py",
+ "hinweis": "Korrekturen aus den Mitteilungen der Verwaltung, siehe docs/metadaten.md",
+ "tempolimit": {
+  "15_2024_Martinusstraße/DSD 14178 325er_2.dsd": {
+   "tempolimit_kmh": 30,
+   "tempolimit_dsd_kmh": 10,
+   "grund": "Die Mitteilung nennt das vorgeschriebene Limit; die DSD-Konfiguration (Anzeige-Schwelle) weicht ab",
+   "messstelle": "Martinusstraße, FR verkehrsberuhigter Bereich (der gemessene Bereich war vor dem Beginn des verkehrsberuhigten Bereiches)",
+   "zuordnung": "name_werte",
+   "quelle": {
+    "vorlage": "69/343/2025",
+    "gremium": "Bezirksausschuss VII - Uedesheim",
+    "sitzung": "2025-02-20",
+    "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=222482&type=do"
+   }
+  },
+  "46_Matthiasstraße/_13.dsd": {
+   "tempolimit_kmh": 30,
+   "tempolimit_dsd_kmh": 50,
+   "grund": "Die Mitteilung nennt das vorgeschriebene Limit; die DSD-Konfiguration (Anzeige-Schwelle) weicht ab",
+   "messstelle": "Matthiasstraße",
+   "zuordnung": "name_zeitraum",
+   "quelle": {
+    "vorlage": "69/280/2024",
+    "gremium": "Bezirksausschuss VII - Uedesheim",
+    "sitzung": "2024-06-18",
+    "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209026&type=do"
+   }
+  },
+  "Stationär_Villestraße/FR GV/L 142 FR Speck20_3.dsd": {
+   "tempolimit_kmh": 50,
+   "tempolimit_dsd_kmh": 20,
+   "grund": "Die Mitteilung nennt das vorgeschriebene Limit; die DSD-Konfiguration (Anzeige-Schwelle) weicht ab",
+   "messstelle": "Villestraße (FR Speck)",
+   "zuordnung": "name_zeitraum",
+   "quelle": {
+    "vorlage": null,
+    "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+    "sitzung": "2024-11-14",
+    "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=216549&type=do"
+   }
+  },
+  "Stationär_Villestraße/FR Norf/Ville Norf 30.dsd": {
+   "tempolimit_kmh": 50,
+   "tempolimit_dsd_kmh": 30,
+   "grund": "Die Mitteilung nennt das vorgeschriebene Limit; die DSD-Konfiguration (Anzeige-Schwelle) weicht ab",
+   "messstelle": "Villestraße (FR Norf)",
+   "zuordnung": "name_zeitraum",
+   "quelle": {
+    "vorlage": null,
+    "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+    "sitzung": "2024-11-14",
+    "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=216549&type=do"
+   }
+  }
+ }
+}

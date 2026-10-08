@@ -62,6 +62,11 @@ messungen:
             v85_kmh: -1
             mittel_kmh: -10.6
             fahrzeuge_je_tag_prozent: 64
+        tempolimit_widerspruch:
+          dsd_kmh: 30
+          mitteilung_kmh: 50
+          verwendet_kmh: 50
+          grund: "Die Mitteilung nennt das vorgeschriebene Limit; die DSD-Konfiguration (Anzeige-Schwelle) weicht ab"
   - datei: "Ville Norf_12.dsd"
     geraet:
       konfiguration: "2211F18850B 30FP067"

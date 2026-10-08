@@ -50,3 +50,8 @@ messungen:
             v85_kmh: 0
             mittel_kmh: 0.5
             fahrzeuge_je_tag_prozent: -3
+        tempolimit_widerspruch:
+          dsd_kmh: 10
+          mitteilung_kmh: 12
+          verwendet_kmh: 10
+          grund: "Abweichung klein; verkehrsberuhigter Bereich o. ä., die DSD-Konfiguration bleibt"

@@ -158,5 +158,74 @@ class Zuordnung(unittest.TestCase):
         self.assertEqual(m.block_tage({"zeitraum": ["2024-04-25", "2024-07-24"]}), 90)  # 47453 Fahrzeuge / 90 = 527 je Tag
 
 
+class Tempolimit(unittest.TestCase):
+    """Widerspruch zwischen der Anzeige-Schwelle in der DSD und dem Limit in der Mitteilung."""
+
+    def datei(self, safety_hex):
+        f = datei("15_2024_Martinusstraße", "a.dsd", ("2024-07-24", "2024-11-22"))
+        f["meta"] = {"safety_speed": safety_hex}  # "0a" = 10 km/h, "1e" = 30, "14" = 20, "2" = 50 (druckbares Byte)
+        return f
+
+    def bew(self, methode="name_zeitraum"):
+        return {"methode": methode}
+
+    def test_gleiches_limit_ist_kein_widerspruch(self):
+        self.assertIsNone(m.tempolimit_pruefung({"tempolimit_kmh": 30}, self.datei("1e"), self.bew()))
+
+    def test_deutlich_abweichendes_limit_der_mitteilung_gilt(self):
+        w = m.tempolimit_pruefung({"tempolimit_kmh": 30}, self.datei("0a"), self.bew("name_werte"))
+        self.assertEqual((w["dsd_kmh"], w["mitteilung_kmh"], w["verwendet_kmh"]), (10, 30, 30))
+        w = m.tempolimit_pruefung({"tempolimit_kmh": 30}, self.datei("2"), self.bew())  # DSD 50 gegen Mitteilung 30
+        self.assertEqual(w["verwendet_kmh"], 30)
+
+    def test_limit_im_kopf_der_bezeichnung(self):
+        w = m.tempolimit_pruefung({"tempo_im_kopf_kmh": 50}, self.datei("14"), self.bew())
+        self.assertEqual(w["verwendet_kmh"], 50)
+
+    def test_kleine_abweichung_und_deutlich_unter_aendern_nichts(self):
+        w = m.tempolimit_pruefung({"tempolimit_kmh": 12}, self.datei("0a"), self.bew())
+        self.assertEqual(w["verwendet_kmh"], 10)  # verkehrsberuhigter Bereich: 12 gegen 10
+        w = m.tempolimit_pruefung({"tempolimit_kmh": 20, "tempolimit_deutlich_unter": True}, self.datei("0a"), self.bew())
+        self.assertEqual(w["verwendet_kmh"], 10)
+
+    def test_unsichere_zuordnung_aendert_nichts(self):
+        w = m.tempolimit_pruefung({"tempolimit_kmh": 30}, self.datei("0a"), self.bew("name_einzige_datei"))
+        self.assertEqual(w["verwendet_kmh"], 10)
+
+    def test_korrekturen_enthalten_nur_wirkliche_aenderungen(self):
+        alle = {"S": {"messungen": [{"datei": "a.dsd", "verwaltung": [
+            {"bezeichnung": "X", "zuordnung": {"methode": "name_zeitraum"}, "quellen": [{"vorlage": "69/1/2025", "dokument": "d"}],
+             "tempolimit_widerspruch": {"dsd_kmh": 10, "mitteilung_kmh": 30, "verwendet_kmh": 30, "grund": "g"}}]},
+            {"datei": "b.dsd", "verwaltung": [{"bezeichnung": "Y", "zuordnung": {"methode": "name_zeitraum"}, "quellen": [{}],
+             "tempolimit_widerspruch": {"dsd_kmh": 10, "mitteilung_kmh": 12, "verwendet_kmh": 10, "grund": "g"}}]}]}}
+        k = m.korrekturen(alle)
+        self.assertEqual(list(k), ["S/a.dsd"])
+        self.assertEqual((k["S/a.dsd"]["tempolimit_kmh"], k["S/a.dsd"]["tempolimit_dsd_kmh"]), (30, 10))
+
+
+class AussenUndDoppelt(unittest.TestCase):
+    def test_fahrzeuge_ausserhalb_des_zeitraums(self):
+        f = datei("10_Holzbüttgener Straße", "a.dsd", ("2023-07-19", "2023-11-16"))
+        f["gueltig"] = f["gueltig"] * 40  # genug Fahrzeuge, damit sie gezaehlt werden
+        a = m.ausserhalb(f, dt.date(2023, 9, 13), dt.date(2023, 11, 16))
+        self.assertEqual(sorted(a), ["davor"])
+        self.assertEqual((a["davor"]["von"], a["davor"]["bis"]), ("2023-07-19", "2023-09-12"))
+        self.assertEqual(m.ausserhalb(f, dt.date(2023, 7, 19), dt.date(2023, 11, 16)), {})
+
+    def test_zu_wenige_fahrzeuge_werden_nicht_vermerkt(self):
+        f = datei("10_Holzbüttgener Straße", "a.dsd", ("2023-07-19", "2023-11-16"))
+        self.assertEqual(m.ausserhalb(f, dt.date(2023, 9, 13), dt.date(2023, 11, 16)), {})
+
+    def test_gleiche_fahrzeugdaten_in_zwei_dateien(self):
+        start = dt.datetime(2023, 5, 4, 8, 0, 0)
+        fahrten = [(start + dt.timedelta(seconds=7 * i), 30 + i % 20) for i in range(8000)]  # ergibt rund 170 Stichproben (jeder 47.), Schwelle 100
+        a = {"rel": "A", "datei": "x.dsd", "alle": fahrten, "gueltig": fahrten}
+        b = {"rel": "B", "datei": "x.dsd", "alle": list(fahrten), "gueltig": []}  # B hat keine glaubwuerdige Uhr
+        c = {"rel": "C", "datei": "y.dsd", "alle": [(t + dt.timedelta(days=30), v) for t, v in fahrten], "gueltig": []}
+        erg = m.doppelte_daten([a, b, c])
+        self.assertEqual(sorted(erg), [("A", "x.dsd"), ("B", "x.dsd")])
+        self.assertEqual(erg[("A", "x.dsd")][0]["anteil_dieser_datei_prozent"], 100.0)
+        self.assertEqual(erg[("A", "x.dsd")][0]["datei"], "B/x.dsd")
+
 if __name__ == "__main__":
     unittest.main()

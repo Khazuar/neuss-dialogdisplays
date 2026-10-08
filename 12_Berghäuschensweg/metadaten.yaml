@@ -14,6 +14,11 @@ messungen:
       erfassung_ab_kmh: 9
       verdeckte_messung: false
     verwaltung: []
+    doppelte_daten:
+      - datei: "12_Berghäuschensweg/_8.dsd"
+        gemeinsame_fahrzeuge: 38761
+        anteil_dieser_datei_prozent: 100.0
+        anteil_der_anderen_prozent: 39.4
   - datei: "_8.dsd"
     geraet:
       konfiguration: "2109F16735B 38LH003"
@@ -22,3 +27,8 @@ messungen:
       erfassung_ab_kmh: 9
       verdeckte_messung: false
     verwaltung: []
+    doppelte_daten:
+      - datei: "12_Berghäuschensweg/DSD_16735_7.dsd"
+        gemeinsame_fahrzeuge: 38761
+        anteil_dieser_datei_prozent: 39.4
+        anteil_der_anderen_prozent: 100.0

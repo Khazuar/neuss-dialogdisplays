@@ -49,3 +49,8 @@ messungen:
           abweichung_dsd_minus_verwaltung:
             v85_kmh: 0
             mittel_kmh: -5.4
+        tempolimit_widerspruch:
+          dsd_kmh: 10
+          mitteilung_kmh: 20
+          verwendet_kmh: 10
+          grund: "Mitteilung nennt kein festes Limit (\"deutlich unter\"), die DSD-Konfiguration bleibt"

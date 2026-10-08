@@ -144,6 +144,11 @@ messungen:
             v85_kmh: 0
             mittel_kmh: 0.2
             fahrzeuge_je_tag_prozent: 32
+        tempolimit_widerspruch:
+          dsd_kmh: 20
+          mitteilung_kmh: 50
+          verwendet_kmh: 50
+          grund: "Die Mitteilung nennt das vorgeschriebene Limit; die DSD-Konfiguration (Anzeige-Schwelle) weicht ab"
   - datei: "L 142 FR Speck_4.dsd"
     geraet:
       konfiguration: "2211F18858B 30CP067"
