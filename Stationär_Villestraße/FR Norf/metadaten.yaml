@@ -1,0 +1,186 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "Stationär_Villestraße/FR Norf"
+messungen:
+  - datei: "0000000000000000_4.dsd"
+    geraet:
+      konfiguration: "2211F18850B 30CP067"
+      name: "0000000000000000"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung: []
+  - datei: "Ville Norf 30.dsd"
+    geraet:
+      konfiguration: "2211F18850B 30FP067"
+      name: "Ville Norf 30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 3
+      verdeckte_messung: true
+    verwaltung:
+      - bezeichnung: "Villestraße (FR Norf)"
+        strasse: "Villestraße"
+        fahrtrichtung: "Norf"
+        zeitraum:
+          - "2024-01-11"
+          - "2024-07-24"
+        tempolimit_kmh: 50
+        fahrzeuge_je_tag:
+          gesamt: 2029
+        v85_kmh: 58
+        mittel_kmh: 58
+        anteil_unter:
+          prozent: 93.0
+          kmh: 60
+        massnahmen_verwaltung: "nicht erforderlich"
+        hinweise_verwaltung:
+          - "Verdeckte Messung"
+        quellen:
+          - vorlage: null
+            ris_vorlage_id: 27941
+            gremium: "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten"
+            sitzung: "2024-11-14"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=216549&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 120
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 399149
+          v85_kmh: 57
+          mittel_kmh: 47.4
+          fahrzeuge_je_tag: 3326
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: -10.6
+            fahrzeuge_je_tag_prozent: 64
+  - datei: "Ville Norf_12.dsd"
+    geraet:
+      konfiguration: "2211F18850B 30FP067"
+      name: "Ville Norf"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung: []
+  - datei: "Ville Norf_2.dsd"
+    geraet:
+      konfiguration: "2211F18850B 30FP067"
+      name: "Ville Norf"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung: []
+  - datei: "Ville Norf_3.dsd"
+    geraet:
+      konfiguration: "2211F18850B 30FP067"
+      name: "Ville Norf"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Villestraße, Fahrtrichtung Norf"
+        strasse: "Villestraße"
+        fahrtrichtung: "Norf"
+        zeitraum:
+          - "2023-03-15"
+          - "2024-01-11"
+        fahrzeuge_im_zeitraum:
+          gesamt: 899118
+        v85_kmh: 57
+        mittel_kmh: 50
+        anteil_unter:
+          prozent: 93.0
+          kmh: 60
+        quellen:
+          - vorlage: "69/288/2024"
+            ris_vorlage_id: 27521
+            gremium: "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten"
+            sitzung: "2024-06-27"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209702&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 303
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 984030
+          v85_kmh: 56
+          mittel_kmh: 46.2
+          fahrzeuge_je_tag: 3258
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: -3.8
+  - datei: "Ville Norf_4.dsd"
+    geraet:
+      konfiguration: "2211F18850B 30FP067"
+      name: "Ville Norf"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Villestraße, Fahrtrichtung Norf"
+        strasse: "Villestraße"
+        fahrtrichtung: "Norf"
+        zeitraum:
+          - "2024-01-11"
+          - "2024-03-19"
+        fahrzeuge_im_zeitraum:
+          gesamt: 196214
+        v85_kmh: 56
+        mittel_kmh: 50
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/288/2024"
+            ris_vorlage_id: 27521
+            gremium: "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten"
+            sitzung: "2024-06-27"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209702&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 69
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 218044
+          v85_kmh: 55
+          mittel_kmh: 45.3
+          fahrzeuge_je_tag: 3207
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: -4.7
+      - bezeichnung: "Villestraße (FR Norf)"
+        strasse: "Villestraße"
+        fahrtrichtung: "Norf"
+        zeitraum:
+          - "2024-01-11"
+          - "2024-07-24"
+        tempolimit_kmh: 50
+        fahrzeuge_je_tag:
+          gesamt: 2029
+        v85_kmh: 58
+        mittel_kmh: 58
+        anteil_unter:
+          prozent: 93.0
+          kmh: 60
+        massnahmen_verwaltung: "nicht erforderlich"
+        hinweise_verwaltung:
+          - "Verdeckte Messung"
+        quellen:
+          - vorlage: null
+            ris_vorlage_id: 27941
+            gremium: "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten"
+            sitzung: "2024-11-14"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=216549&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 69
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 218044
+          v85_kmh: 55
+          mittel_kmh: 45.3
+          fahrzeuge_je_tag: 3160
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -3
+            mittel_kmh: -12.7
+            fahrzeuge_je_tag_prozent: 56

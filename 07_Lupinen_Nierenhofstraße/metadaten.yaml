@@ -1,0 +1,44 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "07_Lupinen_Nierenhofstraße"
+messungen:
+  - datei: "_4.dsd"
+    geraet:
+      konfiguration: "2109F16733B 38LH003"
+      name: null
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Lupinenstraße"
+        strasse: "Lupinenstraße"
+        zeitraum:
+          - "2023-12-18"
+          - "2024-03-19"
+        tempolimit_kmh: 30
+        fahrzeuge_im_zeitraum:
+          kommend: 111089
+          gehend: 139858
+        v85_kmh: 34
+        mittel_kmh: 28
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/288/2024"
+            ris_vorlage_id: 27521
+            gremium: "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten"
+            sitzung: "2024-06-27"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209702&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 93
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 154188
+          v85_kmh: 32
+          mittel_kmh: 21.7
+          fahrzeuge_je_tag: 1676
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -2
+            mittel_kmh: -6.3

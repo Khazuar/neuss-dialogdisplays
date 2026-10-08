@@ -1,0 +1,47 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "03_2024_Hauptstraße 13a"
+messungen:
+  - datei: "DSD17385 Tempo30_3.dsd"
+    geraet:
+      konfiguration: "2112F17385B 30LP003"
+      name: "DSD17385 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 7
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Hauptstraße"
+        strasse: "Hauptstraße"
+        zeitraum:
+          - "2024-04-22"
+          - "2024-07-24"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 1436
+        v85_kmh: 28
+        mittel_kmh: 22
+        anteil_unter:
+          prozent: 99.5
+          kmh: 40
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/309/2024"
+            ris_vorlage_id: 27935
+            gremium: "Bezirksausschuss IV - Holzheim"
+            sitzung: "2024-11-05"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=215168&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 94
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 131130
+          v85_kmh: 28
+          mittel_kmh: 21.4
+          fahrzeuge_je_tag: 1410
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -0.6
+            fahrzeuge_je_tag_prozent: -2

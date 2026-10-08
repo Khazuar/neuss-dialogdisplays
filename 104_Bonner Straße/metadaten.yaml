@@ -1,0 +1,47 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "104_Bonner Straße"
+messungen:
+  - datei: "DSD14180 Tempo40_3.dsd"
+    geraet:
+      konfiguration: "2003F14180B 20LH003"
+      name: "DSD14180 Tempo40"
+      tempolimit_anzeige_kmh: 40
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Bonner Straße"
+        strasse: "Bonner Straße"
+        tempolimit_kmh: 40
+        fahrzeuge_je_tag:
+          gesamt: 1967
+        v85_kmh: 53
+        mittel_kmh: 43
+        anteil_unter:
+          prozent: 77.0
+          kmh: 50
+        einstufung_verwaltung: "ueberhoeht"
+        hinweise_verwaltung:
+          - "Geschwindigkeitsbegrenzung erst kürzlich angeordnet"
+          - "Wiederholung der Messung vorgesehen"
+        quellen:
+          - vorlage: "69/0411/2025"
+            ris_vorlage_id: 29230
+            gremium: "Bezirksausschuss VI - Gnadental, Grimlinghausen, Erfttal"
+            sitzung: "2026-03-26"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=241966&type=do"
+        zuordnung:
+          methode: "name_werte"
+          hinweis: "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 49180
+          v85_kmh: 53
+          mittel_kmh: 43.5
+          fahrzeuge_je_tag: 1967
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: 0.5
+            fahrzeuge_je_tag_prozent: 0

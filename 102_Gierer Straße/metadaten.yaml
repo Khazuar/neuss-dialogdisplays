@@ -1,0 +1,45 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "102_Gierer Straße"
+messungen:
+  - datei: "DSD17385 Tempo30_7.dsd"
+    geraet:
+      konfiguration: "2112F17385B 30LP003"
+      name: "DSD17385 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 7
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Gierer Straße"
+        strasse: "Gierer Straße"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 544
+        v85_kmh: 37
+        mittel_kmh: 30
+        anteil_unter:
+          prozent: 95.0
+          kmh: 40
+        einstufung_verwaltung: "noch_akzeptabel"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/0413/2025"
+            ris_vorlage_id: 29232
+            gremium: "Bezirksausschuss VIII - Rosellen"
+            sitzung: "2026-03-24"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=241066&type=do"
+        zuordnung:
+          methode: "name_einzige_datei"
+          hinweis: "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 85140
+          v85_kmh: 35
+          mittel_kmh: 24.2
+          fahrzeuge_je_tag: 753
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -2
+            mittel_kmh: -5.8
+            fahrzeuge_je_tag_prozent: 38

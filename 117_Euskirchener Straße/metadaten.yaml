@@ -1,0 +1,14 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "117_Euskirchener Straße"
+messungen:
+  - datei: "DSD17350 Tempo30_7.dsd"
+    geraet:
+      konfiguration: "2112F17350B 30LP003"
+      name: "DSD17350 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung: []

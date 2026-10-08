@@ -1,0 +1,41 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "10_Holzbüttgener Straße"
+messungen:
+  - datei: "_6.dsd"
+    geraet:
+      konfiguration: "2112F17350B 30LP003"
+      name: null
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Holzbüttgener Straße"
+        strasse: "Holzbüttgener Straße"
+        zeitraum:
+          - "2023-09-13"
+          - "2023-11-16"
+        tempolimit_kmh: 30
+        fahrzeuge_im_zeitraum:
+          gesamt: 39628
+        v85_kmh: 40
+        massnahmen_verwaltung: "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+        quellen:
+          - vorlage: "69/255/2024"
+            ris_vorlage_id: 27089
+            gremium: "Bezirksausschuss II - Nordstadt"
+            sitzung: "2024-03-07"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=203194&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 65
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 40659
+          v85_kmh: 40
+          mittel_kmh: 29.8
+          fahrzeuge_je_tag: 635
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0

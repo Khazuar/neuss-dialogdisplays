@@ -1,0 +1,40 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "24_Kreitzweg"
+messungen:
+  - datei: "0000000000000000_13.dsd"
+    geraet:
+      konfiguration: "2003F14178B 20LH003"
+      name: "0000000000000000"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Kreitzweg (Höhe Ludgerusring)"
+        strasse: "Kreitzweg"
+        tempolimit_kmh: 50
+        fahrzeuge_im_zeitraum:
+          gesamt: 48524
+        v85_kmh: 52
+        mittel_kmh: 44
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/292/2024"
+            ris_vorlage_id: 27549
+            gremium: "Bezirksausschuss IV - Holzheim"
+            sitzung: "2024-07-02"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=210214&type=do"
+        zuordnung:
+          methode: "name_werte"
+          hinweis: "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 48540
+          v85_kmh: 52
+          mittel_kmh: 43.8
+          fahrzeuge_je_tag: 1798
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -0.2

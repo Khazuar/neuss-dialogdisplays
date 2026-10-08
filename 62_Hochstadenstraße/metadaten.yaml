@@ -1,0 +1,14 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "62_Hochstadenstraße"
+messungen:
+  - datei: "DSD17386 Tempo40.dsd"
+    geraet:
+      konfiguration: "2112F17386B 30LH003"
+      name: "DSD17386 Tempo40"
+      tempolimit_anzeige_kmh: 40
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung: []

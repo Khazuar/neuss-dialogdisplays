@@ -1,0 +1,49 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "76_Daimlerstraße 140"
+messungen:
+  - datei: "DSD16135 Tempo30.dsd"
+    geraet:
+      konfiguration: "2109F16735B 38LH003"
+      name: "DSD16135 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Daimlerstraße"
+        strasse: "Daimlerstraße"
+        zeitraum:
+          - "2024-04-22"
+          - "2024-07-24"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          kommend: 417
+          gehend: 449
+        v85_kmh: 34
+        mittel_kmh: 26
+        anteil_unter:
+          prozent: 97.0
+          kmh: 40
+        einstufung_verwaltung: "unkritisch"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/310/2024"
+            ris_vorlage_id: 27936
+            gremium: "Bezirksausschuss II - Nordstadt"
+            sitzung: "2024-11-06"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=215167&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 94
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 38975
+          v85_kmh: 34
+          mittel_kmh: 25.8
+          fahrzeuge_je_tag: 419
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -0.2
+            fahrzeuge_je_tag_prozent: -52

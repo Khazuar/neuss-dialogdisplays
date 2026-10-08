@@ -1,0 +1,43 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "46_Matthiasstraße"
+messungen:
+  - datei: "_13.dsd"
+    geraet:
+      konfiguration: "2109F16735B 38LH003"
+      name: null
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Matthiasstraße"
+        strasse: "Matthiasstraße"
+        zeitraum:
+          - "2023-11-16"
+          - "2024-03-19"
+        tempolimit_kmh: 30
+        fahrzeuge_im_zeitraum:
+          gesamt: 144979
+        v85_kmh: 39
+        mittel_kmh: 25
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/280/2024"
+            ris_vorlage_id: 27470
+            gremium: "Bezirksausschuss VII - Uedesheim"
+            sitzung: "2024-06-18"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209026&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 120
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 76620
+          v85_kmh: 38
+          mittel_kmh: 21.1
+          fahrzeuge_je_tag: 618
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: -3.9

@@ -1,0 +1,51 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "106_Düsseldorfer Straße"
+messungen:
+  - datei: "DSD17400 Tempo50_2.dsd"
+    geraet:
+      konfiguration: "2112F17400B 30LH003"
+      name: "DSD17400 Tempo50"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Düsseldorfer Straße, (beidseitige Messung, Tempo 50)"
+        strasse: "Düsseldorfer Straße"
+        beidseitig: true
+        zeitraum:
+          - "2025-10-26"
+          - "2026-03-29"
+        tempolimit_kmh: 50
+        fahrzeuge_je_tag:
+          gesamt: 1740
+        v85_kmh: 59
+        mittel_kmh: 47
+        anteil_unter:
+          prozent: 88.0
+          kmh: 60
+        einstufung_verwaltung: "noch_akzeptabel"
+        massnahmen_verwaltung: "nicht erforderlich"
+        hinweise_verwaltung:
+          - "Bereich soll weiter beobachtet werden"
+        quellen:
+          - vorlage: "69/0460/2026"
+            ris_vorlage_id: 29894
+            gremium: "Bezirksausschuss II - Nordstadt"
+            sitzung: "2026-06-24"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245759&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 155
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 283810
+          v85_kmh: 58
+          mittel_kmh: 44.8
+          fahrzeuge_je_tag: 1843
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: -2.2
+            fahrzeuge_je_tag_prozent: 6

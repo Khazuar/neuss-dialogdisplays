@@ -1,0 +1,44 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "20_Nievenheimer Straße"
+messungen:
+  - datei: "0000000000000000_12.dsd"
+    geraet:
+      konfiguration: "2003F14178B 20LH003"
+      name: "0000000000000000"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Nievenheimer Straße"
+        strasse: "Nievenheimer Straße"
+        zeitraum:
+          - "2023-09-11"
+          - "2023-10-26"
+        tempolimit_kmh: 50
+        fahrzeuge_im_zeitraum:
+          gesamt: 48256
+        v85_kmh: 53
+        mittel_kmh: 44
+        einstufung_verwaltung: "voellig_unkritisch"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/251/2024"
+            ris_vorlage_id: 27018
+            gremium: "Bezirksausschuss V - Norf"
+            sitzung: "2024-02-27"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=202481&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 28
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 48291
+          v85_kmh: 53
+          mittel_kmh: 44.4
+          fahrzeuge_je_tag: 1725
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: 0.4

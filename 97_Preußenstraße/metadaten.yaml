@@ -1,0 +1,54 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "97_Preußenstraße"
+messungen:
+  - datei: "_18.dsd"
+    geraet:
+      konfiguration: "2109F16735B 38LH003"
+      name: null
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Preußenstraße"
+        strasse: "Preußenstraße"
+        zeitraum:
+          - "2025-07-06"
+          - "2025-10-26"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          kommend: 1344
+          gehend: 1189
+        v85_kmh: 38
+        mittel_kmh: 31
+        anteil_unter:
+          prozent: 90.0
+          kmh: 40
+        einstufung_verwaltung: "noch_akzeptabel"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/0406/2025"
+            ris_vorlage_id: 29225
+            gremium: "Bezirksausschuss I - Innenstadt"
+            sitzung: "2026-03-05"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=240020&type=do"
+          - vorlage: "69/0459/2026"
+            ris_vorlage_id: 29893
+            gremium: "Bezirksausschuss I - Innenstadt"
+            sitzung: "2026-06-17"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245735&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 113
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 162620
+          v85_kmh: 38
+          mittel_kmh: 29.5
+          fahrzeuge_je_tag: 1452
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -1.5
+            fahrzeuge_je_tag_prozent: -43

@@ -1,0 +1,51 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "110_Rosellener Kirchstraße"
+messungen:
+  - datei: "DSD17350 Tempo30_6.dsd"
+    geraet:
+      konfiguration: "2112F17350B 30LP003"
+      name: "DSD17350 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Rosellener Kirchstraße (Tempo 30)"
+        strasse: "Rosellener Kirchstraße"
+        zeitraum:
+          - "2025-10-26"
+          - "2026-03-29"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          kommend: 320
+          gehend: 466
+        v85_kmh: 41
+        mittel_kmh: 34
+        anteil_unter:
+          prozent: 83.0
+          kmh: 40
+        einstufung_verwaltung: "ueberdurchschnittlich_hoch"
+        massnahmen_verwaltung: "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+        hinweise_verwaltung:
+          - "Weitergehende Kontrollen (Laserwagen) vorgesehen oder genannt"
+        quellen:
+          - vorlage: "69/0462/2026"
+            ris_vorlage_id: 29897
+            gremium: "Bezirksausschuss VIII - Rosellen"
+            sitzung: "2026-07-07"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=246955&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 117
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 134771
+          v85_kmh: 41
+          mittel_kmh: 31.6
+          fahrzeuge_je_tag: 1152
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -2.4
+            fahrzeuge_je_tag_prozent: 47

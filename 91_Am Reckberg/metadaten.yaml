@@ -1,0 +1,14 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "91_Am Reckberg"
+messungen:
+  - datei: "DSD14180 Tempo50_3.dsd"
+    geraet:
+      konfiguration: "2003F14180B 20LH003"
+      name: "DSD14180 Tempo50"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung: []

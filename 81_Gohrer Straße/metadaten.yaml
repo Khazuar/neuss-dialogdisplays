@@ -1,0 +1,46 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "81_Gohrer Straße"
+messungen:
+  - datei: "DSD17400 Tempo30_5.dsd"
+    geraet:
+      konfiguration: "2112F17400B 30LH003"
+      name: "DSD17400 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Gohrer Straße, FR Maximlian-Kolbe-Straße"
+        strasse: "Gohrer Straße"
+        fahrtrichtung: "Maximlian-Kolbe-Straße"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 539
+        v85_kmh: 35
+        mittel_kmh: 30
+        anteil_unter:
+          prozent: 97.0
+          kmh: 40
+        einstufung_verwaltung: "unkritisch"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/0379/2025"
+            ris_vorlage_id: 28743
+            gremium: "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten"
+            sitzung: "2025-06-04"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=227976&type=do"
+        zuordnung:
+          methode: "name_werte"
+          hinweis: "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 64586
+          v85_kmh: 35
+          mittel_kmh: 27.4
+          fahrzeuge_je_tag: 609
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -2.6
+            fahrzeuge_je_tag_prozent: 13

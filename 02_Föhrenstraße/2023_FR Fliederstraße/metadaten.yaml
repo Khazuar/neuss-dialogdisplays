@@ -1,0 +1,14 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "02_Föhrenstraße/2023_FR Fliederstraße"
+messungen:
+  - datei: "23_05_04_Föhrenstr_FR_Flieder.dsd"
+    geraet:
+      konfiguration: "2112F17385B 30LP003"
+      name: null
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 7
+      verdeckte_messung: false
+    verwaltung: []

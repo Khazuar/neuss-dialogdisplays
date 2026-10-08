@@ -1,0 +1,46 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "36_Lanzerather Buschweg"
+messungen:
+  - datei: "DSD 14178 325er.dsd"
+    geraet:
+      konfiguration: "2003F14178B 20LH003"
+      name: "DSD 14178 325er"
+      tempolimit_anzeige_kmh: 10
+      erfassung_ab_kmh: 10
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Lanzerather Buschweg"
+        strasse: "Lanzerather Buschweg"
+        zeitraum:
+          - "2024-04-22"
+          - "2024-07-24"
+        tempolimit_kmh: 12
+        fahrzeuge_je_tag:
+          gesamt: 160
+        v85_kmh: 23
+        mittel_kmh: 18
+        massnahmen_verwaltung: "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+        hinweise_verwaltung:
+          - "Möglichkeiten für Maßnahmen im verkehrsberuhigten Bereich begrenzt"
+        quellen:
+          - vorlage: "69/309/2024"
+            ris_vorlage_id: 27935
+            gremium: "Bezirksausschuss IV - Holzheim"
+            sitzung: "2024-11-05"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=215168&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 94
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 14399
+          v85_kmh: 23
+          mittel_kmh: 18.5
+          fahrzeuge_je_tag: 155
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: 0.5
+            fahrzeuge_je_tag_prozent: -3

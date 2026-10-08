@@ -12,6 +12,7 @@
 !docs/**
 !belege/**
 !uhr-analyse.md
+!metadaten.yaml
 !site/**
 !.github/**
 __pycache__/

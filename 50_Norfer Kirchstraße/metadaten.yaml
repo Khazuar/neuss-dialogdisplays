@@ -1,0 +1,44 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "50_Norfer Kirchstraße"
+messungen:
+  - datei: "20 kmh.dsd"
+    geraet:
+      konfiguration: "2109F16734B 38LH003"
+      name: "20 kmh"
+      tempolimit_anzeige_kmh: 20
+      erfassung_ab_kmh: 7
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Norfer Kirchstraße"
+        strasse: "Norfer Kirchstraße"
+        zeitraum_in_mitteilung:
+          - "2023-09-13"
+          - "2024-11-16"
+        zeitraum_hinweis: "Der genannte Zeitraum endet nach der Sitzung, in der er berichtet wurde (vermutlich ein Tippfehler); er wird für die Zuordnung nicht verwendet"
+        tempolimit_kmh: 20
+        fahrzeuge_im_zeitraum:
+          gesamt: 51490
+        v85_kmh: 20
+        mittel_kmh: 19
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/251/2024"
+            ris_vorlage_id: 27018
+            gremium: "Bezirksausschuss V - Norf"
+            sitzung: "2024-02-27"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=202481&type=do"
+        zuordnung:
+          methode: "name_einzige_datei"
+          hinweis: "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 51469
+          v85_kmh: 25
+          mittel_kmh: 19.3
+          fahrzeuge_je_tag: 792
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 5
+            mittel_kmh: 0.3

@@ -1,0 +1,48 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "108_Deichstraße"
+messungen:
+  - datei: "DSD16734 Tempo30_7.dsd"
+    geraet:
+      konfiguration: "2109F16734B 38LH003"
+      name: "DSD16734 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Deichstraße (Tempo 30)"
+        strasse: "Deichstraße"
+        zeitraum:
+          - "2025-10-26"
+          - "2026-03-29"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 189
+        v85_kmh: 32
+        mittel_kmh: 26
+        anteil_unter:
+          prozent: 99.0
+          kmh: 40
+        einstufung_verwaltung: "voellig_unkritisch"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/0466/2026"
+            ris_vorlage_id: 29924
+            gremium: "Bezirksausschuss VII - Uedesheim"
+            sitzung: "2026-06-25"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=246544&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 117
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 27561
+          v85_kmh: 31
+          mittel_kmh: 23.3
+          fahrzeuge_je_tag: 236
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: -2.7
+            fahrzeuge_je_tag_prozent: 25

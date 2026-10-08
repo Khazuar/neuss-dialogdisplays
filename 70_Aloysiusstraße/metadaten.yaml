@@ -1,0 +1,47 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "70_Aloysiusstraße"
+messungen:
+  - datei: "DSD17386 Tempo30_2.dsd"
+    geraet:
+      konfiguration: "2112F17386B 30LH003"
+      name: "DSD17386 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Aloysiusstraße"
+        strasse: "Aloysiusstraße"
+        zeitraum:
+          - "2024-05-06"
+          - "2024-07-24"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 367
+        v85_kmh: 32
+        mittel_kmh: 25
+        anteil_unter:
+          prozent: 98.0
+          kmh: 40
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/312/2024"
+            ris_vorlage_id: 27940
+            gremium: "Bezirksausschuss VIII - Rosellen"
+            sitzung: "2024-11-26"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217254&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 80
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 33647
+          v85_kmh: 32
+          mittel_kmh: 25.1
+          fahrzeuge_je_tag: 426
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: 0.1
+            fahrzeuge_je_tag_prozent: 16

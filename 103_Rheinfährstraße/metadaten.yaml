@@ -1,0 +1,49 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "103_Rheinfährstraße"
+messungen:
+  - datei: "DSD16734 Tempo50_2.dsd"
+    geraet:
+      konfiguration: "2109F16734B 38LH003"
+      name: "DSD16734 Tempo50"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Rheinfährstraße"
+        strasse: "Rheinfährstraße"
+        zeitraum:
+          - "2025-07-06"
+          - "2025-10-26"
+        tempolimit_kmh: 50
+        fahrzeuge_je_tag:
+          kommend: 1569
+          gehend: 1600
+        v85_kmh: 48
+        mittel_kmh: 41
+        anteil_unter:
+          prozent: 99.0
+          kmh: 60
+        einstufung_verwaltung: "voellig_unkritisch"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/0412/2025"
+            ris_vorlage_id: 29231
+            gremium: "Bezirksausschuss VII - Uedesheim"
+            sitzung: "2026-03-04"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=239378&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 94
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 154268
+          v85_kmh: 49
+          mittel_kmh: 40.5
+          fahrzeuge_je_tag: 1641
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 1
+            mittel_kmh: -0.5
+            fahrzeuge_je_tag_prozent: -48

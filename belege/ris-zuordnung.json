@@ -1,0 +1,757 @@
+{
+ "erzeugt_von": "metadaten.py",
+ "schwellen": {
+  "zeitraum_ueberlappung_min": 0.8,
+  "zeitraum_anteil_groesserer_min": 0.25,
+  "undatiert_v85_max_abw": 2,
+  "undatiert_mittel_max_abw": 3,
+  "undatiert_abstand_zum_zweiten": 1.0,
+  "abweichend_v85_max_abw": 1,
+  "abweichend_mittel_max_abw": 2,
+  "sitzung_max_monate": 15
+ },
+ "zugeordnet": {
+  "02_2024_Bauerbahn, ggü. Nr. 3/20 km.dsd": [
+   {
+    "messstelle": "Bauerbahn",
+    "zeitraum": [
+     "2024-04-25",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": 0.5,
+     "fahrzeuge_je_tag_prozent": 0
+    }
+   }
+  ],
+  "03_2024_Hauptstraße 13a/DSD17385 Tempo30_3.dsd": [
+   {
+    "messstelle": "Hauptstraße",
+    "zeitraum": [
+     "2024-04-22",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.6,
+     "fahrzeuge_je_tag_prozent": -2
+    }
+   }
+  ],
+  "04_2024_Cyriakusstraße 86-88/DSD14180 Tempo30_3.dsd": [
+   {
+    "messstelle": "Cyriakusstraße",
+    "zeitraum": [
+     "2024-04-22",
+     "2024-07-04"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.1,
+     "fahrzeuge_je_tag_prozent": 26
+    }
+   }
+  ],
+  "05_Quinheimer Straße/_5.dsd": [
+   {
+    "messstelle": "Quinheimer Straße",
+    "zeitraum": [
+     "2024-03-19",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -2,
+     "mittel_kmh": -6.5,
+     "fahrzeuge_je_tag_prozent": -38
+    }
+   }
+  ],
+  "07_2024_ Einsteinstraße/_15.dsd": [
+   {
+    "messstelle": "Einsteinstraße, FR Hertzstraße (beidseitige Messung)",
+    "zeitraum": null,
+    "methode": "name_einzige_datei",
+    "abweichung": {
+     "v85_kmh": -3,
+     "mittel_kmh": -3.6,
+     "fahrzeuge_je_tag_prozent": -39
+    }
+   }
+  ],
+  "07_Lupinen_Nierenhofstraße/_4.dsd": [
+   {
+    "messstelle": "Lupinenstraße",
+    "zeitraum": [
+     "2023-12-18",
+     "2024-03-19"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -2,
+     "mittel_kmh": -6.3
+    }
+   }
+  ],
+  "08_2024_Steinhausstraße/DSD17386 Tempo30_3.dsd": [
+   {
+    "messstelle": "Steinhausstraße, FR Konrad-Adenauer-Ring",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -1.1,
+     "fahrzeuge_je_tag_prozent": 7
+    }
+   }
+  ],
+  "09_2024_Hoistener Schulstraße/DSD17400 Tempo30_4.dsd": [
+   {
+    "messstelle": "Hoistener Schulstraße, FR Kirche",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -2.2,
+     "fahrzeuge_je_tag_prozent": 10
+    }
+   }
+  ],
+  "100_Norfer Kirchstraße/DSD14178 Tempo30_4.dsd": [
+   {
+    "messstelle": "Norfer Kirchstraße",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.2,
+     "fahrzeuge_je_tag_prozent": 3
+    }
+   }
+  ],
+  "101_Nievenheimer Straße/DSD17350 Tempo50_4.dsd": [
+   {
+    "messstelle": "Nievenheimer Straße",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -1.9,
+     "fahrzeuge_je_tag_prozent": 5
+    }
+   }
+  ],
+  "102_Gierer Straße/DSD17385 Tempo30_7.dsd": [
+   {
+    "messstelle": "Gierer Straße",
+    "zeitraum": null,
+    "methode": "name_einzige_datei",
+    "abweichung": {
+     "v85_kmh": -2,
+     "mittel_kmh": -5.8,
+     "fahrzeuge_je_tag_prozent": 38
+    }
+   }
+  ],
+  "103_Rheinfährstraße/DSD16734 Tempo50_2.dsd": [
+   {
+    "messstelle": "Rheinfährstraße",
+    "zeitraum": [
+     "2025-07-06",
+     "2025-10-26"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 1,
+     "mittel_kmh": -0.5,
+     "fahrzeuge_je_tag_prozent": -48
+    }
+   }
+  ],
+  "104_Bonner Straße/DSD14180 Tempo40_3.dsd": [
+   {
+    "messstelle": "Bonner Straße",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": 0.5,
+     "fahrzeuge_je_tag_prozent": 0
+    }
+   }
+  ],
+  "105_An der Obererft/_19.dsd": [
+   {
+    "messstelle": "An der Obererft (Tempo 30)",
+    "zeitraum": [
+     "2025-10-26",
+     "2026-03-29"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 1,
+     "mittel_kmh": -0.1,
+     "fahrzeuge_je_tag_prozent": -41
+    }
+   }
+  ],
+  "106_Düsseldorfer Straße/DSD17400 Tempo50_2.dsd": [
+   {
+    "messstelle": "Düsseldorfer Straße, (beidseitige Messung, Tempo 50)",
+    "zeitraum": [
+     "2025-10-26",
+     "2026-03-29"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -2.2,
+     "fahrzeuge_je_tag_prozent": 6
+    }
+   }
+  ],
+  "108_Deichstraße/DSD16734 Tempo30_7.dsd": [
+   {
+    "messstelle": "Deichstraße (Tempo 30)",
+    "zeitraum": [
+     "2025-10-26",
+     "2026-03-29"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -2.7,
+     "fahrzeuge_je_tag_prozent": 25
+    }
+   }
+  ],
+  "109_Ruhrstraße/_10.dsd": [
+   {
+    "messstelle": "Ruhrstraße (Tempo 30)",
+    "zeitraum": [
+     "2025-10-26",
+     "2026-03-29"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -3,
+     "mittel_kmh": -10.9,
+     "fahrzeuge_je_tag_prozent": -13
+    }
+   }
+  ],
+  "10_2024_Vereinsstraße/DSD14180 Tempo40.dsd": [
+   {
+    "messstelle": "Vereinsstraße, FR Reuschenberger Straße",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": 0.2,
+     "fahrzeuge_je_tag_prozent": 0
+    }
+   }
+  ],
+  "10_Holzbüttgener Straße/_6.dsd": [
+   {
+    "messstelle": "Holzbüttgener Straße",
+    "zeitraum": [
+     "2023-09-13",
+     "2023-11-16"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0
+    }
+   }
+  ],
+  "110_Rosellener Kirchstraße/DSD17350 Tempo30_6.dsd": [
+   {
+    "messstelle": "Rosellener Kirchstraße (Tempo 30)",
+    "zeitraum": [
+     "2025-10-26",
+     "2026-03-29"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -2.4,
+     "fahrzeuge_je_tag_prozent": 47
+    }
+   }
+  ],
+  "112_Liedberger Straße/DSD14178 Tempo30_5.dsd": [
+   {
+    "messstelle": "Liedberger Straße (Tempo 30)",
+    "zeitraum": [
+     "2025-10-26",
+     "2026-03-29"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -0.6,
+     "fahrzeuge_je_tag_prozent": 5
+    }
+   }
+  ],
+  "12_2024_Hüsenstraße/_6.dsd": [
+   {
+    "messstelle": "Hüsenstraße (FR Bonner Straße), beidseitige Messung",
+    "zeitraum": null,
+    "methode": "name_einzige_datei",
+    "abweichung": {
+     "v85_kmh": -4,
+     "mittel_kmh": -3.7,
+     "fahrzeuge_je_tag_prozent": -47
+    }
+   }
+  ],
+  "13_2024_Neukirchener Straße/DSD17350 Tempo30_2.dsd": [
+   {
+    "messstelle": "Neukirchener Straße, FR Allerheiligen",
+    "zeitraum": [
+     "2024-09-16",
+     "2024-12-04"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -1.3,
+     "fahrzeuge_je_tag_prozent": 11
+    }
+   }
+  ],
+  "14_2024_Salzstraße/DSD17385 Tempo30_4.dsd": [
+   {
+    "messstelle": "Salzstraße, FR Neumarkt",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -2.1,
+     "fahrzeuge_je_tag_prozent": 23
+    }
+   }
+  ],
+  "15_2024_Martinusstraße/DSD 14178 325er_2.dsd": [
+   {
+    "messstelle": "Martinusstraße, FR verkehrsberuhigter Bereich (der gemessene Bereich war vor dem Beginn des verkehrsberuhigten Bereiches)",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": 0.0,
+     "fahrzeuge_je_tag_prozent": 0
+    }
+   }
+  ],
+  "17_Nordkanalallee/DSD17400 Tempo30_3.dsd": [
+   {
+    "messstelle": "Nordkanalallee",
+    "zeitraum": [
+     "2024-04-23",
+     "2024-07-23"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.2,
+     "fahrzeuge_je_tag_prozent": 2
+    }
+   }
+  ],
+  "20_Nievenheimer Straße/0000000000000000_12.dsd": [
+   {
+    "messstelle": "Nievenheimer Straße",
+    "zeitraum": [
+     "2023-09-11",
+     "2023-10-26"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": 0.4
+    }
+   }
+  ],
+  "21_Hermannstraße/0000000000000000_6.dsd": [
+   {
+    "messstelle": "Hermannstraße",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.1
+    }
+   }
+  ],
+  "23-2023_Im_Tal/DSD16734 Tempo30_3.dsd": [
+   {
+    "messstelle": "Im Tal",
+    "zeitraum": [
+     "2024-05-06",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.8,
+     "fahrzeuge_je_tag_prozent": -42
+    }
+   }
+  ],
+  "24_Kreitzweg/0000000000000000_13.dsd": [
+   {
+    "messstelle": "Kreitzweg (Höhe Ludgerusring)",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.2
+    }
+   }
+  ],
+  "36_Lanzerather Buschweg/DSD 14178 325er.dsd": [
+   {
+    "messstelle": "Lanzerather Buschweg",
+    "zeitraum": [
+     "2024-04-22",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": 0.5,
+     "fahrzeuge_je_tag_prozent": -3
+    }
+   }
+  ],
+  "46_Matthiasstraße/_13.dsd": [
+   {
+    "messstelle": "Matthiasstraße",
+    "zeitraum": [
+     "2023-11-16",
+     "2024-03-19"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -3.9
+    }
+   }
+  ],
+  "50_Norfer Kirchstraße/20 kmh.dsd": [
+   {
+    "messstelle": "Norfer Kirchstraße",
+    "zeitraum": null,
+    "methode": "name_einzige_datei",
+    "abweichung": {
+     "v85_kmh": 5,
+     "mittel_kmh": 0.3
+    }
+   }
+  ],
+  "60_Mühlenstraße/DSD 14180 325er.dsd": [
+   {
+    "messstelle": "Mühlenstraße",
+    "zeitraum": [
+     "2023-12-12",
+     "2024-03-19"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -5.4
+    }
+   }
+  ],
+  "70_Aloysiusstraße/DSD17386 Tempo30_2.dsd": [
+   {
+    "messstelle": "Aloysiusstraße",
+    "zeitraum": [
+     "2024-05-06",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": 0.1,
+     "fahrzeuge_je_tag_prozent": 16
+    }
+   }
+  ],
+  "76_Daimlerstraße 140/DSD16135 Tempo30.dsd": [
+   {
+    "messstelle": "Daimlerstraße",
+    "zeitraum": [
+     "2024-04-22",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.2,
+     "fahrzeuge_je_tag_prozent": -52
+    }
+   }
+  ],
+  "79_Rosmarinstraße/_16.dsd": [
+   {
+    "messstelle": "Rosmarinstraße, FR Südfriedhof (beidseitige Messung)",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -1.5,
+     "fahrzeuge_je_tag_prozent": -59
+    }
+   }
+  ],
+  "80_Kaarster Straße/DSD17386 Tempo50_2.dsd": [
+   {
+    "messstelle": "Kaarster Straße, FR Kaarst",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -1.5,
+     "fahrzeuge_je_tag_prozent": 47
+    }
+   }
+  ],
+  "81_Gohrer Straße/DSD17400 Tempo30_5.dsd": [
+   {
+    "messstelle": "Gohrer Straße, FR Maximlian-Kolbe-Straße",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -2.6,
+     "fahrzeuge_je_tag_prozent": 13
+    }
+   }
+  ],
+  "84_Am Alten Bach/_7.dsd": [
+   {
+    "messstelle": "Am alten Bach, FR Supermarkt Rewe, beidseitige Messung",
+    "zeitraum": null,
+    "methode": "name_einzige_datei",
+    "abweichung": {
+     "v85_kmh": -2,
+     "mittel_kmh": -5.8,
+     "fahrzeuge_je_tag_prozent": -12
+    }
+   }
+  ],
+  "85_Berghäuschensweg/DSD17350 Tempo50_2.dsd": [
+   {
+    "messstelle": "Berghäuschensweg, FR Innenstadt",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -2.6,
+     "fahrzeuge_je_tag_prozent": 59
+    }
+   }
+  ],
+  "86_Rheinfährstraße/DSD17385 Tempo50_2.dsd": [
+   {
+    "messstelle": "Rheinfährstraße, FR Bonner Straße",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -1.3,
+     "fahrzeuge_je_tag_prozent": 6
+    }
+   }
+  ],
+  "87_Mühlenstraße/DSD 14178 325er_3.dsd": [
+   {
+    "messstelle": "Mühlenstraße, FR Windmühlengasse (Wiederholungsmessung)",
+    "zeitraum": [
+     "2024-12-04",
+     "2025-03-19"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.3,
+     "fahrzeuge_je_tag_prozent": -4
+    }
+   }
+  ],
+  "88_Pomona (Eingang)/_17.dsd": [
+   {
+    "messstelle": "Eingang Pomona (beidseitige Messung)",
+    "zeitraum": [
+     "2025-03-19",
+     "2025-07-06"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -0.7,
+     "fahrzeuge_je_tag_prozent": -51
+    }
+   }
+  ],
+  "97_Preußenstraße/_18.dsd": [
+   {
+    "messstelle": "Preußenstraße",
+    "zeitraum": [
+     "2025-07-06",
+     "2025-10-26"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -1.5,
+     "fahrzeuge_je_tag_prozent": -43
+    }
+   }
+  ],
+  "98_Erprather Straße/DSD17400 Tempo50.dsd": [
+   {
+    "messstelle": "Erprather Straße",
+    "zeitraum": null,
+    "methode": "name_werte",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -0.7,
+     "fahrzeuge_je_tag_prozent": 15
+    }
+   }
+  ],
+  "99_Münchener Straße/_9.dsd": [
+   {
+    "messstelle": "Münchener Straße",
+    "zeitraum": null,
+    "methode": "name_einzige_datei",
+    "abweichung": {
+     "v85_kmh": -3,
+     "mittel_kmh": -4.3,
+     "fahrzeuge_je_tag_prozent": -37
+    }
+   }
+  ],
+  "Stationär_Villestraße/FR GV/0000000000000000_3.dsd": [
+   {
+    "messstelle": "Villestraße, Fahrtrichtung Grevenbroich",
+    "zeitraum": [
+     "2023-03-15",
+     "2024-01-11"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -4.4
+    }
+   }
+  ],
+  "Stationär_Villestraße/FR GV/0000000000000000_4.dsd": [
+   {
+    "messstelle": "Villestraße, Fahrtrichtung Grevenbroich",
+    "zeitraum": [
+     "2024-01-11",
+     "2024-03-19"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -2.9
+    }
+   }
+  ],
+  "Stationär_Villestraße/FR GV/L 142 FR Speck20_3.dsd": [
+   {
+    "messstelle": "Villestraße (FR Speck)",
+    "zeitraum": [
+     "2024-03-27",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": 0.2,
+     "fahrzeuge_je_tag_prozent": 32
+    }
+   }
+  ],
+  "Stationär_Villestraße/FR Norf/Ville Norf 30.dsd": [
+   {
+    "messstelle": "Villestraße (FR Norf)",
+    "zeitraum": [
+     "2024-01-11",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -10.6,
+     "fahrzeuge_je_tag_prozent": 64
+    }
+   }
+  ],
+  "Stationär_Villestraße/FR Norf/Ville Norf_3.dsd": [
+   {
+    "messstelle": "Villestraße, Fahrtrichtung Norf",
+    "zeitraum": [
+     "2023-03-15",
+     "2024-01-11"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -3.8
+    }
+   }
+  ],
+  "Stationär_Villestraße/FR Norf/Ville Norf_4.dsd": [
+   {
+    "messstelle": "Villestraße, Fahrtrichtung Norf",
+    "zeitraum": [
+     "2024-01-11",
+     "2024-03-19"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -4.7
+    }
+   },
+   {
+    "messstelle": "Villestraße (FR Norf)",
+    "zeitraum": [
+     "2024-01-11",
+     "2024-07-24"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -3,
+     "mittel_kmh": -12.7,
+     "fahrzeuge_je_tag_prozent": 56
+    }
+   }
+  ]
+ },
+ "nicht_zugeordnet": [],
+ "nicht_ausgewertet": [
+  {
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=227985&type=do",
+   "kopf": "Berghäuschensweg, Nebenstraße Hausnummer 323",
+   "grund": "Messung auf der Nebenfahrbahn nicht möglich, Gerät erfasst auch die Hauptfahrbahn"
+  },
+  {
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=240218&type=do",
+   "kopf": "Further Straße",
+   "grund": "technischer Defekt, keine Daten vorhanden"
+  }
+ ]
+}

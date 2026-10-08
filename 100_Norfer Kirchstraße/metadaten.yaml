@@ -1,0 +1,45 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "100_Norfer Kirchstraße"
+messungen:
+  - datei: "DSD14178 Tempo30_4.dsd"
+    geraet:
+      konfiguration: "2003F14178B 20LH003"
+      name: "DSD14178 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 10
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Norfer Kirchstraße"
+        strasse: "Norfer Kirchstraße"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 880
+        v85_kmh: 43
+        mittel_kmh: 34
+        anteil_unter:
+          prozent: 70.0
+          kmh: 40
+        einstufung_verwaltung: "ueberdurchschnittlich_hoch"
+        massnahmen_verwaltung: "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+        quellen:
+          - vorlage: "69/0410/2025"
+            ris_vorlage_id: 29229
+            gremium: "Bezirksausschuss V - Norf"
+            sitzung: "2026-03-18"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=240869&type=do"
+        zuordnung:
+          methode: "name_werte"
+          hinweis: "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 42625
+          v85_kmh: 43
+          mittel_kmh: 33.8
+          fahrzeuge_je_tag: 907
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -0.2
+            fahrzeuge_je_tag_prozent: 3

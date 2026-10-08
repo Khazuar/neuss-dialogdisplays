@@ -1,0 +1,22 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "11_Thywissenstraße"
+messungen:
+  - datei: "2022_11_Thywissen_FR_Preussenstr.dsd"
+    geraet:
+      konfiguration: "2003F14180B 20LH003"
+      name: "0000000000000000"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung: []
+  - datei: "2022_11_Thywissen_FR_Schorlemer.dsd"
+    geraet:
+      konfiguration: "2109F16734B 38LH003"
+      name: null
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 7
+      verdeckte_messung: false
+    verwaltung: []

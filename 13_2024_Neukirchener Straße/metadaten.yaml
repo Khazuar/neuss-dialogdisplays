@@ -1,0 +1,49 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "13_2024_Neukirchener Straße"
+messungen:
+  - datei: "DSD17350 Tempo30_2.dsd"
+    geraet:
+      konfiguration: "2112F17350B 30LP003"
+      name: "DSD17350 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Neukirchener Straße, FR Allerheiligen"
+        strasse: "Neukirchener Straße"
+        fahrtrichtung: "Allerheiligen"
+        zeitraum:
+          - "2024-09-16"
+          - "2024-12-04"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 1183
+        v85_kmh: 39
+        mittel_kmh: 32
+        anteil_unter:
+          prozent: 90.0
+          kmh: 40
+        einstufung_verwaltung: "noch_akzeptabel"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/341/2025"
+            ris_vorlage_id: 28265
+            gremium: "Bezirksausschuss VIII - Rosellen"
+            sitzung: "2025-02-05"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=221446&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 80
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 103375
+          v85_kmh: 39
+          mittel_kmh: 30.7
+          fahrzeuge_je_tag: 1309
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -1.3
+            fahrzeuge_je_tag_prozent: 11

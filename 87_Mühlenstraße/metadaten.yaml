@@ -1,0 +1,54 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "87_Mühlenstraße"
+messungen:
+  - datei: "DSD 14178 325er_3.dsd"
+    geraet:
+      konfiguration: "2003F14178B 20LH003"
+      name: "DSD 14178 325er"
+      tempolimit_anzeige_kmh: 10
+      erfassung_ab_kmh: 10
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Mühlenstraße, FR Windmühlengasse (Wiederholungsmessung)"
+        strasse: "Mühlenstraße"
+        fahrtrichtung: "Windmühlengasse"
+        wiederholungsmessung: true
+        zeitraum:
+          - "2024-12-04"
+          - "2025-03-19"
+        fahrzeuge_je_tag:
+          gesamt: 442
+        v85_kmh: 24
+        mittel_kmh: 19
+        anteil_unter:
+          prozent: 69.0
+          kmh: 20
+        hinweise_verwaltung:
+          - "Weitergehende Kontrollen (Laserwagen) vorgesehen oder genannt"
+        quellen:
+          - vorlage: "69/0381/2025"
+            ris_vorlage_id: 28745
+            gremium: "Bezirksausschuss I - Innenstadt"
+            sitzung: "2025-06-24"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=227994&type=do"
+          - vorlage: "69/0459/2026"
+            ris_vorlage_id: 29893
+            gremium: "Bezirksausschuss I - Innenstadt"
+            sitzung: "2026-06-17"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245735&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 78
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 34038
+          v85_kmh: 24
+          mittel_kmh: 18.7
+          fahrzeuge_je_tag: 425
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -0.3
+            fahrzeuge_je_tag_prozent: -4

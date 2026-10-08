@@ -1,0 +1,48 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "109_Ruhrstraße"
+messungen:
+  - datei: "_10.dsd"
+    geraet:
+      konfiguration: "2109F16733B 38LH003"
+      name: null
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Ruhrstraße (Tempo 30)"
+        strasse: "Ruhrstraße"
+        zeitraum:
+          - "2025-10-26"
+          - "2026-03-29"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 769
+        v85_kmh: 36
+        mittel_kmh: 29
+        anteil_unter:
+          prozent: 95.0
+          kmh: 40
+        einstufung_verwaltung: "noch_akzeptabel"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/0464/2026"
+            ris_vorlage_id: 29922
+            gremium: "Bezirksausschuss V - Norf"
+            sitzung: "2026-07-02"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=246992&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 155
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 103088
+          v85_kmh: 33
+          mittel_kmh: 18.1
+          fahrzeuge_je_tag: 669
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -3
+            mittel_kmh: -10.9
+            fahrzeuge_je_tag_prozent: -13

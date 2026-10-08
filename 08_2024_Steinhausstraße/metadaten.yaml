@@ -1,0 +1,48 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "08_2024_Steinhausstraße"
+messungen:
+  - datei: "DSD17386 Tempo30_3.dsd"
+    geraet:
+      konfiguration: "2112F17386B 30LH003"
+      name: "DSD17386 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Steinhausstraße, FR Konrad-Adenauer-Ring"
+        strasse: "Steinhausstraße"
+        fahrtrichtung: "Konrad-Adenauer-Ring"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 814
+        v85_kmh: 37
+        mittel_kmh: 30
+        anteil_unter:
+          prozent: 94.0
+          kmh: 40
+        einstufung_verwaltung: "unkritisch"
+        massnahmen_verwaltung: "nicht erforderlich"
+        hinweise_verwaltung:
+          - "Verwaltung nennt Baustelle oder Umleitung als Erklärung"
+        quellen:
+          - vorlage: "69/355/2025"
+            ris_vorlage_id: 28340
+            gremium: "Bezirksausschuss II - Nordstadt"
+            sitzung: "2025-02-18"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=222082&type=do"
+        zuordnung:
+          methode: "name_werte"
+          hinweis: "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 117092
+          v85_kmh: 36
+          mittel_kmh: 28.9
+          fahrzeuge_je_tag: 874
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: -1.1
+            fahrzeuge_je_tag_prozent: 7

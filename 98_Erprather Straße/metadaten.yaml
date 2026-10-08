@@ -1,0 +1,45 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "98_Erprather Straße"
+messungen:
+  - datei: "DSD17400 Tempo50.dsd"
+    geraet:
+      konfiguration: "2112F17400B 30LH003"
+      name: "DSD17400 Tempo50"
+      tempolimit_anzeige_kmh: 50
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Erprather Straße"
+        strasse: "Erprather Straße"
+        tempolimit_kmh: 50
+        fahrzeuge_je_tag:
+          gesamt: 1642
+        v85_kmh: 40
+        mittel_kmh: 33
+        anteil_unter:
+          prozent: 98.0
+          kmh: 60
+        einstufung_verwaltung: "unkritisch"
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/0408/2025"
+            ris_vorlage_id: 29227
+            gremium: "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten"
+            sitzung: "2026-03-17"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=240581&type=do"
+        zuordnung:
+          methode: "name_werte"
+          hinweis: "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 191480
+          v85_kmh: 40
+          mittel_kmh: 32.3
+          fahrzeuge_je_tag: 1896
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -0.7
+            fahrzeuge_je_tag_prozent: 15

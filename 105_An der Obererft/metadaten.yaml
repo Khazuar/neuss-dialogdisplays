@@ -1,0 +1,51 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "105_An der Obererft"
+messungen:
+  - datei: "_19.dsd"
+    geraet:
+      konfiguration: "2109F16735B 38LH003"
+      name: null
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 9
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "An der Obererft (Tempo 30)"
+        strasse: "An der Obererft"
+        zeitraum:
+          - "2025-10-26"
+          - "2026-03-29"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          kommend: 1612
+          gehend: 1236
+        v85_kmh: 39
+        mittel_kmh: 32
+        anteil_unter:
+          prozent: 87.0
+          kmh: 40
+        einstufung_verwaltung: "ueberdurchschnittlich_hoch"
+        massnahmen_verwaltung: "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+        hinweise_verwaltung:
+          - "Weitergehende Kontrollen (Laserwagen) vorgesehen oder genannt"
+        quellen:
+          - vorlage: "69/0459/2026"
+            ris_vorlage_id: 29893
+            gremium: "Bezirksausschuss I - Innenstadt"
+            sitzung: "2026-06-17"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245735&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 155
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 259876
+          v85_kmh: 40
+          mittel_kmh: 31.9
+          fahrzeuge_je_tag: 1688
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 1
+            mittel_kmh: -0.1
+            fahrzeuge_je_tag_prozent: -41

@@ -1,0 +1,40 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "21_Hermannstraße"
+messungen:
+  - datei: "0000000000000000_6.dsd"
+    geraet:
+      konfiguration: "2003F14180B 20LH003"
+      name: "0000000000000000"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 3
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Hermannstraße"
+        strasse: "Hermannstraße"
+        tempolimit_kmh: 30
+        fahrzeuge_im_zeitraum:
+          gesamt: 39257
+        v85_kmh: 34
+        mittel_kmh: 26
+        massnahmen_verwaltung: "nicht erforderlich"
+        quellen:
+          - vorlage: "69/262/2024"
+            ris_vorlage_id: 27138
+            gremium: "Bezirksausschuss I - Innenstadt"
+            sitzung: "2024-03-14"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=204033&type=do"
+        zuordnung:
+          methode: "name_werte"
+          hinweis: "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 39292
+          v85_kmh: 34
+          mittel_kmh: 25.9
+          fahrzeuge_je_tag: 666
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -0.1

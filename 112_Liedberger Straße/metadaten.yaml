@@ -1,0 +1,48 @@
+# Zusätzlich erhobene Metadaten zu den Messungen in diesem Ordner.
+# Erzeugt von metadaten.py aus den DSD-Dateien und den Mitteilungen der Verwaltung (Ratsinformationssystem
+# der Stadt Neuss), siehe docs/metadaten.md. Angaben der Verwaltung stehen unter 'verwaltung', was aus der
+# DSD stammt unter 'geraet' und 'abgleich_dsd'.
+ordner: "112_Liedberger Straße"
+messungen:
+  - datei: "DSD14178 Tempo30_5.dsd"
+    geraet:
+      konfiguration: "2003F14178B 20LH003"
+      name: "DSD14178 Tempo30"
+      tempolimit_anzeige_kmh: 30
+      erfassung_ab_kmh: 10
+      verdeckte_messung: false
+    verwaltung:
+      - bezeichnung: "Liedberger Straße (Tempo 30)"
+        strasse: "Liedberger Straße"
+        zeitraum:
+          - "2025-10-26"
+          - "2026-03-29"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 365
+        v85_kmh: 44
+        mittel_kmh: 34
+        anteil_unter:
+          prozent: 72.0
+          kmh: 40
+        einstufung_verwaltung: "deutlich_zu_hoch"
+        massnahmen_verwaltung: "Abstimmung mit der Kreispolizeibehörde vorgesehen oder genannt"
+        quellen:
+          - vorlage: "69/0463/2026"
+            ris_vorlage_id: 29921
+            gremium: "Bezirksausschuss IV - Holzheim"
+            sitzung: "2026-06-16"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245761&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 84
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          fahrzeuge: 32072
+          v85_kmh: 43
+          mittel_kmh: 33.4
+          fahrzeuge_je_tag: 382
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: -0.6
+            fahrzeuge_je_tag_prozent: 5
