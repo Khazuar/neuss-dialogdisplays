@@ -25,7 +25,7 @@
   </ul>
   <p class="muted">
     Die Auswertungen sind eigene Berechnungen von Fabian Grewing aus den Rohdaten der Stadt Neuss.
-    Sie sind nicht amtlich und nicht geprüft. Die Geräteuhren werden nie auf Sommerzeit umgestellt und
+    Sie sind nicht amtlich und nicht geprüft, und Fehler in der Auswertung (Skripte, Annahmen, Zuordnung der Angaben) können nicht ausgeschlossen werden; alle Angaben ohne Gewähr. Die Geräteuhren werden nie auf Sommerzeit umgestellt und
     sind teils zurückgesetzt oder verstellt; die Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit
     um und verwenden nur Fahrzeuge mit plausibler Uhr. Zeilen mit
     <span class="warn" aria-hidden="true">⚠</span> haben eine auffällige Geräteuhr oder übersprungene
@@ -158,7 +158,7 @@ function zeile(r, idx) {
     };
   }
   return {
-    standort: bereinige(get("standort")), datei: get("standort") + "/" + get("datei"),
+    standort: bereinige(get("standort")), seite: get("seite"), datei: get("standort") + "/" + get("datei"),
     limit: num(get("tempolimit_kmh")),
     start: start ? start.slice(0, 10) : "", ende: ende ? ende.slice(0, 10) : "",
     hinweis: gruende.join(" | "),
@@ -181,7 +181,11 @@ function cell(tr, col, row) {
     if (row[col.key] < 50) td.className += " bad";
     else if (row[col.key] < 75) td.className += " mid";
   }
-  if (col.key === "links") {
+  if (col.key === "standort" && row.seite) {
+    const a = document.createElement("a");
+    a.href = row.seite; a.textContent = row[col.key];
+    td.append(a);
+  } else if (col.key === "links") {
     const a = document.createElement("a");
     a.href = row.yaml; a.textContent = "YAML";
     td.append(a);

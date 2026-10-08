@@ -33,6 +33,8 @@ jobs:
         run: python -I dsd2csv.py . -o _site
       - name: Einzelmessungen als CSV entfernen (nur YAML und summary.csv bleiben)
         run: find _site -name '*.csv' ! -name summary.csv -delete
+      - name: Detailseiten der Standorte bauen
+        run: python -I seiten_bauen.py --auswertung _site/auswertung.json --ziel _site
       - name: Seiten hinzufuegen
         run: cp site/index.html site/datenschutz.html site/style.css _site/
       - name: Impressum aus den Repository-Variablen erzeugen

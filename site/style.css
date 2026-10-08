@@ -56,3 +56,33 @@ select {
   border: 1px solid var(--line); border-radius: 6px;
 }
 select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Detailseiten der Standorte (seiten_bauen.py) */
+:root { --ok-bg: #cfe8d5; --ok-fg: #14532d; --mid-fg: #5b4400; --bad-fg: #7f1d1d; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --ok-bg: #1f4a2c; --ok-fg: #c8f0d2; --mid-fg: #f6e3a0; --bad-fg: #f8c9c9; }
+}
+.detail { max-width: 1000px; }
+.detail h2 { font-size: 1.3rem; margin: 32px 0 8px; }
+.detail h3 { font-size: 1.1rem; margin: 0 0 8px; }
+.detail h4 { font-size: 1rem; margin: 20px 0 6px; }
+.detail h5 { font-size: 0.95rem; margin: 12px 0 0; }
+.detail td, .detail th { white-space: normal; }
+.detail td.num, .detail th.num { white-space: nowrap; }
+.detail th[scope="row"] { font-weight: 600; }
+.detail caption { text-align: left; padding: 6px 10px; }
+.badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
+.badge.ok { background: var(--ok-bg); color: var(--ok-fg); }
+.badge.mid { background: var(--mid-bg); color: var(--mid-fg); }
+.badge.bad { background: var(--bad-bg); color: var(--bad-fg); }
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 4px 16px 8px; margin: 12px 0; }
+.card h4 { margin-top: 12px; }
+blockquote.verw { margin: 8px 0; padding: 2px 16px; border-left: 4px solid var(--line); background: var(--head); }
+blockquote.verw p { margin: 8px 0; }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 2px 20px; margin: 8px 0 12px; }
+dl.facts dt { color: var(--muted); }
+dl.facts dd { margin: 0; }
+.messung { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 12px; }
+details summary { cursor: pointer; color: var(--link); }
+@media (max-width: 600px) { dl.facts { grid-template-columns: 1fr; } dl.facts dt { margin-top: 6px; } }
+.notice { border-left: 4px solid var(--warn); background: var(--head); padding: 8px 14px; margin: 12px 0 20px; max-width: 80ch; }
