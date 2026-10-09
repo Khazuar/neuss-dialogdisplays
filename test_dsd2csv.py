@@ -96,6 +96,20 @@ class Yaml(unittest.TestCase):
         z = d.yaml_zeilen({"a": [], "b": ["x", "y"], "c": [{"k": 1, "m": {"n": 2}}]})
         self.assertEqual(z, ["a: []", "b:", '  - "x"', '  - "y"', "c:", "  - k: 1", "    m:", "      n: 2"])
 
+    def test_zahlenlisten_stehen_in_einer_zeile(self):
+        self.assertEqual(d.yaml_zeilen({"h": {"ab_kmh": 3, "anzahl": [1, 0, 7]}}), ["h:", "  ab_kmh: 3", "  anzahl: [1, 0, 7]"])
+
+
+class Histogramm(unittest.TestCase):
+    def test_zaehlt_je_kmh_und_laesst_luecken_stehen(self):
+        veh = [(None, v) for v in (30, 30, 31, 33, 33, 33)]
+        self.assertEqual(d.histogramm(veh), {"ab_kmh": 30, "anzahl": [2, 1, 0, 3]})
+        self.assertIsNone(d.histogramm([]))
+
+    def test_summary_csv_enthaelt_kein_histogramm(self):
+        self.assertEqual(d.flach({"n": 1, "histogramm": {"ab_kmh": 3, "anzahl": [1, 2]}, "t": {"histogramm": {"ab_kmh": 1}, "x": 2}}),
+                         {"n": 1, "t.x": 2})
+
 
 class Gefaehrdung(unittest.TestCase):
     def test_aufprall(self):

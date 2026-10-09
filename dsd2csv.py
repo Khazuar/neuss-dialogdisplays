@@ -235,6 +235,8 @@ def yaml_zeilen(obj, einzug=0):
             zeilen += yaml_zeilen(x, einzug + 1)
         elif isinstance(x, list) and not x:
             zeilen.append(f"{pad}{k}: []")
+        elif isinstance(x, list) and all(isinstance(i, int) and not isinstance(i, bool) for i in x):
+            zeilen.append(f"{pad}{k}: [{', '.join(str(i) for i in x)}]")  # Zahlenlisten (Histogramm) in einer Zeile
         elif isinstance(x, list):
             zeilen.append(f"{pad}{k}:")
             for item in x:
@@ -266,6 +268,8 @@ def flach(obj, prefix=""):
     """Verschachteltes Dict -> flaches Dict (fuer summary.csv)."""
     out = {}
     for k, x in obj.items():
+        if k == "histogramm":
+            continue  # Zaehllisten stehen nur in der YAML
         if isinstance(x, dict):
             out.update(flach(x, f"{prefix}{k}."))
         elif isinstance(x, list):
@@ -609,6 +613,18 @@ def aufprall_kmh(v_kmh, limit):
     return 3.6 * math.sqrt(max(0.0, v * v - 2 * a * rest))
 
 
+def histogramm(vehs):
+    """Anzahl Fahrzeuge je ganzem km/h (Aufloesung der Geraete): {"ab_kmh": kleinste Geschwindigkeit, "anzahl": [...]}.
+
+    Die Klassenbreite fuer die Darstellung waehlt seiten_bauen.py je nach Fahrzeugzahl.
+    """
+    zaehler = collections.Counter(v for _, v in vehs)
+    if not zaehler:
+        return None
+    lo, hi = min(zaehler), max(zaehler)
+    return {"ab_kmh": lo, "anzahl": [zaehler.get(v, 0) for v in range(lo, hi + 1)]}
+
+
 def gefaehrdung(vehs, limit):
     """Relativer Risikoindex (Nilsson) und Aufprallgeschwindigkeiten. None ohne Fahrzeuge oder Tempolimit.
 
@@ -757,9 +773,10 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
     uhr, bereinigt, teil, spannen = analysiere_uhr(veh, status, mit_spannen=True)
 
     def zusatz(vehs):
-        """Gefaehrdung und Laerm fuer eine Auswahl von Fahrzeugen (nur wenn Tempolimit und Fahrzeuge bekannt)."""
+        """Histogramm, Gefaehrdung und Laerm fuer eine Auswahl von Fahrzeugen (die beiden letzten nur mit Tempolimit)."""
         vehs = [x for x in vehs if x[1] >= min_kmh]
-        return {k: x for k, x in (("gefaehrdung", gefaehrdung(vehs, lim)), ("laerm", laerm(vehs, lim))) if x}
+        return {k: x for k, x in (("histogramm", histogramm(vehs)), ("gefaehrdung", gefaehrdung(vehs, lim)),
+                                  ("laerm", laerm(vehs, lim))) if x}
 
     res.update(zusatz(veh))
     res["uhr"] = uhr
