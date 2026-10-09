@@ -304,6 +304,161 @@ def umrechnung(limit):
             '<th class="num">Trifft auf mit, km/h</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div></details>")
 
 
+# ------------------------------------------------------------------ Histogramme
+
+HIST_MIN_FAHRZEUGE = 50  # darunter kein Histogramm
+HIST_MIN_VERGLEICH = 100  # Tags/Nachts-Vergleich: so viele Fahrzeuge je Reihe mindestens
+HIST_BREITE_MAX = 5  # breiteste Klasse in km/h
+HIST_B, HIST_H, HIST_L, HIST_R, HIST_T, HIST_U = 600, 290, 44, 12, 38, 38  # Zeichenflaeche des SVG (viewBox)
+
+
+def quantil(anzahl, ab, p):
+    """Kleinste Geschwindigkeit, bei der mindestens der Anteil p der Fahrzeuge erreicht ist."""
+    ziel, k = p * sum(anzahl), 0
+    for i, c in enumerate(anzahl):
+        k += c
+        if k >= ziel:
+            return ab + i
+    return ab + len(anzahl) - 1
+
+
+def klassenbreite(anzahl, ab):
+    """Klassenbreite in ganzen km/h nach Freedman-Diaconis (2 * Quartilsabstand * n^(-1/3)), mindestens 1 km/h
+    (Aufloesung der Geraete) und hoechstens HIST_BREITE_MAX. Viele Fahrzeuge ergeben 1 km/h, wenige breitere Klassen."""
+    n = sum(anzahl)
+    iqr = quantil(anzahl, ab, 0.75) - quantil(anzahl, ab, 0.25)
+    if n < 2 or iqr <= 0:
+        return 1
+    return max(1, min(HIST_BREITE_MAX, int(round(2 * iqr * n ** (-1 / 3)))))
+
+
+def hist_klassen(anzahl, ab, breite, limit, von, bis):
+    """[(erster Wert, letzter Wert, Fahrzeuge)] von..bis. Mit Tempolimit beginnt eine Klasse bei limit+1,
+    keine Klasse enthaelt also Werte auf beiden Seiten des Limits."""
+    versatz = ((limit + 1) if limit else 0) % breite
+    summen = collections.Counter()
+    for i, c in enumerate(anzahl):
+        v = ab + i
+        if c and von <= v <= bis:
+            summen[v - ((v - versatz) % breite)] += c
+    erster = von - ((von - versatz) % breite)
+    return [(s, s + breite - 1, summen.get(s, 0)) for s in range(erster, bis + 1, breite)]
+
+
+def schritt_nice(maximum, ziel=5):
+    for s in (0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50):
+        if maximum / s <= ziel:
+            return s
+    return 100
+
+
+def hist_svg(serien, limit, v85=None):
+    """Histogramm als Inline-SVG. serien: [(Name, CSS-Klasse, {"ab_kmh", "anzahl"})].
+
+    Eine Reihe: Saeulen, gruen bis zum Tempolimit, darueber rot. Mehrere Reihen: Linien im Vergleich. Hoehe = Anteil der
+    Fahrzeuge je km/h, damit Reihen mit verschieden vielen Fahrzeugen und Klassenbreiten vergleichbar sind.
+    Gibt (svg, Text zur Darstellung) zurueck.
+    """
+    ns = [sum(h["anzahl"]) for _, _, h in serien]
+    breite = max(klassenbreite(h["anzahl"], h["ab_kmh"]) for _, _, h in serien)
+    kleinster = min(h["ab_kmh"] for _, _, h in serien)
+    groesster = max(h["ab_kmh"] + len(h["anzahl"]) - 1 for _, _, h in serien)
+    oben = max(quantil(h["anzahl"], h["ab_kmh"], 0.9999) for _, _, h in serien) + 3  # Ausreisser (Messfehler) schneiden wir ab
+    oben = min(max(oben, (limit + 15) if limit else 0), groesster)
+    von, bis = (kleinster // 10) * 10, -(-oben // 10) * 10
+    bis = max(bis, von + 10)
+    reihen, ymax = [], 0.0
+    for (name, klasse, h), n in zip(serien, ns):
+        kl = hist_klassen(h["anzahl"], h["ab_kmh"], breite, limit, von, bis)
+        anteile = [100.0 * c / n / breite for _, _, c in kl]
+        ymax = max(ymax, max(anteile))
+        reihen.append((name, klasse, kl, anteile, n))
+    schritt = schritt_nice(ymax)
+    ytop = max(schritt, -(-ymax // schritt) * schritt)
+    pw, ph = HIST_B - HIST_L - HIST_R, HIST_H - HIST_T - HIST_U
+    sc = pw / (bis - von + 1)
+
+    def x(v):  # linker Rand von Wert v (ein Wert belegt v-0,5 bis v+0,5)
+        return HIST_L + (v - 0.5 - von) * sc
+
+    def y(a):
+        return HIST_T + ph * (1 - a / ytop)
+
+    def zahl(a):
+        return f"{a:.1f}".replace(".", ",") if schritt < 1 else str(int(round(a)))
+
+    s = [f'<svg class="hist" viewBox="0 0 {HIST_B} {HIST_H}" role="img" '
+         f'aria-label="Histogramm der gemessenen Geschwindigkeiten, Klassenbreite {breite} km/h">']
+    k = int(ytop / schritt + 0.5)
+    for i in range(k + 1):
+        a = i * schritt
+        s.append(f'<line class="hist-gitter" x1="{HIST_L}" x2="{HIST_B - HIST_R}" y1="{y(a):.1f}" y2="{y(a):.1f}"/>')
+        s.append(f'<text class="hist-text" x="{HIST_L - 5}" y="{y(a) + 4:.1f}" text-anchor="end">{zahl(a)}&#8239;%</text>')
+    tick = 10 if bis - von <= 130 else 20
+    for v in range(von, bis + 1, tick):
+        s.append(f'<line class="hist-gitter" x1="{x(v) + sc / 2:.1f}" x2="{x(v) + sc / 2:.1f}" y1="{HIST_T + ph}" y2="{HIST_T + ph + 4}"/>')
+        s.append(f'<text class="hist-text" x="{x(v) + sc / 2:.1f}" y="{HIST_T + ph + 17}" text-anchor="middle">{v}</text>')
+    s.append(f'<text class="hist-text" x="{HIST_L + pw / 2}" y="{HIST_H - 6}" text-anchor="middle">Geschwindigkeit in km/h</text>')
+    if len(reihen) == 1:
+        name, klasse, kl, anteile, n = reihen[0]
+        for (a, b, c), anteil in zip(kl, anteile):
+            if not c:
+                continue
+            art = "hist-ueber" if limit and a > limit else "hist-ok"
+            bereich = f"{a}" if a == b else f"{a}–{b}"
+            s.append(f'<rect class="{art}" x="{x(a):.1f}" y="{y(anteil):.1f}" width="{max(0.5, breite * sc - 0.6):.1f}" '
+                     f'height="{HIST_T + ph - y(anteil):.1f}"><title>{bereich} km/h: {ganz(c)} Fahrzeuge ({dez(100.0 * c / n, 2)} %)</title></rect>')
+    else:
+        for name, klasse, kl, anteile, n in reihen:
+            punkte = " ".join(f"{x(a) + breite * sc / 2:.1f},{y(anteil):.1f}" for (a, _, _), anteil in zip(kl, anteile))
+            s.append(f'<polyline class="hist-linie {klasse}" points="{punkte}"/>')
+    marken = []
+    if limit and von <= limit <= bis:
+        marken.append((x(limit + 1), f"Limit {limit}", "hist-limit"))
+    if v85 is not None and len(reihen) == 1 and von <= v85 <= bis:
+        marken.append((x(v85) + sc / 2, f"V85 {v85}", "hist-v85"))
+    zeilen_y = [12, 25] if len(reihen) == 1 else [28]  # bei zwei Reihen steht die Legende in der ersten Zeile
+    for (px, text, klasse), ty in zip(marken, zeilen_y):
+        ende = px > HIST_B - 90
+        s.append(f'<line class="{klasse}" x1="{px:.1f}" x2="{px:.1f}" y1="{ty - 9}" y2="{HIST_T + ph}"/>')
+        s.append(f'<text class="hist-text {klasse}-text" x="{px + (-4 if ende else 4):.1f}" y="{ty}" '
+                 f'text-anchor="{"end" if ende else "start"}">{e(text)}</text>')
+    if len(reihen) > 1:
+        for i, (name, klasse, _, _, n) in enumerate(reihen):
+            s.append(f'<line class="hist-linie {klasse}" x1="{HIST_L + 8 + i * 190}" x2="{HIST_L + 30 + i * 190}" y1="12" y2="12"/>')
+            s.append(f'<text class="hist-text" x="{HIST_L + 36 + i * 190}" y="16">{e(name)} ({ganz(n)})</text>')
+    s.append("</svg>")
+    ausserhalb = [n - sum(c for _, _, c in kl) for (_, _, kl, _, n) in reihen]
+    text = f"Klassenbreite {breite}&nbsp;km/h"
+    text += " (Auflösung der Geräte)" if breite == 1 else f" (zusammengefasst, weil nur {' bzw. '.join(ganz(n) for n in ns)} Fahrzeuge vorliegen)"
+    if any(ausserhalb):
+        schnell = max(h["ab_kmh"] + len(h["anzahl"]) - 1 for _, _, h in serien)
+        mehr = max(ausserhalb)
+        text += (f"; {ganz(mehr)} {'Fahrzeug' if mehr == 1 else 'Fahrzeuge'} über {bis}&nbsp;km/h "
+                 f"{'ist' if mehr == 1 else 'sind'} nicht dargestellt (schnellstes: {schnell}&nbsp;km/h)")
+    return "".join(s), text + "."
+
+
+def histogramm_abschnitt(row):
+    """Geschwindigkeitsverteilung: Histogramm aller Fahrzeuge der Datei, dazu Tags und Nachts im Vergleich."""
+    h = row.get("histogramm")
+    if not h or sum(h["anzahl"]) < HIST_MIN_FAHRZEUGE:
+        return ""
+    limit = row.get("tempolimit_kmh")
+    svg, text = hist_svg([("alle", "", h)], limit, (row.get("geschwindigkeit_kmh") or {}).get("v85"))
+    z = ['<h4>Verteilung der Geschwindigkeiten</h4><figure class="histfig">' + svg +
+         '<figcaption class="muted">Höhe der Säulen: Anteil der Fahrzeuge je km/h, alle Fahrzeuge der Datei'
+         f'{" (blau bis zum Tempolimit, orange darüber)" if limit else ""}. {text}</figcaption></figure>']
+    tz = row.get("teilzeitraeume") or {}
+    tag, nacht = (tz.get(k, {}).get("histogramm") for k in ("tags", "nachts"))
+    if tag and nacht and min(sum(tag["anzahl"]), sum(nacht["anzahl"])) >= HIST_MIN_VERGLEICH:
+        svg, text = hist_svg([("Tags", "hist-tags", tag), ("Nachts", "hist-nachts", nacht)], limit)
+        z.append('<details><summary>Tags und nachts im Vergleich</summary><figure class="histfig">' + svg +
+                 '<figcaption class="muted">Anteil der Fahrzeuge je km/h, getrennt für Tags (6–18 Uhr) und Nachts (18–6 Uhr, Ortszeit). '
+                 f'Nur Fahrzeuge mit plausibler Geräteuhr. {text}</figcaption></figure></details>')
+    return "".join(z)
+
+
 def nacht_abschnitt(row):
     n = row.get("nacht_ereignisse")
     if not n:
@@ -388,6 +543,7 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel):
                  "".join(f"<li>{w}</li>" for w in wid) + "</ul></div>")
     if row.get("anzahl_fahrzeuge"):
         z.append(kennzahlen_tabelle(row))
+        z.append(histogramm_abschnitt(row))
         z.append(schaetzung_tabellen(row))
         z.append(nacht_abschnitt(row))
     else:

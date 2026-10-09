@@ -31,7 +31,8 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
 - `docs/metadaten.md` – Herkunft, Zuordnung und Abdeckung der Metadaten
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
-- `seiten_bauen.py` – baut je Standort eine Detailseite für die GitHub Pages (`standorte/<name>.html`)
+- `seiten_bauen.py` – baut je Standort eine Detailseite für die GitHub Pages (`standorte/<name>.html`), mit
+  Geschwindigkeits-Histogrammen als Inline-SVG
 - `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py` – Tests (`python3 -m unittest -v`)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
 - `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz
@@ -83,7 +84,12 @@ sinnvoll.
   - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: relativer Risikoindex nach Nilsson, Aufprallgeschwindigkeit
     und Anteil der Fahrzeuge, die mit mehr als 30 bzw. 50 km/h aufträfen, Lärm gegenüber dem Tempolimit
     (`docs/gefaehrdung.md`),
-  - `nacht_ereignisse` – Nächte (22–6 Uhr) mit Fahrten ab doppeltem Tempolimit, 100 und 120 km/h
+  - `nacht_ereignisse` – Nächte (22–6 Uhr) mit Fahrten ab doppeltem Tempolimit, 100 und 120 km/h,
+  - `histogramm` – Anzahl Fahrzeuge je ganzem km/h (`ab_kmh`, `anzahl`), auch je Zeitraum; steht nur in der YAML, nicht
+    in `summary.csv`. Die Detailseiten zeichnen daraus die Verteilung: eine Klasse je km/h (Auflösung der Geräte), bei
+    wenigen Fahrzeugen breitere Klassen nach Freedman-Diaconis (2 · Quartilsabstand · n^(−1/3), höchstens 5 km/h),
+    und die Höhe ist der Anteil der Fahrzeuge je km/h. Die Skala endet beim 99,99-%-Perzentil; schnellere Fahrzeuge
+    (meist Messfehler) werden unter dem Bild gezählt
 - `auswertung.yaml`, `summary.csv` – alle Messungen zusammengefasst
 
 Die Geräte stellen ihre Uhr nicht auf Sommerzeit um und sind teils zurückgesetzt oder verstellt. Die

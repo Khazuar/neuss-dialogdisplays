@@ -169,6 +169,80 @@ class Seite(unittest.TestCase):
             self.assertRegex(url, r"^https://(github\.com/Khazuar|ris-neuss\.itk-rheinland\.de|creativecommons\.org)")
 
 
+def hist(n, mitte=25, streuung=6):
+    """Glockenfoermige Zaehlliste von 0 bis 80 km/h mit n Fahrzeugen (ganzzahlig)."""
+    gew = [2.718281828 ** (-((v - mitte) / streuung) ** 2 / 2) for v in range(0, 81)]
+    anzahl = [int(round(n * g / sum(gew))) for g in gew]
+    return {"ab_kmh": 0, "anzahl": anzahl}
+
+
+class Histogramme(unittest.TestCase):
+    def test_klassenbreite_waechst_mit_kleinerem_n(self):
+        breiten = [s.klassenbreite(**{"anzahl": h["anzahl"], "ab": 0}) for h in (hist(200000), hist(20000), hist(2000), hist(300), hist(60))]
+        self.assertEqual(breiten[0], 1)
+        self.assertEqual(breiten[1], 1)
+        self.assertEqual(breiten, sorted(breiten))
+        self.assertGreaterEqual(breiten[-1], 3)
+        self.assertLessEqual(max(breiten), s.HIST_BREITE_MAX)
+
+    def test_klassen_beginnen_bei_limit_plus_eins(self):
+        h = hist(5000)
+        for breite in (1, 2, 3, 5):
+            kl = s.hist_klassen(h["anzahl"], 0, breite, 30, 0, 60)
+            starts = [a for a, _, _ in kl]
+            self.assertIn(31, starts)
+            self.assertTrue(all(b - a == breite - 1 for a, b, _ in kl))
+            self.assertTrue(all(not (a <= 30 < b) for a, b, _ in kl))  # keine Klasse ueber dem Limit
+            self.assertEqual(sum(c for _, _, c in kl), sum(h["anzahl"][:61]))  # nichts geht verloren
+
+    def test_svg_enthaelt_saeulen_limit_und_v85(self):
+        svg, text = s.hist_svg([("alle", "", hist(20000))], 30, 33)
+        self.assertGreater(svg.count("<rect"), 30)  # eine Saeule je km/h mit Fahrzeugen
+        self.assertIn("hist-ueber", svg)
+        self.assertIn("hist-ok", svg)
+        self.assertIn("Limit 30", svg)
+        self.assertIn("V85 33", svg)
+        self.assertIn("Klassenbreite 1&nbsp;km/h (Auflösung der Geräte)", text)
+        self.assertNotIn("xmlns", svg)  # Inline-SVG braucht keinen Namensraum, und keine fremde Adresse
+
+    def test_wenige_fahrzeuge_werden_zusammengefasst_und_erklaert(self):
+        svg, text = s.hist_svg([("alle", "", hist(120))], 30, 33)
+        self.assertNotIn("Auflösung der Geräte", text)
+        self.assertIn("zusammengefasst, weil nur 120 Fahrzeuge vorliegen", text)
+
+    def test_ausreisser_werden_abgeschnitten_aber_genannt(self):
+        h = hist(10000)
+        h["anzahl"] += [0] * 150 + [1]  # ein Fahrzeug mit 231 km/h
+        svg, text = s.hist_svg([("alle", "", h)], 30, 30)
+        self.assertIn("1 Fahrzeug über", text)
+        self.assertIn("schnellstes: 231", text)
+
+    def test_vergleich_hat_zwei_linien_und_legende(self):
+        tags, nachts = hist(5000), hist(800, 30)
+        svg, _ = s.hist_svg([("Tags", "hist-tags", tags), ("Nachts", "hist-nachts", nachts)], 30)
+        self.assertEqual(svg.count("<polyline"), 2)
+        self.assertIn(f"Tags ({s.ganz(sum(tags['anzahl']))})", svg)  # Rundung der Testdaten: nicht exakt 5000
+        self.assertIn(f"Nachts ({s.ganz(sum(nachts['anzahl']))})", svg)
+
+    def test_abschnitt_auf_der_seite(self):
+        row = zeile()
+        row["histogramm"] = hist(5000)
+        row["teilzeitraeume"]["tags"]["histogramm"] = hist(3000)
+        row["teilzeitraeume"]["nachts"]["histogramm"] = hist(400, 30)
+        a = s.histogramm_abschnitt(row)
+        self.assertIn("Verteilung der Geschwindigkeiten", a)
+        self.assertIn("Tags und nachts im Vergleich", a)
+        self.assertEqual(a.count("<svg"), 2)
+        row["teilzeitraeume"]["nachts"]["histogramm"] = hist(60, 30)  # zu wenige fuer den Vergleich
+        self.assertEqual(s.histogramm_abschnitt(row).count("<svg"), 1)
+
+    def test_zu_wenige_fahrzeuge_oder_kein_histogramm(self):
+        row = zeile()
+        self.assertEqual(s.histogramm_abschnitt(row), "")
+        row["histogramm"] = hist(s.HIST_MIN_FAHRZEUGE - 10)
+        self.assertEqual(s.histogramm_abschnitt(row), "")
+
+
 class Bauen(unittest.TestCase):
     def test_alle_seiten_werden_geschrieben(self):
         auswertung = {"standorte": [zeile(), zeile("Stationär_Villestraße/FR GV", "a.dsd")]}
