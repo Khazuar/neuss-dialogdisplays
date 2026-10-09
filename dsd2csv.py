@@ -40,7 +40,8 @@ Aufruf:
                                                       dazu auswertung.yaml, auswertung.json und summary.csv
   python3 -I dsd2csv.py ordner/ -o ausgabe_ordner  -> Ergebnisse unter ausgabe_ordner (Unterordner bleiben erhalten)
   Optionen: --limit 30   Tempolimit fuer alle Dateien erzwingen
-            --min-kmh N  Werte unter N km/h komplett aus der Auswertung nehmen (CSV bleibt vollstaendig)
+            --min-kmh N  Werte unter N km/h komplett aus der Auswertung nehmen (CSV bleibt vollstaendig);
+                         Standard 5, 0 nimmt alle Fahrzeuge
             --meta       Konfigurationswerte der Datei ausgeben
             --status     Status-Records (0x33/0x20) als eigene CSV mitschreiben
 
@@ -59,6 +60,7 @@ import os
 import re
 import sys
 
+MIN_KMH_STANDARD = 5  # Auswertung ab dieser Geschwindigkeit: kein Fahrzeug im Sinne der StVO bewegt sich regelmaessig langsamer (Annahme, siehe docs/dsd-format.md)
 MAGIC = b"004DSD"
 T_VEH = 0x0F
 # Recordlaenge je Typ (inkl. Typ-Byte und CRC): 0x0F Fahrzeug, 0x33/0x20 Status
@@ -734,7 +736,7 @@ HINWEIS_AUSWERTUNG = ("Eigene Berechnung aus den Rohdaten, nicht amtlich. Fehler
                       "Zuordnung) können nicht ausgeschlossen werden; ohne Gewähr.")
 
 
-def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None):
+def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=MIN_KMH_STANDARD, korrekturen=None):
     buf = open(path, "rb").read()
     meta, veh, status, warn = parse(buf)
     base = os.path.splitext(os.path.basename(path))[0]
@@ -767,6 +769,7 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
         **({"tempolimit_dsd_kmh": kor["tempolimit_dsd_kmh"]} if kor and quelle == "mitteilung_verwaltung" else {}),
         "erfassung_ab_kmh": byte_wert(meta.get("capture_min_speed")),
         "auswertung_ab_kmh": min_kmh,
+        "fahrzeuge_unter_auswertung_ab": sum(1 for x in veh if x[1] < min_kmh),
         "warnungen": len(warn),
     }
     res.update(stats(veh, lim, min_kmh) or {"anzahl_fahrzeuge": 0})
@@ -799,8 +802,9 @@ def main():
     ap.add_argument("-o", "--out", help="Ausgabeordner (Standard: neben der Eingabe)")
     ap.add_argument("--limit", type=int,
                     help="Tempolimit (km/h) fuer alle Dateien erzwingen (Standard: aus der DSD ableiten)")
-    ap.add_argument("--min-kmh", type=int, default=0,
-                    help="Werte unter dieser Geschwindigkeit aus der Auswertung nehmen (CSV bleibt vollstaendig)")
+    ap.add_argument("--min-kmh", type=int, default=MIN_KMH_STANDARD,
+                    help=f"Werte unter dieser Geschwindigkeit aus der Auswertung nehmen, CSV bleibt vollstaendig (Standard: {MIN_KMH_STANDARD}; "
+                         "0 = alle Fahrzeuge)")
     ap.add_argument("--korrekturen", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "belege", "korrekturen.json"),
                     help="Korrekturen des Tempolimits aus den Mitteilungen (Standard: belege/korrekturen.json, falls vorhanden)")
     ap.add_argument("--meta", action="store_true")

@@ -100,6 +100,17 @@ class Yaml(unittest.TestCase):
         self.assertEqual(d.yaml_zeilen({"h": {"ab_kmh": 3, "anzahl": [1, 0, 7]}}), ["h:", "  ab_kmh: 3", "  anzahl: [1, 0, 7]"])
 
 
+class MinKmh(unittest.TestCase):
+    def test_standard_ist_5_kmh(self):
+        self.assertEqual(d.MIN_KMH_STANDARD, 5)
+
+    def test_stats_laesst_langsamere_fahrzeuge_weg(self):
+        veh = [(dt.datetime(2025, 1, 1), v) for v in (3, 5, 12, 30, 40)]
+        self.assertEqual(d.stats(veh, 30, d.MIN_KMH_STANDARD)["anzahl_fahrzeuge"], 4)  # 5 km/h zaehlt noch mit
+        self.assertEqual(d.stats(veh, 30, 10)["anzahl_fahrzeuge"], 3)
+        self.assertEqual(d.stats(veh, 30, 0)["anzahl_fahrzeuge"], 5)
+
+
 class Histogramm(unittest.TestCase):
     def test_zaehlt_je_kmh_und_laesst_luecken_stehen(self):
         veh = [(None, v) for v in (30, 30, 31, 33, 33, 33)]
