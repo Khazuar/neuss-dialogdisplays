@@ -129,6 +129,14 @@ class Seite(unittest.TestCase):
         self.assertIn("Ereignisse pro Nacht", h)
         self.assertIn("In 71 von 154 Nächten (46&nbsp;%) fuhr mindestens ein Fahrzeug mit 100&nbsp;km/h oder mehr", h)
 
+    def test_auswertung_ab_steht_auf_der_seite(self):
+        row = zeile()
+        row["auswertung_ab_kmh"], row["fahrzeuge_unter_auswertung_ab"] = 5, 1234
+        h = self.html([], rows=[row])
+        self.assertIn("Ausgewertet ab", h)
+        self.assertIn("5&nbsp;km/h (1.234 langsamere Fahrzeuge in der Datei sind nicht berücksichtigt)", h)
+        self.assertNotIn("Ausgewertet ab", self.html([]))  # ohne Angabe keine Zeile
+
     def test_hinweis_zu_fehlern_steht_oben_und_unten(self):
         h = self.html([])
         self.assertEqual(h.count("Fehler in der Auswertung"), 2)  # Hinweis oben und im Fuss

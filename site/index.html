@@ -106,7 +106,7 @@ const COLUMNS = [
 // Zeitraeume der Auswertung: Praefix der Spalten in summary.csv
 const ZEITRAEUME = [
   { id: "roh", label: "Alle Fahrzeuge (Rohdaten)", praefix: "",
-    info: "Alle Fahrzeuge der Datei, unabhängig von der Uhrzeit. Enthält auch Fahrzeuge mit falsch datierter Geräteuhr." },
+    info: "Alle Fahrzeuge der Datei ab 5 km/h, unabhängig von der Uhrzeit. Enthält auch Fahrzeuge mit falsch datierter Geräteuhr." },
   { id: "bereinigt", label: "Alle Fahrzeuge mit plausibler Uhr", praefix: "bereinigt.",
     info: "Nur Fahrzeuge aus Abschnitten mit plausibler Geräteuhr; schließt zurückgesetzte Uhren (Datum 2020-01-01) und unplausible Zeitstempel aus." },
   { id: "tags", label: "Tags (6–18 Uhr)", praefix: "teilzeitraeume.tags.",

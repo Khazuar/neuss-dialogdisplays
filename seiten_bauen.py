@@ -36,7 +36,7 @@ URTEIL = {"plausibel": "ok", "eingeschraenkt": "mid", "unbrauchbar": "bad"}
 URTEIL_TEXT = {"plausibel": "plausibel", "eingeschraenkt": "eingeschränkt", "unbrauchbar": "unbrauchbar"}
 ART_TEXT = {"unzureichend_belegt": "nicht ausreichend belegt", "widerspruch": "Widerspruch in den Belegen",
             "zurueckgesetzt": "Uhr zurückgesetzt (Standarddatum 2020-01-01)"}
-ZEITRAEUME = [("alle", "Alle Fahrzeuge der Datei"), ("bereinigt", "Nur Fahrzeuge mit plausibler Uhr"),
+ZEITRAEUME = [("alle", "Alle ausgewerteten Fahrzeuge"), ("bereinigt", "Nur Fahrzeuge mit plausibler Uhr"),
               ("tags", "Tags (6–18 Uhr)"), ("nachts", "Nachts (18–6 Uhr)"), ("schulweg", "Schulweg (Mo–Fr, 7–8 Uhr)")]
 METHODE_TEXT = {
     "name_zeitraum": "über Straßenname und Erfassungszeitraum",
@@ -447,7 +447,7 @@ def histogramm_abschnitt(row):
     limit = row.get("tempolimit_kmh")
     svg, text = hist_svg([("alle", "", h)], limit, (row.get("geschwindigkeit_kmh") or {}).get("v85"))
     z = ['<h4>Verteilung der Geschwindigkeiten</h4><figure class="histfig">' + svg +
-         '<figcaption class="muted">Höhe der Säulen: Anteil der Fahrzeuge je km/h, alle Fahrzeuge der Datei'
+         '<figcaption class="muted">Höhe der Säulen: Anteil der Fahrzeuge je km/h, alle ausgewerteten Fahrzeuge'
          f'{" (blau bis zum Tempolimit, orange darüber)" if limit else ""}. {text}</figcaption></figure>']
     tz = row.get("teilzeitraeume") or {}
     tag, nacht = (tz.get(k, {}).get("histogramm") for k in ("tags", "nachts"))
@@ -521,7 +521,10 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel):
     z = [f'<section class="messung" id="{e(standort_slug(row["datei"]))}"><h3>{e(row["datei"])}</h3>']
     quelle = {"mitteilung_verwaltung": "laut Mitteilung der Verwaltung", "parameter": "vorgegeben"}.get(row.get("tempolimit_quelle"), "aus der DSD-Konfiguration")
     fakten = [("Tempolimit", f'{limit}&nbsp;km/h ({quelle}{"; DSD-Konfiguration " + str(row["tempolimit_dsd_kmh"]) + " km/h" if row.get("tempolimit_dsd_kmh") else ""})' if limit else "unbekannt"),
-              ("Fahrzeuge in der Datei", ganz(row.get("anzahl_fahrzeuge")))]
+              ("Fahrzeuge in der Auswertung", ganz(row.get("anzahl_fahrzeuge")))]
+    ab, unter = row.get("auswertung_ab_kmh"), row.get("fahrzeuge_unter_auswertung_ab")
+    if ab:
+        fakten.append(("Ausgewertet ab", f'{ab}&nbsp;km/h ({ganz(unter)} langsamere Fahrzeuge in der Datei sind nicht berücksichtigt)'))
     mz = row.get("messzeitraum")
     if mz:
         fakten.append(("Zeitstempel in der Datei", f'{zeit_de(mz["start"])} bis {zeit_de(mz["ende"])} (Gerätezeit)'))

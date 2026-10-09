@@ -120,7 +120,43 @@ Segmenten, umgerechnet auf Ortszeit:
 | `schulweg` | 07:00 bis 08:00 Uhr, Montag bis Freitag |
 
 Schulferien und Feiertage sind nicht herausgerechnet. `bereinigt` umfasst alle Tageszeiten.
-Die Gesamtwerte (oberste Ebene der YAML) enthalten weiterhin alle Fahrzeuge der Datei.
+Die Gesamtwerte (oberste Ebene der YAML) enthalten weiterhin alle Fahrzeuge der Datei ab 5 km/h
+(siehe unten).
+
+## Auswertung ab 5 km/h
+
+`dsd2csv.py` nimmt Fahrzeuge unter 5 km/h aus der Auswertung (`--min-kmh`, Standard 5; `0` nimmt alle). Bis dahin war der
+Parameter nie gesetzt, weder in den Workflows (`pages.yml`, `release.yml`) noch im Skript, es wurden also alle Fahrzeuge
+gezählt. Die CSV-Dateien enthalten weiterhin jeden Messwert. In der YAML stehen `auswertung_ab_kmh` und
+`fahrzeuge_unter_auswertung_ab`, die Detailseiten nennen beides.
+
+Warum: Wir nehmen an, dass sich kein Fahrzeug im Sinne der StVO regelmäßig langsamer als 5 km/h an der Anzeige vorbei
+bewegt. Solche Werte stammen vermutlich von Fußgängern, Tieren, Echos oder Störungen. Belegt ist das nicht, es ist eine
+Festlegung für diese Auswertung. Die Geräte erfassen je nach Konfiguration ab 3, 7, 9 oder 10 km/h (`capture_min_speed`;
+24, 19, 58 bzw. 8 Dateien). Werte unter 5 km/h stehen in 22 der 24 Dateien mit Erfassung ab 3 km/h, aber auch in 12 der 58
+Dateien mit Erfassung ab 9 km/h und in einer mit 7 km/h. Die Geräte speichern also teils Werte unterhalb der eingestellten
+Erfassungsgrenze.
+
+Wirkung: Von etwa 12,0 Millionen Fahrzeugen fallen 0,46 Millionen (3,8 %) heraus, in 35 der 109 Dateien. Bei drei Messstellen
+sind es über 40 % (Bauerbahn, Feldstraße, Alte Uferstraße). Die Einhaltungsquoten sinken dadurch oder bleiben gleich, bei
+einzelnen Messungen um bis zu 6,5 Prozentpunkte (qualifizierte Quote, Median über alle Messungen: 0), das mittlere Tempo
+steigt (Median 0, höchstens +4,9 km/h). Die drei Dateien mit Tempolimit 10 km/h (verkehrsberuhigter Bereich) enthalten
+keine Werte unter 5 km/h und ändern sich nicht.
+
+Vergleich mit den Mitteilungen der Verwaltung (31 Messungen, Zuordnung über Straßenname und Zeitraum, Fahrzeuge im
+Erfassungszeitraum; Median der Abweichung DSD − Mitteilung):
+
+| Größe | alle Fahrzeuge | ab 5 km/h | ab 10 km/h |
+|---|---|---|---|
+| mittleres Tempo | −1,29 km/h | −0,80 km/h | −0,03 km/h |
+| V85 | 0 km/h | 0 km/h | 0 km/h |
+| Anteil unter dem genannten Tempo (24 Messungen) | −0,9 Prozentpunkte | −0,9 Prozentpunkte | −1,3 Prozentpunkte |
+| Fahrzeuge je Tag (15 Messungen) | −1 % | −5 % | −9 % |
+
+Das mittlere Tempo der Mitteilungen passt am besten zu einer Grenze von 10 bis 12 km/h, der Anteil unter dem genannten
+Tempo und die Fahrzeuge je Tag passen dagegen mit allen Fahrzeugen am besten. Die Mitteilungen rechnen also offenbar nicht
+für alle Größen mit derselben Menge an Fahrzeugen; wie genau, geht aus den Daten nicht hervor. Die Grenze von 5 km/h ist
+ein Kompromiss, den wir mit der Annahme zu Fahrzeugen im Sinne der StVO begründen, nicht mit diesem Vergleich.
 
 **Grenzen.** Die Plausibilitätsprüfung erkennt zurückgesetzte, versprungene und um Stunden verstellte
 Uhren. Eine Abweichung um wenige Minuten oder um genau eine Stunde, die bereits beim Stellen entstand,

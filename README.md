@@ -66,7 +66,7 @@ python3 -I dsd2csv.py datei.dsd             # eine Datei
 python3 -I dsd2csv.py . -o ausgabe          # Ergebnisse unter ausgabe/ (Ordnerstruktur bleibt)
 ```
 
-Optionen: `--limit N` (Tempolimit erzwingen), `--min-kmh N` (Werte unter N km/h aus der Auswertung
+Optionen: `--limit N` (Tempolimit erzwingen), `--min-kmh N` (Standard 5; Werte unter N km/h aus der Auswertung
 nehmen), `--meta`, `--status`. Mit `-I` startet Python isoliert; das ist bei Dateien aus fremder Quelle
 sinnvoll.
 
@@ -95,7 +95,8 @@ sinnvoll.
 Die Geräte stellen ihre Uhr nicht auf Sommerzeit um und sind teils zurückgesetzt oder verstellt. Die
 Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit um und lassen Fahrzeuge mit unplausibler Uhr aus.
 Das Verfahren und die Belege dafür stehen in `docs/dsd-format.md`. Die Kennzahlen auf der obersten Ebene der
-YAML enthalten weiterhin alle Fahrzeuge der Datei.
+YAML enthalten weiterhin alle Fahrzeuge der Datei ab 5 km/h; langsamere Messwerte nimmt die
+Auswertung standardmäßig heraus (`--min-kmh`, Begründung und Folgen in `docs/dsd-format.md`). Die CSV-Dateien bleiben vollständig.
 
 Das **Tempolimit** wird aus der DSD gelesen (`safety_speed`, eine Anzeige-Schwelle des Geräts), siehe `docs/dsd-format.md`.
 Nennt die Mitteilung der Verwaltung ein deutlich anderes Limit, gilt dieses (`belege/korrekturen.json`, vier Messungen,
