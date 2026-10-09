@@ -37,6 +37,19 @@ Bei `eingeschraenkt` nennt das Feld `art`, woran es liegt:
   Die Uhr lief danach gleichmäßig weiter, relative Zeiten sind also nutzbar. Datum, Wochentag und Uhrzeit
   müssen rekonstruiert werden.
 
+### Urteil für eine ganze Datei
+
+Die Detailseiten fassen die Abschnitte einer Datei zu einem Urteil zusammen (`gesamturteil()` in `uhr_belege.py`,
+Schwellen `gesamt_plausibel_min` und `gesamt_unbrauchbar_min`), gewichtet nach Fahrzeugen: `plausibel`, wenn mindestens
+99 % der Fahrzeuge in plausiblen Abschnitten liegen, `unbrauchbar`, wenn mindestens die Hälfte in unbrauchbaren liegt,
+sonst `eingeschraenkt`. Bei den bisherigen Dateien ist das bei 71 plausibel, bei 36 eingeschränkt und bei 1 unbrauchbar (eine weitere
+Datei enthält keine Fahrzeuge).
+
+Nicht verwechseln mit der **Nutzbarkeit** der Zeitstempel in `dsd2csv.py` (`uhr.nutzbarkeit`, siehe
+[dsd-format.md](dsd-format.md)): Sie prüft nur formal, ob Datum, Reset und Sprünge die Zeit unbrauchbar machen, und
+steuert, welche Fahrzeuge in Tags, Nachts und Schulweg eingehen. Sie belegt nicht, dass die Uhrzeit stimmt. Dafür
+ist dieses Urteil da.
+
 ## Belege
 
 Jeder Beleg ist `bestaetigt`, `widerspricht` oder `offen` (nicht prüfbar). Mit Ausnahme des Datums zählen vier

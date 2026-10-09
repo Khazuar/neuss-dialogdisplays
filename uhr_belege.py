@@ -58,6 +58,8 @@ SCHWELLEN = {
     "ris_toleranz_tage": 1,
     "werksdatum_min_fahrzeuge": 500,  # kuerzere Segmente nach Reset sind nicht zu rekonstruieren
     "hb_abdeckung_ok": 0.8,
+    "gesamt_plausibel_min": 0.99,  # Gesamturteil einer Datei: Anteil der Fahrzeuge in plausiblen Abschnitten
+    "gesamt_unbrauchbar_min": 0.5,  # ... bzw. in unbrauchbaren Abschnitten
 }
 URTEILE = ("plausibel", "eingeschraenkt", "unbrauchbar")
 WT = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
@@ -349,6 +351,23 @@ def urteil(s, b, schaetzung):
     gruende.append(f"nur {len(ok)} von 4 unabhängigen Belegen bestätigt, mindestens 2 nötig; nichts widerspricht")
     gruende += [f"{k}: {b[k]['text']}" for k in ok]
     return "eingeschraenkt", gruende, "unzureichend_belegt"
+
+
+def gesamturteil(abschnitte):
+    """(Urteil, Anteil der Fahrzeuge in plausiblen Abschnitten) fuer eine ganze Datei, None ohne Fahrzeuge.
+
+    plausibel: mindestens 99 % der Fahrzeuge liegen in plausiblen Abschnitten; unbrauchbar: mindestens die Haelfte in
+    unbrauchbaren; sonst eingeschraenkt. Regeln in docs/uhr-bewertung.md.
+    """
+    n = sum(a["fahrzeuge"] for a in abschnitte)
+    if not n:
+        return None
+    anteil = {u: sum(a["fahrzeuge"] for a in abschnitte if a["urteil"] == u) / n for u in URTEILE}
+    if anteil["plausibel"] >= SCHWELLEN["gesamt_plausibel_min"]:
+        return "plausibel", anteil["plausibel"]
+    if anteil["unbrauchbar"] >= SCHWELLEN["gesamt_unbrauchbar_min"]:
+        return "unbrauchbar", anteil["plausibel"]
+    return "eingeschraenkt", anteil["plausibel"]
 
 
 # ------------------------------------------------------------------ Ablauf

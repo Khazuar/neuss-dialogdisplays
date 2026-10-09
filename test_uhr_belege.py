@@ -145,6 +145,22 @@ class Urteil(unittest.TestCase):
         self.assertEqual(u.urteil(self.seg(), b, {})[0], "unbrauchbar")
 
 
+class Gesamturteil(unittest.TestCase):
+    def a(self, **je_urteil):
+        return [{"fahrzeuge": n, "urteil": urt} for urt, n in je_urteil.items()]
+
+    def test_regeln(self):
+        self.assertEqual(u.gesamturteil(self.a(plausibel=1000))[0], "plausibel")
+        self.assertEqual(u.gesamturteil(self.a(plausibel=990, eingeschraenkt=10))[0], "plausibel")  # genau 99 %
+        self.assertEqual(u.gesamturteil(self.a(plausibel=980, eingeschraenkt=20))[0], "eingeschraenkt")
+        self.assertEqual(u.gesamturteil(self.a(plausibel=400, unbrauchbar=500, eingeschraenkt=100))[0], "unbrauchbar")
+        self.assertEqual(u.gesamturteil(self.a(eingeschraenkt=1000))[0], "eingeschraenkt")
+
+    def test_anteil_plausibel_und_ohne_fahrzeuge(self):
+        self.assertAlmostEqual(u.gesamturteil(self.a(plausibel=600, eingeschraenkt=400))[1], 0.6)
+        self.assertIsNone(u.gesamturteil([]))
+
+
 class Ris(unittest.TestCase):
     def ris(self):
         return {"dokumente": [{"vorlage": "69/1/2024", "betreff": "x", "gremium": "BA I", "sitzung": "2024-06-01",
