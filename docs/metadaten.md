@@ -45,7 +45,7 @@ nach festen Regeln (Schwellen in `SCHWELLEN`), in dieser Reihenfolge:
    Mitteilung eine Fahrtrichtung und steht eine im Ordner- oder Dateinamen („FR Norf“, „FR GV“, „FR Speck“), müssen
    sie übereinstimmen.
 2. **`name_zeitraum`:** Die Mitteilung nennt einen Erfassungszeitraum, und die Tage, an denen die Datei Fahrzeuge mit
-   glaubwürdiger Uhr enthält, liegen zu mindestens 80 % im Zeitraum (siehe [uhr-bewertung.md](uhr-bewertung.md)).
+   nutzbarer Zeit enthält, liegen zu mindestens 80 % im Zeitraum (siehe [uhr-bewertung.md](uhr-bewertung.md)).
    Das ist die verlässlichste Zuordnung, unabhängig von den Messwerten.
 3. **`name_werte`:** Ohne Zeitraum entscheiden V85 (höchstens 2 km/h Abweichung) und mittleres Tempo (höchstens
    3 km/h) sowie das Sitzungsdatum: Die Messung darf höchstens 15 Monate vor der Sitzung geendet haben und nicht
@@ -71,7 +71,7 @@ das Gerät erfasst auch die Hauptfahrbahn). Sie stehen in `belege/ris-zuordnung.
 ## Abgleich mit der DSD
 
 `abgleich_dsd` rechnet V85, mittleres Tempo und Fahrzeuge je Tag aus der DSD über denselben Zeitraum, nur mit Fahrzeugen
-mit glaubwürdiger Uhr und ab 5 km/h (dieselbe Grenze wie in `dsd2csv.py`, siehe [dsd-format.md](dsd-format.md); wir gehen davon
+mit nutzbarer Zeit und ab 5 km/h (dieselbe Grenze wie in `dsd2csv.py`, siehe [dsd-format.md](dsd-format.md); wir gehen davon
 aus, dass langsamere Messwerte keine Fahrzeuge sind). Bei den 32 Zuordnungen über den Zeitraum (`name_zeitraum`, unabhängig
 von den Werten) gilt:
 

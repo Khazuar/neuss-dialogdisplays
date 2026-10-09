@@ -47,7 +47,7 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 303
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
           fahrzeuge: 713377
           v85_kmh: 56
           mittel_kmh: 48.4
@@ -84,7 +84,7 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 69
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
           fahrzeuge: 155198
           v85_kmh: 56
           mittel_kmh: 48.4
@@ -135,7 +135,7 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 91
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
           fahrzeuge: 211745
           v85_kmh: 57
           mittel_kmh: 49.6

@@ -56,7 +56,7 @@
         "zeitraum_ueberlappung_tage": 91
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 25925,
         "v85_kmh": 21,
         "mittel_kmh": 12.7,
@@ -136,7 +136,7 @@
         "zeitraum_ueberlappung_tage": 94
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 131129,
         "v85_kmh": 28,
         "mittel_kmh": 21.4,
@@ -200,7 +200,7 @@
         "zeitraum_ueberlappung_tage": 74
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 34844,
         "v85_kmh": 32,
         "mittel_kmh": 25.9,
@@ -281,7 +281,7 @@
         "zeitraum_ueberlappung_tage": 128
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 80917,
         "v85_kmh": 32,
         "mittel_kmh": 21.0,
@@ -370,7 +370,7 @@
         "hinweis": "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 69944,
         "v85_kmh": 28,
         "mittel_kmh": 21.4,
@@ -431,7 +431,7 @@
         "zeitraum_ueberlappung_tage": 93
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 136805,
         "v85_kmh": 33,
         "mittel_kmh": 24.0,
@@ -506,7 +506,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 117092,
         "v85_kmh": 36,
         "mittel_kmh": 28.9,
@@ -588,7 +588,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 142984,
         "v85_kmh": 38,
         "mittel_kmh": 29.8,
@@ -667,7 +667,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 42625,
         "v85_kmh": 43,
         "mittel_kmh": 33.8,
@@ -729,7 +729,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 204054,
         "v85_kmh": 49,
         "mittel_kmh": 41.1,
@@ -791,7 +791,7 @@
         "hinweis": "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 85140,
         "v85_kmh": 35,
         "mittel_kmh": 24.2,
@@ -858,7 +858,7 @@
         "zeitraum_ueberlappung_tage": 94
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 154268,
         "v85_kmh": 49,
         "mittel_kmh": 40.5,
@@ -924,7 +924,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 49180,
         "v85_kmh": 53,
         "mittel_kmh": 43.5,
@@ -994,7 +994,7 @@
         "zeitraum_ueberlappung_tage": 155
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 259876,
         "v85_kmh": 40,
         "mittel_kmh": 31.9,
@@ -1065,7 +1065,7 @@
         "zeitraum_ueberlappung_tage": 155
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 283810,
         "v85_kmh": 58,
         "mittel_kmh": 44.8,
@@ -1147,7 +1147,7 @@
         "zeitraum_ueberlappung_tage": 117
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 27561,
         "v85_kmh": 31,
         "mittel_kmh": 23.3,
@@ -1213,7 +1213,7 @@
         "zeitraum_ueberlappung_tage": 155
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 77876,
         "v85_kmh": 34,
         "mittel_kmh": 22.9,
@@ -1276,7 +1276,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 48242,
         "v85_kmh": 45,
         "mittel_kmh": 38.2,
@@ -1335,7 +1335,7 @@
         "zeitraum_ueberlappung_tage": 65
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 40659,
         "v85_kmh": 40,
         "mittel_kmh": 29.8,
@@ -1413,7 +1413,7 @@
         "zeitraum_ueberlappung_tage": 117
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 134771,
         "v85_kmh": 41,
         "mittel_kmh": 31.6,
@@ -1495,7 +1495,7 @@
         "zeitraum_ueberlappung_tage": 84
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 32072,
         "v85_kmh": 43,
         "mittel_kmh": 33.4,
@@ -1683,7 +1683,7 @@
         "hinweis": "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 100223,
         "v85_kmh": 29,
         "mittel_kmh": 19.9,
@@ -1793,7 +1793,7 @@
         "zeitraum_ueberlappung_tage": 80
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 103375,
         "v85_kmh": 39,
         "mittel_kmh": 30.7,
@@ -1856,7 +1856,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 117136,
         "v85_kmh": 28,
         "mittel_kmh": 20.9,
@@ -1935,7 +1935,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 21063,
         "v85_kmh": 28,
         "mittel_kmh": 21.0,
@@ -2034,7 +2034,7 @@
         "zeitraum_ueberlappung_tage": 92
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 233029,
         "v85_kmh": 38,
         "mittel_kmh": 30.8,
@@ -2128,7 +2128,7 @@
         "zeitraum_ueberlappung_tage": 28
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 48286,
         "v85_kmh": 53,
         "mittel_kmh": 44.4,
@@ -2183,7 +2183,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 39257,
         "v85_kmh": 34,
         "mittel_kmh": 25.9,
@@ -2265,7 +2265,7 @@
         "zeitraum_ueberlappung_tage": 80
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 19669,
         "v85_kmh": 37,
         "mittel_kmh": 28.2,
@@ -2321,7 +2321,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 48537,
         "v85_kmh": 52,
         "mittel_kmh": 43.8,
@@ -2433,7 +2433,7 @@
         "zeitraum_ueberlappung_tage": 94
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 14399,
         "v85_kmh": 23,
         "mittel_kmh": 18.5,
@@ -2579,7 +2579,7 @@
         "zeitraum_ueberlappung_tage": 120
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 76620,
         "v85_kmh": 38,
         "mittel_kmh": 21.1,
@@ -2696,7 +2696,7 @@
         "hinweis": "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 51469,
         "v85_kmh": 25,
         "mittel_kmh": 19.3,
@@ -2840,7 +2840,7 @@
         "zeitraum_ueberlappung_tage": 64
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 37753,
         "v85_kmh": 24,
         "mittel_kmh": 18.6,
@@ -2925,7 +2925,7 @@
         "zeitraum_ueberlappung_tage": 80
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 33647,
         "v85_kmh": 32,
         "mittel_kmh": 25.1,
@@ -2992,7 +2992,7 @@
         "zeitraum_ueberlappung_tage": 94
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 38975,
         "v85_kmh": 34,
         "mittel_kmh": 25.8,
@@ -3057,7 +3057,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 55950,
         "v85_kmh": 38,
         "mittel_kmh": 28.5,
@@ -3120,7 +3120,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 182020,
         "v85_kmh": 46,
         "mittel_kmh": 37.5,
@@ -3183,7 +3183,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 64586,
         "v85_kmh": 35,
         "mittel_kmh": 27.4,
@@ -3264,7 +3264,7 @@
         "hinweis": "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 71685,
         "v85_kmh": 34,
         "mittel_kmh": 21.8,
@@ -3327,7 +3327,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 125137,
         "v85_kmh": 49,
         "mittel_kmh": 40.4,
@@ -3394,7 +3394,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 132188,
         "v85_kmh": 39,
         "mittel_kmh": 31.7,
@@ -3468,7 +3468,7 @@
         "zeitraum_ueberlappung_tage": 78
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 34038,
         "v85_kmh": 24,
         "mittel_kmh": 18.7,
@@ -3536,7 +3536,7 @@
         "zeitraum_ueberlappung_tage": 110
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 52496,
         "v85_kmh": 32,
         "mittel_kmh": 24.3,
@@ -3749,7 +3749,7 @@
         "zeitraum_ueberlappung_tage": 113
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 162620,
         "v85_kmh": 38,
         "mittel_kmh": 29.5,
@@ -3811,7 +3811,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 191480,
         "v85_kmh": 40,
         "mittel_kmh": 32.3,
@@ -3874,7 +3874,7 @@
         "hinweis": "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 65463,
         "v85_kmh": 28,
         "mittel_kmh": 18.5,
@@ -3948,7 +3948,7 @@
         "zeitraum_ueberlappung_tage": 303
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 713377,
         "v85_kmh": 56,
         "mittel_kmh": 48.4,
@@ -3999,7 +3999,7 @@
         "zeitraum_ueberlappung_tage": 69
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 155198,
         "v85_kmh": 56,
         "mittel_kmh": 48.4,
@@ -4069,7 +4069,7 @@
         "zeitraum_ueberlappung_tage": 91
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 211745,
         "v85_kmh": 57,
         "mittel_kmh": 49.6,
@@ -4167,7 +4167,7 @@
         "zeitraum_ueberlappung_tage": 120
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 378286,
         "v85_kmh": 58,
         "mittel_kmh": 49.8,
@@ -4253,7 +4253,7 @@
         "zeitraum_ueberlappung_tage": 303
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 938447,
         "v85_kmh": 56,
         "mittel_kmh": 48.3,
@@ -4304,7 +4304,7 @@
         "zeitraum_ueberlappung_tage": 69
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 207596,
         "v85_kmh": 56,
         "mittel_kmh": 47.4,
@@ -4356,7 +4356,7 @@
         "zeitraum_ueberlappung_tage": 69
        },
        "abgleich_dsd": {
-        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung",
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung",
         "fahrzeuge": 207596,
         "v85_kmh": 56,
         "mittel_kmh": 47.4,

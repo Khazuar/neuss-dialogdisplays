@@ -34,7 +34,7 @@ messungen:
           methode: "name_werte"
           hinweis: "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
           fahrzeuge: 39257
           v85_kmh: 34
           mittel_kmh: 25.9

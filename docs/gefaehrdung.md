@@ -7,7 +7,7 @@
 
 Die Kennzahlen stehen in jeder `<name>.yaml` (Blöcke `gefaehrdung`, `laerm`, `nacht_ereignisse`) und auf den
 Detailseiten der Standorte. `gefaehrdung` und `laerm` gibt es für dieselben Zeiträume wie die übrigen Kennzahlen:
-alle Fahrzeuge der Datei, Fahrzeuge mit plausibler Uhr, Tags, Nachts, Schulweg. Ohne bekanntes Tempolimit entfallen
+alle Fahrzeuge der Datei, Fahrzeuge mit nutzbarer Zeit, Tags, Nachts, Schulweg. Ohne bekanntes Tempolimit entfallen
 sie. Berechnet wird in `dsd2csv.py`, die Annahmen stehen dort als Konstanten (`GEFAEHRDUNG`, `NACHT`).
 
 ## Relativer Risikoindex (Potenzmodell nach Nilsson)
@@ -112,8 +112,8 @@ Zählt, wie oft nachts ein Fahrzeug mit sehr hohem Tempo fährt. Eine Aussage wi
 Fahrzeug ab 100 km/h“ ist verständlicher als ein Perzentil.
 
 - **Nacht:** 22:00 bis 06:00 Uhr Ortszeit. Die Nacht gehört zum Abend, an dem sie beginnt.
-- **Gezählt werden nur vollständig aufgezeichnete Nächte** (Beginn und Ende innerhalb eines Abschnitts mit plausibler
-  Uhr). Fiel das Gerät in einer Nacht aus, zählt sie als Nacht ohne Ereignis; der Anteil der Nächte ist dann eher zu
+- **Gezählt werden nur vollständig aufgezeichnete Nächte** (Beginn und Ende innerhalb eines Abschnitts mit nutzbarer
+  Zeit). Fiel das Gerät in einer Nacht aus, zählt sie als Nacht ohne Ereignis; der Anteil der Nächte ist dann eher zu
   niedrig.
 - **Schwellen:** das doppelte Tempolimit sowie 100 und 120 km/h. Bei 50 km/h fallen doppeltes Tempo und 100 km/h
   zusammen.

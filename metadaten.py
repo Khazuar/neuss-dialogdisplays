@@ -392,7 +392,7 @@ def eintrag(block, bew, datei=None):
         z["hinweis"] = hinweise[bew["methode"]]
     e["zuordnung"] = z
     if bew["k"]:
-        e["abgleich_dsd"] = {"hinweis": f"aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab {d.MIN_KMH_STANDARD} km/h), keine Angabe der Verwaltung",
+        e["abgleich_dsd"] = {"hinweis": f"aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab {d.MIN_KMH_STANDARD} km/h), keine Angabe der Verwaltung",
                              **bew["k"], "abweichung_dsd_minus_verwaltung": bew["a"]}
         if bew.get("aussen"):
             e["abgleich_dsd"]["ausserhalb_des_erfassungszeitraums"] = bew["aussen"]

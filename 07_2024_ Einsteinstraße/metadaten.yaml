@@ -42,7 +42,7 @@ messungen:
           methode: "name_einzige_datei"
           hinweis: "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
           fahrzeuge: 69944
           v85_kmh: 28
           mittel_kmh: 21.4
