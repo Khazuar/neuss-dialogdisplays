@@ -23,9 +23,9 @@
     ],
     "methode": "name_zeitraum",
     "abweichung": {
-     "v85_kmh": 0,
-     "mittel_kmh": 0.5,
-     "fahrzeuge_je_tag_prozent": 0
+     "v85_kmh": 4,
+     "mittel_kmh": 4.7,
+     "fahrzeuge_je_tag_prozent": -45
     }
    }
   ],
@@ -68,9 +68,9 @@
     ],
     "methode": "name_zeitraum",
     "abweichung": {
-     "v85_kmh": -2,
-     "mittel_kmh": -6.5,
-     "fahrzeuge_je_tag_prozent": -38
+     "v85_kmh": 0,
+     "mittel_kmh": -2.0,
+     "fahrzeuge_je_tag_prozent": -54
     }
    }
   ],
@@ -95,8 +95,8 @@
     ],
     "methode": "name_zeitraum",
     "abweichung": {
-     "v85_kmh": -2,
-     "mittel_kmh": -6.3
+     "v85_kmh": -1,
+     "mittel_kmh": -4.0
     }
    }
   ],
@@ -241,9 +241,9 @@
     ],
     "methode": "name_zeitraum",
     "abweichung": {
-     "v85_kmh": -3,
-     "mittel_kmh": -10.9,
-     "fahrzeuge_je_tag_prozent": -13
+     "v85_kmh": -2,
+     "mittel_kmh": -6.1,
+     "fahrzeuge_je_tag_prozent": -34
     }
    }
   ],
@@ -308,9 +308,9 @@
     "zeitraum": null,
     "methode": "name_einzige_datei",
     "abweichung": {
-     "v85_kmh": -4,
-     "mittel_kmh": -3.7,
-     "fahrzeuge_je_tag_prozent": -47
+     "v85_kmh": -3,
+     "mittel_kmh": -0.1,
+     "fahrzeuge_je_tag_prozent": -59
     }
    }
   ],
@@ -545,9 +545,9 @@
     "zeitraum": null,
     "methode": "name_einzige_datei",
     "abweichung": {
-     "v85_kmh": -2,
-     "mittel_kmh": -5.8,
-     "fahrzeuge_je_tag_prozent": -12
+     "v85_kmh": -1,
+     "mittel_kmh": -3.2,
+     "fahrzeuge_je_tag_prozent": -25
     }
    }
   ],
@@ -636,11 +636,11 @@
    {
     "messstelle": "Münchener Straße",
     "zeitraum": null,
-    "methode": "name_einzige_datei",
+    "methode": "name_werte",
     "abweichung": {
-     "v85_kmh": -3,
-     "mittel_kmh": -4.3,
-     "fahrzeuge_je_tag_prozent": -37
+     "v85_kmh": -2,
+     "mittel_kmh": -0.5,
+     "fahrzeuge_je_tag_prozent": -53
     }
    }
   ],
@@ -654,7 +654,7 @@
     "methode": "name_zeitraum",
     "abweichung": {
      "v85_kmh": 0,
-     "mittel_kmh": -4.4
+     "mittel_kmh": -1.6
     }
    }
   ],
@@ -668,7 +668,7 @@
     "methode": "name_zeitraum",
     "abweichung": {
      "v85_kmh": 0,
-     "mittel_kmh": -2.9
+     "mittel_kmh": -0.6
     }
    }
   ],
@@ -682,8 +682,8 @@
     "methode": "name_zeitraum",
     "abweichung": {
      "v85_kmh": 0,
-     "mittel_kmh": 0.2,
-     "fahrzeuge_je_tag_prozent": 32
+     "mittel_kmh": 2.6,
+     "fahrzeuge_je_tag_prozent": 25
     }
    }
   ],
@@ -696,9 +696,9 @@
     ],
     "methode": "name_zeitraum",
     "abweichung": {
-     "v85_kmh": -1,
-     "mittel_kmh": -10.6,
-     "fahrzeuge_je_tag_prozent": 64
+     "v85_kmh": 0,
+     "mittel_kmh": -8.2,
+     "fahrzeuge_je_tag_prozent": 55
     }
    }
   ],
@@ -712,7 +712,7 @@
     "methode": "name_zeitraum",
     "abweichung": {
      "v85_kmh": -1,
-     "mittel_kmh": -3.8
+     "mittel_kmh": -1.7
     }
    }
   ],
@@ -725,8 +725,8 @@
     ],
     "methode": "name_zeitraum",
     "abweichung": {
-     "v85_kmh": -1,
-     "mittel_kmh": -4.7
+     "v85_kmh": 0,
+     "mittel_kmh": -2.6
     }
    },
    {
@@ -737,9 +737,9 @@
     ],
     "methode": "name_zeitraum",
     "abweichung": {
-     "v85_kmh": -3,
-     "mittel_kmh": -12.7,
-     "fahrzeuge_je_tag_prozent": 56
+     "v85_kmh": -2,
+     "mittel_kmh": -10.6,
+     "fahrzeuge_je_tag_prozent": 48
     }
    }
   ]

@@ -203,6 +203,18 @@ class Tempolimit(unittest.TestCase):
         self.assertEqual((k["S/a.dsd"]["tempolimit_kmh"], k["S/a.dsd"]["tempolimit_dsd_kmh"]), (30, 10))
 
 
+class Kennzahlen(unittest.TestCase):
+    def test_werte_unter_der_grenze_zaehlen_nicht_als_fahrzeuge(self):
+        t = dt.datetime(2025, 1, 1)
+        vehs = [(t, 2), (t, 4), (t, 5), (t, 20), (t, 30), (t, 40)]  # zwei Werte unter 5 km/h
+        k = m.kennzahlen(vehs, 2)
+        self.assertEqual(k["fahrzeuge"], 4)
+        self.assertEqual(k["fahrzeuge_je_tag"], 2)
+        self.assertEqual(k["mittel_kmh"], 23.8)
+        self.assertEqual(k["v85_kmh"], 40)
+        self.assertIsNone(m.kennzahlen([(t, 3), (t, 4)], 1))
+
+
 class AussenUndDoppelt(unittest.TestCase):
     def test_fahrzeuge_ausserhalb_des_zeitraums(self):
         f = datei("10_Holzbüttgener Straße", "a.dsd", ("2023-07-19", "2023-11-16"))

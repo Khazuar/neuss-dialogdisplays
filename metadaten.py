@@ -90,7 +90,8 @@ def richtungen(text):
 
 
 def kennzahlen(vehs, tage):
-    v = sorted(x[1] for x in vehs)
+    """V85, Mittel und Fahrzeuge je Tag wie in dsd2csv.py: Werte unter MIN_KMH_STANDARD gelten nicht als Fahrzeuge."""
+    v = sorted(x[1] for x in vehs if x[1] >= d.MIN_KMH_STANDARD)
     if not v:
         return None
     n = len(v)
@@ -391,7 +392,7 @@ def eintrag(block, bew, datei=None):
         z["hinweis"] = hinweise[bew["methode"]]
     e["zuordnung"] = z
     if bew["k"]:
-        e["abgleich_dsd"] = {"hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung",
+        e["abgleich_dsd"] = {"hinweis": f"aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab {d.MIN_KMH_STANDARD} km/h), keine Angabe der Verwaltung",
                              **bew["k"], "abweichung_dsd_minus_verwaltung": bew["a"]}
         if bew.get("aussen"):
             e["abgleich_dsd"]["ausserhalb_des_erfassungszeitraums"] = bew["aussen"]

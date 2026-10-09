@@ -45,7 +45,7 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 117
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
           fahrzeuge: 134771
           v85_kmh: 41
           mittel_kmh: 31.6

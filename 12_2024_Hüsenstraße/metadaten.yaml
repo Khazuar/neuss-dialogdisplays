@@ -42,12 +42,12 @@ messungen:
           methode: "name_einzige_datei"
           hinweis: "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
-          fahrzeuge: 128289
-          v85_kmh: 28
-          mittel_kmh: 16.3
-          fahrzeuge_je_tag: 957
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
+          fahrzeuge: 100223
+          v85_kmh: 29
+          mittel_kmh: 19.9
+          fahrzeuge_je_tag: 748
           abweichung_dsd_minus_verwaltung:
-            v85_kmh: -4
-            mittel_kmh: -3.7
-            fahrzeuge_je_tag_prozent: -47
+            v85_kmh: -3
+            mittel_kmh: -0.1
+            fahrzeuge_je_tag_prozent: -59

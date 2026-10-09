@@ -47,14 +47,14 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 303
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
-          fahrzeuge: 759906
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
+          fahrzeuge: 713377
           v85_kmh: 56
-          mittel_kmh: 45.6
-          fahrzeuge_je_tag: 2516
+          mittel_kmh: 48.4
+          fahrzeuge_je_tag: 2362
           abweichung_dsd_minus_verwaltung:
             v85_kmh: 0
-            mittel_kmh: -4.4
+            mittel_kmh: -1.6
   - datei: "0000000000000000_4.dsd"
     geraet:
       konfiguration: "2211F18858B 30CP067"
@@ -84,14 +84,14 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 69
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
-          fahrzeuge: 163490
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
+          fahrzeuge: 155198
           v85_kmh: 56
-          mittel_kmh: 46.1
-          fahrzeuge_je_tag: 2404
+          mittel_kmh: 48.4
+          fahrzeuge_je_tag: 2282
           abweichung_dsd_minus_verwaltung:
             v85_kmh: 0
-            mittel_kmh: -2.9
+            mittel_kmh: -0.6
   - datei: "0000000000000000_5.dsd"
     geraet:
       konfiguration: "2211F18858B 30CP067"
@@ -135,15 +135,15 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 91
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr), keine Angabe der Verwaltung"
-          fahrzeuge: 223344
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit glaubwürdiger Uhr, ab 5 km/h), keine Angabe der Verwaltung"
+          fahrzeuge: 211745
           v85_kmh: 57
-          mittel_kmh: 47.2
-          fahrzeuge_je_tag: 2454
+          mittel_kmh: 49.6
+          fahrzeuge_je_tag: 2327
           abweichung_dsd_minus_verwaltung:
             v85_kmh: 0
-            mittel_kmh: 0.2
-            fahrzeuge_je_tag_prozent: 32
+            mittel_kmh: 2.6
+            fahrzeuge_je_tag_prozent: 25
         tempolimit_widerspruch:
           dsd_kmh: 20
           mitteilung_kmh: 50

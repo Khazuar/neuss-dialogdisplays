@@ -71,20 +71,24 @@ das Gerät erfasst auch die Hauptfahrbahn). Sie stehen in `belege/ris-zuordnung.
 ## Abgleich mit der DSD
 
 `abgleich_dsd` rechnet V85, mittleres Tempo und Fahrzeuge je Tag aus der DSD über denselben Zeitraum, nur mit Fahrzeugen
-mit glaubwürdiger Uhr. Bei den 32 Zuordnungen über den Zeitraum (`name_zeitraum`, unabhängig von den Werten) gilt:
+mit glaubwürdiger Uhr und ab 5 km/h (dieselbe Grenze wie in `dsd2csv.py`, siehe [dsd-format.md](dsd-format.md); wir gehen davon
+aus, dass langsamere Messwerte keine Fahrzeuge sind). Bei den 32 Zuordnungen über den Zeitraum (`name_zeitraum`, unabhängig
+von den Werten) gilt:
 
-- **V85:** In 28 von 32 Fällen weicht die DSD höchstens 1 km/h von der Mitteilung ab, in 4 Fällen um 2 bis 3 km/h.
-  Wo sie abweicht, liegt die DSD meist niedriger (12 von 14 Fällen).
-- **Mittleres Tempo:** Die DSD liegt in 26 von 31 Fällen niedriger (Median −1,3 km/h), in Einzelfällen um mehr als
-  10 km/h (z. B. `Ruhrstraße` 109: DSD 18 km/h, Mitteilung 29 km/h).
+- **V85:** In 29 von 32 Fällen weicht die DSD höchstens 1 km/h von der Mitteilung ab, in 2 Fällen um 2 bis 3 km/h und in einem
+  um 4 km/h (`Bauerbahn`: DSD 21, Mitteilung 17). Wo sie abweicht, liegt die DSD meist niedriger (9 von 12 Fällen).
+- **Mittleres Tempo:** Die DSD liegt in 26 von 31 Fällen niedriger (Median −0,8 km/h), in Einzelfällen um mehr als
+  10 km/h (`Villestraße (FR Norf)`: DSD 47 km/h, Mitteilung 58 km/h, siehe unten).
 - **Fahrzeuge je Tag:** Sie weichen in beide Richtungen ab, bei 18 von 23 um mehr als 5 % (nach oben und unten gleich
   häufig). Bei Messungen, für die die Mitteilung zwei Richtungen nennt, gibt es eine Erklärung, siehe unten.
-  Außerdem filtert die Verwaltungssoftware offenbar nach Geschwindigkeit ([dsd-format.md](dsd-format.md)).
+- **Bauerbahn:** Hier zählt die Verwaltung offenbar alle Fahrzeuge, auch die unter 5 km/h: Mittleres Tempo 8 km/h und
+  527 Fahrzeuge je Tag in der Mitteilung gegenüber 12,7 km/h und 288 Fahrzeugen je Tag (−45 %) in unserer Rechnung. Rund
+  45 % der Werte dieser Datei liegen unter 5 km/h. Mit allen Fahrzeugen kämen wir auf die 527.
 
 Wo die Abweichung groß ist, kann auch die Mitteilung selbst Fehler enthalten: Bei `Villestraße (FR Norf)` nennt sie als
 mittleres Tempo 58 km/h bei einer V85 von ebenfalls 58 km/h, was nicht zusammenpasst. Die Fahrzeuge je Tag rechnet die
-Verwaltung vermutlich als Fahrzeuge geteilt durch (Ende minus Beginn) des Erfassungszeitraums: 47.453 Fahrzeuge geteilt
-durch 90 Tage sind die 527 der Mitteilung zur Bauerbahn, `metadaten.py` rechnet deshalb ebenso.
+Verwaltung vermutlich als Fahrzeuge geteilt durch (Ende minus Beginn) des Erfassungszeitraums: 47.453 Fahrzeuge (alle der
+Datei) geteilt durch 90 Tage sind die 527 der Mitteilung zur Bauerbahn, `metadaten.py` teilt deshalb ebenso durch die Tage.
 
 ## Widersprüche zwischen DSD und Mitteilung
 
