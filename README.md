@@ -76,9 +76,10 @@ sinnvoll.
 - `<name>.yaml` – Auswertung je Messung: Standort (relativer Ordnerpfad), Tempolimit samt Quelle,
   Anzahl Fahrzeuge, Messzeitraum, mittlere/maximale Geschwindigkeit, V85/V95/V99, Einhaltungsquote und
   qualifizierte Einhaltungsquote, außerdem
-  - `uhr` – Bewertung der Geräteuhr (`plausibel`, `eingeschraenkt`, `unbrauchbar`) mit Hinweisen und den
-    Uhr-Segmenten,
-  - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit plausibler Uhr,
+  - `uhr` – formale Prüfung der Zeitstempel (`nutzbarkeit`: `nutzbar`, `teilweise_nutzbar`, `nicht_nutzbar`) mit
+    Hinweisen und den Uhr-Segmenten. Sie sagt nicht, ob die Uhrzeit stimmt; das belegt `uhr_belege.py`
+    (`plausibel`, `eingeschraenkt`, `unbrauchbar`, `belege/uhr-bewertung.json`),
+  - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit nutzbarer Zeit,
   - `teilzeitraeume` – dieselben Kennzahlen für `tags` (6–18 Uhr), `nachts` (18–6 Uhr) und `schulweg`
     (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
   - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: relativer Risikoindex nach Nilsson, Aufprallgeschwindigkeit
@@ -93,7 +94,8 @@ sinnvoll.
 - `auswertung.yaml`, `summary.csv` – alle Messungen zusammengefasst
 
 Die Geräte stellen ihre Uhr nicht auf Sommerzeit um und sind teils zurückgesetzt oder verstellt. Die
-Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit um und lassen Fahrzeuge mit unplausibler Uhr aus.
+Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit um und lassen Fahrzeuge ohne nutzbare Zeit aus (zurückgesetzte Uhr, Datumssprünge, Versatz um Stunden). Nutzbar heißt nicht
+belegt: Ob die Uhrzeit stimmt, zeigen die Belege je Abschnitt auf den Detailseiten.
 Das Verfahren und die Belege dafür stehen in `docs/dsd-format.md`. Die Kennzahlen auf der obersten Ebene der
 YAML enthalten weiterhin alle Fahrzeuge der Datei ab 5 km/h; langsamere Messwerte nimmt die
 Auswertung standardmäßig heraus (`--min-kmh`, Begründung und Folgen in `docs/dsd-format.md`). Die CSV-Dateien bleiben vollständig.

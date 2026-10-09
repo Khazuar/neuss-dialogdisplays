@@ -107,8 +107,13 @@ Ein Segment ist **nicht nutzbar**, wenn
   etwa 8 Stunden gegenüber den Nachbarmessungen verschoben). Diese Uhren werden nicht korrigiert, weil der
   Fehler nicht belegbar ist.
 
-Die Bewertung je Datei (`uhr.bewertung`) ist `plausibel` (mindestens 99 % der Fahrzeuge nutzbar, kein
-Hinweis auf eine verrutschte Uhr), `eingeschraenkt` oder `unbrauchbar` (unter 50 % nutzbar).
+Die Nutzbarkeit je Datei (`uhr.nutzbarkeit`) ist `nutzbar` (mindestens 99 % der Fahrzeuge nutzbar, kein
+Hinweis auf eine verrutschte Uhr), `teilweise_nutzbar` oder `nicht_nutzbar` (unter 50 % nutzbar). Das ist eine formale
+Prüfung der Zeitstempel und **kein Urteil, ob die Uhrzeit stimmt**: Eine nutzbare Uhr kann um eine Stunde danebenliegen.
+Ob die Zeit belegt ist, entscheidet `uhr_belege.py` (`plausibel`, `eingeschraenkt`, `unbrauchbar`, siehe
+[uhr-bewertung.md](uhr-bewertung.md)). Beide Prüfungen können abweichen: Bei 34 von 108 Dateien mit Fahrzeugen widersprechen
+sie sich: 25 sind nutzbar, die Belege reichen aber nur für `eingeschraenkt`, 9 sind nicht nutzbar (meist zurückgesetzte
+Uhr), die Belege sagen `eingeschraenkt`. Die Auswertung nach Tageszeit nutzt die Nutzbarkeit.
 
 **Teilzeiträume.** `teilzeitraeume` und `bereinigt` in der YAML verwenden nur Fahrzeuge aus nutzbaren
 Segmenten, umgerechnet auf Ortszeit:

@@ -505,9 +505,9 @@ def bewerte_segmente(segs, veh):
 def analysiere_uhr(veh, status, mit_spannen=False):
     """Gibt (uhr, bereinigt, teilzeitraeume) zurueck, mit mit_spannen=True zusaetzlich die Spannen.
 
-    uhr: Bewertung der Geraeteuhr (Dict fuer die YAML), bereinigt: [(Ortszeit, v)] aller Fahrzeuge
-    in Segmenten mit plausibler Uhr, teilzeitraeume: dasselbe getrennt nach TEILZEITRAEUME,
-    spannen: [(erste, letzte Ortszeit)] je Abschnitt mit plausibler Uhr (fuer die Auswertung je Nacht).
+    uhr: Nutzbarkeit der Zeitstempel (Dict fuer die YAML; keine Aussage, ob die Uhrzeit stimmt), bereinigt: [(Ortszeit, v)]
+    aller Fahrzeuge in Segmenten mit nutzbarer Zeit, teilzeitraeume: dasselbe getrennt nach TEILZEITRAEUME,
+    spannen: [(erste, letzte Ortszeit)] je Abschnitt mit nutzbarer Zeit (fuer die Auswertung je Nacht).
     """
     segs = uhr_segmente(veh, status)
     bewerte_segmente(segs, veh)
@@ -570,10 +570,12 @@ def analysiere_uhr(veh, status, mit_spannen=False):
     groesste = {id(s) for s in sorted(mit, key=lambda s: -len(s["idx"]))[:8]}
     uhr = {
         "zeitmodell": "Geräteuhr ohne Sommerzeitumstellung, Teilzeiträume in Ortszeit (Europe/Berlin) umgerechnet",
-        "bewertung": ("unbrauchbar" if anteil < 0.5 else
-                      "plausibel" if anteil >= 0.99 and not pruefen else "eingeschraenkt"),
-        "fahrzeuge_mit_gueltiger_zeit_prozent": round(100 * anteil, 2) if gesamt else None,
-        "fahrzeuge_ohne_gueltige_zeit": gesamt - nutzbar,
+        # Formale Pruefung der Zeitstempel (kein Reset, keine Spruenge, kein Versatz um Stunden). Sie sagt nichts darueber,
+        # ob die Uhrzeit stimmt; das belegt uhr_belege.py (belege/uhr-bewertung.json).
+        "nutzbarkeit": ("nicht_nutzbar" if anteil < 0.5 else
+                        "nutzbar" if anteil >= 0.99 and not pruefen else "teilweise_nutzbar"),
+        "fahrzeuge_mit_nutzbarer_zeit_prozent": round(100 * anteil, 2) if gesamt else None,
+        "fahrzeuge_ohne_nutzbare_zeit": gesamt - nutzbar,
         "hinweise": list(dict.fromkeys(hinweise)),
         "segmente_mit_fahrzeugen": len(mit),
         "segmente": [segment_yaml(s) for s in segs if id(s) in groesste],
@@ -695,8 +697,8 @@ def laerm(vehs, limit):
 def nacht_ereignisse(fahrten, spannen, limit):
     """Wie oft faehrt in einer Nacht (22-6 Uhr Ortszeit) ein Fahrzeug mit doppeltem Tempo, ab 100 oder ab 120 km/h?
 
-    Gezaehlt werden nur vollstaendig aufgezeichnete Naechte (Beginn und Ende innerhalb eines Abschnitts mit plausibler
-    Uhr); Naechte, in denen das Geraet ausfiel, zaehlen als Naechte ohne Ereignis.
+    Gezaehlt werden nur vollstaendig aufgezeichnete Naechte (Beginn und Ende innerhalb eines Abschnitts mit nutzbarer
+    Zeit); Naechte, in denen das Geraet ausfiel, zaehlen als Naechte ohne Ereignis.
     """
     von, bis = NACHT
     dauer = dt.timedelta(hours=(bis - von) % 24)
@@ -784,7 +786,7 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=MIN_
     res.update(zusatz(veh))
     res["uhr"] = uhr
     b = stats(bereinigt, lim, min_kmh) or {"anzahl_fahrzeuge": 0}
-    res["bereinigt"] = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit plausibler Geräteuhr (siehe uhr), Zeiten in Ortszeit",
+    res["bereinigt"] = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit nutzbarer Zeit (siehe uhr), Zeiten in Ortszeit",
                         **b, **zusatz(bereinigt)}
     res["teilzeitraeume"] = {}
     for name, (definition, _) in TEILZEITRAEUME.items():

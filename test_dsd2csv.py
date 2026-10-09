@@ -69,8 +69,9 @@ class Uhrsegmente(unittest.TestCase):
         veh, status = self.aufzeichnung(echte + reset)
         uhr, bereinigt, _ = d.analysiere_uhr(veh, status)
         self.assertEqual(len(bereinigt), 50)
-        self.assertEqual(uhr["fahrzeuge_ohne_gueltige_zeit"], 50)
-        self.assertEqual(uhr["bewertung"], "eingeschraenkt")  # genau die Haelfte der Fahrzeuge nutzbar
+        self.assertEqual(uhr["fahrzeuge_ohne_nutzbare_zeit"], 50)
+        self.assertEqual(uhr["nutzbarkeit"], "teilweise_nutzbar")  # genau die Haelfte der Fahrzeuge nutzbar
+        self.assertNotIn("bewertung", uhr)  # "plausibel" sagt nur uhr_belege.py
         self.assertTrue(any("zurückgesetzter Geräteuhr" in h for h in uhr["hinweise"]))
 
     def test_einzelner_ausreisser_zaehlt_nicht_als_segment(self):
