@@ -27,8 +27,9 @@
     Die Auswertungen sind eigene Berechnungen von Fabian Grewing aus den Rohdaten der Stadt Neuss.
     Sie sind nicht amtlich und nicht geprüft, und Fehler in der Auswertung (Skripte, Annahmen, Zuordnung der Angaben) können nicht ausgeschlossen werden; alle Angaben ohne Gewähr. Die Geräteuhren werden nie auf Sommerzeit umgestellt und
     sind teils zurückgesetzt oder verstellt; die Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit
-    um und verwenden nur Fahrzeuge mit plausibler Uhr. Zeilen mit
-    <span class="warn" aria-hidden="true">⚠</span> haben eine auffällige Geräteuhr oder übersprungene
+    um und verwenden nur Fahrzeuge mit nutzbarer Zeit (kein Reset, keine Datumssprünge, kein Versatz um Stunden).
+    Das ist eine formale Prüfung; ob die Uhrzeit tatsächlich stimmt, belegen nur die Detailseiten. Zeilen mit
+    <span class="warn" aria-hidden="true">⚠</span> haben nur teilweise nutzbare Zeitstempel oder übersprungene
     Datensätze, der Tooltip nennt den Grund. Das Verfahren steht im README. Einhaltungsquoten unter
     50&nbsp;% sind rot, unter 75&nbsp;% gelb hinterlegt.
   </p>
@@ -107,14 +108,14 @@ const COLUMNS = [
 const ZEITRAEUME = [
   { id: "roh", label: "Alle Fahrzeuge (Rohdaten)", praefix: "",
     info: "Alle Fahrzeuge der Datei ab 5 km/h, unabhängig von der Uhrzeit. Enthält auch Fahrzeuge mit falsch datierter Geräteuhr." },
-  { id: "bereinigt", label: "Alle Fahrzeuge mit plausibler Uhr", praefix: "bereinigt.",
-    info: "Nur Fahrzeuge aus Abschnitten mit plausibler Geräteuhr; schließt zurückgesetzte Uhren (Datum 2020-01-01) und unplausible Zeitstempel aus." },
+  { id: "bereinigt", label: "Alle Fahrzeuge mit nutzbarer Zeit", praefix: "bereinigt.",
+    info: "Nur Fahrzeuge aus Abschnitten mit nutzbarer Zeit; schließt zurückgesetzte Uhren (Datum 2020-01-01) und unplausible Zeitstempel aus. Ob die Uhrzeit stimmt, ist damit nicht belegt." },
   { id: "tags", label: "Tags (6–18 Uhr)", praefix: "teilzeitraeume.tags.",
-    info: "06:00 bis 18:00 Uhr Ortszeit, alle Tage, nur Fahrzeuge mit plausibler Uhr." },
+    info: "06:00 bis 18:00 Uhr Ortszeit, alle Tage, nur Fahrzeuge mit nutzbarer Zeit." },
   { id: "nachts", label: "Nachts (18–6 Uhr)", praefix: "teilzeitraeume.nachts.",
-    info: "18:00 bis 06:00 Uhr Ortszeit, alle Tage, nur Fahrzeuge mit plausibler Uhr." },
+    info: "18:00 bis 06:00 Uhr Ortszeit, alle Tage, nur Fahrzeuge mit nutzbarer Zeit." },
   { id: "schulweg", label: "Schulweg (Mo–Fr, 7–8 Uhr)", praefix: "teilzeitraeume.schulweg.",
-    info: "07:00 bis 08:00 Uhr Ortszeit, Montag bis Freitag, nur Fahrzeuge mit plausibler Uhr. Schulferien sind nicht herausgerechnet." },
+    info: "07:00 bis 08:00 Uhr Ortszeit, Montag bis Freitag, nur Fahrzeuge mit nutzbarer Zeit. Schulferien sind nicht herausgerechnet." },
 ];
 let data = [];
 let zeitraum = ZEITRAEUME[0];
@@ -135,11 +136,11 @@ function zeile(r, idx) {
   const start = get("messzeitraum.start"), ende = get("messzeitraum.ende");
   const warnungen = num(get("warnungen")) || 0;
   const gruende = [];
-  const uhr = get("uhr.bewertung");
-  if (uhr && uhr !== "plausibel") {
-    const anteil = get("uhr.fahrzeuge_mit_gueltiger_zeit_prozent");
-    gruende.push("Geräteuhr " + (uhr === "unbrauchbar" ? "unbrauchbar" : "eingeschränkt plausibel") +
-      (anteil ? " (" + fmt1.format(Number(anteil)) + " % der Fahrzeuge mit gültiger Zeit)" : "") +
+  const uhr = get("uhr.nutzbarkeit");
+  if (uhr && uhr !== "nutzbar") {
+    const anteil = get("uhr.fahrzeuge_mit_nutzbarer_zeit_prozent");
+    gruende.push("Zeitstempel " + (uhr === "nicht_nutzbar" ? "nicht nutzbar" : "nur teilweise nutzbar") +
+      (anteil ? " (" + fmt1.format(Number(anteil)) + " % der Fahrzeuge mit nutzbarer Zeit)" : "") +
       (get("uhr.hinweise") ? ": " + get("uhr.hinweise") : ""));
   }
   if (get("tempolimit_quelle") === "mitteilung_verwaltung") {

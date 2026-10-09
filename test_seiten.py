@@ -27,7 +27,7 @@ def zeile(rel="07_2024_ Einsteinstraße", datei="_15.dsd", n=1000):
             "nacht_ereignisse": {"definition": "22:00 bis 06:00 Uhr Ortszeit, nur vollständig aufgezeichnete Nächte", "naechte": 154,
                                  "schwellen": [{"ab_kmh": 100, "doppeltes_tempolimit": False, "naechte_mit_fahrt": 71,
                                                 "anteil_naechte_prozent": 46.1, "fahrten_gesamt": 130, "fahrten_je_nacht": 0.84}]},
-            "uhr": {"bewertung": "plausibel", "fahrzeuge_mit_gueltiger_zeit_prozent": 100.0, "hinweise": ["Hinweis <b>fett</b>"]},
+            "uhr": {"nutzbarkeit": "nutzbar", "fahrzeuge_mit_nutzbarer_zeit_prozent": 100.0, "hinweise": ["Hinweis <b>fett</b>"]},
             "bereinigt": {**teil, "messzeitraum": {"start": "2024-07-24 09:48:27", "ende": "2024-12-04 10:38:55"}},
             "teilzeitraeume": {"tags": teil, "nachts": {"anzahl_fahrzeuge": 0}, "schulweg": teil}}
 
@@ -166,6 +166,27 @@ class Seite(unittest.TestCase):
     def test_kurze_abschnitte_werden_zusammengefasst(self):
         h = self.html([])
         self.assertIn("1 weitere kurze Abschnitte", h)
+
+    def test_uhr_urteil_kommt_aus_den_belegen_nicht_aus_der_nutzbarkeit(self):
+        row = zeile()  # Zeitstempel zu 100 % nutzbar
+        abschnitt = {"start": "2024-04-25 18:14:59", "ende": "2024-07-24 06:43:18", "fahrzeuge": 47453, "urteil": "eingeschraenkt",
+                     "art": "widerspruch", "begruendung": ["tagesgang: um +90 Minuten verschoben"]}
+        h = s.uhr_abschnitt(row, [abschnitt], "x")
+        self.assertIn("Uhr eingeschränkt", h)
+        self.assertNotIn("Uhr plausibel", h)  # frueher stand hier trotz Widerspruch "plausibel"
+        self.assertIn("<strong>nutzbar</strong> (100,0&nbsp;% der Fahrzeuge", h)
+        self.assertIn("sagt nicht, dass die Uhrzeit stimmt", h)
+        self.assertIn("Widerspruch in den Belegen", h)
+        plausibel = dict(abschnitt, urteil="plausibel", art=None)
+        self.assertIn("Uhr plausibel", s.uhr_abschnitt(row, [plausibel], "x"))
+
+    def test_uhr_ohne_belege_und_teilweise_nutzbar(self):
+        row = zeile()
+        row["uhr"] = {"nutzbarkeit": "teilweise_nutzbar", "fahrzeuge_mit_nutzbarer_zeit_prozent": 62.5}
+        h = s.uhr_abschnitt(row, [], "x")
+        self.assertIn("keine Prüfung der Uhr anhand von Belegen", h)
+        self.assertNotIn('class="badge', h)
+        self.assertIn("<strong>teilweise nutzbar</strong> (62,5&nbsp;%", h)
 
     def test_leere_datei(self):
         h = self.html([], rows=[zeile(n=0)])

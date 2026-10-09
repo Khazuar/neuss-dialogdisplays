@@ -23,6 +23,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
 from dsd2csv import aufprall_kmh, standort_slug  # noqa: E402
+from uhr_belege import gesamturteil  # noqa: E402
 
 REPO = "https://github.com/Khazuar/neuss-dialogdisplays"
 MIN_FAHRZEUGE_ABSCHNITT = 2000  # kleinere Uhr-Abschnitte werden zusammengefasst
@@ -36,7 +37,7 @@ URTEIL = {"plausibel": "ok", "eingeschraenkt": "mid", "unbrauchbar": "bad"}
 URTEIL_TEXT = {"plausibel": "plausibel", "eingeschraenkt": "eingeschränkt", "unbrauchbar": "unbrauchbar"}
 ART_TEXT = {"unzureichend_belegt": "nicht ausreichend belegt", "widerspruch": "Widerspruch in den Belegen",
             "zurueckgesetzt": "Uhr zurückgesetzt (Standarddatum 2020-01-01)"}
-ZEITRAEUME = [("alle", "Alle ausgewerteten Fahrzeuge"), ("bereinigt", "Nur Fahrzeuge mit plausibler Uhr"),
+ZEITRAEUME = [("alle", "Alle ausgewerteten Fahrzeuge"), ("bereinigt", "Nur Fahrzeuge mit nutzbarer Zeit"),
               ("tags", "Tags (6–18 Uhr)"), ("nachts", "Nachts (18–6 Uhr)"), ("schulweg", "Schulweg (Mo–Fr, 7–8 Uhr)")]
 METHODE_TEXT = {
     "name_zeitraum": "über Straßenname und Erfassungszeitraum",
@@ -119,9 +120,20 @@ def kennzahlen_tabelle(row):
 
 def uhr_abschnitt(row, abschnitte, rel):
     uhr = row.get("uhr") or {}
-    bew = uhr.get("bewertung", "unbrauchbar")
-    z = [f'<h4>Geräteuhr</h4><p>{badge("Uhr " + URTEIL_TEXT.get(bew, bew), URTEIL.get(bew, "mid"))} '
-         f'{dez(uhr.get("fahrzeuge_mit_gueltiger_zeit_prozent"), 1)}&nbsp;% der Fahrzeuge haben eine glaubwürdige Zeit.</p>']
+    ges = gesamturteil(abschnitte)
+    if ges:
+        bew, anteil = ges
+        kopf = (f'{badge("Uhr " + URTEIL_TEXT[bew], URTEIL[bew])} {dez(100 * anteil, 1)}&nbsp;% der Fahrzeuge liegen in Abschnitten, '
+                'deren Uhr anhand von Belegen als plausibel gelten kann (Tabelle unten).')
+    else:
+        kopf = "Für diese Datei liegt keine Prüfung der Uhr anhand von Belegen vor."
+    nutzbar = {"nutzbar": "nutzbar", "teilweise_nutzbar": "teilweise nutzbar", "nicht_nutzbar": "nicht nutzbar"}.get(uhr.get("nutzbarkeit"))
+    z = [f'<h4>Geräteuhr</h4><p>{kopf}</p>']
+    if nutzbar:
+        z.append(f'<p>Zeitstempel für die Auswertung nach Tageszeit: <strong>{nutzbar}</strong> '
+                 f'({dez(uhr.get("fahrzeuge_mit_nutzbarer_zeit_prozent"), 1)}&nbsp;% der Fahrzeuge, kein Reset, keine Datumssprünge, '
+                 'kein Versatz um Stunden). Das ist eine formale Prüfung und sagt nicht, dass die Uhrzeit stimmt; '
+                 'das zeigen nur die Belege in der Tabelle.</p>')
     if uhr.get("hinweise"):
         z.append("<ul>" + "".join(f"<li>{e(h)}</li>" for h in uhr["hinweise"]) + "</ul>")
     gross = [a for a in abschnitte if a["fahrzeuge"] >= MIN_FAHRZEUGE_ABSCHNITT]
@@ -169,7 +181,7 @@ def abgleich_tabelle(eintrag):
     if not z:
         return ""
     return ('<div class="tablewrap"><table><caption class="muted">Abgleich: Angabe der Verwaltung gegen die DSD-Datei (aus der DSD '
-            'berechnet, nur Fahrzeuge mit glaubwürdiger Uhr)</caption><thead><tr><th>Kennzahl</th><th class="num">Verwaltung</th>'
+            'berechnet, nur Fahrzeuge mit nutzbarer Zeit ab 5 km/h)</caption><thead><tr><th>Kennzahl</th><th class="num">Verwaltung</th>'
             '<th class="num">DSD</th><th class="num">Abweichung</th></tr></thead><tbody>' + "".join(z) + "</tbody></table></div>")
 
 
@@ -455,7 +467,7 @@ def histogramm_abschnitt(row):
         svg, text = hist_svg([("Tags", "hist-tags", tag), ("Nachts", "hist-nachts", nacht)], limit)
         z.append('<details><summary>Tags und nachts im Vergleich</summary><figure class="histfig">' + svg +
                  '<figcaption class="muted">Anteil der Fahrzeuge je km/h, getrennt für Tags (6–18 Uhr) und Nachts (18–6 Uhr, Ortszeit). '
-                 f'Nur Fahrzeuge mit plausibler Geräteuhr. {text}</figcaption></figure></details>')
+                 f'Nur Fahrzeuge mit nutzbarer Zeit. {text}</figcaption></figure></details>')
     return "".join(z)
 
 
@@ -465,7 +477,7 @@ def nacht_abschnitt(row):
         return ""
     z = ['<h4>Ereignisse pro Nacht</h4>']
     if not n.get("naechte"):
-        return z[0] + '<p>Keine vollständig aufgezeichnete Nacht mit plausibler Uhr; Auswertung nicht möglich.</p>'
+        return z[0] + '<p>Keine vollständig aufgezeichnete Nacht mit nutzbarer Zeit; Auswertung nicht möglich.</p>'
     zeilen, saetze = [], []
     for s in n.get("schwellen", []):
         label = f'ab {s["ab_kmh"]}&nbsp;km/h' + (" (doppeltes Tempolimit)" if s.get("doppeltes_tempolimit") else "")
@@ -530,7 +542,7 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel):
         fakten.append(("Zeitstempel in der Datei", f'{zeit_de(mz["start"])} bis {zeit_de(mz["ende"])} (Gerätezeit)'))
     bz = (row.get("bereinigt") or {}).get("messzeitraum")
     if bz:
-        fakten.append(("Davon mit plausibler Uhr", f'{zeit_de(bz["start"])} bis {zeit_de(bz["ende"])}'))
+        fakten.append(("Davon mit nutzbarer Zeit", f'{zeit_de(bz["start"])} bis {zeit_de(bz["ende"])}'))
     if g.get("konfiguration"):
         fakten.append(("Gerät (Konfiguration)", e(g["konfiguration"])))
     if g.get("name"):
