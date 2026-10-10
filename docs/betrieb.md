@@ -29,7 +29,9 @@ neu veröffentlicht, die letzte Version bleibt online.
 ## Ablauf
 
 - Push auf `main` oder manuell (Actions → Pages → Run workflow): Seite neu bauen und veröffentlichen. Der Build führt
-  die Tests aus, erzeugt die Auswertungen (`dsd2csv.py`), baut je Standortordner eine Detailseite
+  die Tests aus, erzeugt die Auswertungen (`dsd2csv.py`, mit 4 Prozessen und einem Zwischenspeicher, der zwischen den Läufen
+  erhalten bleibt; ein Lauf ohne Zwischenspeicher dauert einige Minuten, ein Lauf mit gleichen Daten Sekunden; siehe
+  [gruppen.md](gruppen.md)), baut je Standortordner eine Detailseite
   (`seiten_bauen.py`, Ergebnis `standorte/<name>.html`) und erzeugt das Impressum. Die Detailseiten lesen
   `belege/metadaten.json` und `belege/uhr-bewertung.json` aus dem Repository; wer die Metadaten oder die
   Uhr-Bewertung neu erzeugt (`metadaten.py`, `uhr_belege.py`), muss die Ergebnisse mit committen.

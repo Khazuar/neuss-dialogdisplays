@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: CSV und YAML aus den DSD-Dateien erzeugen
-        run: python -I dsd2csv.py . -o daten
+        run: python -I dsd2csv.py . -o daten --jobs 4
       - name: Datenlizenz beilegen
         run: cp LICENSE-DATEN daten/LICENSE-DATEN
       - name: Hinweis beilegen

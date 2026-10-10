@@ -33,12 +33,15 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
 - `docs/metadaten.md` – Herkunft, Zuordnung und Abdeckung der Metadaten
 - `docs/rauschen.md` – Modell, Regeln und Grenzen des Rauschbodenabzugs
+- `docs/gruppen.md` – Zerlegung der Verteilung in Gruppen, Zeitscheiben und die Auswahl auf den Detailseiten
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `seiten_bauen.py` – baut je Standort eine Detailseite für die GitHub Pages (`standorte/<name>.html`), mit
   Geschwindigkeits-Histogrammen als Inline-SVG
-- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py` – Tests (`python3 -m unittest -v`)
+- `gruppen.py` – zerlegt die Verteilung je Datei in Gruppen (Lognormal-Mischung, Zahl der Gruppen aus den Daten) und baut die Zellen für die Auswahl nach Tageszeit, Tagen und Gruppe
+- `zwischenspeicher.py` – Zwischenspeicher für Ergebnisse je Datei (nur geänderte Dateien oder Skripte werden neu gerechnet)
+- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py` – Tests (`python3 -m unittest -v`)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
-- `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz
+- `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz, dazu `filter.js` (kleines Skript für die Auswahl auf den Detailseiten, liest nur die Daten der eigenen Seite)
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
 - `LICENSE`, `LICENSE-DATEN` – Lizenzen für Software bzw. Daten und Dokumentation, siehe [Lizenz](#lizenz)
 - `.github/workflows/` – erzeugt die abgeleiteten Daten und veröffentlicht sie
@@ -70,7 +73,7 @@ python3 -I dsd2csv.py . -o ausgabe          # Ergebnisse unter ausgabe/ (Ordners
 ```
 
 Optionen: `--limit N` (Tempolimit erzwingen), `--min-kmh N` (Standard 0, zusätzlich; Werte unter N km/h aus der Auswertung
-nehmen), `--meta`, `--status`. Mit `-I` startet Python isoliert; das ist bei Dateien aus fremder Quelle
+nehmen), `--meta`, `--status`, `--keine-csv` (keine CSV je Datei), `--cache ORDNER` (Zwischenspeicher, siehe `docs/gruppen.md`), `--jobs N` (N Dateien gleichzeitig). Mit `-I` startet Python isoliert; das ist bei Dateien aus fremder Quelle
 sinnvoll.
 
 ### Ausgabe
@@ -85,8 +88,10 @@ sinnvoll.
   - `rauschen` – Rauschboden: `belegt`, `abgezogen_fahrzeuge`, Anteil, Mittel und Obergrenze in km/h, Stabilität und das
     `spektrum` (Fahrten je 1000 Stunden, verkehrsunabhängig und insgesamt); `fahrzeuge_in_datei` ist die Zahl vor dem Abzug,
   - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit nutzbarer Zeit,
-  - `teilzeitraeume` – dieselben Kennzahlen für `tags` (6–18 Uhr), `nachts` (18–6 Uhr) und `schulweg`
-    (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
+  - `teilzeitraeume` – dieselben Kennzahlen für `nacht` (22–6 Uhr), `vormittag` (6–12), `nachmittag` (12–19), `abend` (19–22)
+    und `schulweg` (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
+  - `gruppen` – Zerlegung der Verteilung in Gruppen (Zahl aus den Daten, auch keine Zerlegung): Anteil, Modus, Kennzahlen je Gruppe,
+    Hauptmenge ohne die langsamen Gruppen (`docs/gruppen.md`),
   - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: relativer Risikoindex nach Nilsson, Aufprallgeschwindigkeit
     und Anteil der Fahrzeuge, die mit mehr als 30 bzw. 50 km/h aufträfen, Lärm gegenüber dem Tempolimit
     (`docs/gefaehrdung.md`),
@@ -96,6 +101,8 @@ sinnvoll.
     wenigen Fahrzeugen breitere Klassen nach Freedman-Diaconis (2 · Quartilsabstand · n^(−1/3), höchstens 5 km/h),
     und die Höhe ist der Anteil der Fahrzeuge je km/h. Die Skala endet beim 99,99-%-Perzentil; schnellere Fahrzeuge
     (meist Messfehler) werden unter dem Bild gezählt
+- `<name>.zellen.json` – Histogramme je Wochentag und Stunde und Gewichte der Gruppen; daraus rechnet die Detailseite die Auswahl nach
+  Tageszeit, Tagen und Gruppe
 - `auswertung.yaml`, `summary.csv` – alle Messungen zusammengefasst
 
 Die Geräte stellen ihre Uhr nicht auf Sommerzeit um und sind teils zurückgesetzt oder verstellt. Die
@@ -126,7 +133,7 @@ In diesem Repository gelten zwei Lizenzen:
 
 | Was | Lizenz |
 |-----|--------|
-| Software: `dsd2csv.py`, `uhr_belege.py`, `metadaten.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
+| Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
 | Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `metadaten.yaml`, `uhr-analyse.md`, `belege/`, `README.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
 
 Die Quelldateien der Software tragen zusätzlich eine `SPDX-License-Identifier`-Zeile. Die Angaben in

@@ -29,14 +29,18 @@ jobs:
           python-version: "3.12"
       - name: Tests (Zeitumrechnung, Uhr-Auswertung)
         run: python -m unittest -v
-      - name: CSV und YAML aus den DSD-Dateien erzeugen
-        run: python -I dsd2csv.py . -o _site
-      - name: Einzelmessungen als CSV entfernen (nur YAML und summary.csv bleiben)
-        run: find _site -name '*.csv' ! -name summary.csv -delete
+      - name: Zwischenspeicher der Ergebnisse je Datei laden
+        uses: actions/cache@v4
+        with:
+          path: .zwischenspeicher
+          key: ergebnisse-${{ github.sha }}
+          restore-keys: ergebnisse-
+      - name: YAML und Zellen aus den DSD-Dateien erzeugen (ohne CSV je Datei)
+        run: python -I dsd2csv.py . -o _site --keine-csv --cache .zwischenspeicher --jobs 4
       - name: Detailseiten der Standorte bauen
         run: python -I seiten_bauen.py --auswertung _site/auswertung.json --ziel _site
       - name: Seiten hinzufuegen
-        run: cp site/index.html site/datenschutz.html site/style.css _site/
+        run: cp site/index.html site/datenschutz.html site/style.css site/filter.js _site/
       - name: Impressum aus den Repository-Variablen erzeugen
         env:
           IMPRESSUM_STRASSE: ${{ vars.IMPRESSUM_STRASSE }}
