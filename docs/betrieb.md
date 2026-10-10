@@ -26,6 +26,21 @@ werden. Die Anschrift steht im veröffentlichten Impressum, nur eben nicht im Gi
 Fehlt eine Pflichtvariable, bricht der Workflow mit einer Fehlermeldung ab. Die Seite wird dann nicht
 neu veröffentlicht, die letzte Version bleibt online.
 
+## Seite vor dem Push lokal ansehen
+
+`lokal_bauen.py` führt dieselben Schritte aus wie `pages.yml` (ohne Tests) und schreibt die Seite nach `_vorschau/`:
+
+```sh
+python3 -I lokal_bauen.py                      # bauen, die Adresse der Startseite nennen
+python3 -I lokal_bauen.py --serve --oeffnen    # bauen, lokalen Server starten und den Browser öffnen (http://127.0.0.1:8000/)
+```
+
+Der Server lauscht nur auf `127.0.0.1`, also nur auf diesem Rechner. Die Detailseiten (`_vorschau/standorte/*.html`) lassen sich auch
+direkt aus dem Ordner öffnen; die Startseite lädt `summary.csv` und braucht den Server. Der erste Lauf dauert gut anderthalb Minuten
+(8 Prozesse: `--jobs 8`), danach rechnet der Zwischenspeicher (`.zwischenspeicher/`) nur Geändertes neu. Das Impressum wird aus
+denselben Umgebungsvariablen gebaut wie im Workflow (`IMPRESSUM_STRASSE`, `IMPRESSUM_ORT`, `IMPRESSUM_TELEFON`); ohne sie bleiben die
+Felder leer. `_vorschau/` und `.zwischenspeicher/` gehören nicht ins Repository (die Whitelist in `.gitignore` lässt sie weg).
+
 ## Ablauf
 
 - Push auf `main` oder manuell (Actions → Pages → Run workflow): Seite neu bauen und veröffentlichen. Der Build führt
