@@ -129,13 +129,44 @@ class Seite(unittest.TestCase):
         self.assertIn("Ereignisse pro Nacht", h)
         self.assertIn("In 71 von 154 Nächten (46&nbsp;%) fuhr mindestens ein Fahrzeug mit 100&nbsp;km/h oder mehr", h)
 
-    def test_auswertung_ab_steht_auf_der_seite(self):
+    def test_zusaetzliche_mindestgeschwindigkeit_steht_auf_der_seite(self):
         row = zeile()
         row["auswertung_ab_kmh"], row["fahrzeuge_unter_auswertung_ab"] = 5, 1234
         h = self.html([], rows=[row])
         self.assertIn("Ausgewertet ab", h)
         self.assertIn("5&nbsp;km/h (1.234 langsamere Fahrzeuge in der Datei sind nicht berücksichtigt)", h)
         self.assertNotIn("Ausgewertet ab", self.html([]))  # ohne Angabe keine Zeile
+
+    def rauschzeile(self, **kw):
+        row = zeile()
+        row["fahrzeuge_in_datei"] = 1200
+        row["rauschen"] = {"geprueft": True, "belegt": True, "abgezogen_fahrzeuge": 200, "anteil_prozent": 16.7, "mittel_kmh": 4.9,
+                           "obergrenze_kmh": 9, "stabil": True,
+                           "spektrum": {"ab_kmh": 3, "rausch": [2040, 1590, 970, 590], "alle": [3130, 2270, 1610, 980]}, **kw}
+        return row
+
+    def test_rauschboden_belegt_mit_bild(self):
+        h = self.html([], rows=[self.rauschzeile()])
+        self.assertIn("Rauschboden (verkehrsunabhängige Messwerte)", h)
+        self.assertIn("Bei 16,7&nbsp;% der Messwerte dieser Datei (200 Fahrzeuge)", h)
+        self.assertIn("im Mittel bei 4,9&nbsp;km/h, 95&nbsp;% davon unter 9&nbsp;km/h", h)
+        self.assertIn("herausgerechnet", h)
+        self.assertIn('class="rausch-rot"', h)  # roter Teil im Bild
+        self.assertEqual(h.count('class="rausch-alle"'), 4)  # eine graue Saeule je km/h
+        self.assertIn("Fahrzeuge in der Datei</dt><dd>1.200", h)
+        self.assertNotIn("Ausgewertet ab", h)  # keine Mindestgeschwindigkeit mehr
+
+    def test_rauschboden_nicht_belegt_oder_nicht_nachweisbar_oder_nicht_geprueft(self):
+        h = s.rauschen_abschnitt(self.rauschzeile(belegt=False, grund="Anteil in den Haelften nicht stabil"))
+        self.assertIn("nicht belegt", h)
+        self.assertIn("Es wurde nichts herausgerechnet", h)
+        h = s.rauschen_abschnitt({"rauschen": {"geprueft": True, "belegt": False, "grund": "kein verkehrsunabhaengiger Rauschboden nachweisbar",
+                                               "anteil_prozent": 0.0}})
+        self.assertIn("nicht nachweisen", h)
+        self.assertNotIn("<svg", h)
+        h = s.rauschen_abschnitt({"rauschen": {"geprueft": False, "grund": "weniger als 3000 Fahrzeuge"}})
+        self.assertIn("Nicht geprüft: weniger als 3000 Fahrzeuge", h)
+        self.assertEqual(s.rauschen_abschnitt(zeile()), "")  # Altdaten ohne Block
 
     def test_hinweis_zu_fehlern_steht_oben_und_unten(self):
         h = self.html([])

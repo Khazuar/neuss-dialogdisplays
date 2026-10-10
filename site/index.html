@@ -28,7 +28,9 @@
     Sie sind nicht amtlich und nicht geprüft, und Fehler in der Auswertung (Skripte, Annahmen, Zuordnung der Angaben) können nicht ausgeschlossen werden; alle Angaben ohne Gewähr. Die Geräteuhren werden nie auf Sommerzeit umgestellt und
     sind teils zurückgesetzt oder verstellt; die Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit
     um und verwenden nur Fahrzeuge mit nutzbarer Zeit (kein Reset, keine Datumssprünge, kein Versatz um Stunden).
-    Das ist eine formale Prüfung; ob die Uhrzeit tatsächlich stimmt, belegen nur die Detailseiten. Zeilen mit
+    Das ist eine formale Prüfung; ob die Uhrzeit tatsächlich stimmt, belegen nur die Detailseiten.
+    Sehr langsame Messwerte, deren Rate nicht vom Verkehr abhängt (Fußgänger, Tiere, Echos, Störungen), sind aus allen
+    Kennzahlen herausgerechnet, wo sich das belegen lässt; die Detailseiten nennen Anteil und Grund. Zeilen mit
     <span class="warn" aria-hidden="true">⚠</span> haben nur teilweise nutzbare Zeitstempel oder übersprungene
     Datensätze, der Tooltip nennt den Grund. Das Verfahren steht im README. Einhaltungsquoten unter
     50&nbsp;% sind rot, unter 75&nbsp;% gelb hinterlegt.
@@ -107,7 +109,7 @@ const COLUMNS = [
 // Zeitraeume der Auswertung: Praefix der Spalten in summary.csv
 const ZEITRAEUME = [
   { id: "roh", label: "Alle Fahrzeuge (Rohdaten)", praefix: "",
-    info: "Alle Fahrzeuge der Datei ab 5 km/h, unabhängig von der Uhrzeit. Enthält auch Fahrzeuge mit falsch datierter Geräteuhr." },
+    info: "Alle Fahrzeuge der Datei ohne verkehrsunabhängigen Rauschboden (sehr langsame Messwerte, wo belegt), unabhängig von der Uhrzeit. Enthält auch Fahrzeuge mit falsch datierter Geräteuhr." },
   { id: "bereinigt", label: "Alle Fahrzeuge mit nutzbarer Zeit", praefix: "bereinigt.",
     info: "Nur Fahrzeuge aus Abschnitten mit nutzbarer Zeit; schließt zurückgesetzte Uhren (Datum 2020-01-01) und unplausible Zeitstempel aus. Ob die Uhrzeit stimmt, ist damit nicht belegt." },
   { id: "tags", label: "Tags (6–18 Uhr)", praefix: "teilzeitraeume.tags.",

@@ -16,6 +16,7 @@ import argparse
 import collections
 import html
 import json
+import math
 import os
 import re
 import sys
@@ -181,7 +182,7 @@ def abgleich_tabelle(eintrag):
     if not z:
         return ""
     return ('<div class="tablewrap"><table><caption class="muted">Abgleich: Angabe der Verwaltung gegen die DSD-Datei (aus der DSD '
-            'berechnet, nur Fahrzeuge mit nutzbarer Zeit ab 5 km/h)</caption><thead><tr><th>Kennzahl</th><th class="num">Verwaltung</th>'
+            'berechnet, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens)</caption><thead><tr><th>Kennzahl</th><th class="num">Verwaltung</th>'
             '<th class="num">DSD</th><th class="num">Abweichung</th></tr></thead><tbody>' + "".join(z) + "</tbody></table></div>")
 
 
@@ -451,6 +452,68 @@ def hist_svg(serien, limit, v85=None):
     return "".join(s), text + "."
 
 
+def rausch_svg(sp, breite=420, hoehe=190):
+    """Fahrten je Stunde nach Geschwindigkeit: grau alle, rot davon verkehrsunabhaengig (Rauschboden)."""
+    n = len(sp["alle"])
+    rate = [x / 1000 for x in sp["alle"]]
+    ymax = max(rate) * 1.1 or 1
+    schritt = 10 ** math.floor(math.log10(ymax))
+    for f in (1, 2, 5, 10):
+        if ymax / (schritt * f) <= 4:
+            schritt *= f
+            break
+    ol, orr, ot, ou = 36, 8, 10, 28
+    sx = (breite - ol - orr) / n
+
+    def y(w):
+        return ot + (hoehe - ot - ou) * (1 - w / ymax)
+
+    s = [f'<svg class="hist" viewBox="0 0 {breite} {hoehe}" role="img" aria-label="Fahrten je Stunde nach Geschwindigkeit, davon Rauschboden">']
+    t = 0.0
+    while t <= ymax:
+        s.append(f'<line class="hist-gitter" x1="{ol}" x2="{breite - orr}" y1="{y(t):.1f}" y2="{y(t):.1f}"/>'
+                 f'<text class="hist-text" x="{ol - 4}" y="{y(t) + 4:.1f}" text-anchor="end">{dez(t, 1 if schritt < 1 else 0)}</text>')
+        t += schritt
+    for i in range(n):
+        v = sp["ab_kmh"] + i
+        x = ol + i * sx
+        ges, ra = rate[i], sp["rausch"][i] / 1000
+        s.append(f'<rect class="rausch-alle" x="{x + 0.5:.1f}" y="{y(ges):.1f}" width="{max(sx - 1, 0.5):.1f}" height="{hoehe - ou - y(ges):.1f}">'
+                 f'<title>{v} km/h: {dez(ges, 2)} Fahrten je Stunde, davon verkehrsunabhängig {dez(ra, 2)}</title></rect>')
+        if ra > 0:
+            s.append(f'<rect class="rausch-rot" x="{x + 0.5:.1f}" y="{y(ra):.1f}" width="{max(sx - 1, 0.5):.1f}" height="{hoehe - ou - y(ra):.1f}"/>')
+        if n <= 14 or i % 2 == 0:
+            s.append(f'<text class="hist-text" x="{x + sx / 2:.1f}" y="{hoehe - ou + 14}" text-anchor="middle">{v}</text>')
+    s.append(f'<text class="hist-text" x="{ol + (breite - ol - orr) / 2:.1f}" y="{hoehe - 3}" text-anchor="middle">Geschwindigkeit in km/h</text></svg>')
+    return "".join(s)
+
+
+def rauschen_abschnitt(row):
+    """Rauschboden: Anteil der Messwerte, die nicht vom Verkehr abhaengen (rauschen.py), mit Bild und Hinweis."""
+    r = row.get("rauschen")
+    if not r:
+        return ""
+    z = ['<h4>Rauschboden (verkehrsunabhängige Messwerte)</h4>']
+    if not r.get("geprueft"):
+        z.append(f'<p>Nicht geprüft: {e(r.get("grund"))}. Die Kennzahlen enthalten alle aufgezeichneten Fahrzeuge.</p>')
+    elif r.get("belegt"):
+        z.append(f'<p>Bei {dez(r.get("abgezogen_anteil_prozent", r["anteil_prozent"]), 1)}&nbsp;% der Messwerte dieser Datei ({ganz(r["abgezogen_fahrzeuge"])} Fahrzeuge) hängt die Rate '
+                 f'nicht vom Verkehr ab: Sie bleibt über den Tag gleich, während der Verkehr schwankt. Diese Werte liegen im Mittel bei '
+                 f'{dez(r["mittel_kmh"], 1)}&nbsp;km/h, 95&nbsp;% davon unter {r["obergrenze_kmh"]}&nbsp;km/h. Sie sind aus allen Kennzahlen auf dieser '
+                 'Seite herausgerechnet. Was dahintersteckt (Fußgänger, Tiere, Echos, Störungen), lässt sich aus den Daten nicht sagen.</p>')
+    elif r.get("grund") and "nachweisbar" in r["grund"]:
+        z.append('<p>Ein verkehrsunabhängiger Rauschboden lässt sich in dieser Datei nicht nachweisen. Es wurde nichts herausgerechnet.</p>')
+    else:
+        z.append(f'<p>Ein verkehrsunabhängiger Anteil von etwa {dez(r.get("anteil_prozent"), 1)}&nbsp;% wurde geschätzt, ist aber nicht belegt '
+                 f'({e(r.get("grund"))}). Es wurde nichts herausgerechnet; die Kennzahlen enthalten alle aufgezeichneten Fahrzeuge.</p>')
+    sp = r.get("spektrum")
+    if sp and sp.get("alle"):
+        z.append('<figure class="histfig">' + rausch_svg(sp) + '<figcaption class="muted">Fahrten je Stunde nach Geschwindigkeit: grau alle, '
+                 'rot davon verkehrsunabhängig (geschätzt aus dem Verlauf über den Tag, nur Zeiten mit nutzbarer Uhr).</figcaption></figure>')
+    z.append(f'<p class="muted">Verfahren und Grenzen: <a href="{REPO}/blob/main/docs/rauschen.md">Rauschboden</a>.</p>')
+    return "".join(z)
+
+
 def histogramm_abschnitt(row):
     """Geschwindigkeitsverteilung: Histogramm aller Fahrzeuge der Datei, dazu Tags und Nachts im Vergleich."""
     h = row.get("histogramm")
@@ -533,6 +596,7 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel):
     z = [f'<section class="messung" id="{e(standort_slug(row["datei"]))}"><h3>{e(row["datei"])}</h3>']
     quelle = {"mitteilung_verwaltung": "laut Mitteilung der Verwaltung", "parameter": "vorgegeben"}.get(row.get("tempolimit_quelle"), "aus der DSD-Konfiguration")
     fakten = [("Tempolimit", f'{limit}&nbsp;km/h ({quelle}{"; DSD-Konfiguration " + str(row["tempolimit_dsd_kmh"]) + " km/h" if row.get("tempolimit_dsd_kmh") else ""})' if limit else "unbekannt"),
+              ("Fahrzeuge in der Datei", ganz(row.get("fahrzeuge_in_datei"))),
               ("Fahrzeuge in der Auswertung", ganz(row.get("anzahl_fahrzeuge")))]
     ab, unter = row.get("auswertung_ab_kmh"), row.get("fahrzeuge_unter_auswertung_ab")
     if ab:
@@ -558,6 +622,7 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel):
                  "".join(f"<li>{w}</li>" for w in wid) + "</ul></div>")
     if row.get("anzahl_fahrzeuge"):
         z.append(kennzahlen_tabelle(row))
+        z.append(rauschen_abschnitt(row))
         z.append(histogramm_abschnitt(row))
         z.append(schaetzung_tabellen(row))
         z.append(nacht_abschnitt(row))
