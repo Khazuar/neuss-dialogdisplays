@@ -9,7 +9,8 @@ Eingaben:
   belege/metadaten.json    Angaben der Verwaltung und Geraete-Konfiguration (metadaten.py)
   belege/uhr-bewertung.json  Urteil zur Geraeteuhr je Abschnitt (uhr_belege.py)
 
-Die Seiten sind statisches HTML ohne Skripte und ohne Verbindungen zu anderen Servern. Alle Texte aus den
+Die Seiten sind statisches HTML ohne Verbindungen zu anderen Servern. Nur die Auswahl nach Zeit, Tagen und Gruppe braucht
+ein kleines eigenes Skript (site/filter.js), das ausschliesslich die eingebettete Datentabelle liest. Alle Texte aus den
 Daten werden maskiert. Der Wortlaut der Verwaltung steht als Auszug da; massgeblich ist das verlinkte Dokument.
 """
 import argparse
@@ -23,6 +24,7 @@ import sys
 import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
+import gruppen  # noqa: E402
 from dsd2csv import aufprall_kmh, standort_slug  # noqa: E402
 from uhr_belege import gesamturteil  # noqa: E402
 
@@ -39,7 +41,8 @@ URTEIL_TEXT = {"plausibel": "plausibel", "eingeschraenkt": "eingeschränkt", "un
 ART_TEXT = {"unzureichend_belegt": "nicht ausreichend belegt", "widerspruch": "Widerspruch in den Belegen",
             "zurueckgesetzt": "Uhr zurückgesetzt (Standarddatum 2020-01-01)"}
 ZEITRAEUME = [("alle", "Alle ausgewerteten Fahrzeuge"), ("bereinigt", "Nur Fahrzeuge mit nutzbarer Zeit"),
-              ("tags", "Tags (6–18 Uhr)"), ("nachts", "Nachts (18–6 Uhr)"), ("schulweg", "Schulweg (Mo–Fr, 7–8 Uhr)")]
+              ("nacht", "Nacht (22–6 Uhr)"), ("vormittag", "Vormittag (6–12 Uhr)"), ("nachmittag", "Nachmittag (12–19 Uhr)"),
+              ("abend", "Abend (19–22 Uhr)"), ("schulweg", "Schulweg (Mo–Fr, 7–8 Uhr)")]
 METHODE_TEXT = {
     "name_zeitraum": "über Straßenname und Erfassungszeitraum",
     "name_werte": "über Straßenname, Sitzungsdatum und die Werte der DSD-Datei (Abgleich nicht unabhängig)",
@@ -320,7 +323,7 @@ def umrechnung(limit):
 # ------------------------------------------------------------------ Histogramme
 
 HIST_MIN_FAHRZEUGE = 50  # darunter kein Histogramm
-HIST_MIN_VERGLEICH = 100  # Tags/Nachts-Vergleich: so viele Fahrzeuge je Reihe mindestens
+HIST_MIN_VERGLEICH = 100  # Tag/Nacht-Vergleich: so viele Fahrzeuge je Reihe mindestens
 HIST_BREITE_MAX = 5  # breiteste Klasse in km/h
 HIST_B, HIST_H, HIST_L, HIST_R, HIST_T, HIST_U = 600, 290, 44, 12, 38, 38  # Zeichenflaeche des SVG (viewBox)
 
@@ -514,6 +517,102 @@ def rauschen_abschnitt(row):
     return "".join(z)
 
 
+ZEIT_OPTIONEN = [("alle", "Ganztägig (alle Stunden)"), ("nacht", "Nacht (22–6 Uhr)"), ("vormittag", "Vormittag (6–12 Uhr)"),
+                 ("nachmittag", "Nachmittag (12–19 Uhr)"), ("abend", "Abend (19–22 Uhr)"), ("schulweg", "Schulweg (7–8 Uhr)")]
+TAGE_OPTIONEN = [("alle", "Alle Tage"), ("werktag", "Werktage (Mo–Fr)"), ("samstag", "Samstage"), ("sonn", "Sonn- und Feiertage")] + \
+    [(str(i), t if i < 7 else "Feiertage an Werktagen und Samstagen") for i, t in enumerate(gruppen.TAGE)]
+
+
+def gruppen_abschnitt(row):
+    """Zerlegung in Gruppen (gruppen.py): Tabelle mit Anteil, Lage und Kennzahlen je Gruppe, auch ohne JavaScript sichtbar."""
+    g = row.get("gruppen")
+    if not g:
+        return ""
+    z = ['<h4>Gruppen in der Verteilung (Schätzung)</h4>']
+    if not g.get("geprueft"):
+        return z[0] + f'<p>Nicht zerlegt: {e(g.get("grund"))}.</p>'
+    if g["anzahl"] == 1:
+        return z[0] + ('<p>Die Verteilung lässt sich nicht stabil in voneinander getrennte Gruppen zerlegen: Mehr als eine Gruppe '
+                       'verbessert die Beschreibung der jeweils anderen Messtage nicht deutlich, kehrt nicht in beiden Hälften der Messtage '
+                       'wieder oder liegt zu dicht beieinander. Es gibt deshalb keine Zerlegung.</p>'
+                       f'<p class="muted">Verfahren und Grenzen: <a href="{REPO}/blob/main/docs/gruppen.md">Gruppen</a>.</p>')
+    zeilen = []
+    for gr in g["gruppen"]:
+        zeilen.append(f'<tr><th scope="row">Gruppe {gr["nr"]}{" (langsam)" if gr.get("langsam") else ""}</th>'
+                      f'<td class="num">{dez(gr["anteil_prozent"], 1)}&nbsp;%</td><td class="num">{dez(gr["modus_kmh"], 1)}</td>'
+                      f'<td class="num">{dez(gr["mittel_kmh"], 1)}</td><td class="num">{ganz(gr["v85_kmh"])}</td>'
+                      f'<td class="num{klasse_quote(gr.get("einhaltungsquote_prozent"))}">{dez(gr.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
+                      f'<td class="num{klasse_quote(gr.get("qualifizierte_einhaltungsquote_prozent"))}">{dez(gr.get("qualifizierte_einhaltungsquote_prozent"), 1)}&nbsp;%</td></tr>')
+    h = g.get("hauptmenge_ohne_langsame")
+    if h:
+        zeilen.append(f'<tr><th scope="row">Hauptmenge ohne die langsamen Gruppen</th><td class="num">{dez(h["anteil_prozent"], 1)}&nbsp;%</td>'
+                      f'<td class="num">–</td><td class="num">{dez(h["mittel_kmh"], 1)}</td><td class="num">{ganz(h["v85_kmh"])}</td>'
+                      f'<td class="num{klasse_quote(h.get("einhaltungsquote_prozent"))}">{dez(h.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
+                      f'<td class="num{klasse_quote(h.get("qualifizierte_einhaltungsquote_prozent"))}">{dez(h.get("qualifizierte_einhaltungsquote_prozent"), 1)}&nbsp;%</td></tr>')
+    z.append(f'<p>Die Verteilung setzt sich aus {g["anzahl"]} Gruppen zusammen. Die Zerlegung gilt für alle Tageszeiten und Tage. '
+             'Gruppen sind statistische Anteile der Verteilung und keine Fahrzeugarten: Was sich dahinter verbirgt (etwa Radfahrer, '
+             'abbiegende oder anfahrende Fahrzeuge, Fahrer, die sich am Tempolimit oder am Gefühl orientieren), lässt sich aus den Daten '
+             'nicht sagen.</p>')
+    z.append('<div class="tablewrap"><table><caption class="muted">Gruppen, nach dem häufigsten Tempo (Modus) geordnet; Anteil, Mittel, '
+             'V85 und Einhaltung gelten für die Fahrzeuge der Gruppe</caption><thead><tr><th>Gruppe</th><th class="num">Anteil</th>'
+             '<th class="num">Modus, km/h</th><th class="num">Ø km/h</th><th class="num">V85</th><th class="num">Einhaltung</th>'
+             '<th class="num">Qualifiziert</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
+    if g.get("obere_gruppen_ueberlappen"):
+        z.append('<p class="muted">Die oberen Gruppen überlappen stark; belegt ist nur, dass sich die langsamste Gruppe von den übrigen trennt.</p>')
+    if g.get("fahrzeuge_unter_grenze"):
+        z.append(f'<p class="muted">{ganz(g["fahrzeuge_unter_grenze"])} Fahrzeuge unter {g["angepasst_ab_kmh"]}&nbsp;km/h (Rand der Erfassung) '
+                 'sind nicht zerlegt und stehen in keiner Gruppe.</p>')
+    z.append(f'<p class="muted">Verfahren und Grenzen: <a href="{REPO}/blob/main/docs/gruppen.md">Gruppen</a>. Auswahl nach Zeit, Tagen und Gruppe: '
+             'im Abschnitt „Auswertung nach Zeit, Tagen und Gruppe“ (benötigt JavaScript).</p>')
+    return "".join(z)
+
+
+def json_in_html(obj):
+    """JSON fuer ein script-Element: kein vorzeitiges Ende durch '</' und keine Kommentarsequenzen."""
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/").replace("<!--", "<\\!--")
+
+
+def filter_abschnitt(row, daten, sid):
+    """Auswahl nach Tageszeit, Tagen und Gruppe. Die Daten stehen als Tabelle (JSON) im Seitentext, filter.js rechnet daraus."""
+    if not daten or not daten.get("z"):
+        return ""
+    gruppen_opt = [("alle", "Alle Fahrzeuge (ohne Rauschboden)")]
+    if daten.get("r"):
+        gruppen_opt.append(("rausch", "Rauschboden (herausgerechnet)"))
+    for g in daten.get("gruppen", []):
+        gruppen_opt.append((f'g{g["nr"]}', f'Gruppe {g["nr"]} (Modus {dez(g["modus"], 0)} km/h, {dez(g["anteil"], 0)} %)'))
+    if daten.get("langsam"):
+        gruppen_opt.append(("haupt", "Hauptmenge (ohne langsame Gruppen)"))
+    if daten.get("rand"):
+        gruppen_opt.append(("rand", f'Unter {daten["rand"]} km/h (nicht zerlegt)'))
+
+    def auswahl(name, label, opts):
+        return (f'<div><label for="{sid}-{name}">{e(label)}</label><select id="{sid}-{name}" data-feld="{name}">' +
+                "".join(f'<option value="{e(v)}">{e(t)}</option>' for v, t in opts) + "</select></div>")
+
+    return ('<noscript><p class="muted">Die Auswahl nach Tageszeit, Wochentag und Gruppe benötigt JavaScript. Ohne JavaScript zeigt diese Seite '
+            'die Auswertung für alle Fahrzeuge und die Zeiträume in den Tabellen.</p></noscript>'
+            f'<section class="filter" data-filter hidden><h4>Auswertung nach Zeit, Tagen und Gruppe</h4>'
+            '<p class="muted">Wählen Sie Tageszeit, Tage und Gruppe; Kennzahlen und Verteilung gelten dann für diese Auswahl. '
+            'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt.</p>'
+            '<div class="controls">' + auswahl("zeit", "Tageszeit", ZEIT_OPTIONEN) + auswahl("tage", "Tage", TAGE_OPTIONEN) +
+            auswahl("gruppe", "Gruppe", gruppen_opt) + '</div>'
+            '<div class="filter-ergebnis" aria-live="polite"></div>'
+            f'<script type="application/json" class="filter-daten">{json_in_html(daten)}</script></section>')
+
+def hist_summe(hists):
+    """Summe von Histogrammen {"ab_kmh", "anzahl"}; None, wenn keines vorhanden ist."""
+    hists = [h for h in hists if h]
+    if not hists:
+        return None
+    lo = min(h["ab_kmh"] for h in hists)
+    hi = max(h["ab_kmh"] + len(h["anzahl"]) - 1 for h in hists)
+    summe = [0] * (hi - lo + 1)
+    for h in hists:
+        for i, c in enumerate(h["anzahl"]):
+            summe[h["ab_kmh"] - lo + i] += c
+    return {"ab_kmh": lo, "anzahl": summe}
+
 def histogramm_abschnitt(row):
     """Geschwindigkeitsverteilung: Histogramm aller Fahrzeuge der Datei, dazu Tags und Nachts im Vergleich."""
     h = row.get("histogramm")
@@ -525,11 +624,12 @@ def histogramm_abschnitt(row):
          '<figcaption class="muted">Höhe der Säulen: Anteil der Fahrzeuge je km/h, alle ausgewerteten Fahrzeuge'
          f'{" (blau bis zum Tempolimit, orange darüber)" if limit else ""}. {text}</figcaption></figure>']
     tz = row.get("teilzeitraeume") or {}
-    tag, nacht = (tz.get(k, {}).get("histogramm") for k in ("tags", "nachts"))
+    tag = hist_summe([tz.get(k, {}).get("histogramm") for k in ("vormittag", "nachmittag", "abend")])
+    nacht = tz.get("nacht", {}).get("histogramm")
     if tag and nacht and min(sum(tag["anzahl"]), sum(nacht["anzahl"])) >= HIST_MIN_VERGLEICH:
-        svg, text = hist_svg([("Tags", "hist-tags", tag), ("Nachts", "hist-nachts", nacht)], limit)
-        z.append('<details><summary>Tags und nachts im Vergleich</summary><figure class="histfig">' + svg +
-                 '<figcaption class="muted">Anteil der Fahrzeuge je km/h, getrennt für Tags (6–18 Uhr) und Nachts (18–6 Uhr, Ortszeit). '
+        svg, text = hist_svg([("Tag", "hist-tags", tag), ("Nacht", "hist-nachts", nacht)], limit)
+        z.append('<details><summary>Tag und Nacht im Vergleich</summary><figure class="histfig">' + svg +
+                 '<figcaption class="muted">Anteil der Fahrzeuge je km/h, getrennt für Tag (6–22 Uhr) und Nacht (22–6 Uhr, Ortszeit). '
                  f'Nur Fahrzeuge mit nutzbarer Zeit. {text}</figcaption></figure></details>')
     return "".join(z)
 
@@ -589,7 +689,7 @@ def widersprueche(row, meta_messung):
     return z
 
 
-def messung_abschnitt(row, meta_messung, abschnitte, rel):
+def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None):
     g = (meta_messung or {}).get("geraet", {})
     limit = row.get("tempolimit_kmh")
     verw = (meta_messung or {}).get("verwaltung", [])
@@ -622,8 +722,10 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel):
                  "".join(f"<li>{w}</li>" for w in wid) + "</ul></div>")
     if row.get("anzahl_fahrzeuge"):
         z.append(kennzahlen_tabelle(row))
+        z.append(filter_abschnitt(row, daten, standort_slug(row["datei"])))
         z.append(rauschen_abschnitt(row))
         z.append(histogramm_abschnitt(row))
+        z.append(gruppen_abschnitt(row))
         z.append(schaetzung_tabellen(row))
         z.append(nacht_abschnitt(row))
     else:
@@ -636,7 +738,7 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel):
     return "".join(z)
 
 
-def seite(rel, rows, meta_standort, uhr_dateien):
+def seite(rel, rows, meta_standort, uhr_dateien, zellen=None):
     name = bereinige(rel)
     meta_nach_datei = {m["datei"]: m for m in (meta_standort or {}).get("messungen", [])}
     eintraege = [(m["datei"], v) for m in (meta_standort or {}).get("messungen", []) for v in m.get("verwaltung", [])]
@@ -685,7 +787,8 @@ def seite(rel, rows, meta_standort, uhr_dateien):
     teile.append("<section><h2>Messungen</h2>")
     for row in sorted(rows, key=lambda r: r["datei"]):
         teile.append(messung_abschnitt(row, meta_nach_datei.get(row["datei"]),
-                                       (uhr_dateien.get(f'{rel}/{row["datei"]}') or {}).get("abschnitte", []), rel))
+                                       (uhr_dateien.get(f'{rel}/{row["datei"]}') or {}).get("abschnitte", []), rel,
+                                       (zellen or {}).get(row["datei"])))
     teile.append("</section>")
     teile.append(f"""<footer class="muted">
 <p>Rohdaten und Skripte: <a href="{REPO}/tree/main/{quote_pfad(rel)}">GitHub</a> ·
@@ -696,13 +799,24 @@ def seite(rel, rows, meta_standort, uhr_dateien):
 <p><a href="../index.html">Übersicht</a><a href="../impressum.html">Impressum</a><a href="../datenschutz.html">Datenschutz</a></p>
 </footer>
 </main>
-</body>
+{{FILTER_SKRIPT}}</body>
 </html>
-""")
+""".replace("{FILTER_SKRIPT}", '<script src="../filter.js" defer></script>\n' if any((zellen or {}).values()) else ""))
     return "".join(teile)
 
 
-def bauen(auswertung, metadaten, uhr, ziel):
+def lade_zellen(ordner, rel, rows):
+    """Zellendaten (<datei>.zellen.json von dsd2csv.py) der Messungen eines Standorts: {Dateiname: Daten}."""
+    erg = {}
+    for r in rows:
+        pfad = os.path.join(ordner or "", rel, os.path.splitext(r["datei"])[0] + ".zellen.json")
+        if ordner and os.path.exists(pfad):
+            with open(pfad, encoding="utf-8") as fh:
+                erg[r["datei"]] = json.load(fh)
+    return erg
+
+
+def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None):
     je_standort = collections.OrderedDict()
     for row in auswertung["standorte"]:
         je_standort.setdefault(row["standort"], []).append(row)
@@ -716,7 +830,7 @@ def bauen(auswertung, metadaten, uhr, ziel):
         for r in rows:
             if r.get("seite") != f"standorte/{slug}.html":
                 raise ValueError(f"Seitenlink passt nicht zum Standort: {r.get('seite')} / {rel}")
-        text = seite(rel, rows, metadaten["standorte"].get(rel), uhr["dateien"])
+        text = seite(rel, rows, metadaten["standorte"].get(rel), uhr["dateien"], lade_zellen(zellen_ordner, rel, rows))
         with open(os.path.join(ziel, "standorte", slug + ".html"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
     return slugs
@@ -729,12 +843,13 @@ def main():
     ap.add_argument("--metadaten", default=os.path.join(hier, "belege", "metadaten.json"))
     ap.add_argument("--uhr", default=os.path.join(hier, "belege", "uhr-bewertung.json"))
     ap.add_argument("--ziel", required=True, help="Ausgabeordner (die Seiten landen in <ziel>/standorte/)")
+    ap.add_argument("--zellen", help="Ordner mit den .zellen.json von dsd2csv.py (Standard: Ordner der auswertung.json)")
     a = ap.parse_args()
     daten = []
     for pfad in (a.auswertung, a.metadaten, a.uhr):
         with open(pfad, encoding="utf-8") as fh:
             daten.append(json.load(fh))
-    slugs = bauen(*daten, a.ziel)
+    slugs = bauen(*daten, a.ziel, a.zellen or os.path.dirname(os.path.abspath(a.auswertung)))
     print(f"{len(slugs)} Standortseiten in {os.path.join(a.ziel, 'standorte')}", file=sys.stderr)
 
 

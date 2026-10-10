@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 import dsd2csv
+import gruppen
 import seiten_bauen as s
 
 HIER = os.path.dirname(os.path.abspath(__file__))
@@ -29,7 +30,7 @@ def zeile(rel="07_2024_ Einsteinstraße", datei="_15.dsd", n=1000):
                                                 "anteil_naechte_prozent": 46.1, "fahrten_gesamt": 130, "fahrten_je_nacht": 0.84}]},
             "uhr": {"nutzbarkeit": "nutzbar", "fahrzeuge_mit_nutzbarer_zeit_prozent": 100.0, "hinweise": ["Hinweis <b>fett</b>"]},
             "bereinigt": {**teil, "messzeitraum": {"start": "2024-07-24 09:48:27", "ende": "2024-12-04 10:38:55"}},
-            "teilzeitraeume": {"tags": teil, "nachts": {"anzahl_fahrzeuge": 0}, "schulweg": teil}}
+            "teilzeitraeume": {"nacht": {"anzahl_fahrzeuge": 0}, "vormittag": dict(teil), "nachmittag": dict(teil), "abend": dict(teil), "schulweg": dict(teil)}}
 
 
 def eintrag(**kw):
@@ -287,21 +288,92 @@ class Histogramme(unittest.TestCase):
     def test_abschnitt_auf_der_seite(self):
         row = zeile()
         row["histogramm"] = hist(5000)
-        row["teilzeitraeume"]["tags"]["histogramm"] = hist(3000)
-        row["teilzeitraeume"]["nachts"]["histogramm"] = hist(400, 30)
+        for k, n in (("vormittag", 2000), ("nachmittag", 2000), ("abend", 500)):
+            row["teilzeitraeume"][k]["histogramm"] = hist(n)
+        row["teilzeitraeume"]["nacht"]["histogramm"] = hist(400, 30)
         a = s.histogramm_abschnitt(row)
         self.assertIn("Verteilung der Geschwindigkeiten", a)
-        self.assertIn("Tags und nachts im Vergleich", a)
+        self.assertIn("Tag und Nacht im Vergleich", a)
+        self.assertIn(f"Tag ({s.ganz(sum(hist(2000)['anzahl']) * 2 + sum(hist(500)['anzahl']))})", a)  # Tag = Vormittag + Nachmittag + Abend
         self.assertEqual(a.count("<svg"), 2)
-        row["teilzeitraeume"]["nachts"]["histogramm"] = hist(60, 30)  # zu wenige fuer den Vergleich
+        row["teilzeitraeume"]["nacht"]["histogramm"] = hist(60, 30)  # zu wenige fuer den Vergleich
         self.assertEqual(s.histogramm_abschnitt(row).count("<svg"), 1)
 
+    def test_hist_summe(self):
+        h = s.hist_summe([{"ab_kmh": 10, "anzahl": [1, 2]}, None, {"ab_kmh": 11, "anzahl": [5, 5]}])
+        self.assertEqual(h, {"ab_kmh": 10, "anzahl": [1, 7, 5]})
+        self.assertIsNone(s.hist_summe([None]))
     def test_zu_wenige_fahrzeuge_oder_kein_histogramm(self):
         row = zeile()
         self.assertEqual(s.histogramm_abschnitt(row), "")
         row["histogramm"] = hist(s.HIST_MIN_FAHRZEUGE - 10)
         self.assertEqual(s.histogramm_abschnitt(row), "")
 
+
+class FilterSeite(unittest.TestCase):
+    def daten(self):
+        import test_gruppen as tg
+        fahrten, spannen = tg.fahrten_und_spannen(tage=28)
+        block, daten = gruppen.analysiere(gruppen.zellen_bauen(fahrten, fahrten, spannen), 30, True)
+        return block, daten
+
+    def html(self, daten, block=None):
+        row = zeile()
+        row["gruppen"] = block or {"geprueft": False, "grund": "x"}
+        return s.seite("07_2024_ Einsteinstraße", [row], {"messungen": []}, {}, {row["datei"]: daten})
+
+    def test_abschnitt_daten_und_skript(self):
+        block, daten = self.daten()
+        h = self.html(daten, block)
+        self.assertIn("Auswertung nach Zeit, Tagen und Gruppe", h)
+        self.assertIn("<noscript>", h)
+        self.assertIn('<section class="filter" data-filter hidden>', h)  # ohne JavaScript bleibt der Abschnitt verborgen
+        self.assertIn('<script src="../filter.js" defer></script>', h)
+        for name in ("Gruppe 1 (Modus", "Gruppe 2 (Modus", "Hauptmenge (ohne langsame Gruppen)", "Ganztägig", "Nacht (22–6 Uhr)", "Schulweg (7–8 Uhr)",
+                     "Werktage (Mo–Fr)", "Sonn- und Feiertage", "Feiertage an Werktagen und Samstagen", ">Montag<"):
+            self.assertIn(name, h, name)
+        self.assertNotIn("Rauschboden (herausgerechnet)", h)  # ohne abgezogenen Rauschboden keine solche Gruppe
+        m = re.search(r'<script type="application/json" class="filter-daten">(.*?)</script>', h, re.S)
+        self.assertEqual(json.loads(m.group(1)), daten)  # die Tabelle im Seitentext ist genau die Datentabelle
+
+    def test_json_kann_das_skript_nicht_beenden(self):
+        self.assertNotIn("</script", s.json_in_html({"a": "</script><script>alert(1)</script>", "b": "<!--"}))
+        self.assertEqual(json.loads(s.json_in_html({"a": "</x>"})), {"a": "</x>"})
+
+    def test_ohne_zellen_kein_abschnitt_und_kein_skript(self):
+        h = self.html(None)
+        self.assertNotIn("Auswertung nach Zeit, Tagen und Gruppe", h)
+        self.assertNotIn("filter.js", h)
+        self.assertNotIn("<noscript>", h)
+
+    def test_gruppen_tabelle(self):
+        block, _ = self.daten()
+        h = s.gruppen_abschnitt({"gruppen": block})
+        self.assertIn("Gruppen in der Verteilung", h)
+        self.assertIn("Gruppe 1 (langsam)", h)
+        self.assertIn("Hauptmenge ohne die langsamen Gruppen", h)
+        self.assertIn("keine Fahrzeugarten", h)
+        self.assertIn("2 Gruppen zusammen", h)
+        self.assertIn("Nicht zerlegt", s.gruppen_abschnitt({"gruppen": {"geprueft": False, "grund": "zu klein"}}))
+        self.assertIn("nicht stabil", s.gruppen_abschnitt({"gruppen": {"geprueft": True, "anzahl": 1}}))
+        self.assertEqual(s.gruppen_abschnitt({}), "")
+
+    def test_keine_externen_adressen_im_filter(self):
+        h = self.html(*reversed(self.daten()))
+        for url in re.findall(r'(?:href|src)="(https?://[^"]+)"', h):
+            self.assertRegex(url, r"^https://(github\.com/Khazuar|ris-neuss\.itk-rheinland\.de|creativecommons\.org)")
+
+    def test_bauen_liest_die_zellen(self):
+        _, daten = self.daten()
+        zl = zeile()
+        with tempfile.TemporaryDirectory() as d:
+            ordner = os.path.join(d, zl["standort"])
+            os.makedirs(ordner)
+            with open(os.path.join(ordner, "_15.zellen.json"), "w", encoding="utf-8") as fh:
+                json.dump(daten, fh)
+            s.bauen({"standorte": [zl]}, {"standorte": {}}, {"dateien": {}}, d, d)
+            with open(os.path.join(d, "standorte", dsd2csv.standort_slug(zl["standort"]) + ".html"), encoding="utf-8") as fh:
+                self.assertIn("filter-daten", fh.read())
 
 class Bauen(unittest.TestCase):
     def test_alle_seiten_werden_geschrieben(self):
