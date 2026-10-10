@@ -110,6 +110,46 @@ class Gruppenbildung(unittest.TestCase):
         self.assertFalse(g.vergleichbar(a, teile, b, [[0, 1, 2]]))  # andere Zahl von Gruppen
 
 
+class Problemgruppen(unittest.TestCase):
+    def test_kleine_gruppe_geht_in_die_naechste_nachbarin_auf(self):
+        a = modus_mischung((0.01, 8, 0.2), (0.25, 28, 0.3), (0.74, 46, 0.1))
+        b = modus_mischung((0.015, 9, 0.25), (0.25, 28, 0.3), (0.735, 46, 0.1))
+        teile = [[0], [1], [2]]
+        self.assertEqual(g.problemgruppen(a, teile, b, teile), [0])  # nur die winzige Gruppe (unter 3 %)
+        self.assertEqual(g.nachbar_paar(a, teile, 0), 0)  # am Rand: nur die eine Nachbarin
+        self.assertEqual(g.nachbar_paar(a, teile, 2), 1)
+        mitte = modus_mischung((0.3, 10, 0.1), (0.1, 26, 0.1), (0.6, 30, 0.1))
+        self.assertEqual(g.nachbar_paar(mitte, teile, 1), 1)  # Gruppe 1 liegt dichter an Gruppe 2 (26 | 30) als an Gruppe 0 (10 | 26)
+        self.assertEqual(g.problemgruppen(a, [[0, 1], [2]], b, [[0, 1], [2]]), [])
+
+    def test_instabile_gruppe_ist_ein_problem(self):
+        a = modus_mischung((0.3, 15, 0.1), (0.7, 40, 0.1))
+        b = modus_mischung((0.3, 22, 0.1), (0.7, 40, 0.1))  # die langsame Gruppe wandert um 38 %
+        teile = [[0], [1]]
+        self.assertEqual(g.problemgruppen(a, teile, b, teile), [0])
+        self.assertFalse(g.gruppen_gleich(a, [0], b, [0]))
+        self.assertTrue(g.gruppen_gleich(a, [1], b, [1]))
+
+    def test_schmale_kurve_weit_vom_rand_der_erfassung(self):
+        """Die Untergrenze der Streuung gilt am Tempo der Kurve, nicht am Rand der Erfassung: Ein schmaler Gipfel bei 46 km/h
+        bleibt schmal, auch wenn die Erfassung bei 4 km/h beginnt."""
+        c = mischung_ab([(0.2, 24, 0.4), (0.8, 46, 0.10)], 60000, 7, 4)
+        w, a = g.tabelle(c, 4)
+        m = g.anpassen(w, a, 2, 3, ab=4)
+        oben = max(range(2), key=lambda j: m.modus(j))
+        self.assertAlmostEqual(m.modus(oben), 46, delta=1.5)
+        self.assertLess(m.s[oben], 0.13)
+        self.assertGreaterEqual(min(m.s), g.S_MIN)
+
+    def test_untergrenze_der_streuung_waechst_zum_niedrigen_tempo(self):
+        c = collections.Counter({5: 4000, 6: 100, 7: 100, 40: 1000, 41: 1000})  # Haufen auf einer Klasse bei 5 km/h
+        w, a = g.tabelle(c, 3)
+        m = g.anpassen(w, a, 2, 3, ab=3)
+        for j in range(2):
+            self.assertGreaterEqual(m.s[j] + 1e-9, min(g.S_KLASSE / math.exp(m.mu[j]), 0.2) if m.mu[j] > 0 else 0)
+            self.assertGreaterEqual(m.s[j] + 1e-9, g.S_MIN)
+
+
 class Zerlegung(unittest.TestCase):
     def waehlen(self, komponenten, n=60000):
         return g.waehle_k(mischung(komponenten, n, 1), mischung(komponenten, n, 2), 3)

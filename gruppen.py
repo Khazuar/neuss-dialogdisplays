@@ -30,6 +30,8 @@ MODUS_ABSTAND_MIN = 0.15  # dann muessen die beiden langsamsten Gruppen aber um 
 SICHTBAR_MIN = 0.25  # von jeder Gruppe muss mindestens so viel ihrer Flaeche im erfassten Bereich liegen
 TOL_LAGE = 0.07  # Haelften stimmen ueberein: Modus (Logarithmus), mindestens, bei breiten Gruppen 0,25 x Streuung ...
 TOL_ANTEIL = 0.06  # ... und Anteil
+S_MIN = 0.03  # engste Kurve: Streuung des Logarithmus der Geschwindigkeit
+S_KLASSE = 0.8  # eine Kurve ist mindestens so breit wie 0,8 km/h an ihrem Tempo (die Geraete messen auf 1 km/h)
 VMAX_GRUPPEN = 255  # die Kurven einer Gruppe werden bis zu dieser Geschwindigkeit ausgewertet
 
 # Zeitscheiben (Ortszeit): Name, von, bis (Stunde, bis exklusiv); der Schulweg (7-8 Uhr, Mo-Fr) steht in dsd2csv.TEILZEITRAEUME
@@ -166,7 +168,6 @@ def em(werte, anzahl, w, mu, s, xa=None, iterationen=400, tol=1e-9):
     k = len(w)
     xs = [math.log(v) for v in werte]
     n = sum(anzahl)
-    smin = [max(0.03, 0.8 / max(werte[0], 1))] * k if xa is not None else [0.03] * k
     schranke = 0.8416  # Phi^-1(1 - SICHTBAR_MIN)
     w, mu, s = list(w), list(mu), list(s)
     alt = None
@@ -198,7 +199,10 @@ def em(werte, anzahl, w, mu, s, xa=None, iterationen=400, tol=1e-9):
         summe = sum(gesamt)
         w = [max(g / summe, 1e-6) for g in gesamt]
         mu = [s1[j] / max(gesamt[j], 1e-9) for j in range(k)]
-        s = [max(math.sqrt(max(s2[j] / max(gesamt[j], 1e-9) - mu[j] ** 2, 0.0)), smin[j]) for j in range(k)]
+        # Untergrenze der Streuung: ein km/h (Aufloesung der Geraete) am haeufigsten Tempo der Kurve, nie unter 0,03; eine Kurve bei
+        # niedrigem Tempo kann also nicht auf eine einzelne Klasse zusammenfallen
+        s = [max(math.sqrt(max(s2[j] / max(gesamt[j], 1e-9) - mu[j] ** 2, 0.0)), S_MIN, S_KLASSE / math.exp(min(max(mu[j], 0.0), 6.0)))
+             for j in range(k)]
         if xa is not None:  # nicht weiter in den abgeschnittenen Bereich wandern
             mu = [max(mu[j], xa - schranke * s[j]) for j in range(k)]
         if alt is not None and abs(ll - alt) < tol * abs(ll):
@@ -334,16 +338,34 @@ def modus_abstand(m, teile):
     return math.log(gruppen_modus(m, idx[1]) / gruppen_modus(m, idx[0])) if len(idx) >= 2 else None
 
 
+def gruppen_gleich(a, ga, b, gb):
+    """Dieselbe Gruppe in zwei Anpassungen: Lage (haeufigstes Tempo der Summenkurve) und Anteil stimmen ueberein."""
+    tol = max(TOL_LAGE, 0.25 * 0.5 * (gruppen_moment(a, ga)[1] + gruppen_moment(b, gb)[1]))  # die Lage einer breiten Gruppe ist ungenauer
+    return (abs(math.log(gruppen_modus(a, ga)) - math.log(gruppen_modus(b, gb))) <= tol
+            and abs(gruppen_anteil(a, ga) - gruppen_anteil(b, gb)) <= TOL_ANTEIL)
+
+
 def vergleichbar(a, ta, b, tb):
     """Die Gruppen zweier Anpassungen stimmen in Zahl, Lage und Anteil ueberein. Verglichen werden die Gruppen (Summenkurven),
     nicht ihre Kurven: Kurven einer Gruppe duerfen untereinander Masse tauschen."""
-    if len(ta) != len(tb):
-        return False
-    for ga, gb in zip(ta, tb):
-        tol = max(TOL_LAGE, 0.25 * 0.5 * (gruppen_moment(a, ga)[1] + gruppen_moment(b, gb)[1]))  # die Lage einer breiten Gruppe ist ungenauer
-        if abs(math.log(gruppen_modus(a, ga)) - math.log(gruppen_modus(b, gb))) > tol or abs(gruppen_anteil(a, ga) - gruppen_anteil(b, gb)) > TOL_ANTEIL:
-            return False
-    return True
+    return len(ta) == len(tb) and all(gruppen_gleich(a, ga, b, gb) for ga, gb in zip(ta, tb))
+
+
+def problemgruppen(ma, pa, mb, pb):
+    """Indizes der Gruppen, die in den Haelften nicht wiederkehren oder zu klein sind (Anteil unter MIN_ANTEIL in einer Haelfte)."""
+    return [i for i, (ga, gb) in enumerate(zip(pa, pb))
+            if min(gruppen_anteil(ma, ga), gruppen_anteil(mb, gb)) < MIN_ANTEIL or not gruppen_gleich(ma, ga, mb, gb)]
+
+
+def nachbar_paar(m, teile, i):
+    """Index j der Gruppe, mit der Gruppe i zusammengefasst wird: der benachbarten mit dem naeheren haeufigsten Tempo (Paar (j, j+1))."""
+    k = kurven_von(m, teile)
+    modi = [gruppen_modus(m, t) for t in k]
+    if i == 0:
+        return 0
+    if i == len(teile) - 1:
+        return i - 1
+    return i - 1 if math.log(modi[i] / modi[i - 1]) <= math.log(modi[i + 1] / modi[i]) else i
 
 
 def tabelle(zaehler, ab):
@@ -378,8 +400,10 @@ def waehle_k(gerade, ungerade, ab):
             stabil = vergleichbar(ma, pa, mb, pb)
             if (stabil and not klein) or len(tr) < 2:
                 break
-            i = naechstes_paar(mt, tr)
-            tr = tr[:i] + [tr[i] + tr[i + 1]] + tr[i + 2:]
+            # die kleinste Problemgruppe geht in ihre naechste Nachbarin auf (statt dass die grossen Gruppen verschmelzen)
+            i = min(problemgruppen(ma, pa, mb, pb), key=lambda i: min(gruppen_anteil(ma, pa[i]), gruppen_anteil(mb, pb[i])))
+            j = nachbar_paar(mt, tr, i)
+            tr = tr[:j] + [tr[j] + tr[j + 1]] + tr[j + 2:]
         gewinn = 0.5 * (ll_je_fahrzeug(ma, bw, ba) - ll_je_fahrzeug(vorher[0], bw, ba)
                         + ll_je_fahrzeug(mb, aw, aa) - ll_je_fahrzeug(vorher[1], aw, aa))
         du, da = trennschaerfen(mt, pt)
