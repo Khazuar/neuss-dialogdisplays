@@ -2,9 +2,11 @@
 """Zerlegung der Geschwindigkeitsverteilung in Gruppen und die Zellen fuer die Filter der Detailseiten.
 
 Je Datei wird die Verteilung der Fahrzeuge (nach Abzug des Rauschbodens, rauschen.py) als Mischung von Lognormal-Verteilungen
-angepasst. Die Zahl der Gruppen K bestimmt die Datei selbst: Eine weitere Gruppe zaehlt nur, wenn sie die Likelihood auf den
-jeweils anderen Messtagen (gerade gegen ungerade Tage) spuerbar verbessert, in beiden Haelften wiederkehrt, nicht winzig ist
-und von den anderen getrennt liegt. Laesst sich keine Zerlegung belegen, bleibt K = 1. Verfahren und Grenzen: docs/gruppen.md.
+angepasst. Die Zahl der Kurven K bestimmt die Datei selbst: Eine weitere Kurve zaehlt nur, wenn sie die Likelihood auf den
+jeweils anderen Messtagen (gerade gegen ungerade Tage) spuerbar verbessert und in beiden Haelften wiederkehrt. Eine Gruppe
+besteht aus einer oder mehreren Kurven (ihre Summe); Zahl, Lage und Anteil der Gruppen muessen in beiden Haelften wiederkehren,
+nicht winzig sein und voneinander getrennt liegen. Laesst sich keine Zerlegung belegen, bleibt K = 1. Verfahren und Grenzen:
+docs/gruppen.md.
 
 Die Zerlegung ist fuer alle Stunden und Tage gleich. Der Anteil einer Gruppe an einer Geschwindigkeit haengt dann nur von der
 Geschwindigkeit ab, und die Detailseiten koennen jede Auswahl (Tageszeit, Wochentag, Gruppe) im Browser aus den Zellen rechnen.
@@ -249,36 +251,97 @@ def ll_je_fahrzeug(m, werte, anzahl):
     return sum(c * math.log(max(m.dichte(v), 1e-300)) for v, c in zip(werte, anzahl)) / n
 
 
-def trennschaerfen(m):
-    """(D_unten, D_alle): Ashman-Abstand D = sqrt(2) |mu_i - mu_j| / sqrt(s_i^2 + s_j^2) im Logarithmus.
+def gruppen_modus(m, teil):
+    """Haeufigstes Tempo der Summenkurve einer Gruppe (Kurven teil), auf 0,1 km/h genau im erfassten Bereich."""
+    if len(teil) == 1:
+        return m.modus(teil[0])
+    start = max(1.0, math.exp(m.xa)) if m.xa is not None else 1.0
+    beste, bester = -1.0, start
+    for i in range(int((VMAX_GRUPPEN - start) * 10) + 1):
+        v = start + i / 10
+        d = sum(m.w[j] * m.pdf(j, v) for j in teil)
+        if d > beste:
+            beste, bester = d, v
+    return bester
+
+
+def gruppen_anteil(m, teil):
+    """Anteil der Gruppe an den erfassten Fahrzeugen (Summe der Anteile ihrer Kurven)."""
+    a = m.anteile()
+    return sum(a[j] for j in teil)
+
+
+def gruppen_sichtbar(m, teil):
+    """Teil der Flaeche der Summenkurve, der im erfassten Bereich liegt."""
+    return sum(m.w[j] * m.sichtbar(j) for j in teil) / sum(m.w[j] for j in teil)
+
+
+def gruppen_moment(m, teil):
+    """(Mittel, Streuung) von ln v unter der Summenkurve einer Gruppe, geschlossen aus den Kurven."""
+    w = sum(m.w[j] for j in teil)
+    mittel = sum(m.w[j] * m.mu[j] for j in teil) / w
+    var = sum(m.w[j] * (m.s[j] ** 2 + m.mu[j] ** 2) for j in teil) / w - mittel ** 2
+    return mittel, math.sqrt(max(var, 1e-12))
+
+
+def zusammenfassen(m):
+    """Erste Einteilung der Kurven in Gruppen: Kurven, deren haeufigstes Tempo dicht beieinander liegt (unter MODUS_ABSTAND_MIN im
+    Logarithmus), beschreiben zusammen die Form einer Gruppe und keine zwei. Gibt Teile als Listen von Rangplaetzen zurueck
+    (Rang 0 hat das kleinste haeufigste Tempo), damit dieselbe Einteilung auf die Anpassungen der Haelften uebertragbar ist."""
+    rang = m.sortiert()
+    teile = [[0]]
+    for r in range(1, len(rang)):
+        if math.log(m.modus(rang[r]) / gruppen_modus(m, [rang[i] for i in teile[-1]])) < MODUS_ABSTAND_MIN:
+            teile[-1].append(r)
+        else:
+            teile.append([r])
+    return teile
+
+
+def kurven_von(m, teile):
+    """Rangplaetze -> Kurvennummern der Anpassung m."""
+    rang = m.sortiert()
+    return [[rang[r] for r in t] for t in teile]
+
+
+def naechstes_paar(m, teile):
+    """Index i der beiden benachbarten Gruppen (i, i+1) mit dem kleinsten Abstand der haeufigsten Tempi."""
+    k = kurven_von(m, teile)
+    modi = [gruppen_modus(m, t) for t in k]
+    return min(range(len(teile) - 1), key=lambda i: math.log(modi[i + 1] / modi[i]))
+
+
+def trennschaerfen(m, teile):
+    """(D_unten, D_alle): Ashman-Abstand D = sqrt(2) |mu_i - mu_j| / sqrt(s_i^2 + s_j^2) zwischen den Gruppen (Mittel und Streuung von ln v).
 
     D_unten: langsamste Gruppe gegen die naechste, D_alle: kleinster Abstand aller Paare (Gruppen mit Anteil >= MIN_ANTEIL).
     """
-    anteile = m.anteile()
-    idx = sorted((j for j in range(m.k) if anteile[j] >= MIN_ANTEIL), key=m.modus)
+    idx = [t for t in teile if gruppen_anteil(m, t) >= MIN_ANTEIL]
     if len(idx) < 2:
         return None, None
+    mom = [gruppen_moment(m, t) for t in idx]
 
-    def dd(i, j):
-        return math.sqrt(2) * abs(m.mu[i] - m.mu[j]) / math.sqrt(m.s[i] ** 2 + m.s[j] ** 2)
+    def dd(a, b):
+        return math.sqrt(2) * abs(mom[a][0] - mom[b][0]) / math.sqrt(mom[a][1] ** 2 + mom[b][1] ** 2)
 
-    paare = [dd(i, j) for a, i in enumerate(idx) for j in idx[a + 1:]]
-    return dd(idx[0], idx[1]), min(paare)
+    paare = [dd(a, b) for a in range(len(idx)) for b in range(a + 1, len(idx))]
+    return dd(0, 1), min(paare)
 
 
-def modus_abstand(m):
+def modus_abstand(m, teile):
     """Logarithmus des Verhaeltnisses der haeufigsten Tempi der beiden langsamsten Gruppen (Anteil >= MIN_ANTEIL)."""
-    anteile = m.anteile()
-    idx = sorted((j for j in range(m.k) if anteile[j] >= MIN_ANTEIL), key=m.modus)
-    return math.log(m.modus(idx[1]) / m.modus(idx[0])) if len(idx) >= 2 else None
+    idx = [t for t in teile if gruppen_anteil(m, t) >= MIN_ANTEIL]
+    return math.log(gruppen_modus(m, idx[1]) / gruppen_modus(m, idx[0])) if len(idx) >= 2 else None
 
 
-def vergleichbar(a, b):
-    """Die Gruppen zweier Anpassungen (nach Modus sortiert) stimmen in Lage und Anteil ueberein."""
-    aa, ab = a.anteile(), b.anteile()  # Anteile an den erfassten Fahrzeugen
-    for ja, jb in zip(a.sortiert(), b.sortiert()):
-        tol = max(TOL_LAGE, 0.25 * 0.5 * (a.s[ja] + b.s[jb]))  # die Lage einer breiten Gruppe ist ungenauer
-        if abs(math.log(a.modus(ja)) - math.log(b.modus(jb))) > tol or abs(aa[ja] - ab[jb]) > TOL_ANTEIL:
+def vergleichbar(a, ta, b, tb):
+    """Die Gruppen zweier Anpassungen stimmen in Zahl, Lage und Anteil ueberein. Verglichen werden die Gruppen (Summenkurven),
+    nicht ihre Kurven: Kurven einer Gruppe duerfen untereinander Masse tauschen."""
+    if len(ta) != len(tb):
+        return False
+    for ga, gb in zip(ta, tb):
+        tol = max(TOL_LAGE, 0.25 * 0.5 * (gruppen_moment(a, ga)[1] + gruppen_moment(b, gb)[1]))  # die Lage einer breiten Gruppe ist ungenauer
+        if abs(math.log(gruppen_modus(a, ga)) - math.log(gruppen_modus(b, gb))) > tol or abs(gruppen_anteil(a, ga) - gruppen_anteil(b, gb)) > TOL_ANTEIL:
             return False
     return True
 
@@ -289,10 +352,13 @@ def tabelle(zaehler, ab):
 
 
 def waehle_k(gerade, ungerade, ab):
-    """Bestimmt die Zahl der Gruppen. gerade/ungerade: Counter der Haelften der Messtage, ab: kleinste angepasste Geschwindigkeit.
+    """Bestimmt die Zahl der Kurven K und ihre Einteilung in Gruppen. gerade/ungerade: Counter der Haelften der Messtage, ab: kleinste
+    angepasste Geschwindigkeit.
 
     Links von ab ist die Verteilung nicht erfasst (nicht null): die Anpassung nutzt die Flanke im erfassten Bereich.
-    Gibt dict mit k, obere_gruppen_ueberlappen, auswahl (je K: stabil, klein, sichtbar_min, d_unten, d_alle, cv_gewinn) und mischung zurueck.
+    Kurven mit nahe beieinander liegendem haeufigsten Tempo bilden zusammen eine Gruppe (zusammenfassen); Stabilitaet, Groesse,
+    Trennung und Sichtbarkeit gelten fuer die Gruppen. Gibt dict mit k (Kurven), teile (Kurven je Gruppe), obere_gruppen_ueberlappen,
+    auswahl (je K: gruppen, stabil, klein, sichtbar_min, d_unten, d_alle, modus_abstand, cv_gewinn) und mischung zurueck.
     """
     gesamt = collections.Counter(gerade)
     gesamt.update(ungerade)
@@ -300,39 +366,55 @@ def waehle_k(gerade, ungerade, ab):
     aw, aa = tabelle(gerade, ab)
     bw, ba = tabelle(ungerade, ab)
     vorher = (anpassen(aw, aa, 1, 2, ab=ab), anpassen(bw, ba, 1, 2, ab=ab))
-    auswahl, mischungen, fehl = [], {}, 0
+    auswahl, mischungen, einteilung, fehl = [], {}, {}, 0
     for k in range(2, K_MAX + 1):
         ma, mb, mt = anpassen(aw, aa, k, ab=ab), anpassen(bw, ba, k, ab=ab), anpassen(tw, ta, k, 4, ab=ab)
+        # Einteilung in Gruppen: erst nach dem Abstand der haeufigsten Tempi, dann so lange benachbarte Gruppen zusammenfassen, bis die
+        # Gruppen in beiden Haelften der Messtage wiederkehren (Kurven, die Masse tauschen, beschreiben dieselbe Gruppe)
+        tr = zusammenfassen(mt)
+        while True:
+            pa, pb, pt = kurven_von(ma, tr), kurven_von(mb, tr), kurven_von(mt, tr)
+            klein = min(min(gruppen_anteil(ma, t) for t in pa), min(gruppen_anteil(mb, t) for t in pb)) < MIN_ANTEIL
+            stabil = vergleichbar(ma, pa, mb, pb)
+            if (stabil and not klein) or len(tr) < 2:
+                break
+            i = naechstes_paar(mt, tr)
+            tr = tr[:i] + [tr[i] + tr[i + 1]] + tr[i + 2:]
         gewinn = 0.5 * (ll_je_fahrzeug(ma, bw, ba) - ll_je_fahrzeug(vorher[0], bw, ba)
                         + ll_je_fahrzeug(mb, aw, aa) - ll_je_fahrzeug(vorher[1], aw, aa))
-        du, da = trennschaerfen(mt)
-        abst = modus_abstand(mt)
-        sichtbar = min(mt.sichtbar(j) for j in range(k))  # kleinster Teil einer Gruppe im erfassten Bereich
-        e = {"k": k, "stabil": vergleichbar(ma, mb), "klein": min(min(ma.anteile()), min(mb.anteile())) < MIN_ANTEIL,
-             "sichtbar_min": round(sichtbar, 2),
+        du, da = trennschaerfen(mt, pt)
+        abst = modus_abstand(mt, pt)
+        sichtbar = min(gruppen_sichtbar(mt, t) for t in pt)  # kleinster Teil einer Gruppe im erfassten Bereich
+        e = {"k": k, "gruppen": len(pt), "stabil": stabil, "klein": klein, "sichtbar_min": round(sichtbar, 2),
              "d_unten": None if du is None else round(du, 2), "d_alle": None if da is None else round(da, 2),
              "modus_abstand": None if abst is None else round(abst, 2), "cv_gewinn": round(gewinn, 4)}
         auswahl.append(e)
-        mischungen[k] = mt
+        mischungen[k], einteilung[k] = mt, pt
         vorher = (ma, mb)
         if gewinn < CV_GEWINN_MIN:
             break
-        fehl = 0 if (e["stabil"] and not e["klein"] and sichtbar >= SICHTBAR_MIN) else fehl + 1
+        fehl = 0 if (e["stabil"] and not e["klein"] and sichtbar >= SICHTBAR_MIN and len(pt) >= 2) else fehl + 1
         if fehl >= 2:
             break
-    ok = [e for e in auswahl if e["stabil"] and not e["klein"] and e["sichtbar_min"] >= SICHTBAR_MIN and e["cv_gewinn"] >= CV_GEWINN_MIN]
+    ok = [e for e in auswahl if e["gruppen"] >= 2 and e["stabil"] and not e["klein"] and e["sichtbar_min"] >= SICHTBAR_MIN
+          and e["cv_gewinn"] >= CV_GEWINN_MIN]
     getrennt = [e["k"] for e in ok if e["d_alle"] is not None and e["d_alle"] >= D_MIN]
     unten = [e["k"] for e in ok if e["d_unten"] is not None and e["d_unten"] >= D_MIN]
     stark = [e["k"] for e in ok if e["cv_gewinn"] >= CV_GEWINN_STARK and (e["modus_abstand"] or 0) >= MODUS_ABSTAND_MIN]
-    if getrennt:
-        k, ueberlappend = max(getrennt), False
-    elif unten:
-        k, ueberlappend = max(unten), True
-    elif stark:
-        k, ueberlappend = max(stark), True
+    # Eine weitere Kurve innerhalb derselben Gruppen verfeinert nur die Form (die Zahl der Gruppen bleibt): Sie braucht nur den
+    # Gewinn und die Stabilitaet, keine eigene Trennung und keinen starken Gewinn.
+    zulaessig = set(getrennt) | set(unten) | set(stark)
+    nach_k = {e["k"]: e for e in ok}
+    for e in ok:
+        vor = nach_k.get(e["k"] - 1)
+        if e["k"] not in zulaessig and vor is not None and vor["k"] in zulaessig and vor["gruppen"] == e["gruppen"]:
+            zulaessig.add(e["k"])
+    if zulaessig:
+        k = max(zulaessig)
+        ueberlappend = k not in getrennt
     else:
         k, ueberlappend = 1, False
-    return {"k": k, "obere_gruppen_ueberlappen": ueberlappend, "auswahl": auswahl,
+    return {"k": k, "teile": einteilung[k] if k > 1 else None, "obere_gruppen_ueberlappen": ueberlappend, "auswahl": auswahl,
             "mischung": mischungen[k].als_dict() if k > 1 else None}
 
 
@@ -420,7 +502,8 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
         if speicher:
             speicher.speichern("gruppen", schluessel, erg)
     k = erg["k"]
-    block = {"geprueft": True, "anzahl": k, "obere_gruppen_ueberlappen": erg["obere_gruppen_ueberlappen"], "angepasst_ab_kmh": ab,
+    block = {"geprueft": True, "anzahl": len(erg["teile"]) if k > 1 else 1, "kurven": k,
+             "obere_gruppen_ueberlappen": erg["obere_gruppen_ueberlappen"], "angepasst_ab_kmh": ab,
              "fahrzeuge": n, "fahrzeuge_unter_grenze": sum(c for v, c in gesamt.items() if v < ab)}
     if k == 1:
         block["grund"] = "keine stabile, voneinander getrennte Zerlegung nachweisbar"
@@ -428,26 +511,30 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
     if k == 1:
         return block, daten
     m = Mischung(**erg["mischung"])
-    rang = m.sortiert()  # Gruppe 1 hat das kleinste haeufigste Tempo
     vs = list(range(ab, VMAX_GRUPPEN + 1))
     n_fit = sum(c for v, c in gesamt.items() if v >= ab)
     # Abweichung zwischen Daten und angepasster Kurve: Anteil der Fahrzeuge, die das Modell an einer anderen Geschwindigkeit sieht
     dichten = {v: m.dichte(v) for v in range(ab, max(gesamt) + 1)}
     summe = sum(dichten.values())
     block["modellabweichung_prozent"] = round(50 * sum(abs(gesamt.get(v, 0) / n_fit - dichten[v] / summe) for v in dichten), 1)
-    # Jede Gruppe ist ihre angepasste Kurve: erwartete Fahrzeuge je km/h (Anteil der erfassten Fahrzeuge mal Form der Kurve).
-    # Fahrzeuge werden den Gruppen nicht zugeordnet; was die Kurven nicht erklaeren, steht im Rest.
+    # Jede Gruppe ist ihre Summenkurve (eine oder mehrere Kurven): erwartete Fahrzeuge je km/h (Anteil der erfassten Fahrzeuge
+    # mal Form der Summenkurve). Fahrzeuge werden den Gruppen nicht zugeordnet; was die Kurven nicht erklaeren, steht im Rest.
     pi = m.anteile()
-    kurven = []
-    for j in rang:
+    teile = erg["teile"]  # [[Kurvennummern]] nach Tempo geordnet; Gruppe 1 hat das kleinste haeufigste Tempo
+    form = {}
+    for j in range(m.k):
         p = {v: m.pdf(j, v) for v in vs}
         s = sum(p.values())
-        kurven.append({v: n_fit * pi[j] * p[v] / s for v in vs})
-    gruppen = []
-    for nr, (j, h) in enumerate(zip(rang, kurven), 1):
+        form[j] = {v: q / s for v, q in p.items()}
+    kurven, gruppen = [], []
+    for nr, teil in enumerate(teile, 1):
+        pi_g = sum(pi[j] for j in teil)
+        h = {v: n_fit * sum(pi[j] * form[j][v] for j in teil) for v in vs}
+        kurven.append(h)
         kz = kennzahlen(h, limit)
-        gruppen.append({"nr": nr, "anteil_prozent": round(100 * sum(h.values()) / n, 2), "modus_kmh": round(m.modus(j), 1),
-                        "streuung_log": round(m.s[j], 3), "sichtbar_prozent": round(100 * m.sichtbar(j)), "mittel_kmh": kz["mittel_kmh"],
+        gruppen.append({"nr": nr, "kurven": len(teil), "anteil_prozent": round(100 * sum(h.values()) / n, 2),
+                        "modus_kmh": round(gruppen_modus(m, teil), 1), "streuung_log": round(gruppen_moment(m, teil)[1], 3),
+                        "sichtbar_prozent": round(100 * gruppen_sichtbar(m, teil)), "mittel_kmh": kz["mittel_kmh"],
                         "v85_kmh": kz["v85_kmh"], "einhaltungsquote_prozent": kz.get("einhaltungsquote_prozent"),
                         "qualifizierte_einhaltungsquote_prozent": kz.get("qualifizierte_einhaltungsquote_prozent")})
     rest = {v: max(0.0, gesamt.get(v, 0) - sum(h.get(v, 0.0) for h in kurven)) for v in set(gesamt) | set(vs)}
@@ -456,7 +543,8 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
     if rest:
         block["rest"] = {"anteil_prozent": round(100 * sum(rest.values()) / n, 2), **kennzahlen(rest, limit)}
     daten["w0"] = ab
-    for g, j in zip(gruppen, rang):
-        daten["gruppen"].append({"nr": g["nr"], "anteil": g["anteil_prozent"], "modus": g["modus_kmh"], "mu": round(m.mu[j], 4),
-                                 "s": round(m.s[j], 4), "pi": round(pi[j], 4)})
+    for g, teil in zip(gruppen, teile):
+        pi_g = sum(pi[j] for j in teil)
+        daten["gruppen"].append({"nr": g["nr"], "anteil": g["anteil_prozent"], "modus": g["modus_kmh"], "pi": round(pi_g, 4),
+                                 "kurven": [{"mu": round(m.mu[j], 4), "s": round(m.s[j], 4), "c": round(pi[j] / pi_g, 4)} for j in teil]})
     return block, daten

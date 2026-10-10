@@ -70,6 +70,46 @@ class Hilfen(unittest.TestCase):
         self.assertEqual(g.abschneiden(glatt), 5)  # kein Haufen: alles zaehlt
 
 
+def modus_mischung(*komponenten):
+    """Mischung aus (Anteil, haeufigstes Tempo, s); die Kurven stehen in der Reihenfolge der Angabe."""
+    return g.Mischung([w for w, _, _ in komponenten], [math.log(m) + s * s for _, m, s in komponenten], [s for _, _, s in komponenten])
+
+
+class Gruppenbildung(unittest.TestCase):
+    def test_zusammenfassen_nach_dem_abstand_der_modi(self):
+        m = modus_mischung((0.5, 33, 0.1), (0.2, 15, 0.15), (0.3, 30, 0.05))  # absichtlich nicht nach Tempo geordnet
+        self.assertEqual(g.zusammenfassen(m), [[0], [1, 2]])  # Raenge: 15 | 30 und 33 (ln 33/30 = 0,095 < 0,15)
+        self.assertEqual(g.kurven_von(m, [[0], [1, 2]]), [[1], [2, 0]])  # Raenge -> Kurvennummern der Anpassung
+        m2 = modus_mischung((0.5, 40, 0.1), (0.5, 20, 0.1))
+        self.assertEqual(g.zusammenfassen(m2), [[0], [1]])
+
+    def test_summe_der_kurven_einer_gruppe(self):
+        m = modus_mischung((0.2, 15, 0.1), (0.3, 30, 0.05), (0.5, 33, 0.1))
+        self.assertAlmostEqual(g.gruppen_anteil(m, [1, 2]), 0.8, places=9)
+        mittel, streuung = g.gruppen_moment(m, [1, 2])
+        self.assertAlmostEqual(mittel, 0.3 / 0.8 * m.mu[1] + 0.5 / 0.8 * m.mu[2], places=9)
+        w1, w2 = 0.3 / 0.8, 0.5 / 0.8  # Varianz einer Mischung: mittlere Varianz plus Varianz der Mittel
+        erwartet = w1 * m.s[1] ** 2 + w2 * m.s[2] ** 2 + w1 * w2 * (m.mu[1] - m.mu[2]) ** 2
+        self.assertAlmostEqual(streuung ** 2, erwartet, places=9)
+        self.assertEqual(g.gruppen_modus(m, [0]), m.modus(0))
+        self.assertTrue(30 <= g.gruppen_modus(m, [1, 2]) <= 36)
+
+    def test_naechstes_paar(self):
+        m = modus_mischung((0.3, 10, 0.1), (0.3, 25, 0.1), (0.4, 30, 0.1))
+        self.assertEqual(g.naechstes_paar(m, [[0], [1], [2]]), 1)
+        self.assertEqual(g.naechstes_paar(m, [[0], [1, 2]]), 0)
+
+    def test_stabilitaet_gilt_fuer_die_gruppen_nicht_fuer_die_kurven(self):
+        a = modus_mischung((0.3, 15, 0.1), (0.3, 30, 0.05), (0.4, 33, 0.1))
+        b = modus_mischung((0.3, 15, 0.1), (0.1, 30, 0.05), (0.6, 33, 0.1))  # die beiden oberen Kurven tauschen Masse (Summe gleich)
+        teile = [[0], [1, 2]]
+        self.assertTrue(g.vergleichbar(a, teile, b, teile))
+        self.assertFalse(g.vergleichbar(a, [[0], [1], [2]], b, [[0], [1], [2]]))  # als einzelne Gruppen waeren sie instabil
+        c = modus_mischung((0.5, 15, 0.1), (0.2, 30, 0.05), (0.3, 33, 0.1))  # Masse wandert zwischen den Gruppen
+        self.assertFalse(g.vergleichbar(a, teile, c, teile))
+        self.assertFalse(g.vergleichbar(a, teile, b, [[0, 1, 2]]))  # andere Zahl von Gruppen
+
+
 class Zerlegung(unittest.TestCase):
     def waehlen(self, komponenten, n=60000):
         return g.waehle_k(mischung(komponenten, n, 1), mischung(komponenten, n, 2), 3)
@@ -101,6 +141,17 @@ class Zerlegung(unittest.TestCase):
         """Mit wenig Daten schwanken die Haelften: keine belegte Zerlegung statt einer zufaelligen."""
         erg = g.waehle_k(mischung([(1.0, 30, 0.2)], 400, 3), mischung([(1.0, 30, 0.2)], 400, 4), 3)
         self.assertEqual(erg["k"], 1)
+
+    def test_gruppe_aus_mehreren_kurven(self):
+        """Ein schmaler Gipfel neben einer breiten Glocke gehoert zu einer Gruppe: die Teile zaehlen als Kurven einer Gruppe."""
+        erg = self.waehlen([(0.2, 20, 0.15), (0.1, 29.5, 0.04), (0.7, 36, 0.12)], n=120000)
+        self.assertGreaterEqual(erg["k"], 2)
+        teile = erg["teile"]
+        self.assertEqual(sorted(j for t in teile for j in t), list(range(erg["k"])))  # jede Kurve gehoert zu genau einer Gruppe
+        m = g.Mischung(**erg["mischung"])
+        self.assertAlmostEqual(g.gruppen_modus(m, teile[0]), 20, delta=3)  # teile: Kurvennummern je Gruppe, langsamste Gruppe zuerst
+        self.assertAlmostEqual(sum(g.gruppen_anteil(m, t) for t in teile), 1.0, places=6)
+        self.assertLessEqual(len(teile), erg["k"])
 
     def test_anpassung_ist_deterministisch(self):
         c = mischung([(0.3, 15, 0.18), (0.7, 40, 0.12)], 30000, 5)
@@ -165,7 +216,10 @@ class Analyse(unittest.TestCase):
         self.assertNotIn("hauptmenge_ohne_langsame", block)
         self.assertEqual(len(daten["gruppen"]), 2)
         for x in daten["gruppen"]:
-            self.assertEqual(sorted(x), ["anteil", "modus", "mu", "nr", "pi", "s"])
+            self.assertEqual(sorted(x), ["anteil", "kurven", "modus", "nr", "pi"])
+            self.assertAlmostEqual(sum(c["c"] for c in x["kurven"]), 1.0, delta=0.001)  # Gewichte der Kurven einer Gruppe
+            for c in x["kurven"]:
+                self.assertEqual(sorted(c), ["c", "mu", "s"])
             self.assertNotIn("w", x)
             self.assertNotIn("bis", x)
         self.assertAlmostEqual(sum(x["pi"] for x in daten["gruppen"]), 1.0, delta=0.001)
@@ -185,9 +239,13 @@ class Analyse(unittest.TestCase):
         w0 = daten["w0"]
         kurven = []
         for x in daten["gruppen"]:
-            p = {v: math.exp(-0.5 * ((math.log(v) - x["mu"]) / x["s"]) ** 2) / (x["s"] * v) for v in range(w0, g.VMAX_GRUPPEN + 1)}
-            s = sum(p.values())
-            kurven.append({v: block["fahrzeuge"] * x["pi"] * q / s for v, q in p.items()})
+            h = collections.Counter()
+            for c in x["kurven"]:  # die Gruppe ist die gewichtete Summe ihrer Kurven
+                p = {v: math.exp(-0.5 * ((math.log(v) - c["mu"]) / c["s"]) ** 2) / (c["s"] * v) for v in range(w0, g.VMAX_GRUPPEN + 1)}
+                s = sum(p.values())
+                for v, q in p.items():
+                    h[v] += block["fahrzeuge"] * x["pi"] * c["c"] * q / s
+            kurven.append(h)
         for x, h in zip(block["gruppen"], kurven):  # YAML und Datentabelle beschreiben dieselben Kurven
             self.assertAlmostEqual(100 * sum(h.values()) / block["fahrzeuge"], x["anteil_prozent"], delta=0.05)
             self.assertAlmostEqual(g.kennzahlen(h, 30)["mittel_kmh"], x["mittel_kmh"], delta=0.02)

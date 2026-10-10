@@ -558,7 +558,8 @@ def gruppen_abschnitt(row):
                        'verbessert die Beschreibung der jeweils anderen Messtage nicht deutlich, kehrt nicht in beiden Hälften der Messtage '
                        'wieder oder liegt zu dicht beieinander. Es gibt deshalb keine Zerlegung.</p>'
                        f'<p class="muted">Verfahren und Grenzen: <a href="{REPO}/blob/main/docs/gruppen.md">Gruppen</a>.</p>')
-    zeilen = [gruppen_zeile(f'Gruppe {gr["nr"]}', gr["anteil_prozent"], dez(gr["modus_kmh"], 1), f'{ganz(gr.get("sichtbar_prozent"))}&nbsp;%', gr)
+    zeilen = [gruppen_zeile(f'Gruppe {gr["nr"]}' + (f' <span class="muted">(aus {gr["kurven"]} Kurven)</span>' if gr.get("kurven", 1) > 1 else ""),
+                            gr["anteil_prozent"], dez(gr["modus_kmh"], 1), f'{ganz(gr.get("sichtbar_prozent"))}&nbsp;%', gr)
               for gr in g["gruppen"]]
     if g.get("rest"):
         zeilen.append(gruppen_zeile("Rest (nicht erklärt)", g["rest"]["anteil_prozent"], "–", "–", g["rest"]))
@@ -566,6 +567,10 @@ def gruppen_abschnitt(row):
              'Gruppen sind angepasste Kurven (statistische Anteile der Verteilung) und keine Fahrzeugarten: Was sich dahinter verbirgt (etwa Radfahrer, '
              'abbiegende oder anfahrende Fahrzeuge, Fahrer, die sich am Tempolimit oder am Gefühl orientieren), lässt sich aus den Daten '
              'nicht sagen. Fahrzeuge werden den Gruppen nicht zugeordnet: Was die Kurven nicht erklären, steht im Rest.</p>')
+    if g.get("kurven", g["anzahl"]) > g["anzahl"]:
+        z.append(f'<p class="muted">Die Verteilung ist aus {g["kurven"]} Kurven angepasst. Wo eine Gruppe aus mehreren Kurven besteht, beschreibt '
+                 'ihre Summe die Form der Gruppe; wie die Kurven innerhalb der Gruppe aufgeteilt sind, ist nicht belegt (die Aufteilung '
+                 'wechselt zwischen den Hälften der Messtage) und wird nicht ausgewiesen.</p>')
     z.append('<div class="tablewrap"><table><caption class="muted">Gruppen, nach dem häufigsten Tempo (Modus) geordnet. Anteil, Mittel, V85 '
              'und Einhaltung gelten für die angepasste Kurve der Gruppe; „Sichtbar“ ist der Teil der Kurve im erfassten Bereich. '
              'Die Anteile müssen sich nicht zu 100&nbsp;% addieren.</caption>'

@@ -37,9 +37,10 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `seiten_bauen.py` – baut je Standort eine Detailseite für die GitHub Pages (`standorte/<name>.html`), mit
   Geschwindigkeits-Histogrammen als Inline-SVG
-- `gruppen.py` – zerlegt die Verteilung je Datei in Gruppen (Lognormal-Mischung, Zahl der Gruppen aus den Daten) und baut die Zellen für die Auswahl nach Tageszeit, Tagen und Gruppe
+- `gruppen.py` – zerlegt die Verteilung je Datei in Gruppen (Lognormal-Mischung, Zahl der Kurven und Gruppen aus den Daten) und baut die Zellen für die Auswahl nach Tageszeit, Tagen und Gruppe
 - `zwischenspeicher.py` – Zwischenspeicher für Ergebnisse je Datei (nur geänderte Dateien oder Skripte werden neu gerechnet)
-- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py` – Tests (`python3 -m unittest -v`)
+- `lokal_bauen.py` – baut die GitHub-Pages-Seite lokal nach `_vorschau/` und startet auf Wunsch einen lokalen Server, um sie vor dem Push im Browser anzusehen (`docs/betrieb.md`)
+- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py` – Tests (`python3 -m unittest -v`)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
 - `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz, dazu `filter.js` (kleines Skript für die Auswahl auf den Detailseiten, liest nur die Daten der eigenen Seite)
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
@@ -90,8 +91,9 @@ sinnvoll.
   - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit nutzbarer Zeit,
   - `teilzeitraeume` – dieselben Kennzahlen für `nacht` (22–6 Uhr), `vormittag` (6–12), `nachmittag` (12–19), `abend` (19–22)
     und `schulweg` (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
-  - `gruppen` – Beschreibung der Verteilung als Mischung angepasster Kurven (Zahl der Gruppen aus den Daten, auch keine Zerlegung):
-    Anteil, Modus, Kennzahlen je Kurve, dazu der Rest, den die Kurven nicht erklären, und die Abweichung des Modells
+  - `gruppen` – Beschreibung der Verteilung als Mischung angepasster Kurven (Zahl der Kurven und Gruppen aus den Daten, auch keine
+    Zerlegung; eine Gruppe besteht aus einer oder mehreren Kurven): Anteil, Modus, Kennzahlen je Gruppe, dazu der Rest, den die Kurven
+    nicht erklären, und die Abweichung des Modells
     (`docs/gruppen.md`),
   - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: relativer Risikoindex nach Nilsson, Aufprallgeschwindigkeit
     und Anteil der Fahrzeuge, die mit mehr als 30 bzw. 50 km/h aufträfen, Lärm gegenüber dem Tempolimit

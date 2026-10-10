@@ -41,16 +41,21 @@
     return s;
   }
 
-  // Form der Kurve einer Gruppe: Anteil je km/h ab w0 (Summe 1), Lognormal mit mu und s des Logarithmus
+  // Form der Summenkurve einer Gruppe: Anteil je km/h ab w0 (Summe 1). Eine Gruppe besteht aus einer oder mehreren Lognormal-Kurven
+  // (mu und s des Logarithmus) mit festen Anteilen c innerhalb der Gruppe.
   function kurvenform(g, w0) {
-    var p = [], z = 0, v;
-    for (v = w0; v <= HIST.VMAX; v++) {
-      var q = (Math.log(v) - g.mu) / g.s, d = Math.exp(-0.5 * q * q) / (g.s * v);
-      p.push(d);
-      z += d;
+    var gesamt = [], v, j;
+    for (v = w0; v <= HIST.VMAX; v++) { gesamt.push(0); }
+    for (j = 0; j < g.kurven.length; j++) {
+      var k = g.kurven[j], p = [], z = 0;
+      for (v = w0; v <= HIST.VMAX; v++) {
+        var q = (Math.log(v) - k.mu) / k.s, d = Math.exp(-0.5 * q * q) / (k.s * v);
+        p.push(d);
+        z += d;
+      }
+      for (v = 0; v < p.length; v++) { gesamt[v] += k.c * p[v] / z; }
     }
-    for (v = 0; v < p.length; v++) { p[v] /= z; }
-    return p;
+    return gesamt;
   }
 
   // Zerlegt das Histogramm einer Auswahl: Anteile der Gruppen werden bei festen Kurven neu geschaetzt (EM), jede Gruppe ist

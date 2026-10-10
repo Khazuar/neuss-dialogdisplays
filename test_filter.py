@@ -56,10 +56,14 @@ def zelle_hist(daten, quelle, tage, stunden):
 
 
 def kurvenform(x, w0):
-    """Anteil je km/h einer Gruppe ab w0 (Summe 1), wie site/filter.js."""
-    p = {v: math.exp(-0.5 * ((math.log(v) - x["mu"]) / x["s"]) ** 2) / (x["s"] * v) for v in range(w0, gruppen.VMAX_GRUPPEN + 1)}
-    s = sum(p.values())
-    return {v: q / s for v, q in p.items()}
+    """Anteil je km/h einer Gruppe ab w0 (Summe 1), wie site/filter.js: die Kurven der Gruppe, je auf 1 normiert, mal ihr Gewicht."""
+    summe = {v: 0.0 for v in range(w0, gruppen.VMAX_GRUPPEN + 1)}
+    for k in x["kurven"]:
+        p = {v: math.exp(-0.5 * ((math.log(v) - k["mu"]) / k["s"]) ** 2) / (k["s"] * v) for v in summe}
+        s = sum(p.values())
+        for v, q in p.items():
+            summe[v] += k["c"] * q / s
+    return summe
 
 
 @unittest.skipUnless(NODE, "Node ist nicht installiert")
@@ -118,6 +122,21 @@ class FilterJs(unittest.TestCase):
         self.assertGreater(mittel[1], 35)
         self.assertAlmostEqual(sum(sum(h.values()) for h in mod), n, delta=0.5)
         self.assertEqual(g1["modell"]["pi"], g2["modell"]["pi"])  # beide Gruppen derselben Auswahl: dieselbe Zerlegung
+
+    def test_gruppe_aus_mehreren_kurven(self):
+        """Besteht eine Gruppe aus zwei Kurven, ist ihre Form die gewichtete Summe der beiden (auf je 1 normiert)."""
+        import copy
+        daten = copy.deepcopy(self.daten)
+        k = daten["gruppen"][1]["kurven"][0]
+        daten["gruppen"][1]["kurven"] = [{"mu": k["mu"] - 0.08, "s": k["s"] * 0.8, "c": 0.4}, {"mu": k["mu"] + 0.05, "s": k["s"], "c": 0.6}]
+        (g2,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2"}])
+        m = g2["modell"]
+        w0, n = daten["w0"], sum(g2["hist"].values())
+        p = kurvenform(daten["gruppen"][1], w0)
+        self.assertAlmostEqual(sum(p.values()), 1.0, places=9)
+        for v in (20, 30, 40, 50):
+            self.assertAlmostEqual(m["gruppen"][1][str(v)], m["nfit"] * m["pi"][1] * p[v], delta=1e-6 * n)
+        self.assertAlmostEqual(sum(m["pi"]), 1.0, places=6)
 
     def test_anteile_der_gruppen_je_auswahl(self):
         """Nachts andere Anteile als tagsueber: Die Anteile werden je Auswahl neu geschaetzt, die Kurven bleiben."""

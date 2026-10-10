@@ -369,6 +369,18 @@ class FilterSeite(unittest.TestCase):
         self.assertIn("Nicht zerlegt", s.gruppen_abschnitt({"gruppen": {"geprueft": False, "grund": "zu klein"}}))
         self.assertIn("nicht stabil", s.gruppen_abschnitt({"gruppen": {"geprueft": True, "anzahl": 1}}))
         self.assertEqual(s.gruppen_abschnitt({}), "")
+        self.assertNotIn("Kurven angepasst", h)  # eine Kurve je Gruppe: nichts zu erklaeren
+
+    def test_gruppe_aus_mehreren_kurven(self):
+        block, _ = self.daten()
+        mehr = dict(block, kurven=3, gruppen=[dict(block["gruppen"][0]), dict(block["gruppen"][1], kurven=2)])
+        h = s.gruppen_abschnitt({"gruppen": mehr})
+        self.assertIn("Gruppe 2 <span", h)
+        self.assertIn("(aus 2 Kurven)", h)
+        self.assertNotIn("(aus 1 Kurven)", h)
+        self.assertIn("aus 3 Kurven angepasst", h)
+        self.assertIn("nicht belegt", h)  # die Aufteilung innerhalb einer Gruppe wird nicht ausgewiesen
+
     def test_warnung_bei_schlechter_passung(self):
         block, daten = self.daten()
         schlecht = dict(block, modellabweichung_prozent=15.5)
