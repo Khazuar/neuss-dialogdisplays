@@ -125,48 +125,33 @@ Segmenten, umgerechnet auf Ortszeit:
 | `schulweg` | 07:00 bis 08:00 Uhr, Montag bis Freitag |
 
 Schulferien und Feiertage sind nicht herausgerechnet. `bereinigt` umfasst alle Tageszeiten.
-Die Gesamtwerte (oberste Ebene der YAML) enthalten weiterhin alle Fahrzeuge der Datei ab 5 km/h
-(siehe unten).
-
-## Auswertung ab 5 km/h
-
-`dsd2csv.py` nimmt Fahrzeuge unter 5 km/h aus der Auswertung (`--min-kmh`, Standard 5; `0` nimmt alle). Bis dahin war der
-Parameter nie gesetzt, weder in den Workflows (`pages.yml`, `release.yml`) noch im Skript, es wurden also alle Fahrzeuge
-gezählt. Die CSV-Dateien enthalten weiterhin jeden Messwert. In der YAML stehen `auswertung_ab_kmh` und
-`fahrzeuge_unter_auswertung_ab`, die Detailseiten nennen beides.
-
-Warum: Wir nehmen an, dass sich kein Fahrzeug im Sinne der StVO regelmäßig langsamer als 5 km/h an der Anzeige vorbei
-bewegt. Solche Werte stammen vermutlich von Fußgängern, Tieren, Echos oder Störungen. Belegt ist das nicht, es ist eine
-Festlegung für diese Auswertung. Die Geräte erfassen je nach Konfiguration ab 3, 7, 9 oder 10 km/h (`capture_min_speed`;
-24, 19, 58 bzw. 8 Dateien). Werte unter 5 km/h stehen in 22 der 24 Dateien mit Erfassung ab 3 km/h, aber auch in 12 der 58
-Dateien mit Erfassung ab 9 km/h und in einer mit 7 km/h. Die Geräte speichern also teils Werte unterhalb der eingestellten
-Erfassungsgrenze.
-
-Wirkung: Von etwa 12,0 Millionen Fahrzeugen fallen 0,46 Millionen (3,8 %) heraus, in 35 der 109 Dateien. Bei drei Messstellen
-sind es über 40 % (Bauerbahn, Feldstraße, Alte Uferstraße). Die Einhaltungsquoten sinken dadurch oder bleiben gleich, bei
-einzelnen Messungen um bis zu 6,5 Prozentpunkte (qualifizierte Quote, Median über alle Messungen: 0), das mittlere Tempo
-steigt (Median 0, höchstens +4,9 km/h). Die drei Dateien mit Tempolimit 10 km/h (verkehrsberuhigter Bereich) enthalten
-keine Werte unter 5 km/h und ändern sich nicht.
-
-Vergleich mit den Mitteilungen der Verwaltung (31 Messungen, Zuordnung über Straßenname und Zeitraum, Fahrzeuge im
-Erfassungszeitraum; Median der Abweichung DSD − Mitteilung):
-
-| Größe | alle Fahrzeuge | ab 5 km/h | ab 10 km/h |
-|---|---|---|---|
-| mittleres Tempo | −1,29 km/h | −0,80 km/h | −0,03 km/h |
-| V85 | 0 km/h | 0 km/h | 0 km/h |
-| Anteil unter dem genannten Tempo (24 Messungen) | −0,9 Prozentpunkte | −0,9 Prozentpunkte | −1,3 Prozentpunkte |
-| Fahrzeuge je Tag (15 Messungen) | −1 % | −5 % | −9 % |
-
-Das mittlere Tempo der Mitteilungen passt am besten zu einer Grenze von 10 bis 12 km/h, der Anteil unter dem genannten
-Tempo und die Fahrzeuge je Tag passen dagegen mit allen Fahrzeugen am besten. Die Mitteilungen rechnen also offenbar nicht
-für alle Größen mit derselben Menge an Fahrzeugen; wie genau, geht aus den Daten nicht hervor. Die Grenze von 5 km/h ist
-ein Kompromiss, den wir mit der Annahme zu Fahrzeugen im Sinne der StVO begründen, nicht mit diesem Vergleich.
+Die Gesamtwerte (oberste Ebene der YAML) enthalten weiterhin alle Fahrzeuge der Datei, abzüglich des Rauschbodens
+(siehe unten; `fahrzeuge_in_datei` ist die Zahl davor).
 
 **Grenzen.** Die Plausibilitätsprüfung erkennt zurückgesetzte, versprungene und um Stunden verstellte
 Uhren. Eine Abweichung um wenige Minuten oder um genau eine Stunde, die bereits beim Stellen entstand,
 ist mit dem Verkehrsgang allein nicht belegbar. Ob die Uhr beim Stellen richtig ging, ist eine
 Annahme, die der Test an den Zeitumstellungen nur relativ bestätigt.
+
+## Sehr langsame Messwerte: Rauschboden statt Mindestgeschwindigkeit
+
+Die Geräte zeichnen je nach Konfiguration ab 3, 7, 9 oder 10 km/h auf (`capture_min_speed`; 24, 19, 58 bzw. 8 Dateien),
+speichern aber teils auch Werte darunter: Werte unter 5 km/h stehen in 22 der 24 Dateien mit Erfassung ab 3 km/h, aber auch in
+12 der 58 Dateien mit Erfassung ab 9 km/h. Von etwa 12,0 Millionen Messwerten sind 1,06 Millionen (8,8 %) langsamer als
+10 km/h, bei einzelnen Messstellen über 60 %.
+
+Früher nahm die Auswertung dafür Werte unter 5 km/h heraus (`--min-kmh`, Standard 5), vorher alle mit. Jetzt gilt kein fester
+Grenzwert mehr: `rauschen.py` schätzt je Datei, welcher Teil der Messwerte nicht vom Verkehr abhängt (die Rate bleibt über den
+Tag gleich, während der Verkehr schwankt), und rechnet ihn heraus. Die Begründung, das Modell, die Regeln für den Abzug und die
+Grenzen stehen in [rauschen.md](rauschen.md). `--min-kmh` gibt es weiter (Standard 0) für eine zusätzliche Mindestgeschwindigkeit.
+Die CSV-Dateien enthalten jeden Messwert.
+
+Vergleich mit der früheren Grenze von 5 km/h (108 Dateien): Bei den meisten Dateien ändert sich nichts (mittleres Tempo und
+V85 im Median 0, mittleres Tempo Quartile 0 bis +0,08 km/h). Bei 22 Dateien weicht das mittlere Tempo um mehr als 1 km/h ab
+(Bereich −4,9 bis +1,9 km/h), die qualifizierte Einhaltungsquote um −3,2 bis +6,5 Prozentpunkte. Das sind Dateien, bei denen der
+Rauschboden nicht belegt ist (Hälften nicht stabil, reicht über 15 km/h): Dort werden die langsamen Werte jetzt nicht mehr
+pauschal herausgenommen, sondern bleiben drin und stehen mit dem Grund in der YAML. Wo erst ab 9 oder 10 km/h aufgezeichnet
+wird, war die Grenze von 5 km/h wirkungslos, der Rauschboden bei 9 bis 13 km/h aber oft noch nachweisbar.
 
 ## Bekannte Datenprobleme
 

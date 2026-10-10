@@ -102,14 +102,15 @@ class Yaml(unittest.TestCase):
 
 
 class MinKmh(unittest.TestCase):
-    def test_standard_ist_5_kmh(self):
-        self.assertEqual(d.MIN_KMH_STANDARD, 5)
-
-    def test_stats_laesst_langsamere_fahrzeuge_weg(self):
+    def test_stats_laesst_auf_wunsch_langsamere_fahrzeuge_weg(self):
         veh = [(dt.datetime(2025, 1, 1), v) for v in (3, 5, 12, 30, 40)]
-        self.assertEqual(d.stats(veh, 30, d.MIN_KMH_STANDARD)["anzahl_fahrzeuge"], 4)  # 5 km/h zaehlt noch mit
+        self.assertEqual(d.stats(veh, 30)["anzahl_fahrzeuge"], 5)  # ohne Grenze zaehlen alle
+        self.assertEqual(d.stats(veh, 30, 5)["anzahl_fahrzeuge"], 4)  # 5 km/h zaehlt noch mit
         self.assertEqual(d.stats(veh, 30, 10)["anzahl_fahrzeuge"], 3)
-        self.assertEqual(d.stats(veh, 30, 0)["anzahl_fahrzeuge"], 5)
+
+    def test_standard_ist_keine_mindestgeschwindigkeit(self):
+        import inspect
+        self.assertEqual(inspect.signature(d.convert).parameters["min_kmh"].default, 0)
 
 
 class Histogramm(unittest.TestCase):
@@ -121,6 +122,9 @@ class Histogramm(unittest.TestCase):
     def test_summary_csv_enthaelt_kein_histogramm(self):
         self.assertEqual(d.flach({"n": 1, "histogramm": {"ab_kmh": 3, "anzahl": [1, 2]}, "t": {"histogramm": {"ab_kmh": 1}, "x": 2}}),
                          {"n": 1, "t.x": 2})
+
+    def test_summary_csv_enthaelt_kein_rauschspektrum(self):
+        self.assertEqual(d.flach({"rauschen": {"belegt": True, "spektrum": {"ab_kmh": 3, "rausch": [5]}}}), {"rauschen.belegt": True})
 
 
 class Gefaehrdung(unittest.TestCase):

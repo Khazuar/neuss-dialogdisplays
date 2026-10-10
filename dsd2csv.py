@@ -40,8 +40,8 @@ Aufruf:
                                                       dazu auswertung.yaml, auswertung.json und summary.csv
   python3 -I dsd2csv.py ordner/ -o ausgabe_ordner  -> Ergebnisse unter ausgabe_ordner (Unterordner bleiben erhalten)
   Optionen: --limit 30   Tempolimit fuer alle Dateien erzwingen
-            --min-kmh N  Werte unter N km/h komplett aus der Auswertung nehmen (CSV bleibt vollstaendig);
-                         Standard 5, 0 nimmt alle Fahrzeuge
+            --min-kmh N  zusaetzlich Werte unter N km/h aus der Auswertung nehmen (CSV bleibt vollstaendig); Standard 0.
+                         Den verkehrsunabhaengigen Rauschboden (sehr langsame Werte) rechnet rauschen.py heraus.
             --meta       Konfigurationswerte der Datei ausgeben
             --status     Status-Records (0x33/0x20) als eigene CSV mitschreiben
 
@@ -60,7 +60,9 @@ import os
 import re
 import sys
 
-MIN_KMH_STANDARD = 5  # Auswertung ab dieser Geschwindigkeit: kein Fahrzeug im Sinne der StVO bewegt sich regelmaessig langsamer (Annahme, siehe docs/dsd-format.md)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
+import rauschen  # noqa: E402
+
 MAGIC = b"004DSD"
 T_VEH = 0x0F
 # Recordlaenge je Typ (inkl. Typ-Byte und CRC): 0x0F Fahrzeug, 0x33/0x20 Status
@@ -270,7 +272,7 @@ def flach(obj, prefix=""):
     """Verschachteltes Dict -> flaches Dict (fuer summary.csv)."""
     out = {}
     for k, x in obj.items():
-        if k == "histogramm":
+        if k in ("histogramm", "spektrum"):
             continue  # Zaehllisten stehen nur in der YAML
         if isinstance(x, dict):
             out.update(flach(x, f"{prefix}{k}."))
@@ -738,7 +740,29 @@ HINWEIS_AUSWERTUNG = ("Eigene Berechnung aus den Rohdaten, nicht amtlich. Fehler
                       "Zuordnung) können nicht ausgeschlossen werden; ohne Gewähr.")
 
 
-def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=MIN_KMH_STANDARD, korrekturen=None):
+def rauschen_block(rb, abgezogen, roh=0):
+    """YAML-Block zum Rauschboden (rauschen.pruefen). abgezogen: Zahl der herausgerechneten Fahrzeuge, roh: Fahrzeuge in der Datei."""
+    if rb is None:
+        return {"geprueft": False, "grund": f"weniger als {rauschen.MIN_FAHRZEUGE} Fahrzeuge mit nutzbarer Zeit oder kein Tempolimit"}
+    b = {"geprueft": True, "belegt": rb["belegt"], "abgezogen_fahrzeuge": abgezogen}
+    if rb["grund"]:
+        b["grund"] = rb["grund"]
+    b["anteil_prozent"] = round(100 * rb["anteil"], 2)  # Schaetzung des Modells; abgezogen wird weniger, wo nachts weniger gemessen wurde
+    if abgezogen and roh:
+        b["abgezogen_anteil_prozent"] = round(100 * abgezogen / roh, 2)
+    if rb["mittel_kmh"] is not None:
+        b["mittel_kmh"] = round(rb["mittel_kmh"], 1)
+        b["obergrenze_kmh"] = rb["obergrenze_kmh"]
+    b["stabil"] = rb["stabil"]
+    b["anteil_gerade_tage_prozent"] = round(100 * rb["anteil_haelften"][0], 2)
+    b["anteil_ungerade_tage_prozent"] = round(100 * rb["anteil_haelften"][1], 2)
+    b["verkehrsschwelle_kmh"] = round(rb["verkehrsschwelle_kmh"], 1)
+    if "spektrum" in rb:
+        b["spektrum"] = rb["spektrum"]  # Fahrten je 1000 Stunden: rausch = verkehrsunabhaengig, alle = insgesamt
+    return b
+
+
+def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None):
     buf = open(path, "rb").read()
     meta, veh, status, warn = parse(buf)
     base = os.path.splitext(os.path.basename(path))[0]
@@ -761,6 +785,14 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=MIN_
         print(f"  WARNUNG {base}: {wmsg}", file=sys.stderr)
     kor = (korrekturen or {}).get(f"{standort}/{os.path.basename(path)}")
     lim, quelle = tempolimit(meta, limit, kor)
+    uhr, bereinigt, teil, spannen = analysiere_uhr(veh, status, mit_spannen=True)
+    rb = rauschen.pruefen(bereinigt, spannen, lim)
+    anzahl_roh = len(veh)
+    if rb and rb["belegt"]:  # verkehrsunabhaengigen Rauschboden herausrechnen (docs/rauschen.md)
+        modell = rb["_modell"]
+        veh = rauschen.ohne_rauschen_je_v(veh, modell)
+        bereinigt = rauschen.ohne_rauschen(bereinigt, modell)
+        teil = {k: rauschen.ohne_rauschen(v, modell) for k, v in teil.items()}
     res = {
         "standort": standort,
         "datei": os.path.basename(path),
@@ -772,10 +804,10 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=MIN_
         "erfassung_ab_kmh": byte_wert(meta.get("capture_min_speed")),
         "auswertung_ab_kmh": min_kmh,
         "fahrzeuge_unter_auswertung_ab": sum(1 for x in veh if x[1] < min_kmh),
+        "fahrzeuge_in_datei": anzahl_roh,
         "warnungen": len(warn),
     }
     res.update(stats(veh, lim, min_kmh) or {"anzahl_fahrzeuge": 0})
-    uhr, bereinigt, teil, spannen = analysiere_uhr(veh, status, mit_spannen=True)
 
     def zusatz(vehs):
         """Histogramm, Gefaehrdung und Laerm fuer eine Auswahl von Fahrzeugen (die beiden letzten nur mit Tempolimit)."""
@@ -785,6 +817,7 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=MIN_
 
     res.update(zusatz(veh))
     res["uhr"] = uhr
+    res["rauschen"] = rauschen_block(rb, anzahl_roh - len(veh) if rb and rb["belegt"] else 0, anzahl_roh)
     b = stats(bereinigt, lim, min_kmh) or {"anzahl_fahrzeuge": 0}
     res["bereinigt"] = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit nutzbarer Zeit (siehe uhr), Zeiten in Ortszeit",
                         **b, **zusatz(bereinigt)}
@@ -804,9 +837,9 @@ def main():
     ap.add_argument("-o", "--out", help="Ausgabeordner (Standard: neben der Eingabe)")
     ap.add_argument("--limit", type=int,
                     help="Tempolimit (km/h) fuer alle Dateien erzwingen (Standard: aus der DSD ableiten)")
-    ap.add_argument("--min-kmh", type=int, default=MIN_KMH_STANDARD,
-                    help=f"Werte unter dieser Geschwindigkeit aus der Auswertung nehmen, CSV bleibt vollstaendig (Standard: {MIN_KMH_STANDARD}; "
-                         "0 = alle Fahrzeuge)")
+    ap.add_argument("--min-kmh", type=int, default=0,
+                    help="zusaetzlich Werte unter dieser Geschwindigkeit aus der Auswertung nehmen, CSV bleibt vollstaendig "
+                         "(Standard: 0; den Rauschboden rechnet das Skript ohnehin heraus, siehe docs/rauschen.md)")
     ap.add_argument("--korrekturen", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "belege", "korrekturen.json"),
                     help="Korrekturen des Tempolimits aus den Mitteilungen (Standard: belege/korrekturen.json, falls vorhanden)")
     ap.add_argument("--meta", action="store_true")

@@ -19,6 +19,8 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `dsd2csv.py` – DSD → CSV und YAML-Auswertung
 - `uhr_belege.py` – prüft für jeden Abschnitt einer Aufzeichnung, ob man der Geräteuhr glauben darf
   (`plausibel`, `eingeschraenkt`, `unbrauchbar`), mit Belegen
+- `rauschen.py` – schätzt je Datei den Rauschboden (sehr langsame Messwerte, deren Rate nicht vom Verkehr abhängt) und rechnet
+  ihn heraus, wo das belegt ist
 - `<Standortordner>/uhr-analyse.md` – je Standort eine lesbare Fassung der Urteile mit allen Belegen
 - `metadaten.py` – ordnet die Angaben der Verwaltung (Messstelle, Fahrtrichtung, Zeitraum, Tempolimit, V85 …) den
   DSD-Dateien zu und schreibt je Standort eine `metadaten.yaml` mit Quellen
@@ -30,10 +32,11 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
   (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`)
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
 - `docs/metadaten.md` – Herkunft, Zuordnung und Abdeckung der Metadaten
+- `docs/rauschen.md` – Modell, Regeln und Grenzen des Rauschbodenabzugs
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `seiten_bauen.py` – baut je Standort eine Detailseite für die GitHub Pages (`standorte/<name>.html`), mit
   Geschwindigkeits-Histogrammen als Inline-SVG
-- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py` – Tests (`python3 -m unittest -v`)
+- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py` – Tests (`python3 -m unittest -v`)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
 - `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
@@ -66,7 +69,7 @@ python3 -I dsd2csv.py datei.dsd             # eine Datei
 python3 -I dsd2csv.py . -o ausgabe          # Ergebnisse unter ausgabe/ (Ordnerstruktur bleibt)
 ```
 
-Optionen: `--limit N` (Tempolimit erzwingen), `--min-kmh N` (Standard 5; Werte unter N km/h aus der Auswertung
+Optionen: `--limit N` (Tempolimit erzwingen), `--min-kmh N` (Standard 0, zusätzlich; Werte unter N km/h aus der Auswertung
 nehmen), `--meta`, `--status`. Mit `-I` startet Python isoliert; das ist bei Dateien aus fremder Quelle
 sinnvoll.
 
@@ -79,6 +82,8 @@ sinnvoll.
   - `uhr` – formale Prüfung der Zeitstempel (`nutzbarkeit`: `nutzbar`, `teilweise_nutzbar`, `nicht_nutzbar`) mit
     Hinweisen und den Uhr-Segmenten. Sie sagt nicht, ob die Uhrzeit stimmt; das belegt `uhr_belege.py`
     (`plausibel`, `eingeschraenkt`, `unbrauchbar`, `belege/uhr-bewertung.json`),
+  - `rauschen` – Rauschboden: `belegt`, `abgezogen_fahrzeuge`, Anteil, Mittel und Obergrenze in km/h, Stabilität und das
+    `spektrum` (Fahrten je 1000 Stunden, verkehrsunabhängig und insgesamt); `fahrzeuge_in_datei` ist die Zahl vor dem Abzug,
   - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit nutzbarer Zeit,
   - `teilzeitraeume` – dieselben Kennzahlen für `tags` (6–18 Uhr), `nachts` (18–6 Uhr) und `schulweg`
     (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
@@ -97,8 +102,10 @@ Die Geräte stellen ihre Uhr nicht auf Sommerzeit um und sind teils zurückgeset
 Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit um und lassen Fahrzeuge ohne nutzbare Zeit aus (zurückgesetzte Uhr, Datumssprünge, Versatz um Stunden). Nutzbar heißt nicht
 belegt: Ob die Uhrzeit stimmt, zeigen die Belege je Abschnitt auf den Detailseiten.
 Das Verfahren und die Belege dafür stehen in `docs/dsd-format.md`. Die Kennzahlen auf der obersten Ebene der
-YAML enthalten weiterhin alle Fahrzeuge der Datei ab 5 km/h; langsamere Messwerte nimmt die
-Auswertung standardmäßig heraus (`--min-kmh`, Begründung und Folgen in `docs/dsd-format.md`). Die CSV-Dateien bleiben vollständig.
+YAML enthalten weiterhin alle Fahrzeuge der Datei, abzüglich des **Rauschbodens**: Sehr langsame Messwerte (Fußgänger,
+Tiere, Echos, Störungen), deren Rate nicht vom Verkehr abhängt, schätzt `rauschen.py` je Datei und rechnet sie heraus, wo das
+belegt ist (Modell und Regeln in `docs/rauschen.md`). Eine feste Mindestgeschwindigkeit gibt es nicht mehr; `--min-kmh` ist
+optional. Die CSV-Dateien bleiben vollständig.
 
 Das **Tempolimit** wird aus der DSD gelesen (`safety_speed`, eine Anzeige-Schwelle des Geräts), siehe `docs/dsd-format.md`.
 Nennt die Mitteilung der Verwaltung ein deutlich anderes Limit, gilt dieses (`belege/korrekturen.json`, vier Messungen,
