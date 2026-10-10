@@ -299,6 +299,21 @@ class Histogramme(unittest.TestCase):
         row["teilzeitraeume"]["nacht"]["histogramm"] = hist(60, 30)  # zu wenige fuer den Vergleich
         self.assertEqual(s.histogramm_abschnitt(row).count("<svg"), 1)
 
+    def test_mit_filter_steht_das_feste_histogramm_nur_im_noscript(self):
+        row = zeile()
+        row["histogramm"] = hist(5000)
+        for k, n in (("vormittag", 2000), ("nachmittag", 2000), ("abend", 500)):
+            row["teilzeitraeume"][k]["histogramm"] = hist(n)
+        row["teilzeitraeume"]["nacht"]["histogramm"] = hist(400, 30)
+        a = s.histogramm_abschnitt(row, mit_filter=True)
+        m = re.search(r"<noscript>(.*?)</noscript>", a, re.S)
+        self.assertIn("Verteilung der Geschwindigkeiten", m.group(1))
+        self.assertEqual(m.group(1).count("<svg"), 1)
+        draussen = a.replace(m.group(0), "")
+        self.assertNotIn("Verteilung der Geschwindigkeiten", draussen)
+        self.assertIn("Tag und Nacht im Vergleich", draussen)  # den Vergleich zeigt die Auswahl nicht
+        self.assertEqual(draussen.count("<svg"), 1)
+
     def test_hist_summe(self):
         h = s.hist_summe([{"ab_kmh": 10, "anzahl": [1, 2]}, None, {"ab_kmh": 11, "anzahl": [5, 5]}])
         self.assertEqual(h, {"ab_kmh": 10, "anzahl": [1, 7, 5]})
@@ -343,6 +358,19 @@ class FilterSeite(unittest.TestCase):
         self.assertNotIn('data-feld="gruppe"', h1)
         self.assertIn('data-feld="zeit"', h1)
         self.assertIn('data-feld="tage"', h1)
+
+    def test_seite_zeigt_das_histogramm_nur_einmal_mit_javascript(self):
+        block, daten = self.daten()
+        row = zeile()
+        row["gruppen"] = block
+        row["histogramm"] = hist(5000)
+        h = s.seite("07_2024_ Einsteinstraße", [row], {"messungen": []}, {}, {row["datei"]: daten})
+        self.assertEqual(h.count("Verteilung der Geschwindigkeiten"), 1)
+        self.assertLess(h.index("<noscript><h4>Verteilung der Geschwindigkeiten"), h.index("</noscript>", h.index("<noscript><h4>Verteilung")))
+        ohne = s.seite("07_2024_ Einsteinstraße", [row], {"messungen": []}, {}, {})  # ohne Zellen: kein Filter, das Histogramm steht offen
+        self.assertEqual(ohne.count("Verteilung der Geschwindigkeiten"), 1)
+        self.assertNotIn("<noscript>", ohne)
+
     def test_json_kann_das_skript_nicht_beenden(self):
         self.assertNotIn("</script", s.json_in_html({"a": "</script><script>alert(1)</script>", "b": "<!--"}))
         self.assertEqual(json.loads(s.json_in_html({"a": "</x>"})), {"a": "</x>"})

@@ -618,7 +618,7 @@ def filter_abschnitt(row, daten, sid):
     warnung = modell_warnung(row) if gruppen_opt else ""
     felder = auswahl("zeit", "Tageszeit", ZEIT_OPTIONEN) + auswahl("tage", "Tage", TAGE_OPTIONEN) + (auswahl("gruppe", "Gruppe", gruppen_opt) if gruppen_opt else "")
     return ('<noscript><p class="muted">Die Auswahl nach Tageszeit, Wochentag und Gruppe benötigt JavaScript. Ohne JavaScript zeigt diese Seite '
-            'die Auswertung für alle Fahrzeuge und die Zeiträume in den Tabellen.</p></noscript>'
+            'die Auswertung für alle Fahrzeuge (Tabellen und Histogramm) und die Zeiträume in den Tabellen.</p></noscript>'
             f'<section class="filter" data-filter hidden><h4>Auswertung nach Zeit, Tagen und Gruppe</h4>'
             '<p class="muted">Wählen Sie Tageszeit, Tage' + (' und Gruppe' if gruppen_opt else '') + '; Kennzahlen und Verteilung gelten dann für diese Auswahl. '
             'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt. '
@@ -642,8 +642,11 @@ def hist_summe(hists):
     return {"ab_kmh": lo, "anzahl": summe}
 
 
-def histogramm_abschnitt(row):
-    """Geschwindigkeitsverteilung: Histogramm aller Fahrzeuge der Datei, dazu Tags und Nachts im Vergleich."""
+def histogramm_abschnitt(row, mit_filter=False):
+    """Geschwindigkeitsverteilung: Histogramm aller Fahrzeuge der Datei, dazu Tags und Nachts im Vergleich.
+
+    mit_filter: Die Seite hat den Abschnitt mit der Auswahl (JavaScript), der dasselbe Histogramm zeigt. Das feste Histogramm steht
+    dann nur noch im noscript-Block fuer Besucher ohne JavaScript; der Vergleich Tag/Nacht bleibt, weil die Auswahl ihn nicht zeigt."""
     h = row.get("histogramm")
     if not h or sum(h["anzahl"]) < HIST_MIN_FAHRZEUGE:
         return ""
@@ -652,6 +655,8 @@ def histogramm_abschnitt(row):
     z = ['<h4>Verteilung der Geschwindigkeiten</h4><figure class="histfig">' + svg +
          '<figcaption class="muted">Höhe der Säulen: Anteil der Fahrzeuge je km/h, alle ausgewerteten Fahrzeuge'
          f'{" (blau bis zum Tempolimit, orange darüber)" if limit else ""}. {text}</figcaption></figure>']
+    if mit_filter:
+        z = ["<noscript>" + z[0] + "</noscript>"]
     tz = row.get("teilzeitraeume") or {}
     tag = hist_summe([tz.get(k, {}).get("histogramm") for k in ("vormittag", "nachmittag", "abend")])
     nacht = tz.get("nacht", {}).get("histogramm")
@@ -751,9 +756,10 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None):
                  "".join(f"<li>{w}</li>" for w in wid) + "</ul></div>")
     if row.get("anzahl_fahrzeuge"):
         z.append(kennzahlen_tabelle(row))
-        z.append(filter_abschnitt(row, daten, standort_slug(row["datei"])))
+        auswahl = filter_abschnitt(row, daten, standort_slug(row["datei"]))
+        z.append(auswahl)
+        z.append(histogramm_abschnitt(row, mit_filter=bool(auswahl)))
         z.append(rauschen_abschnitt(row))
-        z.append(histogramm_abschnitt(row))
         z.append(gruppen_abschnitt(row))
         z.append(schaetzung_tabellen(row))
         z.append(nacht_abschnitt(row))
