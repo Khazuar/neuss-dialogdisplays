@@ -99,8 +99,20 @@
     return 100;
   }
 
+  // Erwartete Fahrzeuge je km/h der angepassten Kurve einer Gruppe, so skaliert, dass sie bis zur Zuordnungsgrenze (haeufigstes Tempo
+  // der naechst schnelleren Gruppe) so viele Fahrzeuge umfasst wie die Gruppe in der Auswahl hat. Nur fuer einzelne Gruppen.
+  function gruppenKurve(daten, gruppe, n) {
+    var nr = gruppe.charAt(0) === "g" ? parseInt(gruppe.slice(1), 10) : 0, g = nr ? (daten.gruppen || [])[nr - 1] : null;
+    if (!g || g.mu === undefined) { return null; }
+    function pdf(v) { var z = (Math.log(v) - g.mu) / g.s; return Math.exp(-0.5 * z * z) / (g.s * v); }
+    var w0 = daten.w0 || 1, bis = g.bis === null || g.bis === undefined ? 255 : Math.floor(g.bis), z = 0, v;
+    for (v = w0; v <= bis; v++) { z += pdf(v); }
+    if (z <= 0) { return null; }
+    return function (w) { return w < w0 ? 0 : n * pdf(w) / z; };
+  }
+
   // Histogramm als SVG-Text (gleiche Klassen wie auf den uebrigen Seiten); Hoehe = Anteil der Fahrzeuge je km/h
-  function histogrammSvg(hist, kz, limit) {
+  function histogrammSvg(hist, kz, limit, kurve) {
     var vs = sortiert(hist), n = kz.n, breite = klassenbreite(hist, n);
     var oben = quantilWert(hist, vs, n, 0.9999) + 3;
     oben = Math.min(Math.max(oben, limit ? limit + 15 : 0), vs[vs.length - 1]);
@@ -142,6 +154,15 @@
              '" height="' + (HIST.T + ph - y(liste[i][2])).toFixed(1) + '"><title>' + (breite === 1 ? liste[i][0] : liste[i][0] + "–" + bisw) + ' km/h: ' +
              de(liste[i][1], 0) + ' Fahrzeuge (' + de(100 * liste[i][1] / n, 2) + ' %)</title></rect>');
     }
+    if (kurve) {
+      var punkte = [];
+      for (start = erster; start <= bis; start += breite) {
+        var erwartet = 0;
+        for (v = Math.max(start, von); v < start + breite && v <= bis; v++) { erwartet += kurve(v); }
+        punkte.push((x(start) + breite * sc / 2).toFixed(1) + "," + y(100 * erwartet / n / breite).toFixed(1));
+      }
+      s.push('<polyline class="hist-modell" points="' + punkte.join(" ") + '"/>');
+    }
     var marken = [];
     if (limit && limit >= von && limit <= bis) { marken.push([x(limit + 1), "Limit " + limit, "hist-limit"]); }
     if (kz.v85 >= von && kz.v85 <= bis) { marken.push([x(kz.v85) + sc / 2, "V85 " + kz.v85, "hist-v85"]); }
@@ -167,9 +188,11 @@
     }
     html += '</tr></tbody></table></div>';
     if (kz.n < HIST.MIN_FAHRZEUGE) { return html + "<p class=\"muted\">Zu wenige Fahrzeuge für ein Histogramm.</p>"; }
-    var h = histogrammSvg(r.hist, kz, limit);
+    var kurve = gruppenKurve(daten, auswahl.gruppe, kz.n), h = histogrammSvg(r.hist, kz, limit, kurve);
     return html + '<figure class="histfig">' + h.svg + '<figcaption class="muted">Anteil der Fahrzeuge der Auswahl je km/h (Klassenbreite ' + h.breite +
-      ' km/h' + (limit ? ", blau bis zum Tempolimit, orange darüber" : "") + '). "je Stunde": Fahrzeuge je vollständig aufgezeichneter Stunde der Auswahl.</figcaption></figure>';
+      ' km/h' + (limit ? ", blau bis zum Tempolimit, orange darüber" : "") + '). "je Stunde": Fahrzeuge je vollständig aufgezeichneter Stunde der Auswahl.' +
+      (kurve ? ' Säulen: die tatsächlichen Fahrzeuge der Gruppe (Daten mal Anteil der Gruppe an der Geschwindigkeit); Linie: die angepasste Kurve der Gruppe. ' +
+        'Wo die Säulen von der Linie abweichen, erklärt das Modell die Daten nicht.' : '') + '</figcaption></figure>';
   }
 
   function klasseQuote(x) { return x === null ? "" : (x < 50 ? " bad" : x < 75 ? " mid" : ""); }
@@ -190,7 +213,7 @@
     zeichnen();
   }
 
-  var api = { waehle: waehle, kennzahlen: kennzahlen, klassenbreite: klassenbreite, histogrammSvg: histogrammSvg, ergebnisHtml: ergebnisHtml };
+  var api = { waehle: waehle, kennzahlen: kennzahlen, klassenbreite: klassenbreite, histogrammSvg: histogrammSvg, ergebnisHtml: ergebnisHtml, gruppenKurve: gruppenKurve };
   if (typeof module !== "undefined" && module.exports) { module.exports = api; }
   if (wurzel.document) {
     var abschnitte = wurzel.document.querySelectorAll("[data-filter]");

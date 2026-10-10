@@ -329,10 +329,14 @@ class FilterSeite(unittest.TestCase):
         self.assertIn("<noscript>", h)
         self.assertIn('<section class="filter" data-filter hidden>', h)  # ohne JavaScript bleibt der Abschnitt verborgen
         self.assertIn('<script src="../filter.js" defer></script>', h)
-        for name in ("Gruppe 1 (Modus", "Gruppe 2 (Modus", "Hauptmenge (ohne langsame Gruppen)", "Ganztägig", "Nacht (22–6 Uhr)", "Schulweg (7–8 Uhr)",
+        for name in ("Gruppe 1 (Modus", "Gruppe 2 (Modus", "Ganztägig", "Nacht (22–6 Uhr)", "Schulweg (7–8 Uhr)",
                      "Werktage (Mo–Fr)", "Sonn- und Feiertage", "Feiertage an Werktagen und Samstagen", ">Montag<"):
             self.assertIn(name, h, name)
         self.assertNotIn("Rauschboden (herausgerechnet)", h)  # ohne abgezogenen Rauschboden keine solche Gruppe
+        self.assertNotIn("Hauptmenge (ohne langsame Gruppen)", h)  # mit einer verbleibenden Gruppe waere sie eine Wiederholung dieser Gruppe
+        d3 = json.loads(json.dumps(daten))
+        d3["gruppen"].append(dict(d3["gruppen"][1], nr=3))
+        self.assertIn("Hauptmenge (ohne langsame Gruppen)", self.html(d3, block))  # zwei schnelle Gruppen: die Hauptmenge ist etwas Eigenes
         m = re.search(r'<script type="application/json" class="filter-daten">(.*?)</script>', h, re.S)
         self.assertEqual(json.loads(m.group(1)), daten)  # die Tabelle im Seitentext ist genau die Datentabelle
 
@@ -351,13 +355,25 @@ class FilterSeite(unittest.TestCase):
         h = s.gruppen_abschnitt({"gruppen": block})
         self.assertIn("Gruppen in der Verteilung", h)
         self.assertIn("Gruppe 1 (langsam)", h)
-        self.assertIn("Hauptmenge ohne die langsamen Gruppen", h)
+        self.assertNotIn("Hauptmenge ohne die langsamen Gruppen", h)  # nur eine schnelle Gruppe: keine Wiederholung
+        b3 = json.loads(json.dumps(block))
+        b3["hauptmenge_ohne_langsame"]["gruppen"] = [2, 3]
+        self.assertIn("Hauptmenge ohne die langsamen Gruppen", s.gruppen_abschnitt({"gruppen": b3}))
+        self.assertIn("weichen von den Daten bei etwa", h)  # Passung des Modells
         self.assertIn("keine Fahrzeugarten", h)
         self.assertIn("2 Gruppen zusammen", h)
         self.assertIn("Nicht zerlegt", s.gruppen_abschnitt({"gruppen": {"geprueft": False, "grund": "zu klein"}}))
         self.assertIn("nicht stabil", s.gruppen_abschnitt({"gruppen": {"geprueft": True, "anzahl": 1}}))
         self.assertEqual(s.gruppen_abschnitt({}), "")
 
+    def test_warnung_bei_schlechter_passung(self):
+        block, daten = self.daten()
+        schlecht = dict(block, modellabweichung_prozent=15.5)
+        self.assertIn("Das Modell passt hier schlecht", s.gruppen_abschnitt({"gruppen": schlecht}))
+        self.assertIn("Das Modell passt hier schlecht", self.html(daten, schlecht))  # auch im Abschnitt mit der Auswahl
+        gut = dict(block, modellabweichung_prozent=3.0)
+        self.assertNotIn("Das Modell passt hier schlecht", s.gruppen_abschnitt({"gruppen": gut}))
+        self.assertEqual(s.modell_warnung({}), "")
     def test_keine_externen_adressen_im_filter(self):
         h = self.html(*reversed(self.daten()))
         for url in re.findall(r'(?:href|src)="(https?://[^"]+)"', h):

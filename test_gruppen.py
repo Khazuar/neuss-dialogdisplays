@@ -179,6 +179,25 @@ class Analyse(unittest.TestCase):
         n = sum(sum(c for c in z[1::2]) for z in daten["z"].values())
         self.assertEqual(n, block["fahrzeuge"])
 
+    def test_zuordnung_gibt_langsamer_gruppe_keine_schnellen_fahrzeuge(self):
+        m = g.Mischung([0.2, 0.8], [math.log(20) + 0.18, math.log(44) + 0.04], [0.42, 0.2])  # breite langsame Gruppe, schnelle Hauptgruppe
+        roh = m.antworten(55)
+        self.assertGreater(roh[0], 0.0)  # der lange Ausläufer der breiten Gruppe reicht rechnerisch bis 55 km/h
+        z = m.zuordnung(55)
+        self.assertEqual(z[0], 0.0)  # aber Fahrzeuge schneller als das häufigste Tempo der Hauptgruppe gehören ihr nicht
+        self.assertEqual(z[1], 1.0)
+        self.assertAlmostEqual(sum(m.zuordnung(30)), 1.0, places=9)
+        self.assertGreater(m.zuordnung(30)[0], 0.0)  # darunter bleibt es bei den Anteilen der Anpassung
+
+    def test_modellabweichung_und_zuordnungsgrenze_im_block(self):
+        fahrten, spannen = fahrten_und_spannen(tage=28)
+        block, daten = g.analysiere(g.zellen_bauen(fahrten, fahrten, spannen), 30, True)
+        self.assertLess(block["modellabweichung_prozent"], 8.0)  # die Testdaten sind lognormal, die Kurven passen
+        self.assertEqual(block["gruppen"][1]["zugeordnet_bis_kmh"], None)  # die schnellste Gruppe hat keine Grenze
+        self.assertAlmostEqual(block["gruppen"][0]["zugeordnet_bis_kmh"], block["gruppen"][1]["modus_kmh"], places=1)
+        self.assertLessEqual(block["gruppen"][0]["v85_kmh"], block["gruppen"][0]["zugeordnet_bis_kmh"])
+        self.assertIn("mu", daten["gruppen"][0])
+        self.assertEqual(daten["gruppen"][0]["bis"], block["gruppen"][0]["zugeordnet_bis_kmh"])
     def test_rauschgrenze_begrenzt_die_anpassung(self):
         fahrten, spannen = fahrten_und_spannen(tage=28)
         zd = g.zellen_bauen(fahrten, fahrten, spannen)

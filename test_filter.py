@@ -99,6 +99,27 @@ class FilterJs(unittest.TestCase):
         erw = {g["nr"]: g["anteil"] for g in self.daten["gruppen"]}
         self.assertAlmostEqual(100 * g1["kz"]["n"] / n, erw[1], delta=0.3)
 
+    def test_kurve_der_gruppe(self):
+        skript = (
+            "const f = require(process.argv[1]); const d = JSON.parse(require('fs').readFileSync(process.argv[2], 'utf8'));"
+            "const k = f.gruppenKurve(d, 'g1', 1000); const k2 = f.gruppenKurve(d, 'alle', 1000);"
+            "let s = 0; const bis = Math.floor(d.gruppen[0].bis); for (let v = d.w0; v <= bis; v++) s += k(v);"
+            "console.log(JSON.stringify({summe: s, davor: k(d.w0 - 1), alle: k2, jenseits: k(bis + 20) > 0}));")
+        with tempfile.TemporaryDirectory() as t:
+            pfad = os.path.join(t, "d.json")
+            with open(pfad, "w", encoding="utf-8") as fh:
+                json.dump(self.daten, fh)
+            out = subprocess.run([NODE, "-e", skript, os.path.join(HIER, "site", "filter.js"), pfad], stdout=subprocess.PIPE, check=True, timeout=60)
+        r = json.loads(out.stdout.decode())
+        self.assertAlmostEqual(r["summe"], 1000, delta=0.5)  # die Kurve umfasst bis zur Zuordnungsgrenze so viele Fahrzeuge wie die Gruppe
+        self.assertEqual(r["davor"], 0)
+        self.assertIsNone(r["alle"])  # nur einzelne Gruppen haben eine Kurve
+        self.assertTrue(r["jenseits"])  # sie läuft über die Grenze hinaus weiter und zeigt den Ausläufer
+        (g1,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1"}])
+        self.assertIn("hist-modell", g1["html"])
+        self.assertIn("angepasste Kurve der Gruppe", g1["html"])
+        (alle,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
+        self.assertNotIn("hist-modell", alle["html"])
     def test_ausgabe_html(self):
         (r,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
         self.assertIn("<table>", r["html"])

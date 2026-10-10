@@ -90,7 +90,24 @@ JavaScript bleibt der Abschnitt verborgen, und die Seite zeigt die übrigen Tabe
 
 Gruppen in der Auswahl: „Alle Fahrzeuge (ohne Rauschboden)“, „Rauschboden“ (das, was herausgerechnet wurde, soweit belegt),
 „Gruppe 1“ bis „Gruppe K“ (nach Modus geordnet, 1 ist die langsamste), „Hauptmenge“ (ohne die langsamen Gruppen) und „Unter X
-km/h“ (der nicht zerlegte Rand).
+km/h“ (der nicht zerlegte Rand). Die Hauptmenge gibt es nur, wenn danach mindestens zwei schnelle Gruppen übrig bleiben; bei
+einer einzigen wäre sie dieselbe Gruppe.
+
+**Was die Säulen einer Gruppe zeigen.** Die Säulen sind die tatsächlichen Fahrzeuge der Gruppe: Jedes Fahrzeug zählt mit dem
+Anteil, den die Gruppe an seiner Geschwindigkeit hat (aus der angepassten Mischung). Sie haben deshalb nicht genau die Form der
+angepassten Kurve. Wo die Daten von der Kurve abweichen, zeigt sich das in den Säulen der Gruppen, die dort den größten Anteil
+haben. Zur Kontrolle liegt bei einer einzelnen Gruppe die angepasste Kurve als Linie über den Säulen (auf dieselbe Fläche
+bis zur Zuordnungsgrenze skaliert). Je weiter die Säulen von der Linie entfernt sind, desto weniger erklärt das Modell die Daten.
+
+**Zuordnungsgrenze.** Eine langsamere Gruppe besitzt keine Fahrzeuge, die schneller sind als das häufigste Tempo der nächst
+schnelleren Gruppe (`zugeordnet_bis_kmh`). Der lange Ausläufer einer breiten Lognormal-Kurve reicht sonst rechnerisch bis zu
+den Rasern und ließe sie zur „langsamen“ Gruppe gehören; so hatte eine langsame Gruppe ein V99 von 56 km/h, obwohl ihr
+häufigstes Tempo bei 20 km/h liegt. Die Vereinbarung betrifft nur die Zuordnung der Fahrzeuge, nicht die Anpassung.
+
+**Passung des Modells.** `modellabweichung_prozent` ist der Anteil der Fahrzeuge, die die angepasste Mischung an einer anderen
+Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h). Im Median über die 80 zerlegten Dateien
+sind es 3,2 % (Quartile 2,0 und 4,6), bei 15 Dateien mehr als 5 %, bei 2 mehr als 10 % (Kreitzweg 15,0 %, Nievenheimer Straße
+mit der Datei `0000000000000000_12` 15,5 %). Ab 10 % warnen die Seiten, dass das Modell schlecht passt.
 
 Die Zellen enthalten nur vollständig aufgezeichnete Stunden mit nutzbarer Zeit; die Zahl der Fahrzeuge einer Auswahl kann
 deshalb geringfügig unter der Zahl in den Tabellen liegen.
@@ -106,7 +123,7 @@ nicht in die Rechnung eingingen. Warum die Gruppe langsam ist, ist offen.
 
 Block `gruppen` je Messung: `geprueft`, `anzahl` (K), `obere_gruppen_ueberlappen`, `angepasst_ab_kmh`, `fahrzeuge`,
 `fahrzeuge_unter_grenze`, `grund` (bei K = 1), `auswahl` (je geprüftem K: `stabil`, `klein`, `sichtbar_min`, `d_unten`, `d_alle`, `modus_abstand`, `cv_gewinn`),
-`gruppen` (Nummer, Anteil, Modus, Streuung im Logarithmus, `sichtbar_prozent`, Mittel, V85, Einhaltung, qualifizierte Einhaltung, `langsam`) und
+`modellabweichung_prozent`, `gruppen` (Nummer, Anteil, Modus, Streuung im Logarithmus, `sichtbar_prozent`, Mittel, V85, `zugeordnet_bis_kmh`, Einhaltung, qualifizierte Einhaltung, `langsam`) und
 `hauptmenge_ohne_langsame`. Die Zellen liegen als `<Datei>.zellen.json` neben der YAML (Format siehe `gruppen.py`,
 `analysiere`).
 
@@ -116,8 +133,13 @@ Block `gruppen` je Messung: `geprueft`, `anzahl` (K), `obere_gruppen_ueberlappen
   keine Zuordnung. Wetterdaten sind nicht eingebunden.
 - Bei überlappenden Gruppen ist die Trennung unsicher, auch wenn die Zerlegung stabil ist. Die Schwellen (0,005 und 0,02 nats, 7 %,
   6 Prozentpunkte, 3 %, D ≥ 1) sind Festlegungen, kein Befund. Bei 29 der 109 Dateien gibt es keine Zerlegung (10 sind zu klein, bei 19 ist keine belegt); bei den übrigen 80 sind es 2 Gruppen (76 Dateien) oder 3 Gruppen (4), bei 8 davon mit überlappenden Gruppen.
-- Die Lognormal-Form ist eine Annahme. Verhalten wie ein Spitzer genau am Tempolimit passt nicht gut dazu und wird als eigene
-  schmale Gruppe beschrieben.
+- Die Lognormal-Form ist eine Annahme, und die Gruppen hängen davon ab. Eine Lognormal-Kurve ist nach rechts schief; wo der
+  Verkehr am Tempolimit gestaut wird, ist die Verteilung eher nach links schief (Schulter unterhalb des Limits, steile rechte
+  Flanke). Ein Versuch mit schiefen Normalverteilungen (skew-normal, beide Schieflagen) senkte die Abweichung bei der
+  Nievenheimer Straße (`0000000000000000_12`, Limit 50) von 15,5 auf 2,7 %, verschob dabei aber, was „die langsame Gruppe“ ist
+  (statt eines Gipfels bei 20 km/h eine breite Gruppe von 18 bis 55 km/h). Gruppenparameter sind also Beschreibungen für die
+  gewählte Kurvenform und keine Messgrößen. Der Versuch ist nicht übernommen: Die Anpassung ist dort etwa 20-mal langsamer.
+  Verhalten wie ein Spitzer genau am Tempolimit wird als eigene schmale Gruppe beschrieben.
 - Die Anpassung ist deterministisch, aber nicht eindeutig: Andere Startwerte können bei knappen Fällen eine andere Zerlegung
   finden.
 

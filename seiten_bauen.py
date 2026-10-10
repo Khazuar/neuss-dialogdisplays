@@ -523,6 +523,20 @@ TAGE_OPTIONEN = [("alle", "Alle Tage"), ("werktag", "Werktage (Mo–Fr)"), ("sam
     [(str(i), t if i < 7 else "Feiertage an Werktagen und Samstagen") for i, t in enumerate(gruppen.TAGE)]
 
 
+MODELL_ABWEICHUNG_WARNUNG = 10  # ab so viel Prozent Abweichung zwischen Daten und angepasster Kurve warnt die Seite
+
+
+def modell_warnung(row):
+    """Hinweis, wenn die angepassten Kurven die Daten schlecht beschreiben (sonst leer)."""
+    a = (row.get("gruppen") or {}).get("modellabweichung_prozent")
+    if a is None or a <= MODELL_ABWEICHUNG_WARNUNG:
+        return ""
+    return (f'<p class="notice" role="note"><strong>Das Modell passt hier schlecht:</strong> Die angepassten Kurven weichen bei etwa {dez(a, 1)}&nbsp;% der '
+            'Fahrzeuge von den Daten ab. Die Verteilung hat eine Form, die eine Lognormal-Glocke je Gruppe nicht gut trifft (zum Beispiel eine '
+            'Schulter oder einen Gipfel dicht am Tempolimit). Anteile und Kennzahlen der Gruppen sind deshalb unsicher; die Gruppen sind '
+            'eine Beschreibung der Daten und keine feste Größe.</p>')
+
+
 def gruppen_abschnitt(row):
     """Zerlegung in Gruppen (gruppen.py): Tabelle mit Anteil, Lage und Kennzahlen je Gruppe, auch ohne JavaScript sichtbar."""
     g = row.get("gruppen")
@@ -545,7 +559,7 @@ def gruppen_abschnitt(row):
                       f'<td class="num{klasse_quote(gr.get("einhaltungsquote_prozent"))}">{dez(gr.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
                       f'<td class="num{klasse_quote(gr.get("qualifizierte_einhaltungsquote_prozent"))}">{dez(gr.get("qualifizierte_einhaltungsquote_prozent"), 1)}&nbsp;%</td></tr>')
     h = g.get("hauptmenge_ohne_langsame")
-    if h:
+    if h and len(h["gruppen"]) >= 2:  # mit nur einer verbleibenden Gruppe waere die Zeile eine Wiederholung dieser Gruppe
         zeilen.append(f'<tr><th scope="row">Hauptmenge ohne die langsamen Gruppen</th><td class="num">{dez(h["anteil_prozent"], 1)}&nbsp;%</td>'
                       f'<td class="num">–</td><td class="num">–</td><td class="num">{dez(h["mittel_kmh"], 1)}</td><td class="num">{ganz(h["v85_kmh"])}</td>'
                       f'<td class="num{klasse_quote(h.get("einhaltungsquote_prozent"))}">{dez(h.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
@@ -559,6 +573,13 @@ def gruppen_abschnitt(row):
              '<thead><tr><th>Gruppe</th><th class="num">Anteil</th>'
              '<th class="num">Modus, km/h</th><th class="num">Sichtbar</th><th class="num">Ø km/h</th><th class="num">V85</th><th class="num">Einhaltung</th>'
              '<th class="num">Qualifiziert</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
+    z.append(modell_warnung(row))
+    if g.get("modellabweichung_prozent") is not None:
+        z.append(f'<p class="muted">Die angepassten Kurven weichen von den Daten bei etwa {dez(g["modellabweichung_prozent"], 1)}&nbsp;% der Fahrzeuge ab '
+                 '(Anteil der Fahrzeuge, die das Modell an einer anderen Geschwindigkeit sieht). Die Kennzahlen je Gruppe beschreiben die tatsächlichen '
+                 'Fahrzeuge der Gruppe: jedes Fahrzeug zählt mit dem Anteil, den die Gruppe an seiner Geschwindigkeit hat, aber nur bis zum häufigsten '
+                 'Tempo der nächst schnelleren Gruppe. Sie folgen deshalb nicht genau der angepassten Kurve; was das Modell nicht erklärt, '
+                 'steckt in den Gruppen, in die es am besten passt.</p>')
     if g.get("obere_gruppen_ueberlappen"):
         z.append('<p class="muted">Die oberen Gruppen überlappen stark; belegt ist nur, dass sich die langsamste Gruppe von den übrigen trennt.</p>')
     if g.get("fahrzeuge_unter_grenze"):
@@ -583,7 +604,7 @@ def filter_abschnitt(row, daten, sid):
         gruppen_opt.append(("rausch", "Rauschboden (herausgerechnet)"))
     for g in daten.get("gruppen", []):
         gruppen_opt.append((f'g{g["nr"]}', f'Gruppe {g["nr"]} (Modus {dez(g["modus"], 0)} km/h, {dez(g["anteil"], 0)} %)'))
-    if daten.get("langsam"):
+    if daten.get("langsam") and len(daten.get("gruppen", [])) - len(daten["langsam"]) >= 2:  # sonst gleich der verbleibenden Gruppe
         gruppen_opt.append(("haupt", "Hauptmenge (ohne langsame Gruppen)"))
     if daten.get("rand"):
         gruppen_opt.append(("rand", f'Unter {daten["rand"]} km/h (nicht zerlegt)'))
@@ -592,11 +613,12 @@ def filter_abschnitt(row, daten, sid):
         return (f'<div><label for="{sid}-{name}">{e(label)}</label><select id="{sid}-{name}" data-feld="{name}">' +
                 "".join(f'<option value="{e(v)}">{e(t)}</option>' for v, t in opts) + "</select></div>")
 
+    warnung = modell_warnung(row) if daten.get("gruppen") else ""
     return ('<noscript><p class="muted">Die Auswahl nach Tageszeit, Wochentag und Gruppe benötigt JavaScript. Ohne JavaScript zeigt diese Seite '
             'die Auswertung für alle Fahrzeuge und die Zeiträume in den Tabellen.</p></noscript>'
             f'<section class="filter" data-filter hidden><h4>Auswertung nach Zeit, Tagen und Gruppe</h4>'
             '<p class="muted">Wählen Sie Tageszeit, Tage und Gruppe; Kennzahlen und Verteilung gelten dann für diese Auswahl. '
-            'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt.</p>'
+            'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt.</p>' + warnung +
             '<div class="controls">' + auswahl("zeit", "Tageszeit", ZEIT_OPTIONEN) + auswahl("tage", "Tage", TAGE_OPTIONEN) +
             auswahl("gruppe", "Gruppe", gruppen_opt) + '</div>'
             '<div class="filter-ergebnis" aria-live="polite"></div>'

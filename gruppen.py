@@ -146,6 +146,20 @@ class Mischung:
     def sortiert(self):
         return sorted(range(self.k), key=self.modus)
 
+    def zuordnung(self, v):
+        """Anteil jeder Gruppe an Fahrzeugen mit Geschwindigkeit v, mit der Vereinbarung, dass eine langsamere Gruppe keine Fahrzeuge besitzt,
+        die schneller sind als das haeufigste Tempo der naechst schnelleren Gruppe (sonst gehoert der lange Auslaeufer einer breiten
+        langsamen Gruppe zu schnellen Fahrzeugen, die sicher nicht zu ihr gehoeren). Betrifft nur die Zuordnung, nicht die Anpassung."""
+        a = self.antworten(v)
+        rang = self.sortiert()
+        for r in range(len(rang) - 1):
+            if v > self.modus(rang[r + 1]):
+                a[rang[r]] = 0.0
+        s = sum(a)
+        if s <= 0:
+            return [1.0 if i == rang[-1] else 0.0 for i in range(self.k)]
+        return [x / s for x in a]
+
     def als_dict(self):
         return {"w": self.w, "mu": self.mu, "s": self.s, "xa": self.xa}
 
@@ -439,9 +453,13 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
         return block, daten
     m = Mischung(**erg["mischung"])
     vmax = max(gesamt)
-    antw = {v: m.antworten(v) for v in range(ab, vmax + 1)}
+    antw = {v: m.zuordnung(v) for v in range(ab, vmax + 1)}
     rang = m.sortiert()  # Gruppe 1 ist die langsamste
     nutz = sum(c for v, c in gesamt.items() if v >= ab)
+    # Abweichung zwischen Daten und angepasster Kurve: Anteil der Fahrzeuge, die das Modell an einer anderen Geschwindigkeit sieht
+    dichten = {v: m.dichte(v) for v in range(ab, vmax + 1)}
+    summe = sum(dichten.values())
+    block["modellabweichung_prozent"] = round(50 * sum(abs(gesamt.get(v, 0) / nutz - dichten[v] / summe) for v in dichten), 1)
     gruppen, histe = [], []
     for nr, j in enumerate(rang, 1):
         h = {v: c * antw[v][j] for v, c in gesamt.items() if v >= ab}
@@ -449,6 +467,7 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
         kz = kennzahlen(h, limit)
         gruppen.append({"nr": nr, "anteil_prozent": round(100 * sum(h.values()) / nutz, 2), "modus_kmh": round(m.modus(j), 1),
                         "streuung_log": round(m.s[j], 3), "sichtbar_prozent": round(100 * m.sichtbar(j)), "mittel_kmh": kz["mittel_kmh"], "v85_kmh": kz["v85_kmh"],
+                        "zugeordnet_bis_kmh": round(m.modus(rang[nr]), 1) if nr < k else None,
                         "einhaltungsquote_prozent": kz.get("einhaltungsquote_prozent"),
                         "qualifizierte_einhaltungsquote_prozent": kz.get("qualifizierte_einhaltungsquote_prozent")})
     langsam = [g["nr"] for g in gruppen if g["modus_kmh"] <= LANGSAM_FAKTOR * limit]
@@ -467,5 +486,6 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
     daten["langsam"] = langsam
     for g, j in zip(gruppen, rang):
         daten["gruppen"].append({"nr": g["nr"], "anteil": g["anteil_prozent"], "modus": g["modus_kmh"], "mittel": g["mittel_kmh"],
+                                 "mu": round(m.mu[j], 4), "s": round(m.s[j], 4), "bis": g["zugeordnet_bis_kmh"],
                                  "w": [round(antw[v][j], 3) for v in range(ab, vmax + 1)]})
     return block, daten
