@@ -540,13 +540,14 @@ def gruppen_abschnitt(row):
     for gr in g["gruppen"]:
         zeilen.append(f'<tr><th scope="row">Gruppe {gr["nr"]}{" (langsam)" if gr.get("langsam") else ""}</th>'
                       f'<td class="num">{dez(gr["anteil_prozent"], 1)}&nbsp;%</td><td class="num">{dez(gr["modus_kmh"], 1)}</td>'
+                      f'<td class="num">{ganz(gr.get("sichtbar_prozent"))}&nbsp;%</td>'
                       f'<td class="num">{dez(gr["mittel_kmh"], 1)}</td><td class="num">{ganz(gr["v85_kmh"])}</td>'
                       f'<td class="num{klasse_quote(gr.get("einhaltungsquote_prozent"))}">{dez(gr.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
                       f'<td class="num{klasse_quote(gr.get("qualifizierte_einhaltungsquote_prozent"))}">{dez(gr.get("qualifizierte_einhaltungsquote_prozent"), 1)}&nbsp;%</td></tr>')
     h = g.get("hauptmenge_ohne_langsame")
     if h:
         zeilen.append(f'<tr><th scope="row">Hauptmenge ohne die langsamen Gruppen</th><td class="num">{dez(h["anteil_prozent"], 1)}&nbsp;%</td>'
-                      f'<td class="num">–</td><td class="num">{dez(h["mittel_kmh"], 1)}</td><td class="num">{ganz(h["v85_kmh"])}</td>'
+                      f'<td class="num">–</td><td class="num">–</td><td class="num">{dez(h["mittel_kmh"], 1)}</td><td class="num">{ganz(h["v85_kmh"])}</td>'
                       f'<td class="num{klasse_quote(h.get("einhaltungsquote_prozent"))}">{dez(h.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
                       f'<td class="num{klasse_quote(h.get("qualifizierte_einhaltungsquote_prozent"))}">{dez(h.get("qualifizierte_einhaltungsquote_prozent"), 1)}&nbsp;%</td></tr>')
     z.append(f'<p>Die Verteilung setzt sich aus {g["anzahl"]} Gruppen zusammen. Die Zerlegung gilt für alle Tageszeiten und Tage. '
@@ -554,8 +555,9 @@ def gruppen_abschnitt(row):
              'abbiegende oder anfahrende Fahrzeuge, Fahrer, die sich am Tempolimit oder am Gefühl orientieren), lässt sich aus den Daten '
              'nicht sagen.</p>')
     z.append('<div class="tablewrap"><table><caption class="muted">Gruppen, nach dem häufigsten Tempo (Modus) geordnet; Anteil, Mittel, '
-             'V85 und Einhaltung gelten für die Fahrzeuge der Gruppe</caption><thead><tr><th>Gruppe</th><th class="num">Anteil</th>'
-             '<th class="num">Modus, km/h</th><th class="num">Ø km/h</th><th class="num">V85</th><th class="num">Einhaltung</th>'
+             'V85 und Einhaltung gelten für die Fahrzeuge der Gruppe; „Sichtbar“ ist der Teil der Gruppe im erfassten Bereich</caption>'
+             '<thead><tr><th>Gruppe</th><th class="num">Anteil</th>'
+             '<th class="num">Modus, km/h</th><th class="num">Sichtbar</th><th class="num">Ø km/h</th><th class="num">V85</th><th class="num">Einhaltung</th>'
              '<th class="num">Qualifiziert</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
     if g.get("obere_gruppen_ueberlappen"):
         z.append('<p class="muted">Die oberen Gruppen überlappen stark; belegt ist nur, dass sich die langsamste Gruppe von den übrigen trennt.</p>')
