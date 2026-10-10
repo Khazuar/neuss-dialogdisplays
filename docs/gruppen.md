@@ -3,10 +3,11 @@
 > Eigene Einschätzung nach festen Regeln, nicht amtlich. Fehler im Verfahren und in der Auswertung können nicht
 > ausgeschlossen werden (ohne Gewähr).
 
-Viele Verteilungen sind nicht eine einzelne Glocke, sondern mischen mehrere Gruppen: eine langsame Nebengruppe (je nach Ort
-vielleicht Radfahrer, abbiegende oder anfahrende Fahrzeuge), die Hauptmenge, manchmal weitere. `gruppen.py` zerlegt die
-Verteilung jeder Datei in solche Gruppen, **soweit die Daten das belegen**, und die Detailseiten erlauben, Kennzahlen und
-Histogramm für jede Gruppe sowie für Tageszeit und Wochentag getrennt anzusehen.
+Viele Verteilungen sind nicht eine einzelne Glocke, sondern mischen mehrere Gruppen (je nach Ort vielleicht Radfahrer,
+abbiegende oder anfahrende Fahrzeuge, Fahrer, die sich am Tempolimit oder am Gefühl orientieren). `gruppen.py` beschreibt
+die Verteilung jeder Datei als Mischung solcher Gruppen, **soweit die Daten das belegen**, und die Detailseiten erlauben,
+Kennzahlen und Histogramm für jede Gruppe sowie für Tageszeit und Wochentag getrennt anzusehen. Was die Gruppen nicht erklären,
+steht in einem Rest.
 
 **Was eine Gruppe ist und was nicht.** Eine Gruppe ist ein statistischer Anteil der Verteilung: eine Lognormal-Glocke mit
 Anteil, häufigstem Tempo (Modus) und Streuung. Sie ist keine Fahrzeugart. Was sich dahinter verbirgt, lässt sich aus
@@ -48,9 +49,9 @@ Geschwindigkeiten allein nicht entscheiden. Plausible Deutungen stehen als Hypot
    Die Suche endet, wenn der Gewinn unter die Schwelle fällt oder zwei Werte von K in Folge nicht stabil, zu klein oder zu
    wenig sichtbar sind. Gewählt wird das größte K, das alle Bedingungen erfüllt. Gibt es keins, bleibt es bei einer Gruppe
    (**keine Zerlegung**). Bei weniger als 5000 Fahrzeugen wird nicht zerlegt.
-4. **Feste Gruppen für alle Stunden und Tage.** Die Zerlegung gilt für alle Tageszeiten und Tage gleich. Der Anteil einer
-   Gruppe an Fahrzeugen mit einer bestimmten Geschwindigkeit hängt dann nur von dieser Geschwindigkeit ab. Ein Fahrzeug
-   zählt anteilig zu den Gruppen. Das macht jede Auswahl (Tageszeit, Wochentag, Gruppe) zur einfachen Summe über Zellen.
+4. **Feste Kurven für alle Stunden und Tage.** Form und Lage der Gruppen gelten für alle Tageszeiten und Tage gleich; nur
+   ihre Anteile werden je Auswahl neu geschätzt. Eine Auswahl (Tageszeit, Wochentag, Gruppe) ist damit eine einfache Summe über
+   Zellen plus eine kleine Anpassung der Anteile.
 
 **Warum nicht stündlich anpassen und die Gruppen verfolgen?** Das wurde ausprobiert: je Stunde und Tagtyp eine eigene Anpassung,
 die Gruppen über den Tag verfolgt (Kontinuität, Impuls, zyklischer Schluss). Gemessen an 63 zerlegbaren Dateien mit
@@ -88,44 +89,44 @@ kleine Skript `site/filter.js` liest nur diese Tabelle der eigenen Seite und rec
 Mittel, V85/V95/V99, Einhaltung, qualifizierte Einhaltung) und das Histogramm. Es lädt nichts nach und speichert nichts. Ohne
 JavaScript bleibt der Abschnitt verborgen, und die Seite zeigt die übrigen Tabellen.
 
-Gruppen in der Auswahl: „Alle Fahrzeuge (ohne Rauschboden)“, „Rauschboden“ (das, was herausgerechnet wurde, soweit belegt),
-„Gruppe 1“ bis „Gruppe K“ (nach Modus geordnet, 1 ist die langsamste), „Hauptmenge“ (ohne die langsamen Gruppen) und „Unter X
-km/h“ (der nicht zerlegte Rand). Die Hauptmenge gibt es nur, wenn danach mindestens zwei schnelle Gruppen übrig bleiben; bei
-einer einzigen wäre sie dieselbe Gruppe.
+Gruppen in der Auswahl: „Alle Daten“, „Gruppe 1“ bis „Gruppe K“ (nach häufigstem Tempo geordnet, 1 ist die langsamste), „Rest (nicht
+erklärt)“ und, wo ein Rauschboden abgezogen wurde, „Rauschboden (herausgerechnet)“. Ohne Zerlegung (K = 1) gibt es das Feld
+„Gruppe“ nicht.
 
-**Was die Säulen einer Gruppe zeigen.** Die Säulen sind die tatsächlichen Fahrzeuge der Gruppe: Jedes Fahrzeug zählt mit dem
-Anteil, den die Gruppe an seiner Geschwindigkeit hat (aus der angepassten Mischung). Sie haben deshalb nicht genau die Form der
-angepassten Kurve. Wo die Daten von der Kurve abweichen, zeigt sich das in den Säulen der Gruppen, die dort den größten Anteil
-haben. Zur Kontrolle liegt bei einer einzelnen Gruppe die angepasste Kurve als Linie über den Säulen (auf dieselbe Fläche
-bis zur Zuordnungsgrenze skaliert). Je weiter die Säulen von der Linie entfernt sind, desto weniger erklärt das Modell die Daten.
+**Gruppen sind ihre Kurven, Fahrzeuge werden nicht zugeordnet.** Eine Gruppe ist die angepasste Lognormal-Kurve. Für eine Auswahl
+(Tageszeit, Tage) schätzt `filter.js` nur die Anteile der Gruppen neu (EM-Verfahren bei festen Kurven; Form und Lage der Gruppen bleiben die
+der globalen Anpassung). Die Fahrzeuge einer Gruppe sind dann die Zahl der angepassten Fahrzeuge mal Anteil der Gruppe mal Form
+ihrer Kurve. Die Kennzahlen einer Gruppe (Mittel, V85, V95, V99, Einhaltung) sind die der Kurve. Weil das Modell die Daten nie
+ganz trifft, bleibt ein **Rest**: Daten minus die Kurven aller Gruppen, an keiner Geschwindigkeit negativ, dazu alle Fahrzeuge
+unterhalb der Anpassungsgrenze. Die Anteile der Gruppen und des Rests müssen sich nicht zu 100 % addieren: Wo die Kurven über
+den Daten liegen, zählt der Überschuss nicht als negativer Rest. Frühere Fassungen haben jedes Fahrzeug den Gruppen mit dem
+Anteil zugeordnet, der an seiner Geschwindigkeit am besten passt. Das schob alles, was das Modell nicht erklärt, in die
+Gruppe, deren Kurve dort am höchsten ist, und gab zum Beispiel einer langsamen Gruppe ein V99 von 56 km/h bei einem häufigsten
+Tempo von 20 km/h.
 
-**Zuordnungsgrenze.** Eine langsamere Gruppe besitzt keine Fahrzeuge, die schneller sind als das häufigste Tempo der nächst
-schnelleren Gruppe (`zugeordnet_bis_kmh`). Der lange Ausläufer einer breiten Lognormal-Kurve reicht sonst rechnerisch bis zu
-den Rasern und ließe sie zur „langsamen“ Gruppe gehören; so hatte eine langsame Gruppe ein V99 von 56 km/h, obwohl ihr
-häufigstes Tempo bei 20 km/h liegt. Die Vereinbarung betrifft nur die Zuordnung der Fahrzeuge, nicht die Anpassung.
+**Darstellung.** Bei einer Gruppe oder dem Rest bleiben alle Fahrzeuge der Auswahl im Histogramm grau sichtbar. Farbig (blau bis zum
+Tempolimit, orange darüber) ist der Teil, den die Gruppe erklärt, höchstens so hoch wie die graue Säule. Bei einer Gruppe liegt
+ihre Kurve zusätzlich als Linie darüber, damit sichtbar bleibt, wo sie die Säulen überragt.
 
 **Passung des Modells.** `modellabweichung_prozent` ist der Anteil der Fahrzeuge, die die angepasste Mischung an einer anderen
-Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h). Im Median über die 80 zerlegten Dateien
-sind es 3,2 % (Quartile 2,0 und 4,6), bei 15 Dateien mehr als 5 %, bei 2 mehr als 10 % (Kreitzweg 15,0 %, Nievenheimer Straße
-mit der Datei `0000000000000000_12` 15,5 %). Ab 10 % warnen die Seiten, dass das Modell schlecht passt.
+Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h, ab der Anpassungsgrenze). Im Median über die 80
+zerlegten Dateien sind es 3,2 % (Quartile 2,0 und 4,6), bei 15 Dateien mehr als 5 %, bei 2 mehr als 10 % (Kreitzweg 15,0 %,
+Nievenheimer Straße mit der Datei `0000000000000000_12` 15,5 %). Ab 10 % warnen die Seiten, dass das Modell schlecht passt. Der
+**Rest** ist größer als die Abweichung, weil er auch die Fahrzeuge unter der Anpassungsgrenze enthält: Median 8,0 % der
+Fahrzeuge (Quartile 4,8 und 16,0 %). Am größten ist er bei den Dateien, in denen ein Haufen am unteren Rand abgeschnitten wurde
+(Matthiasstraße 67 %, Feldstraße 58 %, Bauerbahn 43 %).
 
 Die Zellen enthalten nur vollständig aufgezeichnete Stunden mit nutzbarer Zeit; die Zahl der Fahrzeuge einer Auswahl kann
 deshalb geringfügig unter der Zahl in den Tabellen liegen.
-
-## Langsame Gruppen
-
-Eine Gruppe gilt als langsam, wenn ihr Modus höchstens 0,6 × Tempolimit beträgt, nicht alle Gruppen langsam sind und die
-langsamen zusammen höchstens die Hälfte der Fahrzeuge ausmachen. Die „Hauptmenge ohne die langsamen Gruppen“ in der YAML und
-auf den Seiten ist eine Ergänzung der Kennzahlen, kein Ersatz: Sie zeigt, wie die Quote aussähe, wenn die langsamen Gruppen
-nicht in die Rechnung eingingen. Warum die Gruppe langsam ist, ist offen.
 
 ## Was in der YAML steht
 
 Block `gruppen` je Messung: `geprueft`, `anzahl` (K), `obere_gruppen_ueberlappen`, `angepasst_ab_kmh`, `fahrzeuge`,
 `fahrzeuge_unter_grenze`, `grund` (bei K = 1), `auswahl` (je geprüftem K: `stabil`, `klein`, `sichtbar_min`, `d_unten`, `d_alle`, `modus_abstand`, `cv_gewinn`),
-`modellabweichung_prozent`, `gruppen` (Nummer, Anteil, Modus, Streuung im Logarithmus, `sichtbar_prozent`, Mittel, V85, `zugeordnet_bis_kmh`, Einhaltung, qualifizierte Einhaltung, `langsam`) und
-`hauptmenge_ohne_langsame`. Die Zellen liegen als `<Datei>.zellen.json` neben der YAML (Format siehe `gruppen.py`,
-`analysiere`).
+`modellabweichung_prozent`, `gruppen` (Nummer, Anteil, Modus, Streuung im Logarithmus, `sichtbar_prozent`, Mittel, V85, Einhaltung,
+qualifizierte Einhaltung; alles für die angepasste Kurve) und `rest` (Anteil und Kennzahlen dessen, was die Kurven nicht erklären,
+einschließlich der Fahrzeuge unter der Anpassungsgrenze). Die Zellen liegen als `<Datei>.zellen.json` neben der YAML (Format
+siehe `gruppen.py`, `analysiere`; je Gruppe `mu`, `s` und `pi`, das ist die Form der Kurve und ihr Anteil an den angepassten Fahrzeugen).
 
 ## Grenzen
 

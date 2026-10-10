@@ -28,8 +28,7 @@ MODUS_ABSTAND_MIN = 0.15  # dann muessen die beiden langsamsten Gruppen aber um 
 SICHTBAR_MIN = 0.25  # von jeder Gruppe muss mindestens so viel ihrer Flaeche im erfassten Bereich liegen
 TOL_LAGE = 0.07  # Haelften stimmen ueberein: Modus (Logarithmus), mindestens, bei breiten Gruppen 0,25 x Streuung ...
 TOL_ANTEIL = 0.06  # ... und Anteil
-LANGSAM_FAKTOR = 0.6  # langsame Gruppe: Modus hoechstens 0,6 x Tempolimit
-LANGSAM_MAX_ANTEIL = 0.5
+VMAX_GRUPPEN = 255  # die Kurven einer Gruppe werden bis zu dieser Geschwindigkeit ausgewertet
 
 # Zeitscheiben (Ortszeit): Name, von, bis (Stunde, bis exklusiv); der Schulweg (7-8 Uhr, Mo-Fr) steht in dsd2csv.TEILZEITRAEUME
 ZEITSCHEIBEN = [("nacht", 22, 6), ("vormittag", 6, 12), ("nachmittag", 12, 19), ("abend", 19, 22)]
@@ -134,31 +133,8 @@ class Mischung:
     def modus(self, j):
         return math.exp(self.mu[j] - self.s[j] ** 2)
 
-    def antworten(self, v):
-        """Anteil jeder Gruppe an Fahrzeugen mit Geschwindigkeit v (Summe 1)."""
-        p = [self.w[j] * self.pdf(j, v) for j in range(self.k)]
-        s = sum(p)
-        if s <= 0:  # weit ausserhalb aller Gruppen: der naechsten zuordnen
-            j = min(range(self.k), key=lambda i: abs(math.log(v) - self.mu[i]))
-            return [1.0 if i == j else 0.0 for i in range(self.k)]
-        return [x / s for x in p]
-
     def sortiert(self):
         return sorted(range(self.k), key=self.modus)
-
-    def zuordnung(self, v):
-        """Anteil jeder Gruppe an Fahrzeugen mit Geschwindigkeit v, mit der Vereinbarung, dass eine langsamere Gruppe keine Fahrzeuge besitzt,
-        die schneller sind als das haeufigste Tempo der naechst schnelleren Gruppe (sonst gehoert der lange Auslaeufer einer breiten
-        langsamen Gruppe zu schnellen Fahrzeugen, die sicher nicht zu ihr gehoeren). Betrifft nur die Zuordnung, nicht die Anpassung."""
-        a = self.antworten(v)
-        rang = self.sortiert()
-        for r in range(len(rang) - 1):
-            if v > self.modus(rang[r + 1]):
-                a[rang[r]] = 0.0
-        s = sum(a)
-        if s <= 0:
-            return [1.0 if i == rang[-1] else 0.0 for i in range(self.k)]
-        return [x / s for x in a]
 
     def als_dict(self):
         return {"w": self.w, "mu": self.mu, "s": self.s, "xa": self.xa}
@@ -452,40 +428,35 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
     if k == 1:
         return block, daten
     m = Mischung(**erg["mischung"])
-    vmax = max(gesamt)
-    antw = {v: m.zuordnung(v) for v in range(ab, vmax + 1)}
-    rang = m.sortiert()  # Gruppe 1 ist die langsamste
-    nutz = sum(c for v, c in gesamt.items() if v >= ab)
+    rang = m.sortiert()  # Gruppe 1 hat das kleinste haeufigste Tempo
+    vs = list(range(ab, VMAX_GRUPPEN + 1))
+    n_fit = sum(c for v, c in gesamt.items() if v >= ab)
     # Abweichung zwischen Daten und angepasster Kurve: Anteil der Fahrzeuge, die das Modell an einer anderen Geschwindigkeit sieht
-    dichten = {v: m.dichte(v) for v in range(ab, vmax + 1)}
+    dichten = {v: m.dichte(v) for v in range(ab, max(gesamt) + 1)}
     summe = sum(dichten.values())
-    block["modellabweichung_prozent"] = round(50 * sum(abs(gesamt.get(v, 0) / nutz - dichten[v] / summe) for v in dichten), 1)
-    gruppen, histe = [], []
-    for nr, j in enumerate(rang, 1):
-        h = {v: c * antw[v][j] for v, c in gesamt.items() if v >= ab}
-        histe.append(h)
+    block["modellabweichung_prozent"] = round(50 * sum(abs(gesamt.get(v, 0) / n_fit - dichten[v] / summe) for v in dichten), 1)
+    # Jede Gruppe ist ihre angepasste Kurve: erwartete Fahrzeuge je km/h (Anteil der erfassten Fahrzeuge mal Form der Kurve).
+    # Fahrzeuge werden den Gruppen nicht zugeordnet; was die Kurven nicht erklaeren, steht im Rest.
+    pi = m.anteile()
+    kurven = []
+    for j in rang:
+        p = {v: m.pdf(j, v) for v in vs}
+        s = sum(p.values())
+        kurven.append({v: n_fit * pi[j] * p[v] / s for v in vs})
+    gruppen = []
+    for nr, (j, h) in enumerate(zip(rang, kurven), 1):
         kz = kennzahlen(h, limit)
-        gruppen.append({"nr": nr, "anteil_prozent": round(100 * sum(h.values()) / nutz, 2), "modus_kmh": round(m.modus(j), 1),
-                        "streuung_log": round(m.s[j], 3), "sichtbar_prozent": round(100 * m.sichtbar(j)), "mittel_kmh": kz["mittel_kmh"], "v85_kmh": kz["v85_kmh"],
-                        "zugeordnet_bis_kmh": round(m.modus(rang[nr]), 1) if nr < k else None,
-                        "einhaltungsquote_prozent": kz.get("einhaltungsquote_prozent"),
+        gruppen.append({"nr": nr, "anteil_prozent": round(100 * sum(h.values()) / n, 2), "modus_kmh": round(m.modus(j), 1),
+                        "streuung_log": round(m.s[j], 3), "sichtbar_prozent": round(100 * m.sichtbar(j)), "mittel_kmh": kz["mittel_kmh"],
+                        "v85_kmh": kz["v85_kmh"], "einhaltungsquote_prozent": kz.get("einhaltungsquote_prozent"),
                         "qualifizierte_einhaltungsquote_prozent": kz.get("qualifizierte_einhaltungsquote_prozent")})
-    langsam = [g["nr"] for g in gruppen if g["modus_kmh"] <= LANGSAM_FAKTOR * limit]
-    if langsam and len(langsam) < k and sum(gruppen[i - 1]["anteil_prozent"] for i in langsam) <= 100 * LANGSAM_MAX_ANTEIL:
-        for g in gruppen:
-            g["langsam"] = g["nr"] in langsam
-        haupt = {v: c * (1 - sum(antw[v][rang[i - 1]] for i in langsam)) for v, c in gesamt.items() if v >= ab}
-        kz = kennzahlen(haupt, limit)
-        block["hauptmenge_ohne_langsame"] = {"gruppen": [g["nr"] for g in gruppen if not g["langsam"]],
-                                              "anteil_prozent": round(100 * sum(haupt.values()) / nutz, 2), **kz}
-    else:
-        langsam = []
+    rest = {v: max(0.0, gesamt.get(v, 0) - sum(h.get(v, 0.0) for h in kurven)) for v in set(gesamt) | set(vs)}
+    rest = {v: c for v, c in rest.items() if c > 0}
     block["gruppen"] = gruppen
-    daten["rand"] = ab if ab > min(gesamt) else 0
+    if rest:
+        block["rest"] = {"anteil_prozent": round(100 * sum(rest.values()) / n, 2), **kennzahlen(rest, limit)}
     daten["w0"] = ab
-    daten["langsam"] = langsam
     for g, j in zip(gruppen, rang):
-        daten["gruppen"].append({"nr": g["nr"], "anteil": g["anteil_prozent"], "modus": g["modus_kmh"], "mittel": g["mittel_kmh"],
-                                 "mu": round(m.mu[j], 4), "s": round(m.s[j], 4), "bis": g["zugeordnet_bis_kmh"],
-                                 "w": [round(antw[v][j], 3) for v in range(ab, vmax + 1)]})
+        daten["gruppen"].append({"nr": g["nr"], "anteil": g["anteil_prozent"], "modus": g["modus_kmh"], "mu": round(m.mu[j], 4),
+                                 "s": round(m.s[j], 4), "pi": round(pi[j], 4)})
     return block, daten

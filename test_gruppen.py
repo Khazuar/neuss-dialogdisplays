@@ -102,14 +102,6 @@ class Zerlegung(unittest.TestCase):
         erg = g.waehle_k(mischung([(1.0, 30, 0.2)], 400, 3), mischung([(1.0, 30, 0.2)], 400, 4), 3)
         self.assertEqual(erg["k"], 1)
 
-    def test_antworten_summieren_zu_eins(self):
-        m = g.Mischung([0.3, 0.7], [math.log(15) + 0.03, math.log(40) + 0.01], [0.2, 0.1])
-        for v in (3, 15, 27, 40, 90, 200):
-            a = m.antworten(v)
-            self.assertAlmostEqual(sum(a), 1.0, places=9)
-        self.assertGreater(m.antworten(14)[0], 0.9)
-        self.assertGreater(m.antworten(41)[1], 0.9)
-
     def test_anpassung_ist_deterministisch(self):
         c = mischung([(0.3, 15, 0.18), (0.7, 40, 0.12)], 30000, 5)
         w, a = g.tabelle(c, 3)
@@ -165,46 +157,66 @@ class Analyse(unittest.TestCase):
         self.assertEqual(block["anzahl"], 2)
         gr = block["gruppen"]
         self.assertEqual([x["nr"] for x in gr], [1, 2])
-        self.assertLess(gr[0]["modus_kmh"], gr[1]["modus_kmh"])  # Gruppe 1 ist die langsamste
-        self.assertAlmostEqual(gr[0]["anteil_prozent"] + gr[1]["anteil_prozent"], 100.0, delta=0.05)
-        self.assertTrue(gr[0]["langsam"])  # Modus 16 <= 0,6 * 30 = 18
-        self.assertFalse(gr[1]["langsam"])
-        self.assertEqual(block["hauptmenge_ohne_langsame"]["gruppen"], [2])
-        self.assertEqual(daten["langsam"], [1])
+        self.assertLess(gr[0]["modus_kmh"], gr[1]["modus_kmh"])  # Gruppe 1 hat das kleinste haeufigste Tempo
+        self.assertAlmostEqual(gr[0]["anteil_prozent"] + gr[1]["anteil_prozent"], 100.0, delta=0.05)  # alle Fahrzeuge sind angepasst
+        for x in gr:  # keine Auszeichnung "langsam"/"Hauptmenge" mehr, keine Zuordnung von Fahrzeugen
+            for schluessel in ("langsam", "zugeordnet_bis_kmh"):
+                self.assertNotIn(schluessel, x)
+        self.assertNotIn("hauptmenge_ohne_langsame", block)
         self.assertEqual(len(daten["gruppen"]), 2)
-        # Gewichte: je Geschwindigkeit liefern alle Gruppen zusammen 1
-        for i in range(len(daten["gruppen"][0]["w"])):
-            self.assertAlmostEqual(sum(x["w"][i] for x in daten["gruppen"]), 1.0, delta=0.002)
-        # Zellen: Summe der Zaehlwerte = Fahrzeuge
-        n = sum(sum(c for c in z[1::2]) for z in daten["z"].values())
+        for x in daten["gruppen"]:
+            self.assertEqual(sorted(x), ["anteil", "modus", "mu", "nr", "pi", "s"])
+            self.assertNotIn("w", x)
+            self.assertNotIn("bis", x)
+        self.assertAlmostEqual(sum(x["pi"] for x in daten["gruppen"]), 1.0, delta=0.001)
+        self.assertNotIn("langsam", daten)
+        self.assertNotIn("rand", daten)
+        n = sum(sum(c for c in z[1::2]) for z in daten["z"].values())  # Zellen: Summe der Zaehlwerte = Fahrzeuge
         self.assertEqual(n, block["fahrzeuge"])
 
-    def test_zuordnung_gibt_langsamer_gruppe_keine_schnellen_fahrzeuge(self):
-        m = g.Mischung([0.2, 0.8], [math.log(20) + 0.18, math.log(44) + 0.04], [0.42, 0.2])  # breite langsame Gruppe, schnelle Hauptgruppe
-        roh = m.antworten(55)
-        self.assertGreater(roh[0], 0.0)  # der lange Ausläufer der breiten Gruppe reicht rechnerisch bis 55 km/h
-        z = m.zuordnung(55)
-        self.assertEqual(z[0], 0.0)  # aber Fahrzeuge schneller als das häufigste Tempo der Hauptgruppe gehören ihr nicht
-        self.assertEqual(z[1], 1.0)
-        self.assertAlmostEqual(sum(m.zuordnung(30)), 1.0, places=9)
-        self.assertGreater(m.zuordnung(30)[0], 0.0)  # darunter bleibt es bei den Anteilen der Anpassung
-
-    def test_modellabweichung_und_zuordnungsgrenze_im_block(self):
+    def test_gruppen_sind_kurven_und_der_rest_ist_der_unterschied(self):
         fahrten, spannen = fahrten_und_spannen(tage=28)
-        block, daten = g.analysiere(g.zellen_bauen(fahrten, fahrten, spannen), 30, True)
-        self.assertLess(block["modellabweichung_prozent"], 8.0)  # die Testdaten sind lognormal, die Kurven passen
-        self.assertEqual(block["gruppen"][1]["zugeordnet_bis_kmh"], None)  # die schnellste Gruppe hat keine Grenze
-        self.assertAlmostEqual(block["gruppen"][0]["zugeordnet_bis_kmh"], block["gruppen"][1]["modus_kmh"], places=1)
-        self.assertLessEqual(block["gruppen"][0]["v85_kmh"], block["gruppen"][0]["zugeordnet_bis_kmh"])
-        self.assertIn("mu", daten["gruppen"][0])
-        self.assertEqual(daten["gruppen"][0]["bis"], block["gruppen"][0]["zugeordnet_bis_kmh"])
+        zd = g.zellen_bauen(fahrten, fahrten, spannen)
+        block, daten = g.analysiere(zd, 30, True)
+        gesamt = collections.Counter()
+        for c in zd["z"].values():
+            gesamt.update(c)
+        # die Kurven der Gruppen aus den Parametern der Datentabelle nachrechnen (wie site/filter.js)
+        w0 = daten["w0"]
+        kurven = []
+        for x in daten["gruppen"]:
+            p = {v: math.exp(-0.5 * ((math.log(v) - x["mu"]) / x["s"]) ** 2) / (x["s"] * v) for v in range(w0, g.VMAX_GRUPPEN + 1)}
+            s = sum(p.values())
+            kurven.append({v: block["fahrzeuge"] * x["pi"] * q / s for v, q in p.items()})
+        for x, h in zip(block["gruppen"], kurven):  # YAML und Datentabelle beschreiben dieselben Kurven
+            self.assertAlmostEqual(100 * sum(h.values()) / block["fahrzeuge"], x["anteil_prozent"], delta=0.05)
+            self.assertAlmostEqual(g.kennzahlen(h, 30)["mittel_kmh"], x["mittel_kmh"], delta=0.02)
+        rest = {v: max(0.0, gesamt.get(v, 0) - sum(h.get(v, 0.0) for h in kurven)) for v in set(gesamt)}
+        rest = {v: c for v, c in rest.items() if c > 0}
+        for v, c in gesamt.items():  # Kurven plus Rest decken die Daten ab
+            self.assertGreaterEqual(sum(h.get(v, 0.0) for h in kurven) + rest.get(v, 0.0) + 1e-6, c)
+        self.assertAlmostEqual(block["rest"]["anteil_prozent"], 100 * sum(rest.values()) / block["fahrzeuge"], delta=0.05)
+        self.assertLess(block["rest"]["anteil_prozent"], 8.0)  # lognormale Testdaten: wenig bleibt uebrig
+        self.assertLess(block["modellabweichung_prozent"], 8.0)
+
+    def test_schlecht_passende_daten_haben_einen_grossen_rest(self):
+        c = collections.Counter()
+        for v in range(10, 60):  # flaches Plateau: keine Glocke
+            c[v] = 400
+        for v in range(30, 40):
+            c[v] += 1200  # dazu ein Gipfel
+        zd = {"haelften": (collections.Counter({v: n // 2 for v, n in c.items()}), collections.Counter({v: n - n // 2 for v, n in c.items()})),
+              "D": collections.Counter({(0, 8): 1}), "z": {(0, 8): c}, "r": {}}
+        block, daten = g.analysiere(zd, 30, True)
+        if block.get("anzahl", 1) > 1:
+            self.assertGreater(block["rest"]["anteil_prozent"], 2.0)
+            self.assertGreater(block["modellabweichung_prozent"], 2.0)
     def test_rauschgrenze_begrenzt_die_anpassung(self):
         fahrten, spannen = fahrten_und_spannen(tage=28)
         zd = g.zellen_bauen(fahrten, fahrten, spannen)
         block, daten = g.analysiere(zd, 30, True, rausch_obergrenze=10)
         self.assertEqual(block["angepasst_ab_kmh"], 11)
         self.assertGreater(block["fahrzeuge_unter_grenze"], 0)
-        self.assertEqual(daten["rand"], 11)
         self.assertEqual(daten["w0"], 11)
         # ohne Rauschboden entscheidet die Form des unteren Rands; eine echte langsame Gruppe (Modus 16) bleibt in der Anpassung
         block, _ = g.analysiere(zd, 30, False)

@@ -537,8 +537,16 @@ def modell_warnung(row):
             'eine Beschreibung der Daten und keine feste Größe.</p>')
 
 
+def gruppen_zeile(name, anteil, modus, sichtbar, g):
+    return (f'<tr><th scope="row">{name}</th><td class="num">{dez(anteil, 1)}&nbsp;%</td><td class="num">{modus}</td>'
+            f'<td class="num">{sichtbar}</td>'
+            f'<td class="num">{dez(g["mittel_kmh"], 1)}</td><td class="num">{ganz(g["v85_kmh"])}</td>'
+            f'<td class="num{klasse_quote(g.get("einhaltungsquote_prozent"))}">{dez(g.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
+            f'<td class="num{klasse_quote(g.get("qualifizierte_einhaltungsquote_prozent"))}">{dez(g.get("qualifizierte_einhaltungsquote_prozent"), 1)}&nbsp;%</td></tr>')
+
+
 def gruppen_abschnitt(row):
-    """Zerlegung in Gruppen (gruppen.py): Tabelle mit Anteil, Lage und Kennzahlen je Gruppe, auch ohne JavaScript sichtbar."""
+    """Zerlegung in Gruppen (gruppen.py): Tabelle mit Anteil, Lage und Kennzahlen je Gruppe und Rest, auch ohne JavaScript sichtbar."""
     g = row.get("gruppen")
     if not g:
         return ""
@@ -550,41 +558,29 @@ def gruppen_abschnitt(row):
                        'verbessert die Beschreibung der jeweils anderen Messtage nicht deutlich, kehrt nicht in beiden Hälften der Messtage '
                        'wieder oder liegt zu dicht beieinander. Es gibt deshalb keine Zerlegung.</p>'
                        f'<p class="muted">Verfahren und Grenzen: <a href="{REPO}/blob/main/docs/gruppen.md">Gruppen</a>.</p>')
-    zeilen = []
-    for gr in g["gruppen"]:
-        zeilen.append(f'<tr><th scope="row">Gruppe {gr["nr"]}{" (langsam)" if gr.get("langsam") else ""}</th>'
-                      f'<td class="num">{dez(gr["anteil_prozent"], 1)}&nbsp;%</td><td class="num">{dez(gr["modus_kmh"], 1)}</td>'
-                      f'<td class="num">{ganz(gr.get("sichtbar_prozent"))}&nbsp;%</td>'
-                      f'<td class="num">{dez(gr["mittel_kmh"], 1)}</td><td class="num">{ganz(gr["v85_kmh"])}</td>'
-                      f'<td class="num{klasse_quote(gr.get("einhaltungsquote_prozent"))}">{dez(gr.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
-                      f'<td class="num{klasse_quote(gr.get("qualifizierte_einhaltungsquote_prozent"))}">{dez(gr.get("qualifizierte_einhaltungsquote_prozent"), 1)}&nbsp;%</td></tr>')
-    h = g.get("hauptmenge_ohne_langsame")
-    if h and len(h["gruppen"]) >= 2:  # mit nur einer verbleibenden Gruppe waere die Zeile eine Wiederholung dieser Gruppe
-        zeilen.append(f'<tr><th scope="row">Hauptmenge ohne die langsamen Gruppen</th><td class="num">{dez(h["anteil_prozent"], 1)}&nbsp;%</td>'
-                      f'<td class="num">–</td><td class="num">–</td><td class="num">{dez(h["mittel_kmh"], 1)}</td><td class="num">{ganz(h["v85_kmh"])}</td>'
-                      f'<td class="num{klasse_quote(h.get("einhaltungsquote_prozent"))}">{dez(h.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
-                      f'<td class="num{klasse_quote(h.get("qualifizierte_einhaltungsquote_prozent"))}">{dez(h.get("qualifizierte_einhaltungsquote_prozent"), 1)}&nbsp;%</td></tr>')
+    zeilen = [gruppen_zeile(f'Gruppe {gr["nr"]}', gr["anteil_prozent"], dez(gr["modus_kmh"], 1), f'{ganz(gr.get("sichtbar_prozent"))}&nbsp;%', gr)
+              for gr in g["gruppen"]]
+    if g.get("rest"):
+        zeilen.append(gruppen_zeile("Rest (nicht erklärt)", g["rest"]["anteil_prozent"], "–", "–", g["rest"]))
     z.append(f'<p>Die Verteilung setzt sich aus {g["anzahl"]} Gruppen zusammen. Die Zerlegung gilt für alle Tageszeiten und Tage. '
-             'Gruppen sind statistische Anteile der Verteilung und keine Fahrzeugarten: Was sich dahinter verbirgt (etwa Radfahrer, '
+             'Gruppen sind angepasste Kurven (statistische Anteile der Verteilung) und keine Fahrzeugarten: Was sich dahinter verbirgt (etwa Radfahrer, '
              'abbiegende oder anfahrende Fahrzeuge, Fahrer, die sich am Tempolimit oder am Gefühl orientieren), lässt sich aus den Daten '
-             'nicht sagen.</p>')
-    z.append('<div class="tablewrap"><table><caption class="muted">Gruppen, nach dem häufigsten Tempo (Modus) geordnet; Anteil, Mittel, '
-             'V85 und Einhaltung gelten für die Fahrzeuge der Gruppe; „Sichtbar“ ist der Teil der Gruppe im erfassten Bereich</caption>'
+             'nicht sagen. Fahrzeuge werden den Gruppen nicht zugeordnet: Was die Kurven nicht erklären, steht im Rest.</p>')
+    z.append('<div class="tablewrap"><table><caption class="muted">Gruppen, nach dem häufigsten Tempo (Modus) geordnet. Anteil, Mittel, V85 '
+             'und Einhaltung gelten für die angepasste Kurve der Gruppe; „Sichtbar“ ist der Teil der Kurve im erfassten Bereich. '
+             'Die Anteile müssen sich nicht zu 100&nbsp;% addieren.</caption>'
              '<thead><tr><th>Gruppe</th><th class="num">Anteil</th>'
              '<th class="num">Modus, km/h</th><th class="num">Sichtbar</th><th class="num">Ø km/h</th><th class="num">V85</th><th class="num">Einhaltung</th>'
              '<th class="num">Qualifiziert</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
     z.append(modell_warnung(row))
     if g.get("modellabweichung_prozent") is not None:
         z.append(f'<p class="muted">Die angepassten Kurven weichen von den Daten bei etwa {dez(g["modellabweichung_prozent"], 1)}&nbsp;% der Fahrzeuge ab '
-                 '(Anteil der Fahrzeuge, die das Modell an einer anderen Geschwindigkeit sieht). Die Kennzahlen je Gruppe beschreiben die tatsächlichen '
-                 'Fahrzeuge der Gruppe: jedes Fahrzeug zählt mit dem Anteil, den die Gruppe an seiner Geschwindigkeit hat, aber nur bis zum häufigsten '
-                 'Tempo der nächst schnelleren Gruppe. Sie folgen deshalb nicht genau der angepassten Kurve; was das Modell nicht erklärt, '
-                 'steckt in den Gruppen, in die es am besten passt.</p>')
+                 '(Anteil der Fahrzeuge, die das Modell an einer anderen Geschwindigkeit sieht).</p>')
     if g.get("obere_gruppen_ueberlappen"):
         z.append('<p class="muted">Die oberen Gruppen überlappen stark; belegt ist nur, dass sich die langsamste Gruppe von den übrigen trennt.</p>')
     if g.get("fahrzeuge_unter_grenze"):
         z.append(f'<p class="muted">{ganz(g["fahrzeuge_unter_grenze"])} Fahrzeuge unter {g["angepasst_ab_kmh"]}&nbsp;km/h (Rand der Erfassung) '
-                 'sind nicht zerlegt und stehen in keiner Gruppe.</p>')
+                 'sind nicht angepasst und stehen im Rest.</p>')
     z.append(f'<p class="muted">Verfahren und Grenzen: <a href="{REPO}/blob/main/docs/gruppen.md">Gruppen</a>. Auswahl nach Zeit, Tagen und Gruppe: '
              'im Abschnitt „Auswertung nach Zeit, Tagen und Gruppe“ (benötigt JavaScript).</p>')
     return "".join(z)
@@ -596,33 +592,36 @@ def json_in_html(obj):
 
 
 def filter_abschnitt(row, daten, sid):
-    """Auswahl nach Tageszeit, Tagen und Gruppe. Die Daten stehen als Tabelle (JSON) im Seitentext, filter.js rechnet daraus."""
+    """Auswahl nach Tageszeit, Tagen und Gruppe. Die Daten stehen als Tabelle (JSON) im Seitentext, filter.js rechnet daraus.
+
+    Das Feld "Gruppe" gibt es nur, wenn die Datei in Gruppen zerlegt ist."""
     if not daten or not daten.get("z"):
         return ""
-    gruppen_opt = [("alle", "Alle Fahrzeuge (ohne Rauschboden)")]
-    if daten.get("r"):
-        gruppen_opt.append(("rausch", "Rauschboden (herausgerechnet)"))
-    for g in daten.get("gruppen", []):
-        gruppen_opt.append((f'g{g["nr"]}', f'Gruppe {g["nr"]} (Modus {dez(g["modus"], 0)} km/h, {dez(g["anteil"], 0)} %)'))
-    if daten.get("langsam") and len(daten.get("gruppen", [])) - len(daten["langsam"]) >= 2:  # sonst gleich der verbleibenden Gruppe
-        gruppen_opt.append(("haupt", "Hauptmenge (ohne langsame Gruppen)"))
-    if daten.get("rand"):
-        gruppen_opt.append(("rand", f'Unter {daten["rand"]} km/h (nicht zerlegt)'))
+    gruppen_opt = []
+    if daten.get("gruppen"):
+        gruppen_opt = [("alle", "Alle Daten")]
+        for g in daten["gruppen"]:
+            gruppen_opt.append((f'g{g["nr"]}', f'Gruppe {g["nr"]} (Modus {dez(g["modus"], 0)} km/h, {dez(g["anteil"], 0)} %)'))
+        gruppen_opt.append(("rest", "Rest (nicht erklärt)"))
+        if daten.get("r"):
+            gruppen_opt.append(("rausch", "Rauschboden (herausgerechnet)"))
 
     def auswahl(name, label, opts):
         return (f'<div><label for="{sid}-{name}">{e(label)}</label><select id="{sid}-{name}" data-feld="{name}">' +
                 "".join(f'<option value="{e(v)}">{e(t)}</option>' for v, t in opts) + "</select></div>")
 
-    warnung = modell_warnung(row) if daten.get("gruppen") else ""
+    warnung = modell_warnung(row) if gruppen_opt else ""
+    felder = auswahl("zeit", "Tageszeit", ZEIT_OPTIONEN) + auswahl("tage", "Tage", TAGE_OPTIONEN) + (auswahl("gruppe", "Gruppe", gruppen_opt) if gruppen_opt else "")
     return ('<noscript><p class="muted">Die Auswahl nach Tageszeit, Wochentag und Gruppe benötigt JavaScript. Ohne JavaScript zeigt diese Seite '
             'die Auswertung für alle Fahrzeuge und die Zeiträume in den Tabellen.</p></noscript>'
             f'<section class="filter" data-filter hidden><h4>Auswertung nach Zeit, Tagen und Gruppe</h4>'
-            '<p class="muted">Wählen Sie Tageszeit, Tage und Gruppe; Kennzahlen und Verteilung gelten dann für diese Auswahl. '
-            'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt.</p>' + warnung +
-            '<div class="controls">' + auswahl("zeit", "Tageszeit", ZEIT_OPTIONEN) + auswahl("tage", "Tage", TAGE_OPTIONEN) +
-            auswahl("gruppe", "Gruppe", gruppen_opt) + '</div>'
+            '<p class="muted">Wählen Sie Tageszeit, Tage' + (' und Gruppe' if gruppen_opt else '') + '; Kennzahlen und Verteilung gelten dann für diese Auswahl. '
+            'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt. '
+            + ('Bei einer Gruppe bleiben alle Fahrzeuge der Auswahl grau sichtbar, farbig ist, was die Kurve der Gruppe davon erklärt.' if gruppen_opt else '') +
+            '</p>' + warnung + '<div class="controls">' + felder + '</div>'
             '<div class="filter-ergebnis" aria-live="polite"></div>'
             f'<script type="application/json" class="filter-daten">{json_in_html(daten)}</script></section>')
+
 
 def hist_summe(hists):
     """Summe von Histogrammen {"ab_kmh", "anzahl"}; None, wenn keines vorhanden ist."""
@@ -636,6 +635,7 @@ def hist_summe(hists):
         for i, c in enumerate(h["anzahl"]):
             summe[h["ab_kmh"] - lo + i] += c
     return {"ab_kmh": lo, "anzahl": summe}
+
 
 def histogramm_abschnitt(row):
     """Geschwindigkeitsverteilung: Histogramm aller Fahrzeuge der Datei, dazu Tags und Nachts im Vergleich."""

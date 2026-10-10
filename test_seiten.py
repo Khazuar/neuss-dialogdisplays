@@ -329,17 +329,20 @@ class FilterSeite(unittest.TestCase):
         self.assertIn("<noscript>", h)
         self.assertIn('<section class="filter" data-filter hidden>', h)  # ohne JavaScript bleibt der Abschnitt verborgen
         self.assertIn('<script src="../filter.js" defer></script>', h)
-        for name in ("Gruppe 1 (Modus", "Gruppe 2 (Modus", "Ganztägig", "Nacht (22–6 Uhr)", "Schulweg (7–8 Uhr)",
+        for name in ("Alle Daten", "Gruppe 1 (Modus", "Gruppe 2 (Modus", "Rest (nicht erklärt)", "Ganztägig", "Nacht (22–6 Uhr)", "Schulweg (7–8 Uhr)",
                      "Werktage (Mo–Fr)", "Sonn- und Feiertage", "Feiertage an Werktagen und Samstagen", ">Montag<"):
             self.assertIn(name, h, name)
-        self.assertNotIn("Rauschboden (herausgerechnet)", h)  # ohne abgezogenen Rauschboden keine solche Gruppe
-        self.assertNotIn("Hauptmenge (ohne langsame Gruppen)", h)  # mit einer verbleibenden Gruppe waere sie eine Wiederholung dieser Gruppe
-        d3 = json.loads(json.dumps(daten))
-        d3["gruppen"].append(dict(d3["gruppen"][1], nr=3))
-        self.assertIn("Hauptmenge (ohne langsame Gruppen)", self.html(d3, block))  # zwei schnelle Gruppen: die Hauptmenge ist etwas Eigenes
+        for nicht in ("Hauptmenge", "(langsam)", "Rauschboden (herausgerechnet)", "Unter "):
+            self.assertNotIn(nicht, h, nicht)  # keine Auszeichnung "langsam" oder "Haupt-"; ohne abgezogenen Rauschboden keine solche Gruppe
         m = re.search(r'<script type="application/json" class="filter-daten">(.*?)</script>', h, re.S)
         self.assertEqual(json.loads(m.group(1)), daten)  # die Tabelle im Seitentext ist genau die Datentabelle
-
+        d2 = dict(daten, r={"0|8": [10, 5]})
+        self.assertIn("Rauschboden (herausgerechnet)", self.html(d2, block))
+        d1 = dict(daten, gruppen=[])  # keine Zerlegung: kein Feld "Gruppe"
+        h1 = self.html(d1)
+        self.assertNotIn('data-feld="gruppe"', h1)
+        self.assertIn('data-feld="zeit"', h1)
+        self.assertIn('data-feld="tage"', h1)
     def test_json_kann_das_skript_nicht_beenden(self):
         self.assertNotIn("</script", s.json_in_html({"a": "</script><script>alert(1)</script>", "b": "<!--"}))
         self.assertEqual(json.loads(s.json_in_html({"a": "</x>"})), {"a": "</x>"})
@@ -354,18 +357,18 @@ class FilterSeite(unittest.TestCase):
         block, _ = self.daten()
         h = s.gruppen_abschnitt({"gruppen": block})
         self.assertIn("Gruppen in der Verteilung", h)
-        self.assertIn("Gruppe 1 (langsam)", h)
-        self.assertNotIn("Hauptmenge ohne die langsamen Gruppen", h)  # nur eine schnelle Gruppe: keine Wiederholung
-        b3 = json.loads(json.dumps(block))
-        b3["hauptmenge_ohne_langsame"]["gruppen"] = [2, 3]
-        self.assertIn("Hauptmenge ohne die langsamen Gruppen", s.gruppen_abschnitt({"gruppen": b3}))
-        self.assertIn("weichen von den Daten bei etwa", h)  # Passung des Modells
+        self.assertIn(">Gruppe 1<", h)
+        self.assertIn("Rest (nicht erklärt)", h)
+        for nicht in ("(langsam)", "Hauptmenge", "nächst schnelleren"):
+            self.assertNotIn(nicht, h, nicht)
         self.assertIn("keine Fahrzeugarten", h)
+        self.assertIn("Fahrzeuge werden den Gruppen nicht zugeordnet", h)
+        self.assertIn("müssen sich nicht zu 100", h)
         self.assertIn("2 Gruppen zusammen", h)
+        self.assertIn("weichen von den Daten bei etwa", h)  # Passung des Modells
         self.assertIn("Nicht zerlegt", s.gruppen_abschnitt({"gruppen": {"geprueft": False, "grund": "zu klein"}}))
         self.assertIn("nicht stabil", s.gruppen_abschnitt({"gruppen": {"geprueft": True, "anzahl": 1}}))
         self.assertEqual(s.gruppen_abschnitt({}), "")
-
     def test_warnung_bei_schlechter_passung(self):
         block, daten = self.daten()
         schlecht = dict(block, modellabweichung_prozent=15.5)

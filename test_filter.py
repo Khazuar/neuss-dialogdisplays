@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Tests fuer site/filter.js (Auswahl nach Zeit, Tagen und Gruppe) mit Node.  Ohne Node werden sie uebersprungen."""
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -20,9 +21,10 @@ const f = require(process.argv[2]);
 const daten = JSON.parse(require("fs").readFileSync(process.argv[3], "utf8"));
 const auswahlen = JSON.parse(process.argv[4]);
 const aus = auswahlen.map(a => {
-  const r = f.waehle(daten, a.zeit, a.tage, a.gruppe);
+  const r = f.waehle(daten, a.zeit, a.tage, a.gruppe === "rausch");
   const kz = f.kennzahlen(r.hist, daten.limit);
-  return { hist: r.hist, stunden: r.stunden, kz: kz, html: f.ergebnisHtml(daten, a) };
+  const modell = /^g\d+$/.test(a.gruppe) || a.gruppe === "rest" ? f.zerlege(daten, r.hist) : null;
+  return { hist: r.hist, stunden: r.stunden, kz: kz, html: f.ergebnisHtml(daten, a), modell: modell };
 });
 console.log(JSON.stringify(aus));
 """
@@ -41,7 +43,7 @@ def laufe(daten, auswahlen):
     return json.loads(out.stdout.decode("utf-8"))
 
 
-def zelle_hist(daten, quelle, tage, stunden, gewicht=lambda v: 1.0):
+def zelle_hist(daten, quelle, tage, stunden):
     h, std = {}, 0
     for t in tage:
         for st in stunden:
@@ -49,10 +51,15 @@ def zelle_hist(daten, quelle, tage, stunden, gewicht=lambda v: 1.0):
             std += daten["tage"].get(key, 0)
             z = daten[quelle].get(key, [])
             for i in range(0, len(z), 2):
-                w = gewicht(z[i])
-                if w > 0:
-                    h[z[i]] = h.get(z[i], 0) + z[i + 1] * w
+                h[z[i]] = h.get(z[i], 0) + z[i + 1]
     return h, std
+
+
+def kurvenform(x, w0):
+    """Anteil je km/h einer Gruppe ab w0 (Summe 1), wie site/filter.js."""
+    p = {v: math.exp(-0.5 * ((math.log(v) - x["mu"]) / x["s"]) ** 2) / (x["s"] * v) for v in range(w0, gruppen.VMAX_GRUPPEN + 1)}
+    s = sum(p.values())
+    return {v: q / s for v, q in p.items()}
 
 
 @unittest.skipUnless(NODE, "Node ist nicht installiert")
@@ -74,7 +81,6 @@ class FilterJs(unittest.TestCase):
         self.assertEqual((kz["v85"], kz["v95"], kz["v99"]), (erwartet["v85_kmh"], erwartet["v95_kmh"], erwartet["v99_kmh"]))
         self.assertAlmostEqual(kz["einhaltung"], erwartet["einhaltungsquote_prozent"], places=1)
         self.assertAlmostEqual(kz["qualifiziert"], erwartet["qualifizierte_einhaltungsquote_prozent"], places=1)
-        # und mit der Kennzahl der Zerlegung: Gesamtzahl der Fahrzeuge
         self.assertEqual(round(kz["n"]), self.block["fahrzeuge"])
 
     def test_zeit_und_tage(self):
@@ -86,48 +92,74 @@ class FilterJs(unittest.TestCase):
             self.assertEqual({int(k): v for k, v in r["hist"].items()}, h)
             self.assertEqual(r["stunden"], std)
 
-    def test_gruppen_summieren_sich_zum_ganzen(self):
-        auswahl = [{"zeit": "alle", "tage": "alle", "gruppe": g} for g in ("alle", "g1", "g2", "haupt", "rand")]
-        alle, g1, g2, haupt, rand = laufe(self.daten, auswahl)
-        n = alle["kz"]["n"]
-        self.assertAlmostEqual(g1["kz"]["n"] + g2["kz"]["n"], n, delta=0.005 * n)  # Gewichte sind auf 3 Stellen gerundet
-        self.assertAlmostEqual(haupt["kz"]["n"], g2["kz"]["n"], delta=0.005 * n)  # Gruppe 1 ist die einzige langsame
-        self.assertLess(g1["kz"]["mittel"], 20)
-        self.assertGreater(g2["kz"]["mittel"], 35)
-        self.assertEqual(rand["kz"], None)  # nichts unterhalb der Grenze, wenn der Rauschboden abgezogen ist
-        self.assertIn("keine Fahrzeuge", rand["html"])
-        erw = {g["nr"]: g["anteil"] for g in self.daten["gruppen"]}
-        self.assertAlmostEqual(100 * g1["kz"]["n"] / n, erw[1], delta=0.3)
+    def test_gruppen_sind_kurven_und_rest_ist_der_unterschied(self):
+        (g1, g2, rest) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1"}, {"zeit": "alle", "tage": "alle", "gruppe": "g2"},
+                                            {"zeit": "alle", "tage": "alle", "gruppe": "rest"}])
+        m = g1["modell"]
+        n = sum(g1["hist"].values())
+        self.assertAlmostEqual(sum(m["pi"]), 1.0, places=6)
+        self.assertAlmostEqual(m["nfit"], n, delta=0.5)  # nichts liegt unter der Anpassungsgrenze
+        w0 = self.daten["w0"]
+        for j, x in enumerate(self.daten["gruppen"]):  # die Kurve einer Gruppe: Zahl der Fahrzeuge mal Anteil mal Form
+            p = kurvenform(x, w0)
+            for v in (20, 30, 45):
+                self.assertAlmostEqual(m["gruppen"][j][str(v)], m["nfit"] * m["pi"][j] * p[v], delta=1e-6 * n)
+            self.assertAlmostEqual(m["pi"][j], x["pi"], delta=0.01)  # ganztaegig stimmt die Schaetzung mit der Anpassung ueberein
+        ges = {int(v): c for v, c in g1["hist"].items()}
+        mod = m["gruppen"]
+        for v, c in ges.items():  # Kurven plus Rest decken die Daten ab; der Rest ist nie negativ
+            r = m["rest"].get(str(v), 0.0)
+            self.assertGreaterEqual(r, 0.0)
+            self.assertGreaterEqual(sum(h.get(str(v), 0.0) for h in mod) + r + 1e-6, c)
+        self.assertLess(sum(m["rest"].values()) / n, 0.08)
+        self.assertEqual(rest["modell"]["rest"], m["rest"])
+        mittel = [sum(int(v) * c for v, c in h.items()) / sum(h.values()) for h in mod]  # die Kurven der beiden Gruppen
+        self.assertLess(mittel[0], 22)
+        self.assertGreater(mittel[1], 35)
+        self.assertAlmostEqual(sum(sum(h.values()) for h in mod), n, delta=0.5)
+        self.assertEqual(g1["modell"]["pi"], g2["modell"]["pi"])  # beide Gruppen derselben Auswahl: dieselbe Zerlegung
 
-    def test_kurve_der_gruppe(self):
-        skript = (
-            "const f = require(process.argv[1]); const d = JSON.parse(require('fs').readFileSync(process.argv[2], 'utf8'));"
-            "const k = f.gruppenKurve(d, 'g1', 1000); const k2 = f.gruppenKurve(d, 'alle', 1000);"
-            "let s = 0; const bis = Math.floor(d.gruppen[0].bis); for (let v = d.w0; v <= bis; v++) s += k(v);"
-            "console.log(JSON.stringify({summe: s, davor: k(d.w0 - 1), alle: k2, jenseits: k(bis + 20) > 0}));")
-        with tempfile.TemporaryDirectory() as t:
-            pfad = os.path.join(t, "d.json")
-            with open(pfad, "w", encoding="utf-8") as fh:
-                json.dump(self.daten, fh)
-            out = subprocess.run([NODE, "-e", skript, os.path.join(HIER, "site", "filter.js"), pfad], stdout=subprocess.PIPE, check=True, timeout=60)
-        r = json.loads(out.stdout.decode())
-        self.assertAlmostEqual(r["summe"], 1000, delta=0.5)  # die Kurve umfasst bis zur Zuordnungsgrenze so viele Fahrzeuge wie die Gruppe
-        self.assertEqual(r["davor"], 0)
-        self.assertIsNone(r["alle"])  # nur einzelne Gruppen haben eine Kurve
-        self.assertTrue(r["jenseits"])  # sie läuft über die Grenze hinaus weiter und zeigt den Ausläufer
-        (g1,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1"}])
-        self.assertIn("hist-modell", g1["html"])
-        self.assertIn("angepasste Kurve der Gruppe", g1["html"])
-        (alle,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
-        self.assertNotIn("hist-modell", alle["html"])
+    def test_anteile_der_gruppen_je_auswahl(self):
+        """Nachts andere Anteile als tagsueber: Die Anteile werden je Auswahl neu geschaetzt, die Kurven bleiben."""
+        nacht, tag = laufe(self.daten, [{"zeit": "nacht", "tage": "alle", "gruppe": "g1"}, {"zeit": "nachmittag", "tage": "alle", "gruppe": "g1"}])
+        for r in (nacht, tag):
+            self.assertAlmostEqual(sum(r["modell"]["pi"]), 1.0, places=6)
+        # die Testdaten haben ueber den Tag gleiche Anteile: beide nahe der Anpassung
+        for r in (nacht, tag):
+            for pi, x in zip(r["modell"]["pi"], self.daten["gruppen"]):
+                self.assertAlmostEqual(pi, x["pi"], delta=0.05)
+
     def test_ausgabe_html(self):
-        (r,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
-        self.assertIn("<table>", r["html"])
-        self.assertIn('<svg class="hist"', r["html"])
-        self.assertIn("hist-limit", r["html"])
-        self.assertIn("Klassenbreite", r["html"])
-        (r,) = laufe(self.daten, [{"zeit": "schulweg", "tage": "samstag", "gruppe": "g1"}])
-        self.assertIn("<table>", r["html"])  # wenige Fahrzeuge: Tabelle, kein Histogramm noetig
+        (alle,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
+        self.assertIn("<table>", alle["html"])
+        self.assertIn('<svg class="hist"', alle["html"])
+        self.assertIn("hist-limit", alle["html"])
+        self.assertIn("Klassenbreite", alle["html"])
+        self.assertNotIn("hist-grau", alle["html"])  # ohne Gruppe keine ausgegrauten Saeulen
+        self.assertNotIn("hist-modell", alle["html"])
+        (g1,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1"}])
+        self.assertIn("hist-grau", g1["html"])  # alle Fahrzeuge bleiben grau sichtbar
+        self.assertIn("hist-ok", g1["html"])  # der Teil der Gruppe ist farbig
+        self.assertIn("hist-modell", g1["html"])  # und die Kurve der Gruppe liegt als Linie darueber
+        self.assertIn("Anteil an allen", g1["html"])
+        self.assertIn("Gruppe 1", g1["html"])
+        self.assertIn("nicht zu 100", g1["html"])
+        (rest,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "rest"}])
+        self.assertIn("Rest", rest["html"])
+        self.assertIn("hist-grau", rest["html"])
+        self.assertNotIn("hist-modell", rest["html"])
+        (klein,) = laufe(self.daten, [{"zeit": "schulweg", "tage": "samstag", "gruppe": "g1"}])
+        self.assertIn("<table>", klein["html"])
+        self.assertIn("Wenige Fahrzeuge", klein["html"])  # Anteile bei kleinen Auswahlen sind unsicher
+
+    def test_farbige_saeule_ist_nie_hoeher_als_die_graue(self):
+        (g1,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2"}])
+        import re
+        grau = [float(m.group(1)) for m in re.finditer(r'class="hist-grau" x="[\d.]+" y="[\d.]+" width="[\d.]+" height="([\d.]+)"', g1["html"])]
+        farbig = [float(m.group(1)) for m in re.finditer(r'class="hist-(?:ok|ueber)" x="[\d.]+" y="[\d.]+" width="[\d.]+" height="([\d.]+)"', g1["html"])]
+        self.assertTrue(grau)
+        self.assertTrue(farbig)
+        self.assertLessEqual(max(farbig), max(grau) + 0.11)  # gerundet auf eine Nachkommastelle
 
 
 if __name__ == "__main__":

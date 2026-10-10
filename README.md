@@ -90,8 +90,9 @@ sinnvoll.
   - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit nutzbarer Zeit,
   - `teilzeitraeume` – dieselben Kennzahlen für `nacht` (22–6 Uhr), `vormittag` (6–12), `nachmittag` (12–19), `abend` (19–22)
     und `schulweg` (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
-  - `gruppen` – Zerlegung der Verteilung in Gruppen (Zahl aus den Daten, auch keine Zerlegung): Anteil, Modus, Kennzahlen je Gruppe,
-    Hauptmenge ohne die langsamen Gruppen (`docs/gruppen.md`),
+  - `gruppen` – Beschreibung der Verteilung als Mischung angepasster Kurven (Zahl der Gruppen aus den Daten, auch keine Zerlegung):
+    Anteil, Modus, Kennzahlen je Kurve, dazu der Rest, den die Kurven nicht erklären, und die Abweichung des Modells
+    (`docs/gruppen.md`),
   - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: relativer Risikoindex nach Nilsson, Aufprallgeschwindigkeit
     und Anteil der Fahrzeuge, die mit mehr als 30 bzw. 50 km/h aufträfen, Lärm gegenüber dem Tempolimit
     (`docs/gefaehrdung.md`),
