@@ -15,6 +15,15 @@ import test_gruppen as tg  # noqa: E402
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 NODE = shutil.which("node")
+_K_MAX = gruppen.K_MAX
+
+
+def setUpModule():
+    gruppen.K_MAX = 5  # die Suche geht immer bis K_MAX (8); fuer schnelle Tests genuegt 5
+
+
+def tearDownModule():
+    gruppen.K_MAX = _K_MAX
 
 SKRIPT = r"""
 const f = require(process.argv[2]);

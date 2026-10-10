@@ -326,11 +326,21 @@ class Histogramme(unittest.TestCase):
 
 
 class FilterSeite(unittest.TestCase):
+    _zerlegung = None
+
     def daten(self):
-        import test_gruppen as tg
-        fahrten, spannen = tg.fahrten_und_spannen(tage=28)
-        block, daten = gruppen.analysiere(gruppen.zellen_bauen(fahrten, fahrten, spannen), 30, True)
-        return block, daten
+        """Zerlegung der Testdaten (einmal gerechnet; die Tests veraendern die Rueckgabe nicht, sondern kopieren sie)."""
+        import copy
+        if FilterSeite._zerlegung is None:
+            import test_gruppen as tg
+            k_max = gruppen.K_MAX
+            gruppen.K_MAX = 5  # die Suche geht immer bis K_MAX; fuer schnelle Tests genuegt 5
+            try:
+                fahrten, spannen = tg.fahrten_und_spannen(tage=28)
+                FilterSeite._zerlegung = gruppen.analysiere(gruppen.zellen_bauen(fahrten, fahrten, spannen), 30, True)
+            finally:
+                gruppen.K_MAX = k_max
+        return copy.deepcopy(FilterSeite._zerlegung)
 
     def html(self, daten, block=None):
         row = zeile()
@@ -385,7 +395,7 @@ class FilterSeite(unittest.TestCase):
         block, _ = self.daten()
         h = s.gruppen_abschnitt({"gruppen": block})
         self.assertIn("Gruppen in der Verteilung", h)
-        self.assertIn(">Gruppe 1<", h)
+        self.assertIn("Gruppe 1", h)  # je nach Anpassung mit dem Zusatz "(aus N Kurven)"
         self.assertIn("Rest (nicht erklärt)", h)
         for nicht in ("(langsam)", "Hauptmenge", "nächst schnelleren"):
             self.assertNotIn(nicht, h, nicht)
@@ -397,7 +407,10 @@ class FilterSeite(unittest.TestCase):
         self.assertIn("Nicht zerlegt", s.gruppen_abschnitt({"gruppen": {"geprueft": False, "grund": "zu klein"}}))
         self.assertIn("nicht stabil", s.gruppen_abschnitt({"gruppen": {"geprueft": True, "anzahl": 1}}))
         self.assertEqual(s.gruppen_abschnitt({}), "")
-        self.assertNotIn("Kurven angepasst", h)  # eine Kurve je Gruppe: nichts zu erklaeren
+        einfach = dict(block, kurven=block["anzahl"], gruppen=[dict(x, kurven=1) for x in block["gruppen"]])
+        h1 = s.gruppen_abschnitt({"gruppen": einfach})
+        self.assertNotIn("Kurven angepasst", h1)  # eine Kurve je Gruppe: nichts zu erklaeren
+        self.assertNotIn("(aus", h1)
 
     def test_gruppe_aus_mehreren_kurven(self):
         block, _ = self.daten()

@@ -24,7 +24,8 @@ K_MAX = 8  # Obergrenze der Suche; sie endet meist frueher (siehe waehle_k)
 MIN_FAHRZEUGE = 5000  # kleinere Dateien werden nicht zerlegt
 MIN_ANTEIL = 0.03  # eine Gruppe unter 3 % in einer Haelfte der Messtage gilt als zu klein
 CV_GEWINN_MIN = 0.005  # mindestens so viel nats je Fahrzeug Gewinn auf den jeweils anderen Tagen, sonst keine weitere Gruppe
-D_MIN = 1.0  # Ashman-Abstand zwischen Gruppen (getrennt ab 1)
+D_MIN = 1.0  # Ashman-Abstand zwischen Gruppen (getrennt ab 1; darunter vermerkt die Seite, dass die Gruppen ueberlappen)
+D_LOSE = 0.5  # ab diesem Ashman-Abstand zwischen allen Gruppen genuegen Gewinn und Stabilitaet (Festlegung: die Gruppen ueberlappen dann)
 CV_GEWINN_STARK = 0.02  # so viel Gewinn belegt eine Struktur auch dort, wo sich die Gruppen stark ueberlappen (breite Gruppe neben einem schmalen Gipfel)
 MODUS_ABSTAND_MIN = 0.15  # dann muessen die beiden langsamsten Gruppen aber um mindestens 15 % im haeufigsten Tempo auseinanderliegen (sonst Form, nicht Gruppe)
 SICHTBAR_MIN = 0.25  # von jeder Gruppe muss mindestens so viel ihrer Flaeche im erfassten Bereich liegen
@@ -357,6 +358,11 @@ def problemgruppen(ma, pa, mb, pb):
             if min(gruppen_anteil(ma, ga), gruppen_anteil(mb, gb)) < MIN_ANTEIL or not gruppen_gleich(ma, ga, mb, gb)]
 
 
+def kleine_gruppen(ms, teile):
+    """Indizes der Gruppen (Rangplaetze in teile), die in einer der Anpassungen ms unter MIN_ANTEIL liegen."""
+    return sorted({i for m in ms for i, t in enumerate(kurven_von(m, teile)) if gruppen_anteil(m, t) < MIN_ANTEIL})
+
+
 def nachbar_paar(m, teile, i):
     """Index j der Gruppe, mit der Gruppe i zusammengefasst wird: der benachbarten mit dem naeheren haeufigsten Tempo (Paar (j, j+1))."""
     k = kurven_von(m, teile)
@@ -373,6 +379,12 @@ def tabelle(zaehler, ab):
     return werte, [zaehler[v] for v in werte]
 
 
+def _gueltig(e):
+    """Eine Anpassung mit K Kurven (Eintrag der Auswahl) erfuellt Zahl, Stabilitaet, Groesse, Sichtbarkeit und Gewinn."""
+    return (e["gruppen"] >= 2 and e["stabil"] and not e["klein"] and e["sichtbar_min"] >= SICHTBAR_MIN
+            and e["cv_gewinn"] >= CV_GEWINN_MIN)
+
+
 def waehle_k(gerade, ungerade, ab):
     """Bestimmt die Zahl der Kurven K und ihre Einteilung in Gruppen. gerade/ungerade: Counter der Haelften der Messtage, ab: kleinste
     angepasste Geschwindigkeit.
@@ -380,15 +392,16 @@ def waehle_k(gerade, ungerade, ab):
     Links von ab ist die Verteilung nicht erfasst (nicht null): die Anpassung nutzt die Flanke im erfassten Bereich.
     Kurven mit nahe beieinander liegendem haeufigsten Tempo bilden zusammen eine Gruppe (zusammenfassen); Stabilitaet, Groesse,
     Trennung und Sichtbarkeit gelten fuer die Gruppen. Gibt dict mit k (Kurven), teile (Kurven je Gruppe), obere_gruppen_ueberlappen,
-    auswahl (je K: gruppen, stabil, klein, sichtbar_min, d_unten, d_alle, modus_abstand, cv_gewinn) und mischung zurueck.
+    auswahl (je K: gruppen, stabil, klein, sichtbar_min, d_unten, d_alle, modus_abstand, cv_gewinn, gegen_k) und mischung zurueck.
+    cv_gewinn ist der Gewinn auf den jeweils anderen Tagen gegenueber der letzten gueltigen Anpassung gegen_k (zuerst K = 1).
     """
     gesamt = collections.Counter(gerade)
     gesamt.update(ungerade)
     tw, ta = tabelle(gesamt, ab)
     aw, aa = tabelle(gerade, ab)
     bw, ba = tabelle(ungerade, ab)
-    vorher = (anpassen(aw, aa, 1, 2, ab=ab), anpassen(bw, ba, 1, 2, ab=ab))
-    auswahl, mischungen, einteilung, fehl = [], {}, {}, 0
+    basis, basis_k = (anpassen(aw, aa, 1, 2, ab=ab), anpassen(bw, ba, 1, 2, ab=ab)), 1
+    auswahl, mischungen, einteilung = [], {}, {}
     for k in range(2, K_MAX + 1):
         ma, mb, mt = anpassen(aw, aa, k, ab=ab), anpassen(bw, ba, k, ab=ab), anpassen(tw, ta, k, 4, ab=ab)
         # Einteilung in Gruppen: erst nach dem Abstand der haeufigsten Tempi, dann so lange benachbarte Gruppen zusammenfassen, bis die
@@ -396,43 +409,42 @@ def waehle_k(gerade, ungerade, ab):
         tr = zusammenfassen(mt)
         while True:
             pa, pb, pt = kurven_von(ma, tr), kurven_von(mb, tr), kurven_von(mt, tr)
-            klein = min(min(gruppen_anteil(ma, t) for t in pa), min(gruppen_anteil(mb, t) for t in pb)) < MIN_ANTEIL
+            klein = min(min(gruppen_anteil(m_, t) for t in kurven_von(m_, tr)) for m_ in (ma, mb, mt)) < MIN_ANTEIL  # in jeder Haelfte und gesamt
             stabil = vergleichbar(ma, pa, mb, pb)
             if (stabil and not klein) or len(tr) < 2:
                 break
             # die kleinste Problemgruppe geht in ihre naechste Nachbarin auf (statt dass die grossen Gruppen verschmelzen)
-            i = min(problemgruppen(ma, pa, mb, pb), key=lambda i: min(gruppen_anteil(ma, pa[i]), gruppen_anteil(mb, pb[i])))
+            probleme = set(problemgruppen(ma, pa, mb, pb)) | set(kleine_gruppen((mt,), tr))
+            i = min(probleme, key=lambda i: min(gruppen_anteil(m_, kurven_von(m_, tr)[i]) for m_ in (ma, mb, mt)))
             j = nachbar_paar(mt, tr, i)
             tr = tr[:j] + [tr[j] + tr[j + 1]] + tr[j + 2:]
-        gewinn = 0.5 * (ll_je_fahrzeug(ma, bw, ba) - ll_je_fahrzeug(vorher[0], bw, ba)
-                        + ll_je_fahrzeug(mb, aw, aa) - ll_je_fahrzeug(vorher[1], aw, aa))
+        # Gewinn auf den jeweils anderen Tagen gegenueber der letzten gueltigen Anpassung (nicht gegenueber K - 1): Eine Kurve, die
+        # allein wenig bringt, soll eine zweite nicht verhindern, die erst zusammen mit ihr viel bringt
+        gewinn = 0.5 * (ll_je_fahrzeug(ma, bw, ba) - ll_je_fahrzeug(basis[0], bw, ba)
+                        + ll_je_fahrzeug(mb, aw, aa) - ll_je_fahrzeug(basis[1], aw, aa))
         du, da = trennschaerfen(mt, pt)
         abst = modus_abstand(mt, pt)
         sichtbar = min(gruppen_sichtbar(mt, t) for t in pt)  # kleinster Teil einer Gruppe im erfassten Bereich
         e = {"k": k, "gruppen": len(pt), "stabil": stabil, "klein": klein, "sichtbar_min": round(sichtbar, 2),
              "d_unten": None if du is None else round(du, 2), "d_alle": None if da is None else round(da, 2),
-             "modus_abstand": None if abst is None else round(abst, 2), "cv_gewinn": round(gewinn, 4)}
+             "modus_abstand": None if abst is None else round(abst, 2), "cv_gewinn": round(gewinn, 4), "gegen_k": basis_k}
         auswahl.append(e)
         mischungen[k], einteilung[k] = mt, pt
-        vorher = (ma, mb)
-        if gewinn < CV_GEWINN_MIN:
-            break
-        fehl = 0 if (e["stabil"] and not e["klein"] and sichtbar >= SICHTBAR_MIN and len(pt) >= 2) else fehl + 1
-        if fehl >= 2:
-            break
-    ok = [e for e in auswahl if e["gruppen"] >= 2 and e["stabil"] and not e["klein"] and e["sichtbar_min"] >= SICHTBAR_MIN
-          and e["cv_gewinn"] >= CV_GEWINN_MIN]
+        if _gueltig(e):
+            basis, basis_k = (ma, mb), k  # kein Abbruch bei einem schlechteren K: auch K = 5 kann gut sein, wenn K = 3 nicht besser als K = 2 ist
+    ok = [e for e in auswahl if _gueltig(e)]
     getrennt = [e["k"] for e in ok if e["d_alle"] is not None and e["d_alle"] >= D_MIN]
     unten = [e["k"] for e in ok if e["d_unten"] is not None and e["d_unten"] >= D_MIN]
     stark = [e["k"] for e in ok if e["cv_gewinn"] >= CV_GEWINN_STARK and (e["modus_abstand"] or 0) >= MODUS_ABSTAND_MIN]
+    lose = [e["k"] for e in ok if e["d_alle"] is not None and e["d_alle"] >= D_LOSE]  # alle Gruppen mindestens teilweise getrennt
     # Eine weitere Kurve innerhalb derselben Gruppen verfeinert nur die Form (die Zahl der Gruppen bleibt): Sie braucht nur den
     # Gewinn und die Stabilitaet, keine eigene Trennung und keinen starken Gewinn.
-    zulaessig = set(getrennt) | set(unten) | set(stark)
-    nach_k = {e["k"]: e for e in ok}
+    zulaessig = set(getrennt) | set(unten) | set(stark) | set(lose)
+    vor = None  # die vorige gueltige Anpassung
     for e in ok:
-        vor = nach_k.get(e["k"] - 1)
         if e["k"] not in zulaessig and vor is not None and vor["k"] in zulaessig and vor["gruppen"] == e["gruppen"]:
             zulaessig.add(e["k"])
+        vor = e
     if zulaessig:
         k = max(zulaessig)
         ueberlappend = k not in getrennt

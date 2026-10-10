@@ -34,12 +34,11 @@ Geschwindigkeiten allein nicht entscheiden. Plausible Deutungen stehen als Hypot
    Grenze gilt am Tempo der Kurve, nicht am Rand der Erfassung: Eine frühere Fassung band sie an die kleinste erfasste
    Geschwindigkeit und zwang bei einer Erfassung ab 4 km/h jede Kurve auf mindestens 0,2, auch den schmalen Gipfel bei 46 km/h.
    Die Abweichung der Nievenheimer Straße (Datei `0000000000000000_12`) sank dadurch von 15,5 auf 3,2 %.
-3. **Zahl der Kurven K und Einteilung in Gruppen, je Datei.** K wird für jede Datei einzeln bestimmt, von 2 bis höchstens 8 (bei
-   den bisherigen Daten endet die Suche nach höchstens 5). **Eine Gruppe besteht aus einer oder mehreren Kurven** (ihre Summe):
+3. **Zahl der Kurven K und Einteilung in Gruppen, je Datei.** K wird für jede Datei einzeln bestimmt: Alle Werte von 2 bis 8 werden geprüft, die Suche bricht nicht ab (auch K = 5 kann\n   gut sein, wenn K = 3 nicht besser ist als K = 2). **Eine Gruppe besteht aus einer oder mehreren Kurven** (ihre Summe):
    Eine Lognormal-Glocke trifft die Form einer Gruppe oft nicht ganz (ein schmaler Gipfel am Rand, eine Schulter), und eine
    zweite Kurve in derselben Gruppe verbessert nur die Form, ohne dass es eine zweite Gruppe wäre. Die Kurven werden deshalb
    eingeteilt (`zusammenfassen`): Kurven, deren häufigstes Tempo weniger als 15 % (im Logarithmus 0,15) auseinanderliegt, bilden
-   eine Gruppe. Ist eine Gruppe in einer der beiden Hälften der Messtage zu klein (unter 3 %) oder
+   eine Gruppe. Ist eine Gruppe in einer der beiden Hälften der Messtage oder in der Anpassung an alle Tage zu klein (unter 3 %) oder
    stimmen Lage und Anteil nicht überein, geht die kleinste solche Gruppe in ihre Nachbarin mit dem näheren häufigsten Tempo auf.
    Das wiederholt sich, bis alle Gruppen übereinstimmen (oder nur noch eine bleibt). Eine winzige Kurve (zum Beispiel 1 % bei
    8 km/h) wird so Teil der benachbarten Gruppe, statt dass die großen Gruppen verschmelzen und die Zerlegung scheitert.
@@ -48,21 +47,20 @@ Geschwindigkeiten allein nicht entscheiden. Plausible Deutungen stehen als Hypot
    Literatur zur Cluster-Analyse mit Mischungen gebräuchlich, etwa Baudry u. a. 2010 und Hennig 2010.) Eine Kurve mehr gilt nur,
    wenn alles zutrifft:
    - **Gewinn auf den anderen Tagen:** Die Anpassung auf den geraden Messtagen beschreibt die ungeraden Tage um mindestens
-     0,005 nats je Fahrzeug besser als mit einer Kurve weniger (und umgekehrt). Sonst endet die Suche. Die Schwelle ist eine
+     0,005 nats je Fahrzeug besser als die letzte gültige Anpassung mit weniger Kurven (und umgekehrt); der Vergleich gilt nicht\n     nur gegenüber K − 1, denn eine Kurve, die allein wenig bringt, soll eine zweite nicht verhindern, die erst zusammen mit ihr viel\n     bringt. Die Schwelle ist eine
      Effektgröße, kein Signifikanztest: Bei Zehntausenden Fahrzeugen belohnt jede Abweichung von der Lognormal-Form
      mit einem kleinen Gewinn.
    - **Stabil:** Die Gruppen aus den beiden Hälften der Messtage (gerade und ungerade Tage) stimmen in der Zahl, in der Lage
      (häufigstes Tempo der Summenkurve innerhalb von 7 % im Logarithmus, bei breiten Gruppen innerhalb 0,25 × Streuung) und im
      Anteil an den erfassten Fahrzeugen (innerhalb von 6 Prozentpunkten) überein.
-   - **Nicht winzig:** Keine Gruppe unter 3 % in einer Hälfte.
+   - **Nicht winzig:** Keine Gruppe unter 3 % in einer Hälfte oder in der Anpassung an alle Tage.
    - **Sichtbar:** Jede Gruppe liegt zu mindestens 25 % im erfassten Bereich.
    - **Getrennt:** Der Ashman-Abstand D = √2 · |μᵢ − μⱼ| / √(σᵢ² + σⱼ²) zwischen allen Gruppen (Mittel und Streuung von ln v der
-     Summenkurve) ist mindestens 1. Gibt es dafür keine Lösung, genügt ein getrenntes Paar „langsamste Gruppe gegen die nächste“,
+     Summenkurve) langsamste„langsamste Gruppe gegen die nächste“,
      oder ein Gewinn von mindestens 0,02 nats, wenn die beiden langsamsten Gruppen im häufigsten Tempo um mindestens 15 %
      auseinanderliegen (breite Gruppe neben einem schmalen Gipfel). In beiden Fällen vermerkt die Seite, dass die Gruppen
      überlappen. Eine weitere Kurve, die die Zahl der Gruppen nicht ändert, braucht nur den Gewinn und die Stabilität.
-   Die Suche endet, wenn der Gewinn unter die Schwelle fällt oder zwei Werte von K in Folge nicht stabil, zu klein oder zu
-   wenig sichtbar sind. Gewählt wird das größte K, das alle Bedingungen erfüllt. Gibt es keins, bleibt es bei einer Gruppe
+   Gewählt wird das größte K, das alle Bedingungen erfüllt. Gibt es keins, bleibt es bei einer Gruppe
    (**keine Zerlegung**). Bei weniger als 5000 Fahrzeugen wird nicht zerlegt.
 4. **Feste Kurven für alle Stunden und Tage.** Form und Lage der Gruppen gelten für alle Tageszeiten und Tage gleich; nur
    ihre Anteile werden je Auswahl neu geschätzt. Eine Auswahl (Tageszeit, Wochentag, Gruppe) ist damit eine einfache Summe über
@@ -127,16 +125,16 @@ Tempolimit, orange darüber) ist der Teil, den die Gruppe erklärt, höchstens s
 ihre Kurve zusätzlich als Linie darüber, damit sichtbar bleibt, wo sie die Säulen überragt.
 
 **Passung des Modells.** `modellabweichung_prozent` ist der Anteil der Fahrzeuge, die die angepasste Mischung an einer anderen
-Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h, ab der Anpassungsgrenze). Im Median über die 81
-zerlegten Dateien sind es 2,6 % (Quartile 1,7 und 3,6), bei 3 Dateien mehr als 5 % (höchstens 6,1 %), bei keiner mehr als 10 %. Ab
-10 % warnen die Seiten, dass das Modell schlecht passt. Bei 6 Dateien liegt das häufigste Tempo einer Gruppe nicht über dem Rand
+Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h, ab der Anpassungsgrenze). Im Median über die 97
+zerlegten Dateien sind es 1,9 % (Quartile 1,5 und 2,9), bei 2 Dateien mehr als 5 % (höchstens 6,1 %), bei keiner mehr als 10 %. Ab
+10 % warnen die Seiten, dass das Modell schlecht passt. Bei 9 Dateien liegt das häufigste Tempo einer Gruppe nicht über dem Rand
 der Anpassung: Die Glocke ist dort am Rand abgeschnitten und wird aus ihrer sichtbaren Flanke angepasst (Schritt 2), das ist
 gewollt. Das ist bei der Villestraße-Datei `FR GV 0000000000000000_2` ein Extrem: Eine Gruppe von 7 % mit dem häufigsten Tempo
 1,9 km/h, angepasst wird ab 4 km/h (Abweichung 1,9 %); sie beschreibt, was der Rauschbodenabzug übrig lässt, und keine Fahrzeuge,
 für die sich ein Tempo angeben ließe. Der
 **Rest** ist größer als die Abweichung, weil er auch die Fahrzeuge unter der Anpassungsgrenze enthält: Median 6,8 % der
-Fahrzeuge (Quartile 3,6 und 15,7 %). Am größten ist er bei den Dateien, in denen ein Haufen am unteren Rand abgeschnitten wurde
-(Matthiasstraße 67 %, Feldstraße 58 %, Bauerbahn 43 %).
+Fahrzeuge (Quartile 3,4 und 15,7 %). Am größten ist er bei den Dateien, in denen ein Haufen am unteren Rand abgeschnitten wurde
+(Matthiasstraße 67 %, Feldstraße 58 %, Eichendorfstraße 50 %).
 
 Die Zellen enthalten nur vollständig aufgezeichnete Stunden mit nutzbarer Zeit; die Zahl der Fahrzeuge einer Auswahl kann
 deshalb geringfügig unter der Zahl in den Tabellen liegen.
@@ -158,14 +156,15 @@ ihre Kurven verteilt ist, wird nicht ausgewiesen, weil sie zwischen den Hälften
 - Eine Glocke ist keine Fahrzeugart. Zusammenhänge mit Tageszeit, Wochentag oder Wetter können Hinweise geben, beweisen aber
   keine Zuordnung. Wetterdaten sind nicht eingebunden.
 - Bei überlappenden Gruppen ist die Trennung unsicher, auch wenn die Zerlegung stabil ist. Die Schwellen (0,005 und 0,02 nats, 7 %,
-  6 Prozentpunkte, 3 %, D ≥ 1, 15 % Abstand der Modi) sind Festlegungen, kein Befund. Bei 28 der 109 Dateien gibt es keine Zerlegung
-  (10 sind zu klein, bei 18 ist keine belegt); bei den übrigen 81 sind es 2 Gruppen (77 Dateien) oder 3 Gruppen (4), bei 7 davon
-  mit überlappenden Gruppen. Bei 66 Dateien besteht jede Gruppe aus einer Kurve (62 mit 2 und 4 mit 3 Gruppen), bei 15 besteht
-  eine der beiden Gruppen aus mehreren Kurven (14 mal 2 Gruppen aus 3 Kurven, einmal aus 4).
+  6 Prozentpunkte, 3 %, D ≥ 1 und D ≥ 0,5, 15 % Abstand der Modi) sind Festlegungen, kein Befund. Bei 12 der 109 Dateien gibt es keine Zerlegung
+  (10 sind zu klein, bei 2 ist keine belegt); bei den übrigen 97 sind es 2 Gruppen (81 Dateien), 3 Gruppen (13) oder 4 Gruppen (3), bei 17 davon
+  mit überlappenden Gruppen. Bei 58 Dateien besteht jede Gruppe aus einer Kurve, bei 39 besteht mindestens eine Gruppe aus mehreren
+  Kurven (bis zu 8 Kurven je Datei).
 - **Die Hälften der Messtage (gerade/ungerade) sind ein mildes Kriterium.** Gerade und ungerade Tage wechseln sich ab und haben
   dieselbe Mischung aus Wochentagen und Jahreszeit. Teilt man stattdessen den Zeitraum in eine erste und eine zweite Hälfte
-  (einmalige Prüfung, nicht Teil des Verfahrens), bleibt von 81 Zerlegungen nur bei 38 dieselbe Zerlegung bestehen; bei 39 entsteht auf der
-  zweiten Teilung keine, bei 4 eine andere. Das war vor der Zusammenfassung von Kurven ähnlich (41 von 80 gleich, 38 keine). Die Aussage ist
+  (einmalige Prüfung, nicht Teil des Verfahrens), bleibt von 97 Zerlegungen nur bei 43 dieselbe Zerlegung bestehen (gleiche Zahl der Gruppen, Lage innerhalb von 15 %, Anteil innerhalb von
+  8 Prozentpunkten); bei 27 entsteht auf der zweiten Teilung keine, bei 27 eine andere. Vor der Zusammenfassung von Kurven und der
+  vollständigen Suche nach K war es ähnlich (von 81 Zerlegungen 38 gleich, 39 keine, 4 andere). Die Aussage ist
   deshalb: Die Gruppen sind in einer Messung über gemischte Tage stabil; ihre Anteile und teils ihre Lage können von der Zeit
   (Jahreszeit, Wochentag, Baustellen) abhängen. Das ist kein Beleg, dass sie falsch sind, aber ein Grund, die Anteile nicht als
   feste Größe eines Standorts zu lesen.
@@ -179,7 +178,11 @@ ihre Kurven verteilt ist, wird nicht ausgewiesen, weil sie zwischen den Hälften
   Teil der damaligen Abweichung kam also von dieser Untergrenze und nicht von der Kurvenform.
   Verhalten wie ein Spitzer genau am Tempolimit wird als eigene schmale Gruppe beschrieben.
 - Die Anpassung ist deterministisch, aber nicht eindeutig: Andere Startwerte können bei knappen Fällen eine andere Zerlegung
-  finden.
+  finden. Ein Versuch, jede weitere Kurve dort zu starten, wo die Daten das bisherige Modell am stärksten übersteigen (der markanteste
+  noch nicht gedeckte Gipfel, wie man von Hand vorginge), erhöhte die Likelihood leicht, ließ aber zum Beispiel bei der Düsseldorfer
+  Straße die breite Gruppe bei 22 km/h in der Gruppe bei 36 km/h aufgehen (2 statt 3 Gruppen); mit Startwerten aus Quantilen und
+  Zufall bleiben die drei Gipfel getrennt. Der Versuch ist nicht übernommen. Bei gleich guten Anpassungen entscheidet damit die
+  Wahl der Startwerte darüber, wie die Masse auf Kurven und Gruppen verteilt wird.
 
 ## Zwischenspeicher
 

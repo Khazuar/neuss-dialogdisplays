@@ -14,6 +14,17 @@ import gruppen as g  # noqa: E402
 import zwischenspeicher as zs  # noqa: E402
 
 
+_K_MAX = g.K_MAX
+
+
+def setUpModule():
+    g.K_MAX = 5  # die Suche geht immer bis K_MAX (8); fuer schnelle Tests genuegt 5
+
+
+def tearDownModule():
+    g.K_MAX = _K_MAX
+
+
 def cdf(v, modus, s):
     mu = math.log(modus) + s * s
     return 0.5 * (1 + math.erf((math.log(v) - mu) / (s * math.sqrt(2))))
@@ -169,13 +180,40 @@ class Zerlegung(unittest.TestCase):
         self.assertAlmostEqual(modi[1], 40, delta=1.5)
         self.assertAlmostEqual(sorted(m.w)[0], 0.25, delta=0.03)
 
-    def test_drei_getrennte_gruppen_und_abbruch_danach(self):
+    def test_drei_getrennte_gruppen_ohne_vorzeitigen_abbruch(self):
         erg = self.waehlen([(0.15, 8, 0.1), (0.25, 20, 0.12), (0.6, 45, 0.1)])
         self.assertEqual(erg["k"], 3)
-        ks = [e["k"] for e in erg["auswahl"]]
-        self.assertLessEqual(len(ks), 5)  # die Suche endet, bevor K_MAX erreicht ist
+        self.assertEqual([e["k"] for e in erg["auswahl"]], list(range(2, g.K_MAX + 1)))  # kein Abbruch: auch ein groesseres K kann besser sein
         for e in erg["auswahl"]:
             self.assertIn("cv_gewinn", e)
+
+    def test_gewinn_gegen_die_letzte_gueltige_anpassung(self):
+        """cv_gewinn eines K gilt gegenueber der letzten gueltigen Anpassung (gegen_k), nicht gegenueber K - 1."""
+        erg = self.waehlen([(0.15, 8, 0.1), (0.25, 20, 0.12), (0.6, 45, 0.1)])
+        basis = 1
+        for e in erg["auswahl"]:
+            self.assertEqual(e["gegen_k"], basis)
+            if g._gueltig(e):
+                basis = e["k"]
+        self.assertEqual(erg["auswahl"][0]["gegen_k"], 1)
+
+    def test_teilweise_ueberlappende_gruppen_genuegen_mit_gewinn_und_stabilitaet(self):
+        """Ashman-Abstand zwischen 0,5 und 1: Die Zerlegung gilt (D_LOSE), die Seite vermerkt, dass die Gruppen ueberlappen."""
+        self.assertLess(g.D_LOSE, g.D_MIN)
+        erg = g.waehle_k(mischung([(0.4, 30, 0.25), (0.6, 38, 0.2)], 80000, 1), mischung([(0.4, 30, 0.25), (0.6, 38, 0.2)], 80000, 2), 3)
+        e = erg["auswahl"][0]
+        self.assertTrue(g.D_LOSE <= e["d_alle"] < g.D_MIN)
+        self.assertEqual(erg["k"], 2)
+        self.assertTrue(erg["obere_gruppen_ueberlappen"])
+
+    def test_zu_kleine_gruppe_in_der_gesamtanpassung_wird_aufgenommen(self):
+        """Eine Gruppe, die nur in der Gesamtanpassung (nicht in den Haelften) unter 3 % liegt, bleibt nicht als eigene Gruppe stehen."""
+        gesamt = modus_mischung((0.01, 70, 0.1), (0.25, 28, 0.3), (0.74, 46, 0.1))
+        halb = modus_mischung((0.05, 70, 0.1), (0.25, 28, 0.3), (0.70, 46, 0.1))
+        teile = [[0], [1], [2]]
+        self.assertEqual(g.kleine_gruppen((gesamt,), teile), [2])  # Rang 2 ist die schnellste Kurve, bei 1 % in der Gesamtanpassung
+        self.assertEqual(g.kleine_gruppen((halb,), teile), [])
+        self.assertEqual(g.kleine_gruppen((halb, gesamt), teile), [2])
 
     def test_wenige_fahrzeuge_zerlegen_nicht_stabil(self):
         """Mit wenig Daten schwanken die Haelften: keine belegte Zerlegung statt einer zufaelligen."""

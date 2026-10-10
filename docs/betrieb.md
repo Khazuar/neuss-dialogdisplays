@@ -36,7 +36,7 @@ python3 -I lokal_bauen.py --serve --oeffnen    # bauen, lokalen Server starten u
 ```
 
 Der Server lauscht nur auf `127.0.0.1`, also nur auf diesem Rechner. Die Detailseiten (`_vorschau/standorte/*.html`) lassen sich auch
-direkt aus dem Ordner öffnen; die Startseite lädt `summary.csv` und braucht den Server. Der erste Lauf dauert gut anderthalb Minuten
+direkt aus dem Ordner öffnen; die Startseite lädt `summary.csv` und braucht den Server. Der erste Lauf dauert knapp fünf Minuten
 (8 Prozesse: `--jobs 8`), danach rechnet der Zwischenspeicher (`.zwischenspeicher/`) nur Geändertes neu. Das Impressum wird aus
 denselben Umgebungsvariablen gebaut wie im Workflow (`IMPRESSUM_STRASSE`, `IMPRESSUM_ORT`, `IMPRESSUM_TELEFON`); ohne sie bleiben die
 Felder leer. `_vorschau/` und `.zwischenspeicher/` gehören nicht ins Repository (die Whitelist in `.gitignore` lässt sie weg).
