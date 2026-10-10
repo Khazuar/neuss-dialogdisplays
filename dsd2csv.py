@@ -44,6 +44,9 @@ Aufruf:
                          Den verkehrsunabhaengigen Rauschboden (sehr langsame Werte) rechnet rauschen.py heraus.
             --meta       Konfigurationswerte der Datei ausgeben
             --status     Status-Records (0x33/0x20) als eigene CSV mitschreiben
+            --keine-csv  keine CSV je Datei schreiben (YAML, Zellen und Zusammenfassungen entstehen trotzdem)
+            --cache ORDNER  Zwischenspeicher fuer Ergebnisse je Datei (siehe zwischenspeicher.py)
+            --jobs N     N Dateien gleichzeitig auswerten (Standard 1)
 
 Nur Standardbibliothek. Mit "python3 -I" starten, wenn Dateien aus unsicherer
 Quelle stammen.
@@ -56,12 +59,15 @@ import datetime as dt
 import functools
 import json
 import math
+import multiprocessing
 import os
 import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
+import gruppen  # noqa: E402
 import rauschen  # noqa: E402
+import zwischenspeicher  # noqa: E402
 
 MAGIC = b"004DSD"
 T_VEH = 0x0F
@@ -298,11 +304,14 @@ LUECKE_MAX = dt.timedelta(days=3)  # laengere Luecke in der Aufzeichnung beginnt
 NACHT_MAX = 0.15  # mehr Fahrzeuge zwischen 0 und 5 Uhr Ortszeit: Uhr vermutlich um Stunden verstellt
 UMSTELLUNG_MAX_MIN = 45  # Tagesgang nach der Korrektur um mehr verschoben: Korrektur passt nicht
 MIN_FAHRZEUGE_PRUEFUNG = 3000  # darunter keine Tagesgang-Pruefung
-TEILZEITRAEUME = {
-    "tags": ("06:00 bis 18:00 Uhr Ortszeit, alle Tage", lambda c: 6 <= c.hour < 18),
-    "nachts": ("18:00 bis 06:00 Uhr Ortszeit, alle Tage", lambda c: c.hour < 6 or c.hour >= 18),
-    "schulweg": ("07:00 bis 08:00 Uhr Ortszeit, Montag bis Freitag", lambda c: c.hour == 7 and c.weekday() < 5),
-}
+def _scheibe(von, bis):
+    stunden_ = frozenset(gruppen.stunden(von, bis))
+    return lambda c: c.hour in stunden_
+
+
+TEILZEITRAEUME = {name: (f"{von:02d}:00 bis {bis:02d}:00 Uhr Ortszeit, alle Tage", _scheibe(von, bis))
+                  for name, von, bis in gruppen.ZEITSCHEIBEN}
+TEILZEITRAEUME["schulweg"] = ("07:00 bis 08:00 Uhr Ortszeit, Montag bis Freitag", lambda c: c.hour == 7 and c.weekday() < 5)
 
 
 @functools.lru_cache(maxsize=None)
@@ -762,40 +771,30 @@ def rauschen_block(rb, abgezogen, roh=0):
     return b
 
 
-def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None):
-    buf = open(path, "rb").read()
-    meta, veh, status, warn = parse(buf)
-    base = os.path.splitext(os.path.basename(path))[0]
-    out = os.path.join(outdir, base + ".csv")
-    with open(out, "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["zeitstempel", "geschwindigkeit_kmh"])
-        for ts, v in veh:
-            w.writerow([ts.isoformat(sep=" "), v])
-    if write_status:
-        with open(os.path.join(outdir, base + "_status.csv"), "w", newline="") as f:
-            w = csv.writer(f)
-            w.writerow(["zeitstempel", "typ", "nutzlast_hex"])
-            for ts, t, pl, _ in status:
-                w.writerow([ts.isoformat(sep=" ") if ts else "", hex(t), pl])
-    if show_meta:
-        for k, v in meta.items():
-            print(f"  {k} = {v}", file=sys.stderr)
-    for wmsg in warn[:10]:
-        print(f"  WARNUNG {base}: {wmsg}", file=sys.stderr)
-    kor = (korrekturen or {}).get(f"{standort}/{os.path.basename(path)}")
+CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py")  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
+
+
+def _code_hash(dateien=CODE_DATEIEN):
+    hier = os.path.dirname(os.path.abspath(__file__))
+    return zwischenspeicher.code_hash(*[os.path.join(hier, f) for f in dateien])
+
+
+def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher=None):
+    """Alle Kennzahlen einer Datei. Gibt (res, daten) zurueck; daten sind die Zellen fuer die Filter der Detailseite."""
     lim, quelle = tempolimit(meta, limit, kor)
     uhr, bereinigt, teil, spannen = analysiere_uhr(veh, status, mit_spannen=True)
     rb = rauschen.pruefen(bereinigt, spannen, lim)
     anzahl_roh = len(veh)
-    if rb and rb["belegt"]:  # verkehrsunabhaengigen Rauschboden herausrechnen (docs/rauschen.md)
+    bereinigt_vorher = bereinigt
+    belegt = bool(rb and rb["belegt"])
+    if belegt:  # verkehrsunabhaengigen Rauschboden herausrechnen (docs/rauschen.md)
         modell = rb["_modell"]
         veh = rauschen.ohne_rauschen_je_v(veh, modell)
         bereinigt = rauschen.ohne_rauschen(bereinigt, modell)
         teil = {k: rauschen.ohne_rauschen(v, modell) for k, v in teil.items()}
     res = {
         "standort": standort,
-        "datei": os.path.basename(path),
+        "datei": name,
         "geraet": meta.get("configuration_number"),
         "geraetename": meta.get("name") or None,
         "tempolimit_kmh": lim,
@@ -817,19 +816,79 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
 
     res.update(zusatz(veh))
     res["uhr"] = uhr
-    res["rauschen"] = rauschen_block(rb, anzahl_roh - len(veh) if rb and rb["belegt"] else 0, anzahl_roh)
+    res["rauschen"] = rauschen_block(rb, anzahl_roh - len(veh) if belegt else 0, anzahl_roh)
+    zd = gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen)
+    res["gruppen"], daten = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
+                                                 rb["obergrenze_kmh"] if belegt else None)
     b = stats(bereinigt, lim, min_kmh) or {"anzahl_fahrzeuge": 0}
     res["bereinigt"] = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit nutzbarer Zeit (siehe uhr), Zeiten in Ortszeit",
                         **b, **zusatz(bereinigt)}
     res["teilzeitraeume"] = {}
-    for name, (definition, _) in TEILZEITRAEUME.items():
-        t = stats(teil[name], lim, min_kmh) or {"anzahl_fahrzeuge": 0}
+    for tname, (definition, _) in TEILZEITRAEUME.items():
+        t = stats(teil[tname], lim, min_kmh) or {"anzahl_fahrzeuge": 0}
         t.pop("messzeitraum", None)
-        res["teilzeitraeume"][name] = {"definition": definition, **t, **zusatz(teil[name])}
+        res["teilzeitraeume"][tname] = {"definition": definition, **t, **zusatz(teil[tname])}
     res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt if x[1] >= min_kmh], spannen, lim)
+    return res, daten
+
+
+def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None, speicher=None, csv_schreiben=True):
+    with open(path, "rb") as fh:
+        buf = fh.read()
+    name = os.path.basename(path)
+    base = os.path.splitext(name)[0]
+    kor = (korrekturen or {}).get(f"{standort}/{name}")
+    schluessel = zwischenspeicher.inhalts_hash(buf, _code_hash(), standort, name, limit, kor, min_kmh) if speicher else None
+    gespeichert = speicher.holen("datei", schluessel) if speicher else None
+    if gespeichert is None or csv_schreiben or write_status or show_meta:
+        meta, veh, status, warn = parse(buf)
+        if csv_schreiben:
+            with open(os.path.join(outdir, base + ".csv"), "w", newline="", encoding="utf-8") as f:
+                w = csv.writer(f)
+                w.writerow(["zeitstempel", "geschwindigkeit_kmh"])
+                for ts, v in veh:
+                    w.writerow([ts.isoformat(sep=" "), v])
+        if write_status:
+            with open(os.path.join(outdir, base + "_status.csv"), "w", newline="") as f:
+                w = csv.writer(f)
+                w.writerow(["zeitstempel", "typ", "nutzlast_hex"])
+                for ts, t, pl, _ in status:
+                    w.writerow([ts.isoformat(sep=" ") if ts else "", hex(t), pl])
+        if show_meta:
+            for k, v in meta.items():
+                print(f"  {k} = {v}", file=sys.stderr)
+        for wmsg in warn[:10]:
+            print(f"  WARNUNG {base}: {wmsg}", file=sys.stderr)
+    if gespeichert is not None:
+        res, daten = gespeichert["res"], gespeichert["daten"]
+        if speicher:  # die Ebenen unter dieser Datei bleiben im Zwischenspeicher, auch wenn nur diese Ebene trifft
+            speicher.benutzt.update(tuple(x) for x in gespeichert.get("abhaengig", []))
+    else:
+        vorher = set(speicher.benutzt) if speicher else set()
+        res, daten = rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher)
+        # wie nach dem Zwischenspeicher: nur JSON-Typen (Treffer und neu gerechnet liefern dasselbe)
+        gespeichert = json.loads(json.dumps({"res": res, "daten": daten,
+                                             "abhaengig": sorted(speicher.benutzt - vorher) if speicher else []}))
+        res, daten = gespeichert["res"], gespeichert["daten"]
+        if speicher:
+            speicher.speichern("datei", schluessel, gespeichert)
     schreibe_yaml(os.path.join(outdir, base + ".yaml"), ["# " + HINWEIS_AUSWERTUNG] + yaml_zeilen(res))
+    if daten:
+        with open(os.path.join(outdir, base + ".zellen.json"), "w", encoding="utf-8", newline="\n") as f:
+            json.dump(daten, f, ensure_ascii=False, separators=(",", ":"))
+            f.write("\n")
     return res
 
+
+def _aufgabe(a):
+    """Eine Datei auswerten (auch in einem eigenen Prozess). Gibt (Index, res oder Fehlertext, benutzte Zwischenspeicher-Eintraege)."""
+    i, f, outdir, standort, limit, meta, status, min_kmh, korrekturen, cache, csv_schreiben = a
+    speicher = zwischenspeicher.Zwischenspeicher(cache) if cache else None
+    try:
+        res = convert(f, outdir, standort, limit, meta, status, min_kmh, korrekturen, speicher, csv_schreiben)
+    except Exception as e:  # eine fehlerhafte Datei soll den Lauf nicht beenden
+        return i, f"{type(e).__name__}: {e}", set(speicher.benutzt) if speicher else set()
+    return i, res, set(speicher.benutzt) if speicher else set()
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -844,6 +903,9 @@ def main():
                     help="Korrekturen des Tempolimits aus den Mitteilungen (Standard: belege/korrekturen.json, falls vorhanden)")
     ap.add_argument("--meta", action="store_true")
     ap.add_argument("--status", action="store_true")
+    ap.add_argument("--keine-csv", action="store_true", help="keine CSV je Datei schreiben")
+    ap.add_argument("--cache", help="Ordner fuer den Zwischenspeicher (Ergebnisse je Datei, siehe zwischenspeicher.py)")
+    ap.add_argument("--jobs", type=int, default=1, help="so viele Dateien gleichzeitig auswerten (Standard 1)")
     a = ap.parse_args()
 
     if os.path.isdir(a.eingabe):
@@ -857,27 +919,37 @@ def main():
     if os.path.exists(a.korrekturen):
         with open(a.korrekturen, encoding="utf-8") as fh:
             korrekturen = json.load(fh).get("tempolimit", {})
-    rows = []
-    for f in files:
+    aufgaben = []
+    for i, f in enumerate(files):
         # ohne -o neben der DSD, mit -o dieselbe Ordnerstruktur unter dem Ausgabeordner
         dsd_ordner = os.path.dirname(os.path.abspath(f))
         rel = os.path.relpath(dsd_ordner, os.path.abspath(wurzel)).replace(os.sep, "/")
         standort = os.path.basename(dsd_ordner) if rel == "." else rel  # relativer Ordnerpfad
         outdir = os.path.join(a.out, rel) if a.out else dsd_ordner
         os.makedirs(outdir, exist_ok=True)
-        try:
-            s = convert(f, outdir, standort, a.limit, a.meta, a.status, a.min_kmh, korrekturen)
-        except Exception as e:
-            print(f"FEHLER {f}: {e}", file=sys.stderr)
+        aufgaben.append((i, f, outdir, standort, a.limit, a.meta, a.status, a.min_kmh, korrekturen, a.cache, not a.keine_csv))
+    if a.jobs > 1 and len(aufgaben) > 1:
+        with multiprocessing.Pool(a.jobs) as pool:
+            ergebnisse = list(pool.imap_unordered(_aufgabe, aufgaben))
+    else:
+        ergebnisse = [_aufgabe(x) for x in aufgaben]
+    ergebnisse.sort(key=lambda x: x[0])
+    rows, benutzt = [], set()
+    for i, s, b in ergebnisse:
+        benutzt |= b
+        if isinstance(s, str):
+            print(f"FEHLER {files[i]}: {s}", file=sys.stderr)
             continue
-        s["seite"] = f"standorte/{standort_slug(standort)}.html"  # Detailseite (seiten_bauen.py), nicht in der Einzel-YAML
+        s["seite"] = f"standorte/{standort_slug(aufgaben[i][3])}.html"  # Detailseite (seiten_bauen.py), nicht in der Einzel-YAML
         rows.append(s)
         g, e = s.get("geschwindigkeit_kmh", {}), s.get("einhaltung", {})
         print(f"{s['standort']} / {s['datei']}: limit={s['tempolimit_kmh']} n={s['anzahl_fahrzeuge']} "
               f"v85={g.get('v85')} v95={g.get('v95')} v99={g.get('v99')} "
               f"quote={e.get('einhaltungsquote_prozent')} qual={e.get('qualifizierte_einhaltungsquote_prozent')} "
               f"warnungen={s['warnungen']}", file=sys.stderr)
-
+    if a.cache and os.path.isdir(a.eingabe) and not any(isinstance(s, str) for _, s, _ in ergebnisse):
+        weg = zwischenspeicher.Zwischenspeicher(a.cache).aufraeumen(benutzt)
+        print(f"Zwischenspeicher: {len(benutzt)} Eintraege benutzt, {weg} veraltete entfernt", file=sys.stderr)
     if os.path.isdir(a.eingabe) and rows:
         summe = a.out or a.eingabe
         z = []

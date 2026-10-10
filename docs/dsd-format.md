@@ -57,7 +57,7 @@ Weitere nützliche Konfigurationswerte: `name` (Messstellenname, oft mit Tempoli
 
 ## Geräteuhr, Zeitumstellung und Tageszeit-Auswertung
 
-Für Auswertungen nach Tageszeit (Tags, Nachts, Schulweg) muss bekannt sein, welche Ortszeit ein
+Für Auswertungen nach Tageszeit (Nacht, Vormittag, Nachmittag, Abend, Schulweg) muss bekannt sein, welche Ortszeit ein
 Zeitstempel bedeutet. Die Rohdaten tragen keine Zeitzone. Das hier beschriebene Zeitmodell stammt aus
 einer Analyse der Dateien, nicht aus Herstellerangaben.
 
@@ -120,11 +120,13 @@ Segmenten, umgerechnet auf Ortszeit:
 
 | Zeitraum | Definition |
 |----------|------------|
-| `tags` | 06:00 bis 18:00 Uhr, alle Tage |
-| `nachts` | 18:00 bis 06:00 Uhr, alle Tage |
+| `nacht` | 22:00 bis 06:00 Uhr, alle Tage |
+| `vormittag` | 06:00 bis 12:00 Uhr, alle Tage |
+| `nachmittag` | 12:00 bis 19:00 Uhr, alle Tage |
+| `abend` | 19:00 bis 22:00 Uhr, alle Tage |
 | `schulweg` | 07:00 bis 08:00 Uhr, Montag bis Freitag |
 
-Schulferien und Feiertage sind nicht herausgerechnet. `bereinigt` umfasst alle Tageszeiten.
+Die Grenzen der Zeitscheiben folgen dem Tagesgang (Begründung in [gruppen.md](gruppen.md)). Schulferien und Feiertage sind nicht herausgerechnet. `bereinigt` umfasst alle Tageszeiten.
 Die Gesamtwerte (oberste Ebene der YAML) enthalten weiterhin alle Fahrzeuge der Datei, abzüglich des Rauschbodens
 (siehe unten; `fahrzeuge_in_datei` ist die Zahl davor).
 

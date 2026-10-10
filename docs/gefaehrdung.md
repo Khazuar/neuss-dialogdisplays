@@ -7,7 +7,7 @@
 
 Die Kennzahlen stehen in jeder `<name>.yaml` (Blöcke `gefaehrdung`, `laerm`, `nacht_ereignisse`) und auf den
 Detailseiten der Standorte. `gefaehrdung` und `laerm` gibt es für dieselben Zeiträume wie die übrigen Kennzahlen:
-alle Fahrzeuge der Datei, Fahrzeuge mit nutzbarer Zeit, Tags, Nachts, Schulweg. Ohne bekanntes Tempolimit entfallen
+alle Fahrzeuge der Datei, Fahrzeuge mit nutzbarer Zeit, Nacht, Vormittag, Nachmittag, Abend, Schulweg. Ohne bekanntes Tempolimit entfallen
 sie. Berechnet wird in `dsd2csv.py`, die Annahmen stehen dort als Konstanten (`GEFAEHRDUNG`, `NACHT`).
 
 ## Relativer Risikoindex (Potenzmodell nach Nilsson)

@@ -47,7 +47,7 @@ Datei enthält keine Fahrzeuge).
 
 Nicht verwechseln mit der **Nutzbarkeit** der Zeitstempel in `dsd2csv.py` (`uhr.nutzbarkeit`, siehe
 [dsd-format.md](dsd-format.md)): Sie prüft nur formal, ob Datum, Reset und Sprünge die Zeit unbrauchbar machen, und
-steuert, welche Fahrzeuge in Tags, Nachts und Schulweg eingehen. Sie belegt nicht, dass die Uhrzeit stimmt. Dafür
+steuert, welche Fahrzeuge in die Zeitscheiben (Nacht, Vormittag, Nachmittag, Abend, Schulweg) eingehen. Sie belegt nicht, dass die Uhrzeit stimmt. Dafür
 ist dieses Urteil da.
 
 ## Belege

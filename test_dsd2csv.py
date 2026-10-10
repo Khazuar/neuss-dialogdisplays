@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: MIT
 """Tests fuer die Zeitumrechnung und Uhr-Auswertung in dsd2csv.py.  Aufruf: python3 -m unittest -v"""
 import datetime as dt
+import os
+import tempfile
 import unittest
 
 import dsd2csv as d
+import zwischenspeicher
 
 
 def zeit(*a):
@@ -46,18 +49,17 @@ class Zeitumstellung(unittest.TestCase):
 
 class Teilzeitraeume(unittest.TestCase):
     def test_grenzen(self):
-        tags = d.TEILZEITRAEUME["tags"][1]
-        nachts = d.TEILZEITRAEUME["nachts"][1]
+        scheiben = {n: d.TEILZEITRAEUME[n][1] for n in ("nacht", "vormittag", "nachmittag", "abend")}
         schule = d.TEILZEITRAEUME["schulweg"][1]
         mo = zeit(2024, 11, 4)  # Montag
-        for stunde, t, n in ((5, False, True), (6, True, False), (17, True, False), (18, False, True)):
-            c = mo.replace(hour=stunde, minute=59 if stunde in (5, 17) else 0)
-            self.assertEqual((tags(c), nachts(c)), (t, n), c)
+        erwartet = {5: "nacht", 6: "vormittag", 11: "vormittag", 12: "nachmittag", 18: "nachmittag", 19: "abend", 21: "abend", 22: "nacht", 23: "nacht", 0: "nacht"}
+        for stunde, name in erwartet.items():
+            c = mo.replace(hour=stunde, minute=59)
+            self.assertEqual([n for n, f in scheiben.items() if f(c)], [name], c)  # jede Stunde liegt in genau einer Scheibe
         self.assertTrue(schule(mo.replace(hour=7, minute=0)))
         self.assertTrue(schule(mo.replace(hour=7, minute=59, second=59)))
         self.assertFalse(schule(mo.replace(hour=8)))
         self.assertFalse(schule(zeit(2024, 11, 9, 7, 30)))  # Samstag
-
 
 class Uhrsegmente(unittest.TestCase):
     def aufzeichnung(self, zeiten):
@@ -241,6 +243,41 @@ class TempolimitQuellen(unittest.TestCase):
     def test_parameter_hat_vorrang_vor_allem(self):
         kor = {"tempolimit_kmh": 30, "tempolimit_dsd_kmh": 10}
         self.assertEqual(d.tempolimit(self.META, 50, kor), (50, "parameter"))
+
+class Zwischenspeicher(unittest.TestCase):
+    """convert() mit Zwischenspeicher an einer echten DSD-Datei mittlerer Groesse."""
+
+    @classmethod
+    def setUpClass(cls):
+        hier = os.path.dirname(os.path.abspath(__file__))
+        dsds = sorted((os.path.getsize(os.path.join(o, f)), os.path.join(o, f)) for o, _, fs in os.walk(hier) for f in fs
+                      if f.lower().endswith(".dsd") and os.path.getsize(os.path.join(o, f)) > 250000)
+        cls.datei = dsds[0][1]
+
+    def test_treffer_liefert_dasselbe_und_haelt_die_ebenen(self):
+        with tempfile.TemporaryDirectory() as t:
+            cache, a, b, c = (os.path.join(t, x) for x in ("cache", "a", "b", "c"))
+            for o in (a, b, c):
+                os.makedirs(o)
+            sp1 = zwischenspeicher.Zwischenspeicher(cache)
+            r1 = d.convert(self.datei, a, "X", None, False, False, 0, {}, sp1, False)
+            self.assertFalse([f for f in os.listdir(a) if f.endswith(".csv")])  # --keine-csv
+            self.assertTrue([f for f in os.listdir(a) if f.endswith(".zellen.json")])
+            self.assertIn("datei", {e for e, _ in sp1.benutzt})
+            sp2 = zwischenspeicher.Zwischenspeicher(cache)
+            r2 = d.convert(self.datei, b, "X", None, False, False, 0, {}, sp2, False)
+            self.assertEqual(r1, r2)
+            self.assertEqual(sp1.benutzt, sp2.benutzt)  # auch die Ebene "gruppen" gilt als benutzt
+            for f in os.listdir(a):
+                with open(os.path.join(a, f), "rb") as x, open(os.path.join(b, f), "rb") as y:
+                    self.assertEqual(x.read(), y.read(), f)
+            d.convert(self.datei, c, "X", None, False, False, 0, {}, sp2, True)  # CSV verlangt: Treffer, aber CSV wird geschrieben
+            self.assertTrue([f for f in os.listdir(c) if f.endswith(".csv")])
+            # anderer Standort, anderes Limit: eigener Eintrag
+            sp3 = zwischenspeicher.Zwischenspeicher(cache)
+            r3 = d.convert(self.datei, c, "Y", 50, False, False, 0, {}, sp3, False)
+            self.assertEqual(r3["standort"], "Y")
+            self.assertEqual(r3["tempolimit_kmh"], 50)
 
 if __name__ == "__main__":
     unittest.main()
