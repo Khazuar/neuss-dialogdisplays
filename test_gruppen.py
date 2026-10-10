@@ -31,6 +31,10 @@ def mischung(komponenten, n, seed):
     return c
 
 
+def mischung_ab(komponenten, n, seed, ab):
+    """Wie mischung(), aber nur Geschwindigkeiten ab 'ab' (links davon ist nichts erfasst)."""
+    return collections.Counter({v: c for v, c in mischung(komponenten, n, seed).items() if v >= ab})
+
 class Hilfen(unittest.TestCase):
     def test_stunden(self):
         self.assertEqual(g.stunden(22, 6), [22, 23, 0, 1, 2, 3, 4, 5])
@@ -188,14 +192,34 @@ class Analyse(unittest.TestCase):
         self.assertLess(block["angepasst_ab_kmh"], 14)
         self.assertEqual(block["anzahl"], 2)
 
-    def test_gruppe_am_rand_ist_ein_artefakt(self):
-        """Eine Gruppe, deren haeufigstes Tempo an der unteren Grenze der Anpassung liegt, zaehlt nicht."""
-        c1 = mischung([(0.4, 3.2, 0.12), (0.6, 30, 0.15)], 60000, 1)
-        c2 = mischung([(0.4, 3.2, 0.12), (0.6, 30, 0.15)], 60000, 2)
-        erg = g.waehle_k(c1, c2, 3)
-        self.assertEqual(erg["k"], 1)
-        self.assertTrue(erg["auswahl"][0]["randartefakt"])
+    def test_abgeschnittene_gruppe_wird_aus_der_flanke_gefunden(self):
+        """Die Verteilung links vom Datenrand ist nicht erfasst (nicht null): eine halb abgeschnittene Gruppe bleibt eine Gruppe."""
+        wahrheit = [(0.30, 15, 0.25), (0.70, 31, 0.17)]
+        c = mischung_ab(wahrheit, 60000, 1, 15)
+        erg = g.waehle_k(c, mischung_ab(wahrheit, 60000, 2, 15), 15)
+        self.assertEqual(erg["k"], 2)
+        m = g.Mischung(**erg["mischung"])
+        langsam = m.sortiert()[0]
+        self.assertAlmostEqual(m.modus(langsam), 15, delta=1.0)
+        self.assertAlmostEqual(m.anteile()[langsam], 0.3 * 0.67 / (0.3 * 0.67 + 0.7), delta=0.03)  # Anteil der erfassten Fahrzeuge
+        self.assertGreater(m.sichtbar(langsam), 0.55)  # etwa zwei Drittel der Glocke liegen im erfassten Bereich
+        # die naive Anpassung (links null) liegt weiter daneben und erfindet eine schmale Gruppe
+        w, a = g.tabelle(c, 15)
+        naiv = g.anpassen(w, a, 2, 4)
+        j = naiv.sortiert()[0]
+        self.assertLess(abs(m.modus(langsam) - 15), abs(naiv.modus(j) - 15))
+        self.assertLess(naiv.s[j], 0.15)
 
+    def test_abgeschnittene_hauptgruppe_bleibt_eine_gruppe(self):
+        c1 = mischung_ab([(1.0, 31, 0.2)], 60000, 1, 25)
+        c2 = mischung_ab([(1.0, 31, 0.2)], 60000, 2, 25)
+        self.assertEqual(g.waehle_k(c1, c2, 25)["k"], 1)
+
+    def test_dichte_der_erfassten_werte_ist_normiert(self):
+        m = g.anpassen(*g.tabelle(mischung_ab([(0.3, 15, 0.25), (0.7, 31, 0.17)], 60000, 1, 15), 15), 2, 3, ab=15)
+        self.assertAlmostEqual(sum(m.dichte(v) for v in range(15, 400)), 1.0, delta=0.03)
+        self.assertAlmostEqual(sum(m.anteile()), 1.0, places=9)
+        self.assertAlmostEqual(g.Mischung([1.0], [3.0], [0.2]).z(), 1.0)  # ohne Abschneidung ist alles sichtbar
     def test_zu_wenige_fahrzeuge_und_kein_limit(self):
         fahrten, spannen = fahrten_und_spannen(tage=2)
         zd = g.zellen_bauen(fahrten, fahrten, spannen)

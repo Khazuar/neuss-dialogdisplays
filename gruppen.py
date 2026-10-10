@@ -21,9 +21,12 @@ import rauschen
 K_MAX = 8  # Obergrenze der Suche; sie endet meist frueher (siehe waehle_k)
 MIN_FAHRZEUGE = 5000  # kleinere Dateien werden nicht zerlegt
 MIN_ANTEIL = 0.03  # eine Gruppe unter 3 % in einer Haelfte der Messtage gilt als zu klein
-CV_GEWINN_MIN = 0.002  # mindestens so viel nats je Fahrzeug Gewinn auf den jeweils anderen Tagen, sonst keine weitere Gruppe
+CV_GEWINN_MIN = 0.005  # mindestens so viel nats je Fahrzeug Gewinn auf den jeweils anderen Tagen, sonst keine weitere Gruppe
 D_MIN = 1.0  # Ashman-Abstand zwischen Gruppen (getrennt ab 1)
-TOL_LAGE = 0.07  # Haelften stimmen ueberein: Modus (Logarithmus) ...
+CV_GEWINN_STARK = 0.02  # so viel Gewinn belegt eine Struktur auch dort, wo sich die Gruppen stark ueberlappen (breite Gruppe neben einem schmalen Gipfel)
+MODUS_ABSTAND_MIN = 0.15  # dann muessen die beiden langsamsten Gruppen aber um mindestens 15 % im haeufigsten Tempo auseinanderliegen (sonst Form, nicht Gruppe)
+SICHTBAR_MIN = 0.25  # von jeder Gruppe muss mindestens so viel ihrer Flaeche im erfassten Bereich liegen
+TOL_LAGE = 0.07  # Haelften stimmen ueberein: Modus (Logarithmus), mindestens, bei breiten Gruppen 0,25 x Streuung ...
 TOL_ANTEIL = 0.06  # ... und Anteil
 LANGSAM_FAKTOR = 0.6  # langsame Gruppe: Modus hoechstens 0,6 x Tempolimit
 LANGSAM_MAX_ANTEIL = 0.5
@@ -95,21 +98,38 @@ def zelle_kodiert(c):
 # ------------------------------------------------------------------ Mischung von Lognormal-Verteilungen
 
 class Mischung:
-    """Mischung von Lognormal-Verteilungen: Anteile w, Mittel mu und Streuung s des Logarithmus der Geschwindigkeit."""
+    """Mischung von Lognormal-Verteilungen: Anteile w, Mittel mu und Streuung s des Logarithmus der Geschwindigkeit.
 
-    def __init__(self, w, mu, s, ll=0.0):
-        self.w, self.mu, self.s, self.ll = list(w), list(mu), list(s), ll
+    xa: Logarithmus der Geschwindigkeit, ab der Fahrzeuge erfasst sind (links davon ist nichts bekannt, nicht null).
+    Die Dichte der erfassten Werte ist die Mischung geteilt durch den erfassten Anteil z() der Gesamtfläche.
+    """
+
+    def __init__(self, w, mu, s, ll=0.0, xa=None):
+        self.w, self.mu, self.s, self.ll, self.xa = list(w), list(mu), list(s), ll, xa
 
     @property
     def k(self):
         return len(self.w)
+
+    def sichtbar(self, j):
+        """Anteil der Flaeche von Gruppe j im erfassten Bereich (1 ohne Abschneidung)."""
+        return 1.0 if self.xa is None else _ueberleben((self.xa - self.mu[j]) / self.s[j])
+
+    def z(self):
+        return sum(self.w[j] * self.sichtbar(j) for j in range(self.k))
+
+    def anteile(self):
+        """Anteil jeder Gruppe an den erfassten Fahrzeugen."""
+        z = self.z()
+        return [self.w[j] * self.sichtbar(j) / z for j in range(self.k)]
 
     def pdf(self, j, v):
         z = (math.log(v) - self.mu[j]) / self.s[j]
         return math.exp(-0.5 * z * z) / (SQ2PI * self.s[j] * v)
 
     def dichte(self, v):
-        return sum(self.w[j] * self.pdf(j, v) for j in range(self.k))
+        """Dichte der erfassten Fahrzeuge bei Geschwindigkeit v (auf den erfassten Bereich normiert)."""
+        return sum(self.w[j] * self.pdf(j, v) for j in range(self.k)) / self.z()
 
     def modus(self, j):
         return math.exp(self.mu[j] - self.s[j] ** 2)
@@ -127,14 +147,35 @@ class Mischung:
         return sorted(range(self.k), key=self.modus)
 
     def als_dict(self):
-        return {"w": self.w, "mu": self.mu, "s": self.s}
+        return {"w": self.w, "mu": self.mu, "s": self.s, "xa": self.xa}
 
 
-def em(werte, anzahl, w, mu, s, iterationen=300, tol=1e-9):
-    """EM fuer eine Lognormal-Mischung auf Zaehlwerten (werte >= 1 km/h). Gibt Mischung mit Log-Likelihood (Geschwindigkeitsraum)."""
+def _ueberleben(a):
+    """Anteil der Standardnormalverteilung oberhalb von a."""
+    return 0.5 * math.erfc(a / math.sqrt(2))
+
+
+def _verhaeltnis(a):
+    """phi(a) / Phi(a) (Kehrwert des Mills-Verhaeltnisses fuer den linken Rand), auch weit im Rand stabil."""
+    if a < -30:
+        return -a + 1.0 / -a
+    phi = math.exp(-0.5 * a * a) / SQ2PI
+    return phi / (0.5 * math.erfc(-a / math.sqrt(2)))
+
+
+def em(werte, anzahl, w, mu, s, xa=None, iterationen=400, tol=1e-9):
+    """EM fuer eine Lognormal-Mischung auf Zaehlwerten (werte >= 1 km/h), links bei xa abgeschnitten.
+
+    Fehlende Fahrzeuge links von xa werden als unbeobachtet behandelt: Die Anpassung nutzt die Flanke, die im erfassten Bereich
+    liegt, und ergaenzt die abgeschnittene Flaeche im Erwartungsschritt (Momente der abgeschnittenen Normalverteilung).
+    Eine Gruppe muss zu mindestens SICHTBAR_MIN im erfassten Bereich liegen, sonst ist ihre Lage nicht bestimmbar.
+    Gibt Mischung mit Log-Likelihood der erfassten Werte (Geschwindigkeitsraum) zurueck.
+    """
     k = len(w)
     xs = [math.log(v) for v in werte]
     n = sum(anzahl)
+    smin = [max(0.03, 0.8 / max(werte[0], 1))] * k if xa is not None else [0.03] * k
+    schranke = 0.8416  # Phi^-1(1 - SICHTBAR_MIN)
     w, mu, s = list(w), list(mu), list(s)
     alt = None
     for _ in range(iterationen):
@@ -150,23 +191,45 @@ def em(werte, anzahl, w, mu, s, iterationen=300, tol=1e-9):
                 obs[j] += r
                 s1[j] += r * x
                 s2[j] += r * x * x
-        w = [max(o / n, 1e-6) for o in obs]
-        mu = [s1[j] / max(obs[j], 1e-9) for j in range(k)]
-        s = [max(math.sqrt(max(s2[j] / max(obs[j], 1e-9) - mu[j] ** 2, 0.0)), 0.03) for j in range(k)]
+        fehl = [0.0] * k
+        if xa is not None:
+            z = sum(w[j] * _ueberleben((xa - mu[j]) / s[j]) for j in range(k))
+            for j in range(k):
+                a = (xa - mu[j]) / s[j]
+                fehl[j] = n / z * w[j] * (1 - _ueberleben(a))  # erwartete Fahrzeuge dieser Gruppe links von xa
+                lam = _verhaeltnis(a)
+                m1 = mu[j] - s[j] * lam  # E[x | x < xa]
+                var = max(s[j] ** 2 * (1 - a * lam - lam * lam), 1e-12)
+                s1[j] += fehl[j] * m1
+                s2[j] += fehl[j] * (var + m1 * m1)
+        gesamt = [obs[j] + fehl[j] for j in range(k)]
+        summe = sum(gesamt)
+        w = [max(g / summe, 1e-6) for g in gesamt]
+        mu = [s1[j] / max(gesamt[j], 1e-9) for j in range(k)]
+        s = [max(math.sqrt(max(s2[j] / max(gesamt[j], 1e-9) - mu[j] ** 2, 0.0)), smin[j]) for j in range(k)]
+        if xa is not None:  # nicht weiter in den abgeschnittenen Bereich wandern
+            mu = [max(mu[j], xa - schranke * s[j]) for j in range(k)]
         if alt is not None and abs(ll - alt) < tol * abs(ll):
             break
         alt = ll
+    m = Mischung(w, mu, s, 0.0, xa)
+    z = m.z()
     ll = 0.0
-    for x, v, c in zip(xs, werte, anzahl):
+    for x, c in zip(xs, anzahl):
         den = sum(w[j] * math.exp(-0.5 * ((x - mu[j]) / s[j]) ** 2) / s[j] for j in range(k))
         if den > 0:
-            ll += c * (math.log(den / SQ2PI) - x)
-    return Mischung(w, mu, s, ll)
+            ll += c * (math.log(den / SQ2PI / z) - x)
+    m.ll = ll
+    return m
 
 
-def anpassen(werte, anzahl, k, versuche=3, seed=3):
-    """Beste Anpassung mit k Gruppen aus mehreren Startwerten (Quantile, dann zufaellig mit festem Startwert)."""
+def anpassen(werte, anzahl, k, versuche=3, seed=3, ab=None):
+    """Beste Anpassung mit k Gruppen aus mehreren Startwerten (Quantile, dann zufaellig mit festem Startwert).
+
+    ab: kleinste erfasste Geschwindigkeit; links davon gilt die Verteilung als nicht erfasst (nicht als null).
+    """
     xs = [math.log(v) for v in werte]
+    xa = None if ab is None else math.log(ab - 0.5)
     n = sum(anzahl)
     mittel = sum(x * c for x, c in zip(xs, anzahl)) / n
     sd = math.sqrt(sum(c * (x - mittel) ** 2 for x, c in zip(xs, anzahl)) / n)
@@ -181,9 +244,11 @@ def anpassen(werte, anzahl, k, versuche=3, seed=3):
                     kum += anzahl[i]
                     i += 1
                 mus.append(xs[i])
+        elif t == 1 and xa is not None:  # eine Gruppe darf zuerst am Rand beginnen
+            mus = sorted([xa] + [rnd.uniform(xs[0], xs[-1]) for _ in range(k - 1)])
         else:
             mus = sorted(rnd.uniform(xs[0], xs[-1]) for _ in range(k))
-        m = em(werte, anzahl, [1.0 / k] * k, mus, [max(sd / (k + 1), 0.1)] * k)
+        m = em(werte, anzahl, [1.0 / k] * k, mus, [max(sd / (k + 1), 0.1)] * k, xa)
         if beste is None or m.ll > beste.ll:
             beste = m
     return beste
@@ -199,7 +264,8 @@ def trennschaerfen(m):
 
     D_unten: langsamste Gruppe gegen die naechste, D_alle: kleinster Abstand aller Paare (Gruppen mit Anteil >= MIN_ANTEIL).
     """
-    idx = sorted((j for j in range(m.k) if m.w[j] >= MIN_ANTEIL), key=m.modus)
+    anteile = m.anteile()
+    idx = sorted((j for j in range(m.k) if anteile[j] >= MIN_ANTEIL), key=m.modus)
     if len(idx) < 2:
         return None, None
 
@@ -210,10 +276,19 @@ def trennschaerfen(m):
     return dd(idx[0], idx[1]), min(paare)
 
 
+def modus_abstand(m):
+    """Logarithmus des Verhaeltnisses der haeufigsten Tempi der beiden langsamsten Gruppen (Anteil >= MIN_ANTEIL)."""
+    anteile = m.anteile()
+    idx = sorted((j for j in range(m.k) if anteile[j] >= MIN_ANTEIL), key=m.modus)
+    return math.log(m.modus(idx[1]) / m.modus(idx[0])) if len(idx) >= 2 else None
+
+
 def vergleichbar(a, b):
     """Die Gruppen zweier Anpassungen (nach Modus sortiert) stimmen in Lage und Anteil ueberein."""
+    aa, ab = a.anteile(), b.anteile()  # Anteile an den erfassten Fahrzeugen
     for ja, jb in zip(a.sortiert(), b.sortiert()):
-        if abs(math.log(a.modus(ja)) - math.log(b.modus(jb))) > TOL_LAGE or abs(a.w[ja] - b.w[jb]) > TOL_ANTEIL:
+        tol = max(TOL_LAGE, 0.25 * 0.5 * (a.s[ja] + b.s[jb]))  # die Lage einer breiten Gruppe ist ungenauer
+        if abs(math.log(a.modus(ja)) - math.log(b.modus(jb))) > tol or abs(aa[ja] - ab[jb]) > TOL_ANTEIL:
             return False
     return True
 
@@ -226,39 +301,45 @@ def tabelle(zaehler, ab):
 def waehle_k(gerade, ungerade, ab):
     """Bestimmt die Zahl der Gruppen. gerade/ungerade: Counter der Haelften der Messtage, ab: kleinste angepasste Geschwindigkeit.
 
-    Gibt dict mit k, obere_gruppen_ueberlappen, auswahl (je K: stabil, klein, d_unten, d_alle, cv_gewinn) und mischung zurueck.
+    Links von ab ist die Verteilung nicht erfasst (nicht null): die Anpassung nutzt die Flanke im erfassten Bereich.
+    Gibt dict mit k, obere_gruppen_ueberlappen, auswahl (je K: stabil, klein, sichtbar_min, d_unten, d_alle, cv_gewinn) und mischung zurueck.
     """
     gesamt = collections.Counter(gerade)
     gesamt.update(ungerade)
     tw, ta = tabelle(gesamt, ab)
     aw, aa = tabelle(gerade, ab)
     bw, ba = tabelle(ungerade, ab)
-    vorher = (anpassen(aw, aa, 1, 2), anpassen(bw, ba, 1, 2))
+    vorher = (anpassen(aw, aa, 1, 2, ab=ab), anpassen(bw, ba, 1, 2, ab=ab))
     auswahl, mischungen, fehl = [], {}, 0
     for k in range(2, K_MAX + 1):
-        ma, mb, mt = anpassen(aw, aa, k), anpassen(bw, ba, k), anpassen(tw, ta, k, 4)
+        ma, mb, mt = anpassen(aw, aa, k, ab=ab), anpassen(bw, ba, k, ab=ab), anpassen(tw, ta, k, 4, ab=ab)
         gewinn = 0.5 * (ll_je_fahrzeug(ma, bw, ba) - ll_je_fahrzeug(vorher[0], bw, ba)
                         + ll_je_fahrzeug(mb, aw, aa) - ll_je_fahrzeug(vorher[1], aw, aa))
         du, da = trennschaerfen(mt)
-        rand = mt.modus(mt.sortiert()[0]) <= ab + 1.0  # Gruppe am unteren Rand der Daten: Artefakt der Abschneidung
-        e = {"k": k, "stabil": vergleichbar(ma, mb), "klein": min(min(ma.w), min(mb.w)) < MIN_ANTEIL, "randartefakt": rand,
+        abst = modus_abstand(mt)
+        sichtbar = min(mt.sichtbar(j) for j in range(k))  # kleinster Teil einer Gruppe im erfassten Bereich
+        e = {"k": k, "stabil": vergleichbar(ma, mb), "klein": min(min(ma.anteile()), min(mb.anteile())) < MIN_ANTEIL,
+             "sichtbar_min": round(sichtbar, 2),
              "d_unten": None if du is None else round(du, 2), "d_alle": None if da is None else round(da, 2),
-             "cv_gewinn": round(gewinn, 4)}
+             "modus_abstand": None if abst is None else round(abst, 2), "cv_gewinn": round(gewinn, 4)}
         auswahl.append(e)
         mischungen[k] = mt
         vorher = (ma, mb)
         if gewinn < CV_GEWINN_MIN:
             break
-        fehl = 0 if (e["stabil"] and not e["klein"] and not rand) else fehl + 1
+        fehl = 0 if (e["stabil"] and not e["klein"] and sichtbar >= SICHTBAR_MIN) else fehl + 1
         if fehl >= 2:
             break
-    ok = [e for e in auswahl if e["stabil"] and not e["klein"] and not e["randartefakt"] and e["cv_gewinn"] >= CV_GEWINN_MIN]
+    ok = [e for e in auswahl if e["stabil"] and not e["klein"] and e["sichtbar_min"] >= SICHTBAR_MIN and e["cv_gewinn"] >= CV_GEWINN_MIN]
     getrennt = [e["k"] for e in ok if e["d_alle"] is not None and e["d_alle"] >= D_MIN]
     unten = [e["k"] for e in ok if e["d_unten"] is not None and e["d_unten"] >= D_MIN]
+    stark = [e["k"] for e in ok if e["cv_gewinn"] >= CV_GEWINN_STARK and (e["modus_abstand"] or 0) >= MODUS_ABSTAND_MIN]
     if getrennt:
         k, ueberlappend = max(getrennt), False
     elif unten:
         k, ueberlappend = max(unten), True
+    elif stark:
+        k, ueberlappend = max(stark), True
     else:
         k, ueberlappend = 1, False
     return {"k": k, "obere_gruppen_ueberlappen": ueberlappend, "auswahl": auswahl,
@@ -367,7 +448,7 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
         histe.append(h)
         kz = kennzahlen(h, limit)
         gruppen.append({"nr": nr, "anteil_prozent": round(100 * sum(h.values()) / nutz, 2), "modus_kmh": round(m.modus(j), 1),
-                        "streuung_log": round(m.s[j], 3), "mittel_kmh": kz["mittel_kmh"], "v85_kmh": kz["v85_kmh"],
+                        "streuung_log": round(m.s[j], 3), "sichtbar_prozent": round(100 * m.sichtbar(j)), "mittel_kmh": kz["mittel_kmh"], "v85_kmh": kz["v85_kmh"],
                         "einhaltungsquote_prozent": kz.get("einhaltungsquote_prozent"),
                         "qualifizierte_einhaltungsquote_prozent": kz.get("qualifizierte_einhaltungsquote_prozent")})
     langsam = [g["nr"] for g in gruppen if g["modus_kmh"] <= LANGSAM_FAKTOR * limit]

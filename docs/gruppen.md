@@ -19,23 +19,35 @@ Geschwindigkeiten allein nicht entscheiden. Plausible Deutungen stehen als Hypot
    Fahrzeuge bis zur 95-%-Grenze des Rauschbodens plus 1 km/h nicht zerlegt. Wo kein Rauschboden belegt ist, bleibt ein Haufen
    am unteren Rand (Sensorgrenze) von der Anpassung ausgenommen (`abschneiden`). Beides erscheint in der Auswahl als
    „Unter X km/h (nicht zerlegt)“.
-2. **Mischung.** Eine Mischung von K Lognormal-Verteilungen wird mit dem EM-Verfahren angepasst (mehrere feste Startwerte,
-   die beste gilt; das Ergebnis ist reproduzierbar).
-3. **Zahl der Gruppen K, je Datei.** K wird für jede Datei einzeln bestimmt, von 2 bis höchstens 8 (die Suche endet bei den bisherigen Daten nach spätestens 6). Eine Gruppe mehr gilt nur,
-   wenn alles zutrifft:
-   - **Kein Überanpassen:** Die Anpassung auf den geraden Messtagen beschreibt die ungeraden Tage um mindestens 0,002 nats
-     je Fahrzeug besser als mit einer Gruppe weniger (und umgekehrt). Sonst endet die Suche.
+2. **Mischung mit abgeschnittener Verteilung.** Eine Mischung von K Lognormal-Verteilungen wird mit dem EM-Verfahren angepasst
+   (mehrere feste Startwerte, die beste gilt; das Ergebnis ist reproduzierbar). Der Bereich links vom Rand der erfassten Daten
+   gilt dabei als **nicht erfasst und nicht als null**: Die Dichte der Mischung wird auf den erfassten Bereich normiert, und die
+   fehlende Fläche links fließt weder in die Passgüte noch in die Zahl der Fahrzeuge ein. Eine am Rand halbierte, gedrittelte
+   oder sonst abgeschnittene Glocke wird deshalb aus der sichtbaren Flanke angepasst; die verdeckte Fläche ergänzt der
+   Erwartungsschritt mit den Momenten der abgeschnittenen Normalverteilung. Eine Gruppe muss mindestens zu 25 % im erfassten
+   Bereich liegen (`sichtbar_prozent`), sonst ist ihre Lage nicht bestimmbar. Ohne diese Behandlung entstehen schmale
+   künstliche Gruppen am Rand: Eine naive Anpassung findet bei einer zur Hälfte abgeschnittenen Gruppe (Wahrheit: Modus 15,
+   Streuung 0,25) eine Gruppe bei 17 km/h mit Streuung 0,11, die abgeschnittene Anpassung eine bei 15,2 km/h mit 0,23
+   (`test_gruppen.py`).
+3. **Zahl der Gruppen K, je Datei.** K wird für jede Datei einzeln bestimmt, von 2 bis höchstens 8 (bei den bisherigen Daten
+   endet die Suche nach höchstens 5). Eine Gruppe mehr gilt nur, wenn alles zutrifft:
+   - **Gewinn auf den anderen Tagen:** Die Anpassung auf den geraden Messtagen beschreibt die ungeraden Tage um mindestens
+     0,005 nats je Fahrzeug besser als mit einer Gruppe weniger (und umgekehrt). Sonst endet die Suche. Die Schwelle ist eine
+     Effektgröße, kein Signifikanztest: Bei Zehntausenden Fahrzeugen belohnt jede Abweichung von der Lognormal-Form
+     mit einem kleinen Gewinn.
    - **Stabil:** Die Gruppen aus den beiden Hälften der Messtage (gerade und ungerade Tage) liegen in Lage (Modus innerhalb von
-     7 % im Logarithmus) und Anteil (innerhalb 6 Prozentpunkten) beieinander.
+     7 % im Logarithmus, bei breiten Gruppen innerhalb 0,25 × Streuung) und Anteil an den erfassten Fahrzeugen (innerhalb von
+     6 Prozentpunkten) beieinander.
    - **Nicht winzig:** Keine Gruppe unter 3 % in einer Hälfte.
-   - **Kein Randartefakt:** Die langsamste Gruppe hat ihr häufigstes Tempo mehr als 1 km/h über der unteren Grenze der Anpassung.
-     Sonst beschreibt sie nur den abgeschnittenen Rand der Daten und keine echte Gruppe.
+   - **Sichtbar:** Jede Gruppe liegt zu mindestens 25 % im erfassten Bereich.
    - **Getrennt:** Der Ashman-Abstand D = √2 · |μᵢ − μⱼ| / √(σᵢ² + σⱼ²) zwischen allen Gruppen ist mindestens 1. Gibt es dafür
-     keine Lösung, genügt ein getrenntes Paar „langsamste Gruppe gegen die nächste“, und die Seite vermerkt, dass die oberen
-     Gruppen überlappen.
-   Die Suche endet, wenn der Gewinn unter die Schwelle fällt oder zwei Werte von K in Folge nicht stabil oder zu klein sind.
-   Gewählt wird das größte K, das alle Bedingungen erfüllt. Gibt es keins, bleibt es bei einer Gruppe (**keine Zerlegung**).
-   Bei weniger als 5000 Fahrzeugen wird nicht zerlegt.
+     keine Lösung, genügt ein getrenntes Paar „langsamste Gruppe gegen die nächste“, oder ein Gewinn von mindestens 0,02 nats,
+     wenn die beiden langsamsten Gruppen im häufigsten Tempo um mindestens 15 % auseinanderliegen (breite Gruppe neben einem
+     schmalen Gipfel). In beiden Fällen vermerkt die Seite, dass die Gruppen überlappen. Zwei Gruppen mit fast gleichem
+     häufigsten Tempo beschreiben die Form einer einzelnen Gruppe und gelten nicht als zwei.
+   Die Suche endet, wenn der Gewinn unter die Schwelle fällt oder zwei Werte von K in Folge nicht stabil, zu klein oder zu
+   wenig sichtbar sind. Gewählt wird das größte K, das alle Bedingungen erfüllt. Gibt es keins, bleibt es bei einer Gruppe
+   (**keine Zerlegung**). Bei weniger als 5000 Fahrzeugen wird nicht zerlegt.
 4. **Feste Gruppen für alle Stunden und Tage.** Die Zerlegung gilt für alle Tageszeiten und Tage gleich. Der Anteil einer
    Gruppe an Fahrzeugen mit einer bestimmten Geschwindigkeit hängt dann nur von dieser Geschwindigkeit ab. Ein Fahrzeug
    zählt anteilig zu den Gruppen. Das macht jede Auswahl (Tageszeit, Wochentag, Gruppe) zur einfachen Summe über Zellen.
@@ -46,7 +58,7 @@ Training auf geraden und Test auf ungeraden Tagen brachte das gegenüber der fes
 Gewinns kommen schon von der festen Zerlegung, die zusätzliche Freiheit je Stunde bringt im Median 0,009 nats je Fahrzeug,
 bei 9 von 63 Dateien ist sie auf ungesehenen Tagen schlechter (Überanpassung). Die Kennzahlen nach Abzug der langsamen
 Gruppen weichen zwischen fester Zerlegung und stündlicher Anpassung im Median um 0,01 bis 0,04 km/h im Mittel ab. Das
-Verfahren ist deutlich langsamer (rund 15 Sekunden je Datei statt 2 bis 5) und liefert keine besser belegte Identität der Gruppen.
+Verfahren ist deutlich langsamer (rund 15 Sekunden je Datei statt 2 bis 5) und liefert keine besser belegte Identität der Gruppen. (Der Vergleich entstand mit der früheren Anpassung ohne Behandlung des abgeschnittenen Rands; er betrifft die Frage stündlich oder fest, nicht die Zahl der Gruppen.)
 
 ## Zeitscheiben und Tage
 
@@ -93,8 +105,8 @@ nicht in die Rechnung eingingen. Warum die Gruppe langsam ist, ist offen.
 ## Was in der YAML steht
 
 Block `gruppen` je Messung: `geprueft`, `anzahl` (K), `obere_gruppen_ueberlappen`, `angepasst_ab_kmh`, `fahrzeuge`,
-`fahrzeuge_unter_grenze`, `grund` (bei K = 1), `auswahl` (je geprüftem K: `stabil`, `klein`, `d_unten`, `d_alle`, `cv_gewinn`),
-`gruppen` (Nummer, Anteil, Modus, Streuung im Logarithmus, Mittel, V85, Einhaltung, qualifizierte Einhaltung, `langsam`) und
+`fahrzeuge_unter_grenze`, `grund` (bei K = 1), `auswahl` (je geprüftem K: `stabil`, `klein`, `sichtbar_min`, `d_unten`, `d_alle`, `modus_abstand`, `cv_gewinn`),
+`gruppen` (Nummer, Anteil, Modus, Streuung im Logarithmus, `sichtbar_prozent`, Mittel, V85, Einhaltung, qualifizierte Einhaltung, `langsam`) und
 `hauptmenge_ohne_langsame`. Die Zellen liegen als `<Datei>.zellen.json` neben der YAML (Format siehe `gruppen.py`,
 `analysiere`).
 
@@ -102,8 +114,8 @@ Block `gruppen` je Messung: `geprueft`, `anzahl` (K), `obere_gruppen_ueberlappen
 
 - Eine Glocke ist keine Fahrzeugart. Zusammenhänge mit Tageszeit, Wochentag oder Wetter können Hinweise geben, beweisen aber
   keine Zuordnung. Wetterdaten sind nicht eingebunden.
-- Bei überlappenden Gruppen ist die Trennung unsicher, auch wenn die Zerlegung stabil ist. Die Schwellen (0,002 nats, 7 %,
-  6 Prozentpunkte, 3 %, D ≥ 1) sind Festlegungen, kein Befund. Bei 50 der 109 Dateien gibt es keine Zerlegung (10 sind zu klein, bei 40 ist keine belegt); bei den übrigen 59 sind es 2 Gruppen (48 Dateien), 3 Gruppen (10) oder 4 Gruppen (1).
+- Bei überlappenden Gruppen ist die Trennung unsicher, auch wenn die Zerlegung stabil ist. Die Schwellen (0,005 und 0,02 nats, 7 %,
+  6 Prozentpunkte, 3 %, D ≥ 1) sind Festlegungen, kein Befund. Bei 29 der 109 Dateien gibt es keine Zerlegung (10 sind zu klein, bei 19 ist keine belegt); bei den übrigen 80 sind es 2 Gruppen (76 Dateien) oder 3 Gruppen (4), bei 8 davon mit überlappenden Gruppen.
 - Die Lognormal-Form ist eine Annahme. Verhalten wie ein Spitzer genau am Tempolimit passt nicht gut dazu und wird als eigene
   schmale Gruppe beschrieben.
 - Die Anpassung ist deterministisch, aber nicht eindeutig: Andere Startwerte können bei knappen Fällen eine andere Zerlegung
