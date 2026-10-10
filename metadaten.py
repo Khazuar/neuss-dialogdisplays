@@ -90,8 +90,12 @@ def richtungen(text):
 
 
 def kennzahlen(vehs, tage):
-    """V85, Mittel und Fahrzeuge je Tag wie in dsd2csv.py: Werte unter MIN_KMH_STANDARD gelten nicht als Fahrzeuge."""
-    v = sorted(x[1] for x in vehs if x[1] >= d.MIN_KMH_STANDARD)
+    """V85, Mittel und Fahrzeuge je Tag aus allen Fahrzeugen, ohne Abzug des Rauschbodens.
+
+    Die Verwaltung zaehlt offenbar alle aufgezeichneten Fahrzeuge (docs/metadaten.md); so ist der Vergleich unabhaengig
+    davon, wie die Auswertung des Repositories den Rauschboden behandelt.
+    """
+    v = sorted(x[1] for x in vehs)
     if not v:
         return None
     n = len(v)
@@ -392,7 +396,7 @@ def eintrag(block, bew, datei=None):
         z["hinweis"] = hinweise[bew["methode"]]
     e["zuordnung"] = z
     if bew["k"]:
-        e["abgleich_dsd"] = {"hinweis": f"aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab {d.MIN_KMH_STANDARD} km/h), keine Angabe der Verwaltung",
+        e["abgleich_dsd"] = {"hinweis": f"aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung",
                              **bew["k"], "abweichung_dsd_minus_verwaltung": bew["a"]}
         if bew.get("aussen"):
             e["abgleich_dsd"]["ausserhalb_des_erfassungszeitraums"] = bew["aussen"]

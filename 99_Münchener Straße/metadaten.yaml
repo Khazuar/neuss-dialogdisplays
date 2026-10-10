@@ -37,15 +37,15 @@ messungen:
             sitzung: "2026-03-12"
             dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=240546&type=do"
         zuordnung:
-          methode: "name_werte"
-          hinweis: "Zuordnung über Straßenname, Sitzungsdatum und die Werte (V85, mittleres Tempo) der DSD-Datei; der Abgleich ist nicht unabhängig"
+          methode: "name_einzige_datei"
+          hinweis: "Zuordnung nur über den Straßennamen und das Sitzungsdatum: die Mitteilung nennt keinen verwendbaren Zeitraum und es gibt keine andere passende DSD-Datei; die Werte können abweichen (siehe abgleich_dsd)"
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
-          fahrzeuge: 65463
-          v85_kmh: 28
-          mittel_kmh: 18.5
-          fahrzeuge_je_tag: 579
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung"
+          fahrzeuge: 87339
+          v85_kmh: 27
+          mittel_kmh: 14.7
+          fahrzeuge_je_tag: 773
           abweichung_dsd_minus_verwaltung:
-            v85_kmh: -2
-            mittel_kmh: -0.5
-            fahrzeuge_je_tag_prozent: -53
+            v85_kmh: -3
+            mittel_kmh: -4.3
+            fahrzeuge_je_tag_prozent: -37

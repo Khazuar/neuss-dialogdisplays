@@ -204,15 +204,15 @@ class Tempolimit(unittest.TestCase):
 
 
 class Kennzahlen(unittest.TestCase):
-    def test_werte_unter_der_grenze_zaehlen_nicht_als_fahrzeuge(self):
+    def test_alle_fahrzeuge_zaehlen_wie_bei_der_verwaltung(self):
         t = dt.datetime(2025, 1, 1)
-        vehs = [(t, 2), (t, 4), (t, 5), (t, 20), (t, 30), (t, 40)]  # zwei Werte unter 5 km/h
+        vehs = [(t, 2), (t, 4), (t, 5), (t, 20), (t, 30), (t, 40)]
         k = m.kennzahlen(vehs, 2)
-        self.assertEqual(k["fahrzeuge"], 4)
-        self.assertEqual(k["fahrzeuge_je_tag"], 2)
-        self.assertEqual(k["mittel_kmh"], 23.8)
+        self.assertEqual(k["fahrzeuge"], 6)
+        self.assertEqual(k["fahrzeuge_je_tag"], 3)
+        self.assertEqual(k["mittel_kmh"], 16.8)
         self.assertEqual(k["v85_kmh"], 40)
-        self.assertIsNone(m.kennzahlen([(t, 3), (t, 4)], 1))
+        self.assertIsNone(m.kennzahlen([], 1))
 
 
 class AussenUndDoppelt(unittest.TestCase):

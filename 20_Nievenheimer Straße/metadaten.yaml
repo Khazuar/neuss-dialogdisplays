@@ -39,11 +39,11 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 28
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
-          fahrzeuge: 48286
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung"
+          fahrzeuge: 48291
           v85_kmh: 53
           mittel_kmh: 44.4
-          fahrzeuge_je_tag: 1724
+          fahrzeuge_je_tag: 1725
           abweichung_dsd_minus_verwaltung:
             v85_kmh: 0
             mittel_kmh: 0.4

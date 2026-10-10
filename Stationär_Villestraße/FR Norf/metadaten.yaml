@@ -53,15 +53,15 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 120
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
-          fahrzeuge: 378286
-          v85_kmh: 58
-          mittel_kmh: 49.8
-          fahrzeuge_je_tag: 3152
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung"
+          fahrzeuge: 399149
+          v85_kmh: 57
+          mittel_kmh: 47.4
+          fahrzeuge_je_tag: 3326
           abweichung_dsd_minus_verwaltung:
-            v85_kmh: 0
-            mittel_kmh: -8.2
-            fahrzeuge_je_tag_prozent: 55
+            v85_kmh: -1
+            mittel_kmh: -10.6
+            fahrzeuge_je_tag_prozent: 64
         tempolimit_widerspruch:
           dsd_kmh: 30
           mitteilung_kmh: 50
@@ -116,14 +116,14 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 303
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
-          fahrzeuge: 938447
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung"
+          fahrzeuge: 984030
           v85_kmh: 56
-          mittel_kmh: 48.3
-          fahrzeuge_je_tag: 3107
+          mittel_kmh: 46.2
+          fahrzeuge_je_tag: 3258
           abweichung_dsd_minus_verwaltung:
             v85_kmh: -1
-            mittel_kmh: -1.7
+            mittel_kmh: -3.8
   - datei: "Ville Norf_4.dsd"
     geraet:
       konfiguration: "2211F18850B 30FP067"
@@ -153,14 +153,14 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 69
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
-          fahrzeuge: 207596
-          v85_kmh: 56
-          mittel_kmh: 47.4
-          fahrzeuge_je_tag: 3053
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung"
+          fahrzeuge: 218044
+          v85_kmh: 55
+          mittel_kmh: 45.3
+          fahrzeuge_je_tag: 3207
           abweichung_dsd_minus_verwaltung:
-            v85_kmh: 0
-            mittel_kmh: -2.6
+            v85_kmh: -1
+            mittel_kmh: -4.7
       - bezeichnung: "Villestraße (FR Norf)"
         strasse: "Villestraße"
         fahrtrichtung: "Norf"
@@ -192,12 +192,12 @@ messungen:
           methode: "name_zeitraum"
           zeitraum_ueberlappung_tage: 69
         abgleich_dsd:
-          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, ab 5 km/h), keine Angabe der Verwaltung"
-          fahrzeuge: 207596
-          v85_kmh: 56
-          mittel_kmh: 47.4
-          fahrzeuge_je_tag: 3009
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung"
+          fahrzeuge: 218044
+          v85_kmh: 55
+          mittel_kmh: 45.3
+          fahrzeuge_je_tag: 3160
           abweichung_dsd_minus_verwaltung:
-            v85_kmh: -2
-            mittel_kmh: -10.6
-            fahrzeuge_je_tag_prozent: 48
+            v85_kmh: -3
+            mittel_kmh: -12.7
+            fahrzeuge_je_tag_prozent: 56
