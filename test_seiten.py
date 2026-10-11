@@ -157,6 +157,17 @@ class Seite(unittest.TestCase):
         self.assertIn("Fahrzeuge in der Datei</dt><dd>1.200", h)
         self.assertNotIn("Ausgewertet ab", h)  # keine Mindestgeschwindigkeit mehr
 
+    def test_rauschbild_nur_im_noscript_wenn_die_auswahl_den_rauschboden_zeigt(self):
+        zl = self.rauschzeile()
+        offen = s.rauschen_abschnitt(zl)
+        self.assertIn("<svg", offen)
+        self.assertNotIn("<noscript>", offen)
+        mit = s.rauschen_abschnitt(zl, mit_filter=True)
+        m = re.search(r"<noscript>(.*?)</noscript>", mit, re.S)
+        self.assertEqual(m.group(1).count("<svg"), 1)
+        self.assertNotIn("<svg", mit.replace(m.group(0), ""))
+        self.assertIn("Bei 16,7&nbsp;% der Messwerte", mit.replace(m.group(0), ""))  # der Text bleibt sichtbar
+
     def test_rauschboden_nicht_belegt_oder_nicht_nachweisbar_oder_nicht_geprueft(self):
         h = s.rauschen_abschnitt(self.rauschzeile(belegt=False, grund="Anteil in den Haelften nicht stabil"))
         self.assertIn("nicht belegt", h)
@@ -278,13 +289,6 @@ class Histogramme(unittest.TestCase):
         self.assertIn("1 Fahrzeug über", text)
         self.assertIn("schnellstes: 231", text)
 
-    def test_vergleich_hat_zwei_linien_und_legende(self):
-        tags, nachts = hist(5000), hist(800, 30)
-        svg, _ = s.hist_svg([("Tags", "hist-tags", tags), ("Nachts", "hist-nachts", nachts)], 30)
-        self.assertEqual(svg.count("<polyline"), 2)
-        self.assertIn(f"Tags ({s.ganz(sum(tags['anzahl']))})", svg)  # Rundung der Testdaten: nicht exakt 5000
-        self.assertIn(f"Nachts ({s.ganz(sum(nachts['anzahl']))})", svg)
-
     def test_abschnitt_auf_der_seite(self):
         row = zeile()
         row["histogramm"] = hist(5000)
@@ -293,31 +297,18 @@ class Histogramme(unittest.TestCase):
         row["teilzeitraeume"]["nacht"]["histogramm"] = hist(400, 30)
         a = s.histogramm_abschnitt(row)
         self.assertIn("Verteilung der Geschwindigkeiten", a)
-        self.assertIn("Tag und Nacht im Vergleich", a)
-        self.assertIn(f"Tag ({s.ganz(sum(hist(2000)['anzahl']) * 2 + sum(hist(500)['anzahl']))})", a)  # Tag = Vormittag + Nachmittag + Abend
-        self.assertEqual(a.count("<svg"), 2)
-        row["teilzeitraeume"]["nacht"]["histogramm"] = hist(60, 30)  # zu wenige fuer den Vergleich
-        self.assertEqual(s.histogramm_abschnitt(row).count("<svg"), 1)
+        self.assertNotIn("Tag und Nacht im Vergleich", a)  # Tag gegen Nacht zeigt die Auswahl
+        self.assertEqual(a.count("<svg"), 1)
 
     def test_mit_filter_steht_das_feste_histogramm_nur_im_noscript(self):
         row = zeile()
         row["histogramm"] = hist(5000)
-        for k, n in (("vormittag", 2000), ("nachmittag", 2000), ("abend", 500)):
-            row["teilzeitraeume"][k]["histogramm"] = hist(n)
-        row["teilzeitraeume"]["nacht"]["histogramm"] = hist(400, 30)
         a = s.histogramm_abschnitt(row, mit_filter=True)
         m = re.search(r"<noscript>(.*?)</noscript>", a, re.S)
         self.assertIn("Verteilung der Geschwindigkeiten", m.group(1))
         self.assertEqual(m.group(1).count("<svg"), 1)
-        draussen = a.replace(m.group(0), "")
-        self.assertNotIn("Verteilung der Geschwindigkeiten", draussen)
-        self.assertIn("Tag und Nacht im Vergleich", draussen)  # den Vergleich zeigt die Auswahl nicht
-        self.assertEqual(draussen.count("<svg"), 1)
+        self.assertEqual(a.replace(m.group(0), ""), "")  # ausserhalb des noscript-Blocks steht nichts
 
-    def test_hist_summe(self):
-        h = s.hist_summe([{"ab_kmh": 10, "anzahl": [1, 2]}, None, {"ab_kmh": 11, "anzahl": [5, 5]}])
-        self.assertEqual(h, {"ab_kmh": 10, "anzahl": [1, 7, 5]})
-        self.assertIsNone(s.hist_summe([None]))
     def test_zu_wenige_fahrzeuge_oder_kein_histogramm(self):
         row = zeile()
         self.assertEqual(s.histogramm_abschnitt(row), "")

@@ -141,8 +141,8 @@ Histogramm (Anzahl Fahrzeuge je km/h) für einen Tagschlüssel (0 bis 6 Montag b
 kleine Skript `site/filter.js` liest nur diese Tabelle der eigenen Seite und rechnet daraus Kennzahlen (Fahrzeuge, je Stunde,
 Mittel, V85/V95/V99, Einhaltung, qualifizierte Einhaltung) und das Histogramm. Es lädt nichts nach und speichert nichts. Ohne
 JavaScript bleibt der Abschnitt verborgen, und die Seite zeigt die Tabelle der Kennzahlen je Zeitraum und das Histogramm aller
-Fahrzeuge (beides entfällt mit JavaScript, weil die Auswahl es mit „alle Daten“ und der jeweiligen Tageszeit ersetzt). Der Vergleich Tag und Nacht bleibt
-in beiden Fällen.
+Fahrzeuge, bei vorhandenem Rauschboden auch dessen Bild (alles entfällt mit JavaScript, weil die Auswahl es ersetzt: „alle Daten“, die
+Tageszeit, etwa Nacht gegen Ganztägig, und die Gruppe „Rauschboden“). Einen eigenen Vergleich Tag gegen Nacht gibt es nicht mehr.
 
 Gruppen in der Auswahl: „Alle Daten“, „Gruppe 1“ bis „Gruppe n“ (nach Anteil geordnet: Gruppe 1 ist die größte, vermutlich die Hauptgruppe; bei gleichem Anteil die langsamere), „Rest (nicht
 erklärt)“ und, wo ein Rauschboden abgezogen wurde, „Rauschboden (herausgerechnet)“. Ohne Zerlegung (K = 1) gibt es das Feld

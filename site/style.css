@@ -109,5 +109,3 @@ svg.hist .hist-modell { fill: none; stroke: var(--fg); stroke-width: 1.8; stroke
 svg.hist .hist-modell-links { fill: none; stroke: var(--fg); stroke-width: 1.5; stroke-dasharray: 5 4; stroke-linejoin: round; opacity: 0.75; }
 svg.hist .rausch-alle { fill: var(--h-gitter); }
 svg.hist .rausch-rot { fill: var(--h-ueber); }
-svg.hist .hist-tags { stroke: var(--h-ok); }
-svg.hist .hist-nachts { stroke: var(--h-nachts); stroke-dasharray: 6 3; }

@@ -323,7 +323,6 @@ def umrechnung(limit):
 # ------------------------------------------------------------------ Histogramme
 
 HIST_MIN_FAHRZEUGE = 50  # darunter kein Histogramm
-HIST_MIN_VERGLEICH = 100  # Tag/Nacht-Vergleich: so viele Fahrzeuge je Reihe mindestens
 HIST_BREITE_MAX = 5  # breiteste Klasse in km/h
 HIST_B, HIST_H, HIST_L, HIST_R, HIST_T, HIST_U = 600, 290, 44, 12, 38, 38  # Zeichenflaeche des SVG (viewBox)
 
@@ -491,8 +490,10 @@ def rausch_svg(sp, breite=420, hoehe=190):
     return "".join(s)
 
 
-def rauschen_abschnitt(row):
-    """Rauschboden: Anteil der Messwerte, die nicht vom Verkehr abhaengen (rauschen.py), mit Bild und Hinweis."""
+def rauschen_abschnitt(row, mit_filter=False):
+    """Rauschboden: Anteil der Messwerte, die nicht vom Verkehr abhaengen (rauschen.py), mit Bild und Hinweis.
+
+    mit_filter: Die Auswahl der Seite bietet den Rauschboden an und zeigt ihn im Histogramm; das Bild steht dann nur im noscript-Block."""
     r = row.get("rauschen")
     if not r:
         return ""
@@ -511,8 +512,10 @@ def rauschen_abschnitt(row):
                  f'({e(r.get("grund"))}). Es wurde nichts herausgerechnet; die Kennzahlen enthalten alle aufgezeichneten Fahrzeuge.</p>')
     sp = r.get("spektrum")
     if sp and sp.get("alle"):
-        z.append('<figure class="histfig">' + rausch_svg(sp) + '<figcaption class="muted">Fahrten je Stunde nach Geschwindigkeit: grau alle, '
-                 'rot davon verkehrsunabhängig (geschätzt aus dem Verlauf über den Tag, nur Zeiten mit nutzbarer Uhr).</figcaption></figure>')
+        bild = ('<figure class="histfig">' + rausch_svg(sp) + '<figcaption class="muted">Fahrten je Stunde nach Geschwindigkeit: grau alle, '
+                'rot davon verkehrsunabhängig (geschätzt aus dem Verlauf über den Tag, nur Zeiten mit nutzbarer Uhr).</figcaption></figure>')
+        # Wo die Auswahl den Rauschboden anbietet (Gruppe "Rauschboden"), zeigt sie ihn im Histogramm; das Bild bleibt ohne JavaScript.
+        z.append("<noscript>" + bild + "</noscript>" if mit_filter else bild)
     z.append(f'<p class="muted">Verfahren und Grenzen: <a href="{REPO}/blob/main/docs/rauschen.md">Rauschboden</a>.</p>')
     return "".join(z)
 
@@ -631,25 +634,11 @@ def filter_abschnitt(row, daten, sid):
             f'<script type="application/json" class="filter-daten">{json_in_html(daten)}</script></section>')
 
 
-def hist_summe(hists):
-    """Summe von Histogrammen {"ab_kmh", "anzahl"}; None, wenn keines vorhanden ist."""
-    hists = [h for h in hists if h]
-    if not hists:
-        return None
-    lo = min(h["ab_kmh"] for h in hists)
-    hi = max(h["ab_kmh"] + len(h["anzahl"]) - 1 for h in hists)
-    summe = [0] * (hi - lo + 1)
-    for h in hists:
-        for i, c in enumerate(h["anzahl"]):
-            summe[h["ab_kmh"] - lo + i] += c
-    return {"ab_kmh": lo, "anzahl": summe}
-
-
 def histogramm_abschnitt(row, mit_filter=False):
-    """Geschwindigkeitsverteilung: Histogramm aller Fahrzeuge der Datei, dazu Tags und Nachts im Vergleich.
+    """Geschwindigkeitsverteilung: Histogramm aller Fahrzeuge der Datei.
 
-    mit_filter: Die Seite hat den Abschnitt mit der Auswahl (JavaScript), der dasselbe Histogramm zeigt. Das feste Histogramm steht
-    dann nur noch im noscript-Block fuer Besucher ohne JavaScript; der Vergleich Tag/Nacht bleibt, weil die Auswahl ihn nicht zeigt."""
+    mit_filter: Die Seite hat den Abschnitt mit der Auswahl (JavaScript), der dasselbe Histogramm zeigt (auch Tag gegen Nacht
+    laesst sich dort waehlen). Das feste Histogramm steht dann nur noch im noscript-Block fuer Besucher ohne JavaScript."""
     h = row.get("histogramm")
     if not h or sum(h["anzahl"]) < HIST_MIN_FAHRZEUGE:
         return ""
@@ -660,14 +649,6 @@ def histogramm_abschnitt(row, mit_filter=False):
          f'{" (blau bis zum Tempolimit, orange darüber)" if limit else ""}. {text}</figcaption></figure>']
     if mit_filter:
         z = ["<noscript>" + z[0] + "</noscript>"]
-    tz = row.get("teilzeitraeume") or {}
-    tag = hist_summe([tz.get(k, {}).get("histogramm") for k in ("vormittag", "nachmittag", "abend")])
-    nacht = tz.get("nacht", {}).get("histogramm")
-    if tag and nacht and min(sum(tag["anzahl"]), sum(nacht["anzahl"])) >= HIST_MIN_VERGLEICH:
-        svg, text = hist_svg([("Tag", "hist-tags", tag), ("Nacht", "hist-nachts", nacht)], limit)
-        z.append('<details><summary>Tag und Nacht im Vergleich</summary><figure class="histfig">' + svg +
-                 '<figcaption class="muted">Anteil der Fahrzeuge je km/h, getrennt für Tag (6–22 Uhr) und Nacht (22–6 Uhr, Ortszeit). '
-                 f'Nur Fahrzeuge mit nutzbarer Zeit. {text}</figcaption></figure></details>')
     return "".join(z)
 
 
@@ -764,7 +745,7 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None):
         z.append("<noscript>" + tabelle + "</noscript>" if auswahl else tabelle)
         z.append(auswahl)
         z.append(histogramm_abschnitt(row, mit_filter=bool(auswahl)))
-        z.append(rauschen_abschnitt(row))
+        z.append(rauschen_abschnitt(row, mit_filter=bool(auswahl and daten and daten.get("r"))))
         z.append(gruppen_abschnitt(row))
         z.append(schaetzung_tabellen(row))
         z.append(nacht_abschnitt(row))
