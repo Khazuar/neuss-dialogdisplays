@@ -114,8 +114,8 @@ Jede Detailseite trägt die Zellen der Messung als Datentabelle (JSON in einem `
 Histogramm (Anzahl Fahrzeuge je km/h) für einen Tagschlüssel (0 bis 6 Montag bis Sonntag, 7 Feiertag) und eine Stunde. Das
 kleine Skript `site/filter.js` liest nur diese Tabelle der eigenen Seite und rechnet daraus Kennzahlen (Fahrzeuge, je Stunde,
 Mittel, V85/V95/V99, Einhaltung, qualifizierte Einhaltung) und das Histogramm. Es lädt nichts nach und speichert nichts. Ohne
-JavaScript bleibt der Abschnitt verborgen, und die Seite zeigt die übrigen Tabellen und das Histogramm aller Fahrzeuge (das mit
-JavaScript entfällt, weil es der Auswahl „ganztägig, alle Tage, alle Daten“ entspricht). Der Vergleich Tag und Nacht bleibt
+JavaScript bleibt der Abschnitt verborgen, und die Seite zeigt die Tabelle der Kennzahlen je Zeitraum und das Histogramm aller
+Fahrzeuge (beides entfällt mit JavaScript, weil die Auswahl es mit „alle Daten“ und der jeweiligen Tageszeit ersetzt). Der Vergleich Tag und Nacht bleibt
 in beiden Fällen.
 
 Gruppen in der Auswahl: „Alle Daten“, „Gruppe 1“ bis „Gruppe n“ (nach Anteil geordnet: Gruppe 1 ist die größte, vermutlich die Hauptgruppe; bei gleichem Anteil die langsamere), „Rest (nicht

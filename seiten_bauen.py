@@ -755,8 +755,10 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None):
         z.append('<div class="notice" role="note"><strong>Widersprüche und Auffälligkeiten zwischen DSD und Mitteilung:</strong><ul>' +
                  "".join(f"<li>{w}</li>" for w in wid) + "</ul></div>")
     if row.get("anzahl_fahrzeuge"):
-        z.append(kennzahlen_tabelle(row))
         auswahl = filter_abschnitt(row, daten, standort_slug(row["datei"]))
+        tabelle = kennzahlen_tabelle(row)
+        # Mit der Auswahl (JavaScript) zeigt sie die Kennzahlen je Tageszeit und Tage; die feste Tabelle steht dann nur noch ohne JavaScript.
+        z.append("<noscript>" + tabelle + "</noscript>" if auswahl else tabelle)
         z.append(auswahl)
         z.append(histogramm_abschnitt(row, mit_filter=bool(auswahl)))
         z.append(rauschen_abschnitt(row))

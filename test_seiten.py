@@ -369,6 +369,17 @@ class FilterSeite(unittest.TestCase):
         self.assertIn('data-feld="zeit"', h1)
         self.assertIn('data-feld="tage"', h1)
 
+    def test_feste_kennzahlentabelle_steht_mit_auswahl_nur_im_noscript(self):
+        block, daten = self.daten()
+        h = self.html(daten, block)
+        self.assertEqual(h.count("Kennzahlen dieser Messung nach Zeitraum"), 1)
+        m = re.search(r"<noscript>((?:(?!</noscript>).)*Kennzahlen dieser Messung nach Zeitraum.*?)</noscript>", h, re.S)
+        self.assertIsNotNone(m)  # die Tabelle steht im noscript-Block
+        self.assertIn("<th>Zeitraum</th>", m.group(1))
+        ohne = self.html(None)  # ohne Zellen keine Auswahl: die Tabelle steht offen
+        self.assertEqual(ohne.count("Kennzahlen dieser Messung nach Zeitraum"), 1)
+        self.assertNotIn("<noscript>", ohne)
+
     def test_seite_zeigt_das_histogramm_nur_einmal_mit_javascript(self):
         block, daten = self.daten()
         row = zeile()
