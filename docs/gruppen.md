@@ -85,9 +85,14 @@ Geschwindigkeiten allein nicht entscheiden. Plausible Deutungen stehen als Hypot
      der Gruppen nicht ändert, braucht nur den Gewinn und die Stabilität.
    Gewählt wird das größte K, das alle Bedingungen erfüllt. Gibt es keins, bleibt es bei einer Gruppe
    (**keine Zerlegung**). Bei weniger als 5000 Fahrzeugen wird nicht zerlegt.
-4. **Feste Kurven für alle Stunden und Tage.** Form und Lage der Gruppen gelten für alle Tageszeiten und Tage gleich; nur
-   ihre Anteile werden je Auswahl neu geschätzt. Eine Auswahl (Tageszeit, Wochentag, Gruppe) ist damit eine einfache Summe über
-   Zellen plus eine kleine Anpassung der Anteile.
+4. **Kurven je Auswahl nachgepasst, gebunden an die globale Anpassung.** Zahl und Einteilung der Gruppen gelten für alle
+   Tageszeiten und Tage gleich. Für eine Auswahl (Tageszeit, Tage) passt `filter.js` im Browser Anteil, Lage und Breite jeder
+   Kurve an die Fahrzeuge der Auswahl an (dasselbe EM-Verfahren wie in Schritt 2, mit Abschneidung links vom Rand, Start bei der
+   globalen Anpassung) und bindet sie an die globale Kurve zurück: Mitte und Streuung sind der gewichtete Mittelwert aus den Daten
+   der Auswahl und der globalen Kurve, die globale Kurve zählt wie κ = 500 Fahrzeuge. Je weniger Fahrzeuge die Auswahl hat, desto
+   näher bleiben die Kurven an der globalen Anpassung; bei weniger als 300 Fahrzeugen bleiben sie fest (nur die Anteile werden
+   geschätzt). Die Streuung bleibt in den Grenzen aus Schritt 2 (0,03 bis 0,25). Die Kennzahlen einer Gruppe ändern sich damit mit
+   Tageszeit und Tagen, etwa wenn nachts schneller gefahren wird.
 
 **Warum nicht stündlich anpassen und die Gruppen verfolgen?** Das wurde ausprobiert: je Stunde und Tagtyp eine eigene Anpassung,
 die Gruppen über den Tag verfolgt (Kontinuität, Impuls, zyklischer Schluss). Gemessen an 63 zerlegbaren Dateien mit
@@ -96,6 +101,18 @@ Gewinns kommen schon von der festen Zerlegung, die zusätzliche Freiheit je Stun
 bei 9 von 63 Dateien ist sie auf ungesehenen Tagen schlechter (Überanpassung). Die Kennzahlen nach Abzug der langsamen
 Gruppen weichen zwischen fester Zerlegung und stündlicher Anpassung im Median um 0,01 bis 0,04 km/h im Mittel ab. Das
 Verfahren ist deutlich langsamer (rund 15 Sekunden je Datei statt 2 bis 5) und liefert keine besser belegte Identität der Gruppen. (Der Vergleich entstand mit der früheren Anpassung ohne Behandlung des abgeschnittenen Rands; er betrifft die Frage stündlich oder fest, nicht die Zahl der Gruppen.)
+
+**Warum die Kurven je Auswahl nachgepasst werden.** Feste Kurven bilden Unterschiede im Tempo einer Gruppe nicht ab, etwa wenn
+nachts schneller gefahren wird: Ihre Kennzahlen blieben bei jeder Auswahl gleich, nur Anteil und Zahl der Fahrzeuge änderten sich.
+Geprüft wurde, wie gut eine Anpassung die Fahrzeuge der jeweils anderen Hälfte der Tage (gerade gegen ungerade) derselben Auswahl
+beschreibt, in nats je Fahrzeug, gegenüber festen Kurven mit neu geschätzten Anteilen. Bei 17 Dateien mit zusammen 135 Auswahlen
+(Tageszeit × Tage mit mindestens 3000 Fahrzeugen je Hälfte) war die Nachpassung mit κ = 500 im Mittel bei allen Dateien besser
+(+0,0004 bis +0,028; bei 6 Dateien mehr als 0,005: Hochstadenstraße 0,028, Kaarster Straße 0,017, Bonner Straße 0,014,
+Obererftstraße 0,012, Bataverstraße 0,007, Nievenheimer Straße 0,006) und in 122 der 135 Auswahlen. Ein einfacher Versuch mit nur
+einer Verschiebung je Gruppe war schwächer und bei der Hoistener Schulstraße im Mittel schlechter als feste Kurven (−0,002); freie
+Kurven ohne Rückbindung folgen kleinen Auswahlen zu stark. Beispiel Kaarster Straße, Gruppe 1: ganztägig Ø 39,5 km/h und
+Einhaltung 94,5 %, nachts Ø 42,6 km/h, V85 50 und Einhaltung 85,5 % (feste Kurven: überall Ø 39,5). Die Rückbindung κ ist eine
+Festlegung; 100 bis 500 liegen in den Versuchen gleichauf, 2500 und 10 000 binden zu stark.
 
 ## Zeitscheiben und Tage
 
@@ -133,9 +150,9 @@ erklärt)“ und, wo ein Rauschboden abgezogen wurde, „Rauschboden (herausgere
 
 **Gruppen sind ihre Kurven, Fahrzeuge werden nicht zugeordnet.** Eine Gruppe ist die angepasste Kurve, bei mehreren Kurven in
 einer Gruppe deren gewichtete Summe (jede Kurve auf Fläche 1 normiert, mal ihr Gewicht in der Gruppe). Für eine Auswahl
-(Tageszeit, Tage) schätzt `filter.js` nur die Anteile der Gruppen neu (EM-Verfahren bei festen Kurven; Form und Lage der Gruppen bleiben die
-der globalen Anpassung). Die Fahrzeuge einer Gruppe sind dann die Zahl der angepassten Fahrzeuge mal Anteil der Gruppe mal Form
-ihrer Kurve. Die Kennzahlen einer Gruppe (Mittel, V85, V95, V99, Einhaltung) sind die der Kurve. Weil das Modell die Daten nie
+(Tageszeit, Tage) passt `filter.js` die Kurven nach (Schritt 4: Anteil, Lage und Breite, gebunden an die globale Anpassung). Die
+Fahrzeuge einer Gruppe sind dann die Zahl der angepassten Fahrzeuge mal Anteil der Gruppe mal Form
+ihrer Kurve. Die Kennzahlen einer Gruppe (Mittel, V85, V95, V99, Einhaltung) sind die der für die Auswahl nachgepassten Kurve. Weil das Modell die Daten nie
 ganz trifft, bleibt ein **Rest**: Daten minus die Kurven aller Gruppen, an keiner Geschwindigkeit negativ, dazu alle Fahrzeuge
 unterhalb der Anpassungsgrenze. Die Anteile der Gruppen und des Rests müssen sich nicht zu 100 % addieren: Wo die Kurven über
 den Daten liegen, zählt der Überschuss nicht als negativer Rest. Der Rest hat keine Kennwerte (Mittel, V85, Einhaltung): Er ist meist

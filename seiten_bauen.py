@@ -623,7 +623,9 @@ def filter_abschnitt(row, daten, sid):
             f'<section class="filter" data-filter hidden><h4>Auswertung nach Zeit, Tagen und Gruppe</h4>'
             '<p class="muted">Wählen Sie Tageszeit, Tage' + (' und Gruppe' if gruppen_opt else '') + '; Kennzahlen und Verteilung gelten dann für diese Auswahl. '
             'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt. '
-            + ('Bei einer Gruppe bleiben alle Fahrzeuge der Auswahl grau sichtbar, farbig ist, was die Kurve der Gruppe davon erklärt.' if gruppen_opt else '') +
+            + ('Bei einer Gruppe bleiben alle Fahrzeuge der Auswahl grau sichtbar, farbig ist, was die Kurve der Gruppe davon erklärt. '
+               'Die Kurven werden für die Auswahl nachgepasst (Anteil, Lage und Breite, gebunden an die Anpassung über alle Daten); bei sehr '
+               'wenigen Fahrzeugen bleiben sie fest.' if gruppen_opt else '') +
             '</p>' + warnung + '<div class="controls">' + felder + '</div>'
             '<div class="filter-ergebnis" aria-live="polite"></div>'
             f'<script type="application/json" class="filter-daten">{json_in_html(daten)}</script></section>')

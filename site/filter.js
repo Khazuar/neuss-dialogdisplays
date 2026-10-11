@@ -4,8 +4,9 @@
 // Histogramm. Keine Verbindungen zu anderen Servern, nichts wird gespeichert. Datenformat: gruppen.py (analysiere),
 // Beschreibung in docs/gruppen.md.
 // Eine Auswahl ist die Summe der Zellen (Tagschluessel, Stunde). Die Gruppen sind die global angepassten Kurven (Lognormal);
-// fuer eine Auswahl werden nur ihre Anteile neu geschaetzt (Form und Lage bleiben). Fahrzeuge werden den Gruppen nicht
-// zugeordnet: Eine Gruppe ist ihre Kurve, der Rest ist, was die Kurven von den Daten nicht erklaeren (Daten minus Kurven, nie
+// fuer eine Auswahl werden die Kurven nachgepasst (Anteile, Lage und Breite je Kurve) und dabei an die globale Anpassung
+// zurueckgebunden: Je weniger Fahrzeuge die Auswahl hat, desto naeher bleiben die Kurven an der globalen Anpassung (Rueckbindung
+// wie KAPPA Fahrzeuge); bei sehr wenigen Fahrzeugen bleiben sie fest. Fahrzeuge werden den Gruppen nicht zugeordnet: Eine Gruppe ist ihre Kurve, der Rest ist, was die Kurven von den Daten nicht erklaeren (Daten minus Kurven, nie
 // negativ). Anteile von Gruppen und Rest muessen sich deshalb nicht zu 100 % addieren.
 (function (wurzel) {
   "use strict";
@@ -58,6 +59,89 @@
     return gesamt;
   }
 
+  // Normalverteilung: Fehlerfunktion (Fehler unter 1,2e-7), ueberleben(a) = P(Z > a), verhaeltnis(a) = phi(a) / Phi(a)
+  function erfc(x) {
+    var z = Math.abs(x), u = 1 / (1 + 0.5 * z);
+    var r = u * Math.exp(-z * z - 1.26551223 + u * (1.00002368 + u * (0.37409196 + u * (0.09678418 + u * (-0.18628806 + u * (0.27886807 +
+            u * (-1.13520398 + u * (1.48851587 + u * (-0.82215223 + u * 0.17087277)))))))));
+    return x >= 0 ? r : 2 - r;
+  }
+  function ueberleben(a) { return 0.5 * erfc(a / Math.SQRT2); }
+  function verhaeltnis(a) {
+    if (a < -30) { return -a + 1 / -a; }
+    return Math.exp(-0.5 * a * a) / Math.sqrt(2 * Math.PI) / (0.5 * erfc(-a / Math.SQRT2));
+  }
+  function summeListe(a) {
+    var s = 0;
+    for (var i = 0; i < a.length; i++) { s += a[i]; }
+    return s;
+  }
+
+  // Kurven je Auswahl nachpassen (EM fuer eine Lognormal-Mischung, links bei w0 abgeschnitten, Startwerte und Rueckbindung an die
+  // globale Anpassung). Gibt die Gruppen mit nachgepassten Kurven zurueck (Format wie daten.gruppen), null bei zu wenigen Fahrzeugen.
+  // Rueckbindung: Mitte und Streuung jeder Kurve sind der Mittelwert aus den Daten der Auswahl und der globalen Kurve, die globale
+  // Kurve zaehlt wie KAPPA Fahrzeuge. Gemessen an der Likelihood auf den jeweils anderen Tagen derselben Auswahl: docs/gruppen.md.
+  var NACHPASSEN = { KAPPA: 500, MIN_FAHRZEUGE: 300, ITERATIONEN: 60, S_MIN: 0.03, S_MAX: 0.25, S_KLASSE: 0.8 };
+
+  function verfeinere(daten, hist, optionen) {
+    var opt = optionen || {}, kappa = opt.kappa === undefined ? NACHPASSEN.KAPPA : opt.kappa;
+    var gr = daten.gruppen || [], w0 = daten.w0 || 1, xa = Math.log(w0 - 0.5), schranke = 0.8416;
+    var kurven = [], werte = [], anz = [], n = 0, v, i, j, it;
+    gr.forEach(function (g, gi) { g.kurven.forEach(function (k) { kurven.push({ gruppe: gi, mu: k.mu, s: k.s, pi: g.pi * k.c }); }); });
+    for (v in hist) { if (Number(v) >= w0) { werte.push(Math.log(Number(v))); anz.push(hist[v]); n += hist[v]; } }
+    var K = kurven.length;
+    if (!K || n < NACHPASSEN.MIN_FAHRZEUGE) { return null; }
+    var mu0 = kurven.map(function (c) { return c.mu; }), s0 = kurven.map(function (c) { return c.s; });
+    var mu = mu0.slice(), s = s0.slice();
+    var w = kurven.map(function (c) { return c.pi / Math.max(ueberleben((xa - c.mu) / c.s), 1e-9); }), sw = summeListe(w);
+    w = w.map(function (x) { return x / sw; });
+    var alt = null;
+    for (it = 0; it < NACHPASSEN.ITERATIONEN; it++) {
+      var obs = new Array(K).fill(0), s1 = new Array(K).fill(0), s2 = new Array(K).fill(0), ll = 0, p = new Array(K);
+      for (i = 0; i < werte.length; i++) {
+        var x = werte[i], den = 0;
+        for (j = 0; j < K; j++) {
+          var q = (x - mu[j]) / s[j];
+          p[j] = w[j] * Math.exp(-0.5 * q * q) / s[j];
+          den += p[j];
+        }
+        if (den <= 0) { continue; }
+        ll += anz[i] * Math.log(den);
+        for (j = 0; j < K; j++) {
+          var r = anz[i] * p[j] / den;
+          obs[j] += r; s1[j] += r * x; s2[j] += r * x * x;
+        }
+      }
+      var z = 0, fehl = new Array(K).fill(0);
+      for (j = 0; j < K; j++) { z += w[j] * ueberleben((xa - mu[j]) / s[j]); }
+      for (j = 0; j < K; j++) {  // erwartete Fahrzeuge links von w0 (nicht erfasst) mit den Momenten der abgeschnittenen Normalverteilung
+        var a = (xa - mu[j]) / s[j], lam = verhaeltnis(a), m1 = mu[j] - s[j] * lam;
+        var vr = Math.max(s[j] * s[j] * (1 - a * lam - lam * lam), 1e-12);
+        fehl[j] = n / z * w[j] * (1 - ueberleben(a));
+        s1[j] += fehl[j] * m1;
+        s2[j] += fehl[j] * (vr + m1 * m1);
+      }
+      var gesamt = obs.map(function (o, jj) { return o + fehl[jj]; }), sg = summeListe(gesamt);
+      w = gesamt.map(function (g_) { return Math.max(g_ / sg, 1e-6); });
+      for (j = 0; j < K; j++) {
+        var nj = Math.max(gesamt[j], 1e-9), mj = (s1[j] + kappa * mu0[j]) / (nj + kappa);
+        var ss = s2[j] - 2 * mj * s1[j] + nj * mj * mj;
+        var vj = (ss + kappa * (s0[j] * s0[j] + (mj - mu0[j]) * (mj - mu0[j]))) / (nj + kappa);
+        s[j] = Math.min(Math.max(Math.sqrt(Math.max(vj, 0)), NACHPASSEN.S_MIN, NACHPASSEN.S_KLASSE / Math.exp(Math.min(Math.max(mj, 0), 6))), NACHPASSEN.S_MAX);
+        mu[j] = Math.max(mj, xa - schranke * s[j]);
+      }
+      if (alt !== null && Math.abs(ll - alt) < 1e-9 * Math.abs(ll)) { break; }
+      alt = ll;
+    }
+    var anteile = w.map(function (x_, jj) { return x_ * ueberleben((xa - mu[jj]) / s[jj]); }), sa = summeListe(anteile);
+    return gr.map(function (g, gi) {
+      var teil = [], piG = 0;
+      for (j = 0; j < K; j++) { if (kurven[j].gruppe === gi) { teil.push(j); piG += anteile[j] / sa; } }
+      return { nr: g.nr, anteil: g.anteil, modus: g.modus, pi: piG, verfeinert: true,
+               kurven: teil.map(function (jj) { return { mu: mu[jj], s: s[jj], c: piG > 0 ? (anteile[jj] / sa) / piG : 1 / teil.length }; }) };
+    });
+  }
+
   // Fortsetzung der Summenkurve einer Gruppe links vom Rand der Anpassung (v = 1 .. w0 - 1), gleiche Normierung wie kurvenform:
   // Anteil je km/h, bezogen auf den erfassten Bereich. Dort ist die Kurve nicht an Daten angepasst, sie zeigt nur, was sie erwarten laesst.
   function kurvenLinks(g, w0) {
@@ -73,8 +157,10 @@
 
   // Zerlegt das Histogramm einer Auswahl: Anteile der Gruppen werden bei festen Kurven neu geschaetzt (EM), jede Gruppe ist
   // dann ihre Kurve mal die Zahl der angepassten Fahrzeuge; der Rest ist Daten minus Kurven (nicht negativ), dazu alles unter w0.
-  function zerlege(daten, hist) {
-    var gr = daten.gruppen || [], w0 = daten.w0 || 1, k = gr.length, nfit = 0, v, j, it;
+  function zerlege(daten, hist, fest, optionen) {
+    var w0 = daten.w0 || 1;
+    var gr = fest ? (daten.gruppen || []) : (verfeinere(daten, hist, optionen) || daten.gruppen || []);
+    var k = gr.length, nfit = 0, v, j, it;
     for (v in hist) { if (Number(v) >= w0) { nfit += hist[v]; } }
     var p = gr.map(function (g) { return kurvenform(g, w0); });
     var pi = gr.map(function (g) { return g.pi; });
@@ -108,7 +194,7 @@
       var r = hist[v] - modell;
       if (r > 1e-9) { rest[vn] = r; }
     }
-    return { gruppen: kurven, rest: rest, pi: pi, nfit: nfit, links: fortsetzung, w0: w0 };
+    return { gruppen: kurven, rest: rest, pi: pi, nfit: nfit, links: fortsetzung, w0: w0, nachgepasst: k > 0 && !!gr[0].verfeinert, kurven: gr };
   }
 
   function sortiert(hist) {
@@ -263,7 +349,7 @@
         var nr = parseInt(gruppe.slice(1), 10);
         vorder = linie = z.gruppen[nr - 1];
         linieLinks = z.w0 > 1 ? z.links[nr - 1] : null;
-        titel = "Kennzahlen der angepassten Kurve von Gruppe " + nr;
+        titel = "Kennzahlen der angepassten Kurve von Gruppe " + nr + (z.nachgepasst ? " (für diese Auswahl nachgepasst)" : "");
       }
       hist = basis.hist;
       anteil = true;
@@ -320,7 +406,7 @@
     zeichnen();
   }
 
-  var api = { waehle: waehle, zerlege: zerlege, kurvenform: kurvenform, kennzahlen: kennzahlen, klassenbreite: klassenbreite,
+  var api = { waehle: waehle, zerlege: zerlege, verfeinere: verfeinere, ueberleben: ueberleben, kurvenform: kurvenform, kennzahlen: kennzahlen, klassenbreite: klassenbreite,
               histogrammSvg: histogrammSvg, ergebnisHtml: ergebnisHtml };
   if (typeof module !== "undefined" && module.exports) { module.exports = api; }
   if (wurzel.document) {

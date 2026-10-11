@@ -2,6 +2,7 @@
 """Tests fuer site/filter.js (Auswahl nach Zeit, Tagen und Gruppe) mit Node.  Ohne Node werden sie uebersprungen."""
 import json
 import math
+import re
 import os
 import shutil
 import subprocess
@@ -32,7 +33,7 @@ const auswahlen = JSON.parse(process.argv[4]);
 const aus = auswahlen.map(a => {
   const r = f.waehle(daten, a.zeit, a.tage, a.gruppe === "rausch");
   const kz = f.kennzahlen(r.hist, daten.limit);
-  const modell = /^g\d+$/.test(a.gruppe) || a.gruppe === "rest" ? f.zerlege(daten, r.hist) : null;
+  const modell = /^g\d+$/.test(a.gruppe) || a.gruppe === "rest" ? f.zerlege(daten, r.hist, a.fest === true, a.optionen) : null;
   return { hist: r.hist, stunden: r.stunden, kz: kz, html: f.ergebnisHtml(daten, a), modell: modell };
 });
 console.log(JSON.stringify(aus));
@@ -106,8 +107,9 @@ class FilterJs(unittest.TestCase):
             self.assertEqual(r["stunden"], std)
 
     def test_gruppen_sind_kurven_und_rest_ist_der_unterschied(self):
-        (g1, g2, rest) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1"}, {"zeit": "alle", "tage": "alle", "gruppe": "g2"},
-                                            {"zeit": "alle", "tage": "alle", "gruppe": "rest"}])
+        (g1, g2, rest) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1", "fest": True},
+                                            {"zeit": "alle", "tage": "alle", "gruppe": "g2", "fest": True},
+                                            {"zeit": "alle", "tage": "alle", "gruppe": "rest", "fest": True}])
         m = g1["modell"]
         n = sum(g1["hist"].values())
         self.assertAlmostEqual(sum(m["pi"]), 1.0, places=6)
@@ -135,7 +137,7 @@ class FilterJs(unittest.TestCase):
 
     def test_kurve_wird_links_vom_rand_gestrichelt_fortgesetzt(self):
         """Links vom Rand der Anpassung (v < w0) setzt sich die Kurve gestrichelt fort, mit derselben Normierung wie im erfassten Bereich."""
-        (g2,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2"}])
+        (g2,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2", "fest": True}])
         w0 = self.daten["w0"]
         self.assertGreater(w0, 1)
         self.assertIn("hist-modell-links", g2["html"])
@@ -180,7 +182,7 @@ class FilterJs(unittest.TestCase):
         daten = copy.deepcopy(self.daten)
         k = daten["gruppen"][1]["kurven"][0]
         daten["gruppen"][1]["kurven"] = [{"mu": k["mu"] - 0.08, "s": k["s"] * 0.8, "c": 0.4}, {"mu": k["mu"] + 0.05, "s": k["s"], "c": 0.6}]
-        (g2,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2"}])
+        (g2,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2", "fest": True}])
         m = g2["modell"]
         w0, n = daten["w0"], sum(g2["hist"].values())
         p = kurvenform(daten["gruppen"][1], w0)
@@ -188,6 +190,76 @@ class FilterJs(unittest.TestCase):
         for v in (20, 30, 40, 50):
             self.assertAlmostEqual(m["gruppen"][1][str(v)], m["nfit"] * m["pi"][1] * p[v], delta=1e-6 * n)
         self.assertAlmostEqual(sum(m["pi"]), 1.0, places=6)
+
+    def nacht_schneller(self):
+        """Testdaten, in denen das Tempo nachts (22 bis 6 Uhr) um 12 % hoeher ist."""
+        import copy
+        daten = copy.deepcopy(self.daten)
+        for key, zelle in daten["z"].items():
+            if int(key.split("|")[1]) in (22, 23, 0, 1, 2, 3, 4, 5):
+                neu = {}
+                for i in range(0, len(zelle), 2):
+                    v = int(round(zelle[i] * 1.12))
+                    neu[v] = neu.get(v, 0) + zelle[i + 1]
+                daten["z"][key] = [x for v in sorted(neu) for x in (v, neu[v])]
+        return daten
+
+    def test_nachpassen_folgt_den_daten_der_auswahl(self):
+        """Ist das Tempo einer Auswahl (hier nachts) um 12 % hoeher, wandern die Kurven mit; feste Kurven bleiben, wo sie sind."""
+        daten = self.nacht_schneller()
+        ausw = {"zeit": "nacht", "tage": "alle", "gruppe": "g1"}
+        (fest,) = laufe(daten, [dict(ausw, fest=True)])
+        (frei,) = laufe(daten, [ausw])
+        mittel = lambda gruppe: sum(int(v) * c for v, c in gruppe.items()) / sum(gruppe.values())  # noqa: E731
+        i_haupt = max(range(len(daten["gruppen"])), key=lambda i: daten["gruppen"][i]["pi"])
+        m_fest = mittel(fest["modell"]["gruppen"][i_haupt])
+        m_frei = mittel(frei["modell"]["gruppen"][i_haupt])
+        self.assertTrue(frei["modell"]["nachgepasst"])
+        self.assertFalse(fest["modell"]["nachgepasst"])
+        self.assertGreater(m_frei, m_fest * 1.05)  # die nachgepasste Kurve laeuft mit dem hoeheren Tempo der Nacht
+        self.assertLess(m_frei, m_fest * 1.2)
+        self.assertIn("für diese Auswahl nachgepasst", frei["html"])
+        # ganztaegig haben die Daten nur zu einem Teil das hoehere Tempo: die Kennwerte liegen dazwischen
+        (alle,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1"}])
+        self.assertLess(mittel(alle["modell"]["gruppen"][i_haupt]), m_frei)
+
+    def test_rueckbindung_haelt_die_kurven_bei_der_globalen_anpassung(self):
+        """kappa sehr gross: Lage und Breite der Kurven bleiben die globalen; kappa 0: sie folgen den Daten (hier 12 % = 0,113 in ln v)."""
+        daten = self.nacht_schneller()
+        ausw = {"zeit": "nacht", "tage": "alle", "gruppe": "g1"}
+        (stark,) = laufe(daten, [dict(ausw, optionen={"kappa": 1e12})])
+        (frei,) = laufe(daten, [dict(ausw, optionen={"kappa": 0})])
+        (mittel,) = laufe(daten, [dict(ausw, optionen={"kappa": 500})])
+        i_haupt = max(range(len(daten["gruppen"])), key=lambda i: daten["gruppen"][i]["pi"])
+        glob = daten["gruppen"][i_haupt]["kurven"]
+        for r, name in ((stark, "stark"), (frei, "frei"), (mittel, "mittel")):
+            self.assertEqual([len(x["kurven"]) for x in r["modell"]["kurven"]], [len(x["kurven"]) for x in daten["gruppen"]], name)
+        for k, g_ in zip(stark["modell"]["kurven"][i_haupt]["kurven"], glob):
+            self.assertAlmostEqual(k["mu"], g_["mu"], places=6)
+            self.assertAlmostEqual(k["s"], g_["s"], places=6)
+
+        def verschiebung(r):
+            return sum(k["c"] * (k["mu"] - g_["mu"]) for k, g_ in zip(r["modell"]["kurven"][i_haupt]["kurven"], glob))
+        self.assertAlmostEqual(verschiebung(frei), math.log(1.12), delta=0.04)
+        self.assertGreater(verschiebung(frei), verschiebung(mittel))  # weniger Rueckbindung folgt den Daten weiter
+        self.assertGreater(verschiebung(mittel), verschiebung(stark))
+        for r in (mittel, frei):  # die Breite bleibt in den Grenzen
+            for k in r["modell"]["kurven"][i_haupt]["kurven"]:
+                self.assertTrue(gruppen.S_MIN - 1e-9 <= k["s"] <= gruppen.S_MAX + 1e-9)
+
+    def test_zu_kleine_auswahl_bleibt_bei_den_festen_kurven(self):
+        (klein,) = laufe(self.daten, [{"zeit": "schulweg", "tage": "sonn", "gruppe": "g1"}])
+        # Die Auswahl hat weniger Fahrzeuge als MIN_FAHRZEUGE (300): fest, nicht nachgepasst
+        n = sum(klein["hist"].values())
+        if n < 300:
+            self.assertFalse(klein["modell"]["nachgepasst"])
+
+    def test_fehlerfunktion_stimmt(self):
+        import subprocess
+        skript = ("const f=require(process.argv[1]); const o={}; for (const a of [-3,-1,0,0.5,2,4]) { o[a]=f.ueberleben(a); } console.log(JSON.stringify(o));")
+        out = subprocess.run([NODE, "-e", skript, os.path.join(HIER, "site", "filter.js")], stdout=subprocess.PIPE, check=True, timeout=60)
+        for a, w in json.loads(out.stdout.decode("utf-8")).items():
+            self.assertAlmostEqual(w, 0.5 * math.erfc(float(a) / math.sqrt(2)), delta=1e-7)
 
     def test_anteile_der_gruppen_je_auswahl(self):
         """Nachts andere Anteile als tagsueber: Die Anteile werden je Auswahl neu geschaetzt, die Kurven bleiben."""
