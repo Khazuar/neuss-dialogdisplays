@@ -152,6 +152,28 @@ class Problemgruppen(unittest.TestCase):
         self.assertLess(m.s[oben], 0.13)
         self.assertGreaterEqual(min(m.s), g.S_MIN)
 
+    def test_obergrenze_der_streuung_haelt_den_ausflaeufer_kurz(self):
+        """Eine breite Schulter wird aus mehreren Kurven gebaut (jede mit s <= S_MAX); ihr rechter Ausflaeufer geht nicht
+        weit ueber die schnelle Gruppe hinaus, die langsame Gruppe hat nicht das groesste V99."""
+        c = mischung_ab([(0.3, 22, 0.45), (0.7, 50, 0.10)], 100000, 9, 10)
+        w, a = g.tabelle(c, 10)
+        m = g.anpassen(w, a, 4, 3, ab=10)
+        self.assertLessEqual(max(m.s), g.S_MAX + 1e-9)
+        # V99 der langsamsten (Summen-)Kurve gegen V99 der schnellsten Kurve
+        vs = list(range(10, g.VMAX_GRUPPEN + 1))
+
+        def v99(j):
+            p = {x: m.pdf(j, x) for x in vs}
+            s, kum = sum(p.values()), 0.0
+            for x in vs:
+                kum += p[x] / s
+                if kum >= 0.99:
+                    return x
+
+        schnell = max(range(m.k), key=lambda j: m.modus(j) * m.w[j])
+        langsam = min(range(m.k), key=lambda j: m.modus(j))
+        self.assertLess(v99(langsam), v99(schnell) + 20)
+
     def test_untergrenze_der_streuung_waechst_zum_niedrigen_tempo(self):
         c = collections.Counter({5: 4000, 6: 100, 7: 100, 40: 1000, 41: 1000})  # Haufen auf einer Klasse bei 5 km/h
         w, a = g.tabelle(c, 3)

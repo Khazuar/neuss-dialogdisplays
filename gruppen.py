@@ -32,6 +32,7 @@ SICHTBAR_MIN = 0.25  # von jeder Gruppe muss mindestens so viel ihrer Flaeche im
 TOL_LAGE = 0.07  # Haelften stimmen ueberein: Modus (Logarithmus), mindestens, bei breiten Gruppen 0,25 x Streuung ...
 TOL_ANTEIL = 0.06  # ... und Anteil
 S_MIN = 0.03  # engste Kurve: Streuung des Logarithmus der Geschwindigkeit
+S_MAX = 0.25  # breiteste Kurve: Eine breitere Lognormal-Kurve hat einen schweren rechten Ausflaeufer, der ueber das Tempo der schnellen Gruppen hinausreicht; eine breite Schulter besteht dann aus mehreren Kurven
 S_KLASSE = 0.8  # eine Kurve ist mindestens so breit wie 0,8 km/h an ihrem Tempo (die Geraete messen auf 1 km/h)
 VMAX_GRUPPEN = 255  # die Kurven einer Gruppe werden bis zu dieser Geschwindigkeit ausgewertet
 
@@ -201,8 +202,8 @@ def em(werte, anzahl, w, mu, s, xa=None, iterationen=400, tol=1e-9):
         w = [max(g / summe, 1e-6) for g in gesamt]
         mu = [s1[j] / max(gesamt[j], 1e-9) for j in range(k)]
         # Untergrenze der Streuung: ein km/h (Aufloesung der Geraete) am haeufigsten Tempo der Kurve, nie unter 0,03; eine Kurve bei
-        # niedrigem Tempo kann also nicht auf eine einzelne Klasse zusammenfallen
-        s = [max(math.sqrt(max(s2[j] / max(gesamt[j], 1e-9) - mu[j] ** 2, 0.0)), S_MIN, S_KLASSE / math.exp(min(max(mu[j], 0.0), 6.0)))
+        # niedrigem Tempo kann also nicht auf eine einzelne Klasse zusammenfallen. Obergrenze S_MAX: kein schwerer Ausflaeufer.
+        s = [min(max(math.sqrt(max(s2[j] / max(gesamt[j], 1e-9) - mu[j] ** 2, 0.0)), S_MIN, S_KLASSE / math.exp(min(max(mu[j], 0.0), 6.0))), S_MAX)
              for j in range(k)]
         if xa is not None:  # nicht weiter in den abgeschnittenen Bereich wandern
             mu = [max(mu[j], xa - schranke * s[j]) for j in range(k)]

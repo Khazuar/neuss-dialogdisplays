@@ -34,6 +34,12 @@ Geschwindigkeiten allein nicht entscheiden. Plausible Deutungen stehen als Hypot
    Grenze gilt am Tempo der Kurve, nicht am Rand der Erfassung: Eine frühere Fassung band sie an die kleinste erfasste
    Geschwindigkeit und zwang bei einer Erfassung ab 4 km/h jede Kurve auf mindestens 0,2, auch den schmalen Gipfel bei 46 km/h.
    Die Abweichung der Nievenheimer Straße (Datei `0000000000000000_12`) sank dadurch von 15,5 auf 3,2 %.
+   Nach oben ist die Streuung auf 0,25 begrenzt (`S_MAX`, Festlegung). Eine breitere Lognormal-Kurve hat einen schweren rechten
+   Ausläufer, der weit über das Tempo der schnellen Gruppen hinausreicht: Ohne die Grenze hatte in 62 von 97 zerlegten Dateien die
+   langsamste Gruppe das größte V99 (Düsseldorfer Straße: Mittel 35 km/h, V99 93 km/h, die Hauptgruppe bei 51 km/h V99 76 km/h), weil
+   die breite Kurve, die die flache Schulter bei niedrigem Tempo trifft, die wenigen sehr schnellen Fahrzeuge miterklärt. Mit der
+   Grenze (0,3: 12 Dateien, 0,25: 3 Dateien) besteht eine breite Schulter aus mehreren schmaleren Kurven, und der Ausläufer gehört der
+   schnellen Gruppe.
 3. **Zahl der Kurven K und Einteilung in Gruppen, je Datei.** K wird für jede Datei einzeln bestimmt: Alle Werte von 2 bis 8 werden geprüft, die Suche bricht nicht ab (auch K = 5 kann\n   gut sein, wenn K = 3 nicht besser ist als K = 2). **Eine Gruppe besteht aus einer oder mehreren Kurven** (ihre Summe):
    Eine Lognormal-Glocke trifft die Form einer Gruppe oft nicht ganz (ein schmaler Gipfel am Rand, eine Schulter), und eine
    zweite Kurve in derselben Gruppe verbessert nur die Form, ohne dass es eine zweite Gruppe wäre. Die Kurven werden deshalb
@@ -125,15 +131,13 @@ Tempolimit, orange darüber) ist der Teil, den die Gruppe erklärt, höchstens s
 ihre Kurve zusätzlich als Linie darüber, damit sichtbar bleibt, wo sie die Säulen überragt.
 
 **Passung des Modells.** `modellabweichung_prozent` ist der Anteil der Fahrzeuge, die die angepasste Mischung an einer anderen
-Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h, ab der Anpassungsgrenze). Im Median über die 97
-zerlegten Dateien sind es 1,9 % (Quartile 1,5 und 2,9), bei 2 Dateien mehr als 5 % (höchstens 6,1 %), bei keiner mehr als 10 %. Ab
-10 % warnen die Seiten, dass das Modell schlecht passt. Bei 9 Dateien liegt das häufigste Tempo einer Gruppe nicht über dem Rand
-der Anpassung: Die Glocke ist dort am Rand abgeschnitten und wird aus ihrer sichtbaren Flanke angepasst (Schritt 2), das ist
-gewollt. Das ist bei der Villestraße-Datei `FR GV 0000000000000000_2` ein Extrem: Eine Gruppe von 7 % mit dem häufigsten Tempo
-1,9 km/h, angepasst wird ab 4 km/h (Abweichung 1,9 %); sie beschreibt, was der Rauschbodenabzug übrig lässt, und keine Fahrzeuge,
-für die sich ein Tempo angeben ließe. Der
-**Rest** ist größer als die Abweichung, weil er auch die Fahrzeuge unter der Anpassungsgrenze enthält: Median 6,8 % der
-Fahrzeuge (Quartile 3,4 und 15,7 %). Am größten ist er bei den Dateien, in denen ein Haufen am unteren Rand abgeschnitten wurde
+Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h, ab der Anpassungsgrenze). Im Median über die 93
+zerlegten Dateien sind es 2,2 % (Quartile 1,7 und 2,6), bei keiner mehr als 5 % (höchstens 4,0 %). Ab 10 % warnen die
+Seiten, dass das Modell schlecht passt. Bei 3 Dateien liegt das häufigste Tempo einer Gruppe nicht über dem Rand
+der Anpassung (Hoistener Schulstraße, Thywissenstraße, Eichendorfstraße): Die Glocke ist dort am Rand abgeschnitten und wird aus ihrer
+sichtbaren Flanke angepasst (Schritt 2), das ist gewollt. Der
+**Rest** ist größer als die Abweichung, weil er auch die Fahrzeuge unter der Anpassungsgrenze enthält: Median 5,2 % der
+Fahrzeuge (Quartile 2,9 und 15,8 %). Am größten ist er bei den Dateien, in denen ein Haufen am unteren Rand abgeschnitten wurde
 (Matthiasstraße 67 %, Feldstraße 58 %, Eichendorfstraße 50 %).
 
 Die Zellen enthalten nur vollständig aufgezeichnete Stunden mit nutzbarer Zeit; die Zahl der Fahrzeuge einer Auswahl kann
@@ -156,15 +160,15 @@ ihre Kurven verteilt ist, wird nicht ausgewiesen, weil sie zwischen den Hälften
 - Eine Glocke ist keine Fahrzeugart. Zusammenhänge mit Tageszeit, Wochentag oder Wetter können Hinweise geben, beweisen aber
   keine Zuordnung. Wetterdaten sind nicht eingebunden.
 - Bei überlappenden Gruppen ist die Trennung unsicher, auch wenn die Zerlegung stabil ist. Die Schwellen (0,005 und 0,02 nats, 7 %,
-  6 Prozentpunkte, 3 %, D ≥ 1 und D ≥ 0,5, 15 % Abstand der Modi) sind Festlegungen, kein Befund. Bei 12 der 109 Dateien gibt es keine Zerlegung
-  (10 sind zu klein, bei 2 ist keine belegt); bei den übrigen 97 sind es 2 Gruppen (81 Dateien), 3 Gruppen (13) oder 4 Gruppen (3), bei 17 davon
-  mit überlappenden Gruppen. Bei 58 Dateien besteht jede Gruppe aus einer Kurve, bei 39 besteht mindestens eine Gruppe aus mehreren
-  Kurven (bis zu 8 Kurven je Datei).
+  6 Prozentpunkte, 3 %, D ≥ 1 und D ≥ 0,5, 15 % Abstand der Modi, Streuung höchstens 0,25) sind Festlegungen, kein Befund. Bei 16 der 109 Dateien gibt es keine Zerlegung
+  (10 sind zu klein, bei 6 ist keine belegt); bei den übrigen 93 sind es 2 Gruppen (67 Dateien), 3 Gruppen (23) oder 4 Gruppen (3), bei 8 davon
+  mit überlappenden Gruppen. Bei 25 Dateien besteht jede Gruppe aus einer Kurve, bei 68 besteht mindestens eine Gruppe aus mehreren
+  Kurven (im Mittel 3,6 Kurven je Datei, bis zu 8).
 - **Die Hälften der Messtage (gerade/ungerade) sind ein mildes Kriterium.** Gerade und ungerade Tage wechseln sich ab und haben
   dieselbe Mischung aus Wochentagen und Jahreszeit. Teilt man stattdessen den Zeitraum in eine erste und eine zweite Hälfte
-  (einmalige Prüfung, nicht Teil des Verfahrens), bleibt von 97 Zerlegungen nur bei 43 dieselbe Zerlegung bestehen (gleiche Zahl der Gruppen, Lage innerhalb von 15 %, Anteil innerhalb von
-  8 Prozentpunkten); bei 27 entsteht auf der zweiten Teilung keine, bei 27 eine andere. Vor der Zusammenfassung von Kurven und der
-  vollständigen Suche nach K war es ähnlich (von 81 Zerlegungen 38 gleich, 39 keine, 4 andere). Die Aussage ist
+  (einmalige Prüfung, nicht Teil des Verfahrens), bleibt von 93 Zerlegungen nur bei 47 dieselbe Zerlegung bestehen (gleiche Zahl der Gruppen, Lage innerhalb von 15 %, Anteil innerhalb von
+  8 Prozentpunkten); bei 22 entsteht auf der zweiten Teilung keine, bei 24 eine andere (eine Datei wird nur auf der zweiten Teilung
+  zerlegt). Vor der Zusammenfassung von Kurven und der vollständigen Suche nach K war es ähnlich (von 81 Zerlegungen 38 gleich, 39 keine, 4 andere). Die Aussage ist
   deshalb: Die Gruppen sind in einer Messung über gemischte Tage stabil; ihre Anteile und teils ihre Lage können von der Zeit
   (Jahreszeit, Wochentag, Baustellen) abhängen. Das ist kein Beleg, dass sie falsch sind, aber ein Grund, die Anteile nicht als
   feste Größe eines Standorts zu lesen.
