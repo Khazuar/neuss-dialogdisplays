@@ -418,6 +418,10 @@ class FilterSeite(unittest.TestCase):
         self.assertIn("Nicht zerlegt", s.gruppen_abschnitt({"gruppen": {"geprueft": False, "grund": "zu klein"}}))
         self.assertIn("nicht stabil", s.gruppen_abschnitt({"gruppen": {"geprueft": True, "anzahl": 1}}))
         self.assertEqual(s.gruppen_abschnitt({}), "")
+        self.assertEqual(sorted(block["rest"]), ["anteil_prozent", "fahrzeuge"])  # der Rest hat keine Kennwerte
+        zeile_rest = re.search(r"<tr><th scope=\"row\">Rest \(nicht erklärt\)</th>(.*?)</tr>", h, re.S).group(1)
+        self.assertEqual(zeile_rest.count("<td"), 7)
+        self.assertEqual(zeile_rest.count("–"), 6)  # nur der Anteil, sonst Striche
         einfach = dict(block, kurven=block["anzahl"], gruppen=[dict(x, kurven=1) for x in block["gruppen"]])
         h1 = s.gruppen_abschnitt({"gruppen": einfach})
         self.assertNotIn("Kurven angepasst", h1)  # eine Kurve je Gruppe: nichts zu erklaeren

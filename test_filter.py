@@ -177,6 +177,11 @@ class FilterJs(unittest.TestCase):
         self.assertIn("Rest", rest["html"])
         self.assertIn("hist-grau", rest["html"])
         self.assertNotIn("hist-modell", rest["html"])
+        for kennwert in ("V85", "V95", "V99", "Einhaltung", "Qualifiziert", "km/h</th>"):
+            self.assertNotIn(kennwert, rest["html"], kennwert)  # der Rest hat keine Kennwerte, auch keine V85-Marke im Bild
+        self.assertIn("Anteil an allen", rest["html"])
+        self.assertIn("je Stunde", rest["html"])
+        self.assertIn("V85", g1["html"])  # die Gruppe schon
         (klein,) = laufe(self.daten, [{"zeit": "schulweg", "tage": "samstag", "gruppe": "g1"}])
         self.assertIn("<table>", klein["html"])
         self.assertIn("Wenige Fahrzeuge", klein["html"])  # Anteile bei kleinen Auswahlen sind unsicher

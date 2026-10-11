@@ -231,7 +231,7 @@
     var hist = basis.hist, vorder = null, linie = null, anteil = false, titel = "Kennzahlen der Auswahl", z = null;
     if (/^g\d+$/.test(gruppe) || gruppe === "rest") {
       z = zerlege(daten, basis.hist);
-      if (gruppe === "rest") { vorder = z.rest; titel = "Kennzahlen des Rests (was die Kurven nicht erklären)"; } else {
+      if (gruppe === "rest") { vorder = z.rest; titel = "Rest (was die Kurven nicht erklären)"; } else {
         var nr = parseInt(gruppe.slice(1), 10);
         vorder = linie = z.gruppen[nr - 1];
         titel = "Kennzahlen der angepassten Kurve von Gruppe " + nr;
@@ -242,21 +242,25 @@
     var kzAlle = kennzahlen(basis.hist, limit), kz = vorder ? kennzahlen(vorder, limit) : kzAlle;
     if (!kz || kz.n < 0.5) { return "<p>Für diese Auswahl liegt nichts in dieser Gruppe.</p>"; }
     var je = basis.stunden ? de(kz.n / basis.stunden, 1) : "–";
+    // Der Rest (was die Kurven nicht erklaeren) ist nicht zusammenhaengend und hat keine Form: nur Zahl, Anteil und je Stunde, keine Kennwerte.
+    var nurZahl = gruppe === "rest";
     var html = '<div class="tablewrap"><table><caption class="muted">' + titel + '</caption><thead><tr><th class="num">Fahrzeuge</th>' +
       (anteil ? '<th class="num">Anteil an allen</th>' : "") + '<th class="num">je Stunde</th>' +
-      '<th class="num">Ø km/h</th><th class="num">V85</th><th class="num">V95</th><th class="num">V99</th>' + (limit ? '<th class="num">Einhaltung</th><th class="num">Qualifiziert</th>' : "") +
-      '</tr></thead><tbody><tr><td class="num">' + de(Math.round(kz.n), 0) + '</td>' + (anteil ? '<td class="num">' + de(100 * kz.n / nBasis, 1) + ' %</td>' : "") +
-      '<td class="num">' + je + '</td><td class="num">' + de(kz.mittel, 1) + '</td><td class="num">' + kz.v85 +
-      '</td><td class="num">' + kz.v95 + '</td><td class="num">' + kz.v99 + '</td>';
-    if (limit) {
-      html += '<td class="num' + klasseQuote(kz.einhaltung) + '">' + de(kz.einhaltung, 2) + ' %</td><td class="num' + klasseQuote(kz.qualifiziert) + '">' + de(kz.qualifiziert, 2) + ' %</td>';
+      (nurZahl ? "" : '<th class="num">Ø km/h</th><th class="num">V85</th><th class="num">V95</th><th class="num">V99</th>' + (limit ? '<th class="num">Einhaltung</th><th class="num">Qualifiziert</th>' : "")) +
+      '</tr></thead><tbody><tr><td class="num">' + de(Math.round(kz.n), 0) + '</td>' + (anteil ? '<td class="num">' + de(100 * kz.n / nBasis, 1) + ' %</td>' : "") +
+      '<td class="num">' + je + '</td>';
+    if (!nurZahl) {
+      html += '<td class="num">' + de(kz.mittel, 1) + '</td><td class="num">' + kz.v85 + '</td><td class="num">' + kz.v95 + '</td><td class="num">' + kz.v99 + '</td>';
+      if (limit) {
+        html += '<td class="num' + klasseQuote(kz.einhaltung) + '">' + de(kz.einhaltung, 2) + ' %</td><td class="num' + klasseQuote(kz.qualifiziert) + '">' + de(kz.qualifiziert, 2) + ' %</td>';
+      }
     }
     html += '</tr></tbody></table></div>';
     if (anteil && nBasis < HIST.WENIG_FAHRZEUGE) {
       html += '<p class="muted">Wenige Fahrzeuge in dieser Auswahl: Die Anteile der Gruppen sind unsicher.</p>';
     }
     if (nBasis < HIST.MIN_FAHRZEUGE) { return html + "<p class=\"muted\">Zu wenige Fahrzeuge für ein Histogramm.</p>"; }
-    var h = histogrammSvg(hist, kzAlle, limit, { vorder: vorder, linie: linie, v85: vorder ? kz.v85 : undefined });
+    var h = histogrammSvg(hist, kzAlle, limit, { vorder: vorder, linie: linie, v85: nurZahl ? null : (vorder ? kz.v85 : undefined) });
     var unterschrift = 'Anteil der Fahrzeuge der Auswahl je km/h (Klassenbreite ' + h.breite + ' km/h' + (limit ? ", blau bis zum Tempolimit, orange darüber" : "") +
       '). "je Stunde": Fahrzeuge je vollständig aufgezeichneter Stunde der Auswahl.';
     if (vorder) {

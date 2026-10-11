@@ -129,7 +129,8 @@ der globalen Anpassung). Die Fahrzeuge einer Gruppe sind dann die Zahl der angep
 ihrer Kurve. Die Kennzahlen einer Gruppe (Mittel, V85, V95, V99, Einhaltung) sind die der Kurve. Weil das Modell die Daten nie
 ganz trifft, bleibt ein **Rest**: Daten minus die Kurven aller Gruppen, an keiner Geschwindigkeit negativ, dazu alle Fahrzeuge
 unterhalb der Anpassungsgrenze. Die Anteile der Gruppen und des Rests müssen sich nicht zu 100 % addieren: Wo die Kurven über
-den Daten liegen, zählt der Überschuss nicht als negativer Rest. Frühere Fassungen haben jedes Fahrzeug den Gruppen mit dem
+den Daten liegen, zählt der Überschuss nicht als negativer Rest. Der Rest hat keine Kennwerte (Mittel, V85, Einhaltung): Er ist meist
+nicht zusammenhängend und hat keine Form; die Seite zeigt nur seine Zahl, seinen Anteil und die Fahrzeuge je Stunde. Frühere Fassungen haben jedes Fahrzeug den Gruppen mit dem
 Anteil zugeordnet, der an seiner Geschwindigkeit am besten passt. Das schob alles, was das Modell nicht erklärt, in die
 Gruppe, deren Kurve dort am höchsten ist, und gab zum Beispiel einer langsamen Gruppe ein V99 von 56 km/h bei einem häufigsten
 Tempo von 20 km/h.
@@ -156,8 +157,8 @@ Block `gruppen` je Messung: `geprueft`, `anzahl` (Zahl der Gruppen), `kurven` (K
 `anzahl`, wo eine Gruppe aus mehreren Kurven besteht), `obere_gruppen_ueberlappen`, `angepasst_ab_kmh`, `fahrzeuge`,
 `fahrzeuge_unter_grenze`, `grund` (bei einer Gruppe), `auswahl` (je geprüftem K: `gruppen`, `stabil`, `klein`, `sichtbar_min`, `d_unten`, `d_alle`, `modus_abstand`, `cv_gewinn`),
 `modellabweichung_prozent`, `gruppen` (Nummer, `kurven` je Gruppe, Anteil, Modus, Streuung im Logarithmus, `sichtbar_prozent`, Mittel, V85, Einhaltung,
-qualifizierte Einhaltung; alles für die Summenkurve der Gruppe) und `rest` (Anteil und Kennzahlen dessen, was die Kurven nicht erklären,
-einschließlich der Fahrzeuge unter der Anpassungsgrenze). Die Zellen liegen als `<Datei>.zellen.json` neben der YAML (Format
+qualifizierte Einhaltung; alles für die Summenkurve der Gruppe) und `rest` (Anteil und Zahl der Fahrzeuge dessen, was die Kurven nicht
+erklären, einschließlich der Fahrzeuge unter der Anpassungsgrenze; ohne Kennzahlen, siehe unten). Die Zellen liegen als `<Datei>.zellen.json` neben der YAML (Format
 siehe `gruppen.py`, `analysiere`; je Gruppe `pi` (Anteil an den angepassten Fahrzeugen) und `kurven` mit `mu`, `s` und Gewicht `c` je
 Kurve; die Form der Gruppe ist die Summe der Kurven, jede auf Fläche 1 normiert, mal `c`). Wie die Masse innerhalb einer Gruppe auf
 ihre Kurven verteilt ist, wird nicht ausgewiesen, weil sie zwischen den Hälften der Messtage wechselt.

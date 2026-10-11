@@ -561,8 +561,9 @@ def gruppen_abschnitt(row):
     zeilen = [gruppen_zeile(f'Gruppe {gr["nr"]}' + (f' <span class="muted">(aus {gr["kurven"]} Kurven)</span>' if gr.get("kurven", 1) > 1 else ""),
                             gr["anteil_prozent"], dez(gr["modus_kmh"], 1), f'{ganz(gr.get("sichtbar_prozent"))}&nbsp;%', gr)
               for gr in g["gruppen"]]
-    if g.get("rest"):
-        zeilen.append(gruppen_zeile("Rest (nicht erklärt)", g["rest"]["anteil_prozent"], "–", "–", g["rest"]))
+    if g.get("rest"):  # der Rest hat keine Form und keine Kennwerte: nur sein Anteil
+        zeilen.append(f'<tr><th scope="row">Rest (nicht erklärt)</th><td class="num">{dez(g["rest"]["anteil_prozent"], 1)}&nbsp;%</td>'
+                      '<td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td></tr>')
     z.append(f'<p>Die Verteilung setzt sich aus {g["anzahl"]} Gruppen zusammen. Die Zerlegung gilt für alle Tageszeiten und Tage. '
              'Gruppen sind angepasste Kurven (statistische Anteile der Verteilung) und keine Fahrzeugarten: Was sich dahinter verbirgt (etwa Radfahrer, '
              'abbiegende oder anfahrende Fahrzeuge, Fahrer, die sich am Tempolimit oder am Gefühl orientieren), lässt sich aus den Daten '

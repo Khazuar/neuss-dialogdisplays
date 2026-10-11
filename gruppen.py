@@ -565,7 +565,7 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
     rest = {v: c for v, c in rest.items() if c > 0}
     block["gruppen"] = gruppen
     if rest:
-        block["rest"] = {"anteil_prozent": round(100 * sum(rest.values()) / n, 2), **kennzahlen(rest, limit)}
+        block["rest"] = {"anteil_prozent": round(100 * sum(rest.values()) / n, 2), "fahrzeuge": round(sum(rest.values()))}
     daten["w0"] = ab
     for g, teil in zip(gruppen, teile):
         pi_g = sum(pi[j] for j in teil)
