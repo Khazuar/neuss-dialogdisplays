@@ -58,6 +58,19 @@
     return gesamt;
   }
 
+  // Fortsetzung der Summenkurve einer Gruppe links vom Rand der Anpassung (v = 1 .. w0 - 1), gleiche Normierung wie kurvenform:
+  // Anteil je km/h, bezogen auf den erfassten Bereich. Dort ist die Kurve nicht an Daten angepasst, sie zeigt nur, was sie erwarten laesst.
+  function kurvenLinks(g, w0) {
+    var links = [], v, j;
+    for (v = 1; v < w0; v++) { links.push(0); }
+    for (j = 0; j < g.kurven.length; j++) {
+      var k = g.kurven[j], z = 0, q;
+      for (v = w0; v <= HIST.VMAX; v++) { q = (Math.log(v) - k.mu) / k.s; z += Math.exp(-0.5 * q * q) / (k.s * v); }
+      for (v = 1; v < w0; v++) { q = (Math.log(v) - k.mu) / k.s; links[v - 1] += k.c * Math.exp(-0.5 * q * q) / (k.s * v) / z; }
+    }
+    return links;
+  }
+
   // Zerlegt das Histogramm einer Auswahl: Anteile der Gruppen werden bei festen Kurven neu geschaetzt (EM), jede Gruppe ist
   // dann ihre Kurve mal die Zahl der angepassten Fahrzeuge; der Rest ist Daten minus Kurven (nicht negativ), dazu alles unter w0.
   function zerlege(daten, hist) {
@@ -81,11 +94,13 @@
         if (delta < 1e-9) { break; }
       }
     }
-    var kurven = [], rest = {};
+    var kurven = [], rest = {}, fortsetzung = [];
     for (j = 0; j < k; j++) {
-      var h = {};
+      var h = {}, l = {}, lk = kurvenLinks(gr[j], w0);
       for (v = 0; v < p[j].length; v++) { h[w0 + v] = nfit * pi[j] * p[j][v]; }
+      for (v = 1; v < w0; v++) { l[v] = nfit * pi[j] * lk[v - 1]; }
       kurven.push(h);
+      fortsetzung.push(l);
     }
     for (v in hist) {
       var vn = Number(v), modell = 0;
@@ -93,7 +108,7 @@
       var r = hist[v] - modell;
       if (r > 1e-9) { rest[vn] = r; }
     }
-    return { gruppen: kurven, rest: rest, pi: pi, nfit: nfit };
+    return { gruppen: kurven, rest: rest, pi: pi, nfit: nfit, links: fortsetzung, w0: w0 };
   }
 
   function sortiert(hist) {
@@ -204,10 +219,14 @@
       }
     }
     if (linie) {
-      var punkte = [];
+      var punkte = [], gestrichelt = [], fort = opt.linieLinks ? nachKlassen(opt.linieLinks) : null;
+      var s0 = opt.rand ? opt.rand - (((opt.rand - versatz) % breite) + breite) % breite : null;  // Klasse am Rand der Anpassung
       for (start = erster; start <= bis; start += breite) {
-        punkte.push((x(start) + breite * sc / 2).toFixed(1) + "," + y(100 * (linie[start] || 0) / n / breite).toFixed(1));
+        var punkt = (x(start) + breite * sc / 2).toFixed(1) + "," + y(100 * ((linie[start] || 0) + (fort ? (fort[start] || 0) : 0)) / n / breite).toFixed(1);
+        if (fort && s0 !== null && start <= s0) { gestrichelt.push(punkt); }
+        if (!fort || s0 === null || start >= s0) { punkte.push(punkt); }
       }
+      if (gestrichelt.length > 1) { s.push('<polyline class="hist-modell-links" points="' + gestrichelt.join(" ") + '"/>'); }
       s.push('<polyline class="hist-modell" points="' + punkte.join(" ") + '"/>');
     }
     var v85 = opt.v85 === undefined ? kz.v85 : opt.v85, marken = [];
@@ -226,21 +245,31 @@
 
   function ergebnisHtml(daten, auswahl) {
     var limit = daten.limit, gruppe = auswahl.gruppe || "alle", rausch = gruppe === "rausch";
-    var basis = waehle(daten, auswahl.zeit, auswahl.tage, rausch), nBasis = summe(basis.hist);
+    var basis = waehle(daten, auswahl.zeit, auswahl.tage, false), rauschHist = null, nBasis;
+    if (rausch) {  // alle aufgezeichneten Fahrten (Fahrzeuge und Rauschboden) grau, der herausgerechnete Rauschboden farbig
+      rauschHist = waehle(daten, auswahl.zeit, auswahl.tage, true).hist;
+      var alle = {}, w;
+      for (w in basis.hist) { alle[w] = basis.hist[w]; }
+      for (w in rauschHist) { alle[w] = (alle[w] || 0) + rauschHist[w]; }
+      basis = { hist: alle, stunden: basis.stunden };
+    }
+    nBasis = summe(basis.hist);
     if (nBasis < 1) { return "<p>Für diese Auswahl liegen keine Fahrzeuge vor.</p>"; }
-    var hist = basis.hist, vorder = null, linie = null, anteil = false, titel = "Kennzahlen der Auswahl", z = null;
+    var hist = basis.hist, vorder = null, linie = null, linieLinks = null, anteil = false, titel = "Kennzahlen der Auswahl", z = null;
+    if (rausch) { vorder = rauschHist; anteil = true; titel = "Kennzahlen des Rauschbodens (aus den Fahrten herausgerechnet)"; }
     if (/^g\d+$/.test(gruppe) || gruppe === "rest") {
       z = zerlege(daten, basis.hist);
       if (gruppe === "rest") { vorder = z.rest; titel = "Rest (was die Kurven nicht erklären)"; } else {
         var nr = parseInt(gruppe.slice(1), 10);
         vorder = linie = z.gruppen[nr - 1];
+        linieLinks = z.w0 > 1 ? z.links[nr - 1] : null;
         titel = "Kennzahlen der angepassten Kurve von Gruppe " + nr;
       }
       hist = basis.hist;
       anteil = true;
     }
     var kzAlle = kennzahlen(basis.hist, limit), kz = vorder ? kennzahlen(vorder, limit) : kzAlle;
-    if (!kz || kz.n < 0.5) { return "<p>Für diese Auswahl liegt nichts in dieser Gruppe.</p>"; }
+    if (!kz || kz.n < 0.5) { return rausch ? "<p>Für diese Auswahl wurde kein Rauschboden herausgerechnet.</p>" : "<p>Für diese Auswahl liegt nichts in dieser Gruppe.</p>"; }
     var je = basis.stunden ? de(kz.n / basis.stunden, 1) : "–";
     // Der Rest (was die Kurven nicht erklaeren) ist nicht zusammenhaengend und hat keine Form: nur Zahl, Anteil und je Stunde, keine Kennwerte.
     var nurZahl = gruppe === "rest";
@@ -260,12 +289,17 @@
       html += '<p class="muted">Wenige Fahrzeuge in dieser Auswahl: Die Anteile der Gruppen sind unsicher.</p>';
     }
     if (nBasis < HIST.MIN_FAHRZEUGE) { return html + "<p class=\"muted\">Zu wenige Fahrzeuge für ein Histogramm.</p>"; }
-    var h = histogrammSvg(hist, kzAlle, limit, { vorder: vorder, linie: linie, v85: nurZahl ? null : (vorder ? kz.v85 : undefined) });
+    var h = histogrammSvg(hist, kzAlle, limit, { vorder: vorder, linie: linie, linieLinks: linieLinks, rand: linieLinks ? z.w0 : null,
+                                                 v85: nurZahl ? null : (vorder ? kz.v85 : undefined) });
     var unterschrift = 'Anteil der Fahrzeuge der Auswahl je km/h (Klassenbreite ' + h.breite + ' km/h' + (limit ? ", blau bis zum Tempolimit, orange darüber" : "") +
       '). "je Stunde": Fahrzeuge je vollständig aufgezeichneter Stunde der Auswahl.';
     if (vorder) {
-      unterschrift += ' Grau: alle Fahrzeuge der Auswahl. Farbig: ' + (gruppe === "rest" ? 'der Rest, den die Kurven der Gruppen nicht erklären' : 'der Teil, den die angepasste Kurve der Gruppe erklärt (höchstens so hoch wie die Säule), Linie: die Kurve selbst') +
-        '. Die Anteile der Gruppen und des Rests müssen sich nicht zu 100 % addieren.';
+      unterschrift += ' Grau: alle ' + (rausch ? 'aufgezeichneten Fahrten der Auswahl (Fahrzeuge und Rauschboden)' : 'Fahrzeuge der Auswahl') + '. Farbig: ' +
+        (rausch ? 'der Rauschboden, der herausgerechnet wurde' : gruppe === "rest" ? 'der Rest, den die Kurven der Gruppen nicht erklären' : 'der Teil, den die angepasste Kurve der Gruppe erklärt (höchstens so hoch wie die Säule), Linie: die Kurve selbst') + '.';
+      if (!rausch) { unterschrift += ' Die Anteile der Gruppen und des Rests müssen sich nicht zu 100 % addieren.'; }
+      if (linieLinks) {
+        unterschrift += ' Gestrichelt: Fortsetzung der Kurve links von ' + z.w0 + ' km/h, dem Rand der Anpassung. Dort ist sie nicht an Daten angepasst und zeigt nur, was sie erwarten lässt.';
+      }
     }
     return html + '<figure class="histfig">' + h.svg + '<figcaption class="muted">' + unterschrift + '</figcaption></figure>';
   }

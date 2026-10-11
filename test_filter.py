@@ -133,6 +133,47 @@ class FilterJs(unittest.TestCase):
         self.assertAlmostEqual(sum(sum(h.values()) for h in mod), n, delta=0.5)
         self.assertEqual(g1["modell"]["pi"], g2["modell"]["pi"])  # beide Gruppen derselben Auswahl: dieselbe Zerlegung
 
+    def test_kurve_wird_links_vom_rand_gestrichelt_fortgesetzt(self):
+        """Links vom Rand der Anpassung (v < w0) setzt sich die Kurve gestrichelt fort, mit derselben Normierung wie im erfassten Bereich."""
+        (g2,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2"}])
+        w0 = self.daten["w0"]
+        self.assertGreater(w0, 1)
+        self.assertIn("hist-modell-links", g2["html"])
+        self.assertIn("Gestrichelt: Fortsetzung der Kurve links von", g2["html"])
+        m = g2["modell"]
+        self.assertEqual(m["w0"], w0)
+        gr = self.daten["gruppen"][1]
+        # Python-Rechnung: Anteil je km/h, normiert auf die Summe ueber den erfassten Bereich (v >= w0)
+        for v in range(1, w0):
+            erwartet = 0.0
+            for k in gr["kurven"]:
+                dichte = lambda x: math.exp(-0.5 * ((math.log(x) - k["mu"]) / k["s"]) ** 2) / (k["s"] * x)
+                z = sum(dichte(x) for x in range(w0, gruppen.VMAX_GRUPPEN + 1))
+                erwartet += k["c"] * dichte(v) / z
+            self.assertAlmostEqual(m["links"][1][str(v)], m["nfit"] * m["pi"][1] * erwartet, delta=1e-6 * m["nfit"])
+        (alle,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
+        self.assertNotIn("hist-modell-links", alle["html"])  # ohne Gruppe keine Kurve
+
+    def test_rauschboden_wie_eine_gruppe(self):
+        """Der Rauschboden zeigt alle aufgezeichneten Fahrten grau und nur den herausgerechneten Rauschboden farbig."""
+        import copy
+        daten = copy.deepcopy(self.daten)
+        daten["r"] = {"0|8": [3, 400, 4, 300, 5, 200, 6, 100], "1|9": [3, 150, 4, 100]}
+        (r,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "rausch"}])
+        (ohne,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
+        self.assertEqual(sum(r["hist"].values()), 1250)  # waehle(..., rausch=true): nur der Rauschboden
+        n = sum(ohne["hist"].values())
+        anteil = ("%.1f" % (100 * 1250 / (n + 1250))).replace(".", "[.,]")  # Anteil an allen aufgezeichneten Fahrten (je nach Locale mit Komma oder Punkt)
+        self.assertRegex(r["html"], anteil + " %")
+        self.assertIn("hist-grau", r["html"])
+        self.assertIn("hist-ok", r["html"])  # der Rauschboden ist farbig
+        self.assertNotIn("hist-modell", r["html"])  # keine Kurve
+        self.assertIn("aufgezeichneten Fahrten der Auswahl (Fahrzeuge und Rauschboden)", r["html"])
+        self.assertIn("der Rauschboden, der herausgerechnet wurde", r["html"])
+        self.assertIn("1.250", r["html"].replace("1,250", "1.250"))  # Zahl der Fahrten des Rauschbodens in der Tabelle
+        (leer,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "rausch"}])  # ohne abgezogenen Rauschboden
+        self.assertIn("kein Rauschboden", leer["html"])
+
     def test_gruppe_aus_mehreren_kurven(self):
         """Besteht eine Gruppe aus zwei Kurven, ist ihre Form die gewichtete Summe der beiden (auf je 1 normiert)."""
         import copy

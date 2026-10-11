@@ -146,7 +146,11 @@ Tempo von 20 km/h.
 
 **Darstellung.** Bei einer Gruppe oder dem Rest bleiben alle Fahrzeuge der Auswahl im Histogramm grau sichtbar. Farbig (blau bis zum
 Tempolimit, orange darüber) ist der Teil, den die Gruppe erklärt, höchstens so hoch wie die graue Säule. Bei einer Gruppe liegt
-ihre Kurve zusätzlich als Linie darüber, damit sichtbar bleibt, wo sie die Säulen überragt.
+ihre Kurve zusätzlich als Linie darüber, damit sichtbar bleibt, wo sie die Säulen überragt. Links vom Rand der Anpassung ist die Kurve
+nicht an Daten angepasst; sie setzt sich dort gestrichelt fort (gleiche Normierung wie im angepassten Bereich) und zeigt nur, was sie
+erwarten lässt, etwa bei einer Gruppe, deren häufigstes Tempo unter dem Rand der Erfassung liegt. Beim Rauschboden (nur wo einer
+abgezogen ist) bleiben alle aufgezeichneten Fahrten der Auswahl, Fahrzeuge und Rauschboden, grau sichtbar; farbig ist nur der
+herausgerechnete Rauschboden. So lässt er sich im Gesamtbild nachvollziehen.
 
 **Passung des Modells.** `modellabweichung_prozent` ist der Anteil der Fahrzeuge, die die angepasste Mischung an einer anderen
 Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h, ab der Anpassungsgrenze). Im Median über die 97
