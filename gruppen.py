@@ -22,7 +22,8 @@ import rauschen
 
 K_MAX = 8  # Obergrenze der Suche; sie endet meist frueher (siehe waehle_k)
 MIN_FAHRZEUGE = 5000  # kleinere Dateien werden nicht zerlegt
-MIN_ANTEIL = 0.03  # eine Gruppe unter 3 % in einer Haelfte der Messtage gilt als zu klein
+MIN_ANTEIL = 0.005  # eine Gruppe unter 0,5 % der angepassten Fahrzeuge gilt als zu klein ...
+MIN_GRUPPE = 150  # ... und eine mit weniger als 150 Fahrzeugen in der jeweiligen Anpassung (alle Tage, gerade oder ungerade Tage): bei kleinen Dateien waechst die Schwelle
 CV_GEWINN_MIN = 0.005  # mindestens so viel nats je Fahrzeug Gewinn auf den jeweils anderen Tagen, sonst keine weitere Gruppe
 D_MIN = 1.0  # Ashman-Abstand zwischen Gruppen (getrennt ab 1; darunter vermerkt die Seite, dass die Gruppen ueberlappen)
 D_LOSE = 0.5  # ab diesem Ashman-Abstand zwischen allen Gruppen genuegen Gewinn und Stabilitaet (Festlegung: die Gruppen ueberlappen dann)
@@ -109,12 +110,16 @@ class Mischung:
     Die Dichte der erfassten Werte ist die Mischung geteilt durch den erfassten Anteil z() der Gesamtfläche.
     """
 
-    def __init__(self, w, mu, s, ll=0.0, xa=None):
-        self.w, self.mu, self.s, self.ll, self.xa = list(w), list(mu), list(s), ll, xa
+    def __init__(self, w, mu, s, ll=0.0, xa=None, n=None):
+        self.w, self.mu, self.s, self.ll, self.xa, self.n = list(w), list(mu), list(s), ll, xa, n  # n: Zahl der angepassten Fahrzeuge
 
     @property
     def k(self):
         return len(self.w)
+
+    def mindestanteil(self):
+        """Kleinster Anteil, ab dem eine Gruppe in dieser Anpassung gross genug ist: mindestens MIN_ANTEIL und mindestens MIN_GRUPPE Fahrzeuge."""
+        return max(MIN_ANTEIL, MIN_GRUPPE / self.n) if self.n else MIN_ANTEIL
 
     def sichtbar(self, j):
         """Anteil der Flaeche von Gruppe j im erfassten Bereich (1 ohne Abschneidung)."""
@@ -249,6 +254,7 @@ def anpassen(werte, anzahl, k, versuche=3, seed=3, ab=None):
         m = em(werte, anzahl, [1.0 / k] * k, mus, [max(sd / (k + 1), 0.1)] * k, xa)
         if beste is None or m.ll > beste.ll:
             beste = m
+    beste.n = n
     return beste
 
 
@@ -320,9 +326,9 @@ def naechstes_paar(m, teile):
 def trennschaerfen(m, teile):
     """(D_unten, D_alle): Ashman-Abstand D = sqrt(2) |mu_i - mu_j| / sqrt(s_i^2 + s_j^2) zwischen den Gruppen (Mittel und Streuung von ln v).
 
-    D_unten: langsamste Gruppe gegen die naechste, D_alle: kleinster Abstand aller Paare (Gruppen mit Anteil >= MIN_ANTEIL).
+    D_unten: langsamste Gruppe gegen die naechste, D_alle: kleinster Abstand aller Paare (Gruppen ab dem Mindestanteil).
     """
-    idx = [t for t in teile if gruppen_anteil(m, t) >= MIN_ANTEIL]
+    idx = [t for t in teile if gruppen_anteil(m, t) >= m.mindestanteil()]
     if len(idx) < 2:
         return None, None
     mom = [gruppen_moment(m, t) for t in idx]
@@ -335,8 +341,8 @@ def trennschaerfen(m, teile):
 
 
 def modus_abstand(m, teile):
-    """Logarithmus des Verhaeltnisses der haeufigsten Tempi der beiden langsamsten Gruppen (Anteil >= MIN_ANTEIL)."""
-    idx = [t for t in teile if gruppen_anteil(m, t) >= MIN_ANTEIL]
+    """Logarithmus des Verhaeltnisses der haeufigsten Tempi der beiden langsamsten Gruppen (ab dem Mindestanteil)."""
+    idx = [t for t in teile if gruppen_anteil(m, t) >= m.mindestanteil()]
     return math.log(gruppen_modus(m, idx[1]) / gruppen_modus(m, idx[0])) if len(idx) >= 2 else None
 
 
@@ -354,14 +360,14 @@ def vergleichbar(a, ta, b, tb):
 
 
 def problemgruppen(ma, pa, mb, pb):
-    """Indizes der Gruppen, die in den Haelften nicht wiederkehren oder zu klein sind (Anteil unter MIN_ANTEIL in einer Haelfte)."""
+    """Indizes der Gruppen, die in den Haelften nicht wiederkehren oder zu klein sind (Anteil unter dem Mindestanteil in einer Haelfte)."""
     return [i for i, (ga, gb) in enumerate(zip(pa, pb))
-            if min(gruppen_anteil(ma, ga), gruppen_anteil(mb, gb)) < MIN_ANTEIL or not gruppen_gleich(ma, ga, mb, gb)]
+            if gruppen_anteil(ma, ga) < ma.mindestanteil() or gruppen_anteil(mb, gb) < mb.mindestanteil() or not gruppen_gleich(ma, ga, mb, gb)]
 
 
 def kleine_gruppen(ms, teile):
-    """Indizes der Gruppen (Rangplaetze in teile), die in einer der Anpassungen ms unter MIN_ANTEIL liegen."""
-    return sorted({i for m in ms for i, t in enumerate(kurven_von(m, teile)) if gruppen_anteil(m, t) < MIN_ANTEIL})
+    """Indizes der Gruppen (Rangplaetze in teile), die in einer der Anpassungen ms unter dem Mindestanteil liegen."""
+    return sorted({i for m in ms for i, t in enumerate(kurven_von(m, teile)) if gruppen_anteil(m, t) < m.mindestanteil()})
 
 
 def nachbar_paar(m, teile, i):
@@ -410,7 +416,7 @@ def waehle_k(gerade, ungerade, ab):
         tr = zusammenfassen(mt)
         while True:
             pa, pb, pt = kurven_von(ma, tr), kurven_von(mb, tr), kurven_von(mt, tr)
-            klein = min(min(gruppen_anteil(m_, t) for t in kurven_von(m_, tr)) for m_ in (ma, mb, mt)) < MIN_ANTEIL  # in jeder Haelfte und gesamt
+            klein = any(gruppen_anteil(m_, t) < m_.mindestanteil() for m_ in (ma, mb, mt) for t in kurven_von(m_, tr))  # in jeder Haelfte und gesamt
             stabil = vergleichbar(ma, pa, mb, pb)
             if (stabil and not klein) or len(tr) < 2:
                 break
@@ -481,25 +487,6 @@ def kennzahlen(hist, limit):
     return erg
 
 
-def abschneiden(zaehler):
-    """Kleinste Geschwindigkeit, ab der angepasst wird: ein Haufen am unteren Rand (Sensorgrenze) bleibt ausserhalb.
-
-    Das erste lokale Minimum der geglaetteten Verteilung unterhalb von 30 km/h, wenn der Rand deutlich hoeher liegt. Wo der
-    Rauschboden belegt und abgezogen ist, wird nicht abgeschnitten.
-    """
-    lo, hi = min(zaehler), max(zaehler)
-    werte = list(range(lo, hi + 1))
-    anzahl = [zaehler.get(v, 0) for v in werte]
-    glatt = [sum(anzahl[max(0, i - 1):i + 2]) / len(anzahl[max(0, i - 1):i + 2]) for i in range(len(anzahl))]
-    for i in range(2, min(len(glatt) - 2, 30)):
-        if glatt[i] <= glatt[i - 1] and glatt[i] < glatt[i + 1] and glatt[i + 1] <= glatt[i + 2] * 1.3:
-            # ein Haufen am Rand faellt von der ersten Klasse an; steigt die Kurve zuerst, ist es eine echte Gruppe
-            if glatt[0] > 1.3 * glatt[i] and all(glatt[j] <= 1.1 * glatt[j - 1] for j in range(1, i + 1)):
-                return werte[i]
-            break
-    return lo
-
-
 # ------------------------------------------------------------------ Analyse einer Datei
 
 def _hash_schluessel(*teile):
@@ -528,10 +515,9 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
              "r": {f"{d}|{h}": zelle_kodiert(c) for (d, h), c in sorted(zd["r"].items()) if c}, "gruppen": []}
     if not limit or n < MIN_FAHRZEUGE:
         return {"geprueft": False, "grund": f"weniger als {MIN_FAHRZEUGE} Fahrzeuge oder kein Tempolimit"}, daten
-    if rauschen_belegt:  # was der Abzug uebrig laesst, liegt im Bereich des Rauschbodens: nicht zerlegen
-        ab = max(min(gesamt), (rausch_obergrenze or 0) + 1, 1)
-    else:
-        ab = max(abschneiden(gesamt), 1)
+    # Rand der Anpassung: das kleinste gemessene Tempo (Erfassungsgrenze der Geraete; links davon ist die Verteilung nicht erfasst).
+    # Wo ein Rauschboden abgezogen ist, liegt, was der Abzug uebrig laesst, im Bereich des Rauschbodens: nicht zerlegen.
+    ab = max(min(gesamt), (rausch_obergrenze or 0) + 1 if rauschen_belegt else 1, 1)
     schluessel = _hash_schluessel(sorted(gerade.items()), sorted(ungerade.items()), ab, code_hash)
     erg = speicher.holen("gruppen", schluessel) if speicher else None
     if erg is None:
@@ -557,7 +543,8 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
     # Jede Gruppe ist ihre Summenkurve (eine oder mehrere Kurven): erwartete Fahrzeuge je km/h (Anteil der erfassten Fahrzeuge
     # mal Form der Summenkurve). Fahrzeuge werden den Gruppen nicht zugeordnet; was die Kurven nicht erklaeren, steht im Rest.
     pi = m.anteile()
-    teile = erg["teile"]  # [[Kurvennummern]] nach Tempo geordnet; Gruppe 1 hat das kleinste haeufigste Tempo
+    # Nummerierung nach Gewicht: Gruppe 1 ist die groesste Gruppe (die Hauptgruppe), dann absteigend; bei gleichem Anteil die langsamere
+    teile = sorted(erg["teile"], key=lambda t: (-sum(pi[j] for j in t), gruppen_modus(m, t)))  # [[Kurvennummern]]
     form = {}
     for j in range(m.k):
         p = {v: m.pdf(j, v) for v in vs}

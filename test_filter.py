@@ -127,8 +127,9 @@ class FilterJs(unittest.TestCase):
         self.assertLess(sum(m["rest"].values()) / n, 0.08)
         self.assertEqual(rest["modell"]["rest"], m["rest"])
         mittel = [sum(int(v) * c for v, c in h.items()) / sum(h.values()) for h in mod]  # die Kurven der beiden Gruppen
-        self.assertLess(mittel[0], 22)
-        self.assertGreater(mittel[1], 35)
+        self.assertGreater(mittel[0], 35)  # Gruppe 1 ist die groesste (hier die schnelle) Gruppe
+        self.assertLess(mittel[1], 22)
+        self.assertGreater(m["pi"][0], m["pi"][1])
         self.assertAlmostEqual(sum(sum(h.values()) for h in mod), n, delta=0.5)
         self.assertEqual(g1["modell"]["pi"], g2["modell"]["pi"])  # beide Gruppen derselben Auswahl: dieselbe Zerlegung
 

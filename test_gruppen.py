@@ -74,11 +74,6 @@ class Hilfen(unittest.TestCase):
         k = g.kennzahlen({20: 0.5, 25: 0.5}, 30)  # gewichtete Histogramme
         self.assertEqual(k["fahrzeuge"], 1)
 
-    def test_abschneiden_findet_den_haufen_am_rand(self):
-        c = collections.Counter({3: 900, 4: 700, 5: 500, 6: 250, 7: 120, 8: 100, 9: 130, 10: 200, 11: 400, 12: 800, 13: 1200, 14: 1500, 15: 1200, 16: 800})
-        self.assertEqual(g.abschneiden(c), 8)
-        glatt = collections.Counter({v: 100 + 10 * v for v in range(5, 40)})
-        self.assertEqual(g.abschneiden(glatt), 5)  # kein Haufen: alles zaehlt
 
 
 def modus_mischung(*komponenten):
@@ -229,13 +224,27 @@ class Zerlegung(unittest.TestCase):
         self.assertTrue(erg["obere_gruppen_ueberlappen"])
 
     def test_zu_kleine_gruppe_in_der_gesamtanpassung_wird_aufgenommen(self):
-        """Eine Gruppe, die nur in der Gesamtanpassung (nicht in den Haelften) unter 3 % liegt, bleibt nicht als eigene Gruppe stehen."""
-        gesamt = modus_mischung((0.01, 70, 0.1), (0.25, 28, 0.3), (0.74, 46, 0.1))
+        """Eine Gruppe, die nur in der Gesamtanpassung (nicht in den Haelften) zu klein ist, bleibt nicht als eigene Gruppe stehen."""
+        gesamt = modus_mischung((0.002, 70, 0.1), (0.25, 28, 0.3), (0.748, 46, 0.1))
         halb = modus_mischung((0.05, 70, 0.1), (0.25, 28, 0.3), (0.70, 46, 0.1))
+        gesamt.n, halb.n = 40000, 20000
         teile = [[0], [1], [2]]
-        self.assertEqual(g.kleine_gruppen((gesamt,), teile), [2])  # Rang 2 ist die schnellste Kurve, bei 1 % in der Gesamtanpassung
+        self.assertEqual(g.kleine_gruppen((gesamt,), teile), [2])  # Rang 2 ist die schnellste Kurve: 0,2 % = 80 Fahrzeuge
         self.assertEqual(g.kleine_gruppen((halb,), teile), [])
         self.assertEqual(g.kleine_gruppen((halb, gesamt), teile), [2])
+
+    def test_mindestgroesse_waechst_bei_kleinen_dateien(self):
+        """Mindestens MIN_ANTEIL der Fahrzeuge und mindestens MIN_GRUPPE Fahrzeuge: 0,6 % von 10 000 sind zu wenig, 0,6 % von 48 000 genug."""
+        m = modus_mischung((0.006, 9, 0.2), (0.994, 46, 0.1))
+        teile = [[0], [1]]
+        m.n = 10000
+        self.assertGreater(m.mindestanteil(), 0.006)
+        self.assertEqual(g.kleine_gruppen((m,), teile), [0])
+        m.n = 48000
+        self.assertEqual(m.mindestanteil(), g.MIN_ANTEIL)
+        self.assertEqual(g.kleine_gruppen((m,), teile), [])
+        m.n = None  # ohne Zahl der Fahrzeuge gilt nur der Mindestanteil
+        self.assertEqual(m.mindestanteil(), g.MIN_ANTEIL)
 
     def test_wenige_fahrzeuge_zerlegen_nicht_stabil(self):
         """Mit wenig Daten schwanken die Haelften: keine belegte Zerlegung statt einer zufaelligen."""
@@ -300,6 +309,23 @@ class Zellen(unittest.TestCase):
 
 
 class Analyse(unittest.TestCase):
+    def test_gruppen_nach_gewicht_nummeriert(self):
+        fahrten, spannen = fahrten_und_spannen(tage=28)
+        zd = g.zellen_bauen(fahrten, fahrten, spannen)
+        block, daten = g.analysiere(zd, 30, True)
+        anteile = [x["anteil_prozent"] for x in block["gruppen"]]
+        self.assertEqual(anteile, sorted(anteile, reverse=True))
+        self.assertEqual([x["nr"] for x in daten["gruppen"]], list(range(1, len(anteile) + 1)))
+        self.assertEqual([x["anteil"] for x in daten["gruppen"]], anteile)  # YAML und Datentabelle in derselben Reihenfolge
+
+    def test_rand_der_anpassung_ist_das_kleinste_gemessene_tempo(self):
+        fahrten, spannen = fahrten_und_spannen(tage=28)
+        zd = g.zellen_bauen(fahrten, fahrten, spannen)
+        kleinste = min(v for c in zd["z"].values() for v in c)
+        block, _ = g.analysiere(zd, 30, False)  # kein Rauschboden belegt: kein Abschneiden eines Haufens am Rand
+        self.assertEqual(block["angepasst_ab_kmh"], max(kleinste, 1))
+        self.assertEqual(block["fahrzeuge_unter_grenze"], 0)
+
     def test_block_und_daten(self):
         fahrten, spannen = fahrten_und_spannen(tage=28)
         zd = g.zellen_bauen(fahrten, fahrten, spannen)
@@ -308,7 +334,8 @@ class Analyse(unittest.TestCase):
         self.assertEqual(block["anzahl"], 2)
         gr = block["gruppen"]
         self.assertEqual([x["nr"] for x in gr], [1, 2])
-        self.assertLess(gr[0]["modus_kmh"], gr[1]["modus_kmh"])  # Gruppe 1 hat das kleinste haeufigste Tempo
+        self.assertGreater(gr[0]["anteil_prozent"], gr[1]["anteil_prozent"])  # Gruppe 1 ist die groesste (die Hauptgruppe), nicht die langsamste
+        self.assertGreater(gr[0]["modus_kmh"], gr[1]["modus_kmh"])  # in den Testdaten ist die grosse Gruppe die schnelle
         self.assertAlmostEqual(gr[0]["anteil_prozent"] + gr[1]["anteil_prozent"], 100.0, delta=0.05)  # alle Fahrzeuge sind angepasst
         for x in gr:  # keine Auszeichnung "langsam"/"Hauptmenge" mehr, keine Zuordnung von Fahrzeugen
             for schluessel in ("langsam", "zugeordnet_bis_kmh"):

@@ -571,7 +571,7 @@ def gruppen_abschnitt(row):
         z.append(f'<p class="muted">Die Verteilung ist aus {g["kurven"]} Kurven angepasst. Wo eine Gruppe aus mehreren Kurven besteht, beschreibt '
                  'ihre Summe die Form der Gruppe; wie die Kurven innerhalb der Gruppe aufgeteilt sind, ist nicht belegt (die Aufteilung '
                  'wechselt zwischen den Hälften der Messtage) und wird nicht ausgewiesen.</p>')
-    z.append('<div class="tablewrap"><table><caption class="muted">Gruppen, nach dem häufigsten Tempo (Modus) geordnet. Anteil, Mittel, V85 '
+    z.append('<div class="tablewrap"><table><caption class="muted">Gruppen, nach Anteil geordnet (Gruppe 1 ist die größte). Anteil, Mittel, V85 '
              'und Einhaltung gelten für die angepasste Kurve der Gruppe; „Sichtbar“ ist der Teil der Kurve im erfassten Bereich. '
              'Die Anteile müssen sich nicht zu 100&nbsp;% addieren.</caption>'
              '<thead><tr><th>Gruppe</th><th class="num">Anteil</th>'
