@@ -82,13 +82,29 @@ def modus_mischung(*komponenten):
 
 
 class Gruppenbildung(unittest.TestCase):
-    def test_zusammenfassen_nach_dem_abstand_der_modi(self):
-        m = modus_mischung((0.5, 33, 0.1), (0.2, 15, 0.15), (0.3, 30, 0.05))  # absichtlich nicht nach Tempo geordnet
-        self.assertEqual(g.zusammenfassen(m), [[0], [1, 2]])  # Raenge: 15 | 30 und 33 (ln 33/30 = 0,095 < 0,15)
+    def test_zusammenfassen_nach_ueberlappenden_kernbereichen(self):
+        # nicht nach Tempo geordnet; Kerne in ln v: Mitte mu = ln(Modus) + s^2, Kern mu +- s
+        m = modus_mischung((0.5, 33, 0.1), (0.2, 15, 0.15), (0.3, 30, 0.05))
+        # 33/s 0,10 und 30/s 0,05: |Delta mu| = 0,095 <= 0,15 -> eine Gruppe; 15 liegt weit ab
+        self.assertEqual(g.zusammenfassen(m), [[0], [1, 2]])  # Raenge: 15 | 30 und 33
         self.assertEqual(g.kurven_von(m, [[0], [1, 2]]), [[1], [2, 0]])  # Raenge -> Kurvennummern der Anpassung
         m2 = modus_mischung((0.5, 40, 0.1), (0.5, 20, 0.1))
         self.assertEqual(g.zusammenfassen(m2), [[0], [1]])
 
+    def test_breite_kurve_zieht_den_huegel_in_ihren_kern(self):
+        """Beide Streuungen zaehlen: Eine schmale Spitze und ein Huegel daneben bilden eine Gruppe, wenn sich ihre Kerne beruehren."""
+        spitze_huegel = modus_mischung((0.6, 30, 0.10), (0.4, 34, 0.15))  # |Delta mu| = 0,12 <= 0,25
+        self.assertEqual(len(g.zusammenfassen(spitze_huegel)), 1)
+        getrennt = modus_mischung((0.6, 30, 0.10), (0.4, 45, 0.15))  # |Delta mu| = 0,41 > 0,25
+        self.assertEqual(len(g.zusammenfassen(getrennt)), 2)
+        gleich_hoch = modus_mischung((0.6, 50, 0.11), (0.4, 50, 0.22))  # dasselbe Tempo, aber stabil: eine Gruppe, nicht zwei
+        self.assertEqual(g.zusammenfassen(gleich_hoch), [[0, 1]])
+
+    def test_kleine_kurve_kommt_zur_gruppe_mit_dem_besten_kern(self):
+        # 40 und 52 (je s 0,1) liegen zu weit auseinander (|Delta mu| = 0,26 > 0,2): zwei Gruppen. Die kleine Kurve bei 46 (s 0,15) liegt
+        # im Kern beider (|Delta mu| 0,15 bzw. 0,11 <= 0,25) und kommt zu der mit der besseren Ueberlappung, hier 52.
+        m = modus_mischung((0.5, 40, 0.1), (0.4, 52, 0.1), (0.1, 46, 0.15))
+        self.assertEqual(g.zusammenfassen(m), [[0], [1, 2]])  # Raenge: 40 | 46 und 52
     def test_summe_der_kurven_einer_gruppe(self):
         m = modus_mischung((0.2, 15, 0.1), (0.3, 30, 0.05), (0.5, 33, 0.1))
         self.assertAlmostEqual(g.gruppen_anteil(m, [1, 2]), 0.8, places=9)
@@ -100,11 +116,19 @@ class Gruppenbildung(unittest.TestCase):
         self.assertEqual(g.gruppen_modus(m, [0]), m.modus(0))
         self.assertTrue(30 <= g.gruppen_modus(m, [1, 2]) <= 36)
 
-    def test_naechstes_paar(self):
-        m = modus_mischung((0.3, 10, 0.1), (0.3, 25, 0.1), (0.4, 30, 0.1))
-        self.assertEqual(g.naechstes_paar(m, [[0], [1], [2]]), 1)
-        self.assertEqual(g.naechstes_paar(m, [[0], [1, 2]]), 0)
-
+    def test_ueberdeckung_und_zusammenlegen(self):
+        """Eine instabile Gruppe geht in die Gruppe mit der groessten Ueberlappung auf, nicht in die mit dem naechsten Tempo."""
+        # Kurve 1: breit bei 26; Kurve 0: schmal bei 10 (weit weg); Kurve 2: schmale Spitze bei 30 neben dem breiten Hintergrund
+        m = modus_mischung((0.3, 10, 0.1), (0.1, 26, 0.25), (0.6, 30, 0.05))
+        teile = [[0], [1], [2]]
+        u_klein_gross = g.ueberdeckung(m, [1], [2])
+        u_klein_weit = g.ueberdeckung(m, [1], [0])
+        self.assertGreater(u_klein_gross, u_klein_weit)
+        self.assertTrue(0.0 <= u_klein_weit <= u_klein_gross <= 1.0)
+        self.assertEqual(g.zusammenlegen(m, teile, 1), [[0], [1, 2]])
+        # die Partnerin muss nicht benachbart sein: schmale Kurve bei 20 sitzt im Hintergrund der breiten bei 24, nicht bei 40
+        m2 = modus_mischung((0.05, 20, 0.1), (0.35, 24, 0.25), (0.6, 40, 0.1))
+        self.assertEqual(g.zusammenlegen(m2, [[0], [1], [2]], 0), [[0, 1], [2]])
     def test_stabilitaet_gilt_fuer_die_gruppen_nicht_fuer_die_kurven(self):
         a = modus_mischung((0.3, 15, 0.1), (0.3, 30, 0.05), (0.4, 33, 0.1))
         b = modus_mischung((0.3, 15, 0.1), (0.1, 30, 0.05), (0.6, 33, 0.1))  # die beiden oberen Kurven tauschen Masse (Summe gleich)
@@ -117,15 +141,11 @@ class Gruppenbildung(unittest.TestCase):
 
 
 class Problemgruppen(unittest.TestCase):
-    def test_kleine_gruppe_geht_in_die_naechste_nachbarin_auf(self):
+    def test_kleine_gruppe_ist_ein_problem(self):
         a = modus_mischung((0.01, 8, 0.2), (0.25, 28, 0.3), (0.74, 46, 0.1))
         b = modus_mischung((0.015, 9, 0.25), (0.25, 28, 0.3), (0.735, 46, 0.1))
         teile = [[0], [1], [2]]
         self.assertEqual(g.problemgruppen(a, teile, b, teile), [0])  # nur die winzige Gruppe (unter 3 %)
-        self.assertEqual(g.nachbar_paar(a, teile, 0), 0)  # am Rand: nur die eine Nachbarin
-        self.assertEqual(g.nachbar_paar(a, teile, 2), 1)
-        mitte = modus_mischung((0.3, 10, 0.1), (0.1, 26, 0.1), (0.6, 30, 0.1))
-        self.assertEqual(g.nachbar_paar(mitte, teile, 1), 1)  # Gruppe 1 liegt dichter an Gruppe 2 (26 | 30) als an Gruppe 0 (10 | 26)
         self.assertEqual(g.problemgruppen(a, [[0, 1], [2]], b, [[0, 1], [2]]), [])
 
     def test_instabile_gruppe_ist_ein_problem(self):
@@ -214,15 +234,20 @@ class Zerlegung(unittest.TestCase):
                 basis = e["k"]
         self.assertEqual(erg["auswahl"][0]["gegen_k"], 1)
 
-    def test_teilweise_ueberlappende_gruppen_genuegen_mit_gewinn_und_stabilitaet(self):
-        """Ashman-Abstand zwischen 0,5 und 1: Die Zerlegung gilt (D_LOSE), die Seite vermerkt, dass die Gruppen ueberlappen."""
-        self.assertLess(g.D_LOSE, g.D_MIN)
-        erg = g.waehle_k(mischung([(0.4, 30, 0.25), (0.6, 38, 0.2)], 80000, 1), mischung([(0.4, 30, 0.25), (0.6, 38, 0.2)], 80000, 2), 3)
-        e = erg["auswahl"][0]
-        self.assertTrue(g.D_LOSE <= e["d_alle"] < g.D_MIN)
-        self.assertEqual(erg["k"], 2)
-        self.assertTrue(erg["obere_gruppen_ueberlappen"])
-
+    def test_gruppen_nach_kernbereichen_sind_getrennt(self):
+        """Gruppen, deren Kerne (mu +- s) sich nicht ueberlappen, haben einen Ashman-Abstand von mindestens sqrt(2); ueberlappende
+        Kerne bilden eine Gruppe. Das Trennkriterium ist damit durch die Einteilung erfuellt."""
+        for komponenten in ([(0.4, 30, 0.25), (0.6, 38, 0.2)], [(0.4, 28, 0.3), (0.6, 40, 0.22)], [(0.3, 15, 0.2), (0.7, 45, 0.12)]):
+            m = modus_mischung(*komponenten)
+            teile = g.kurven_von(m, g.zusammenfassen(m))
+            if len(teile) == 2:
+                du, da = g.trennschaerfen(m, teile)
+                self.assertGreaterEqual(da, math.sqrt(2) - 1e-9, komponenten)
+            else:
+                self.assertEqual(len(teile), 1, komponenten)  # Kerne ueberlappen: eine Gruppe
+        # (0,4, 30, 0,25) und (0,6, 38, 0,2): |Delta mu| = 0,21 <= 0,45, also eine Gruppe; (0,3, 15, 0,2) und (0,7, 45, 0,12): zwei
+        self.assertEqual(len(g.zusammenfassen(modus_mischung((0.4, 30, 0.25), (0.6, 38, 0.2)))), 1)
+        self.assertEqual(len(g.zusammenfassen(modus_mischung((0.3, 15, 0.2), (0.7, 45, 0.12)))), 2)
     def test_zu_kleine_gruppe_in_der_gesamtanpassung_wird_aufgenommen(self):
         """Eine Gruppe, die nur in der Gesamtanpassung (nicht in den Haelften) zu klein ist, bleibt nicht als eigene Gruppe stehen."""
         gesamt = modus_mischung((0.002, 70, 0.1), (0.25, 28, 0.3), (0.748, 46, 0.1))

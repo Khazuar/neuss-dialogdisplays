@@ -25,9 +25,9 @@ MIN_FAHRZEUGE = 5000  # kleinere Dateien werden nicht zerlegt
 MIN_ANTEIL = 0.005  # eine Gruppe unter 0,5 % der angepassten Fahrzeuge gilt als zu klein ...
 MIN_GRUPPE = 150  # ... und eine mit weniger als 150 Fahrzeugen in der jeweiligen Anpassung (alle Tage, gerade oder ungerade Tage): bei kleinen Dateien waechst die Schwelle
 CV_GEWINN_MIN = 0.005  # mindestens so viel nats je Fahrzeug Gewinn auf den jeweils anderen Tagen, sonst keine weitere Gruppe
-D_MIN = 1.0  # Ashman-Abstand zwischen Gruppen (getrennt ab 1; darunter vermerkt die Seite, dass die Gruppen ueberlappen)
-D_LOSE = 0.5  # ab diesem Ashman-Abstand zwischen allen Gruppen genuegen Gewinn und Stabilitaet (Festlegung: die Gruppen ueberlappen dann)
+D_MIN = 1.0  # Ashman-Abstand zwischen Gruppen (getrennt ab 1; darunter vermerkt die Seite, dass die Gruppen ueberlappen). Die Einteilung nach Kernbereichen (zusammenfassen) liefert Gruppen mit D >= sqrt(2); die Pruefung bleibt als Sicherung
 CV_GEWINN_STARK = 0.02  # so viel Gewinn belegt eine Struktur auch dort, wo sich die Gruppen stark ueberlappen (breite Gruppe neben einem schmalen Gipfel)
+KERN_FAKTOR = 1.0  # Kerne zweier Kurven (mu +- s von ln v) ueberlappen, wenn |mu_a - mu_b| <= KERN_FAKTOR * (s_a + s_b): dann gehoeren sie zu einer Gruppe
 MODUS_ABSTAND_MIN = 0.15  # dann muessen die beiden langsamsten Gruppen aber um mindestens 15 % im haeufigsten Tempo auseinanderliegen (sonst Form, nicht Gruppe)
 SICHTBAR_MIN = 0.25  # von jeder Gruppe muss mindestens so viel ihrer Flaeche im erfassten Bereich liegen
 TOL_LAGE = 0.07  # Haelften stimmen ueberein: Modus (Logarithmus), mindestens, bei breiten Gruppen 0,25 x Streuung ...
@@ -297,30 +297,35 @@ def gruppen_moment(m, teil):
 
 
 def zusammenfassen(m):
-    """Erste Einteilung der Kurven in Gruppen: Kurven, deren haeufigstes Tempo dicht beieinander liegt (unter MODUS_ABSTAND_MIN im
-    Logarithmus), beschreiben zusammen die Form einer Gruppe und keine zwei. Gibt Teile als Listen von Rangplaetzen zurueck
-    (Rang 0 hat das kleinste haeufigste Tempo), damit dieselbe Einteilung auf die Anpassungen der Haelften uebertragbar ist."""
+    """Erste Einteilung der Kurven in Gruppen nach ihren Kernbereichen (mu +- s von ln v): Die Kurven werden nach Anteil abnehmend
+    betrachtet. Eine Kurve kommt zur Gruppe einer groesseren, wenn sich ihr Kern mit dem Kern einer Kurve dieser Gruppe ueberlappt
+    (|mu_a - mu_b| <= KERN_FAKTOR * (s_a + s_b)); liegt sie bei mehreren im Kern, gilt die mit der besten Ueberlappung. Sonst
+    begruendet sie eine neue Gruppe. Gibt Teile als Listen von Rangplaetzen zurueck (Rang 0 hat das kleinste haeufigste Tempo),
+    nach dem haeufigsten Tempo der Gruppe geordnet, damit dieselbe Einteilung auf die Anpassungen der Haelften uebertragbar ist."""
     rang = m.sortiert()
-    teile = [[0]]
-    for r in range(1, len(rang)):
-        if math.log(m.modus(rang[r]) / gruppen_modus(m, [rang[i] for i in teile[-1]])) < MODUS_ABSTAND_MIN:
-            teile[-1].append(r)
+    platz = {j: r for r, j in enumerate(rang)}
+    anteil = m.anteile()
+    gruppen = []
+    for j in sorted(range(m.k), key=lambda j: -anteil[j]):
+        beste, abstand = None, None
+        for gi, mitglieder in enumerate(gruppen):
+            for i in mitglieder:
+                grenze = KERN_FAKTOR * (m.s[i] + m.s[j])
+                d = abs(m.mu[i] - m.mu[j])
+                if d <= grenze and (abstand is None or d / grenze < abstand):
+                    beste, abstand = gi, d / grenze
+        if beste is None:
+            gruppen.append([j])
         else:
-            teile.append([r])
+            gruppen[beste].append(j)
+    teile = [sorted(platz[j] for j in mitglieder) for mitglieder in gruppen]
+    teile.sort(key=lambda t: gruppen_modus(m, [rang[r] for r in t]))
     return teile
-
 
 def kurven_von(m, teile):
     """Rangplaetze -> Kurvennummern der Anpassung m."""
     rang = m.sortiert()
     return [[rang[r] for r in t] for t in teile]
-
-
-def naechstes_paar(m, teile):
-    """Index i der beiden benachbarten Gruppen (i, i+1) mit dem kleinsten Abstand der haeufigsten Tempi."""
-    k = kurven_von(m, teile)
-    modi = [gruppen_modus(m, t) for t in k]
-    return min(range(len(teile) - 1), key=lambda i: math.log(modi[i + 1] / modi[i]))
 
 
 def trennschaerfen(m, teile):
@@ -370,16 +375,24 @@ def kleine_gruppen(ms, teile):
     return sorted({i for m in ms for i, t in enumerate(kurven_von(m, teile)) if gruppen_anteil(m, t) < m.mindestanteil()})
 
 
-def nachbar_paar(m, teile, i):
-    """Index j der Gruppe, mit der Gruppe i zusammengefasst wird: der benachbarten mit dem naeheren haeufigsten Tempo (Paar (j, j+1))."""
-    k = kurven_von(m, teile)
-    modi = [gruppen_modus(m, t) for t in k]
-    if i == 0:
-        return 0
-    if i == len(teile) - 1:
-        return i - 1
-    return i - 1 if math.log(modi[i] / modi[i - 1]) <= math.log(modi[i + 1] / modi[i]) else i
+def ueberdeckung(m, ka, kb):
+    """Ueberlappung zweier Gruppen (Kurven ka und kb): Welcher Teil der kleineren Masse unter der Massendichte der anderen liegt, 0 bis 1."""
+    start = max(1.0, math.exp(m.xa)) if m.xa is not None else 1.0
+    vs = [start + i * 0.25 for i in range(int((VMAX_GRUPPEN - start) * 4) + 1)]
+    fa = [sum(m.w[j] * m.pdf(j, v) for j in ka) for v in vs]
+    fb = [sum(m.w[j] * m.pdf(j, v) for j in kb) for v in vs]
+    return sum(min(x, y) for x, y in zip(fa, fb)) / min(sum(fa), sum(fb))
 
+
+def zusammenlegen(m, teile, i):
+    """Die Gruppe i geht in die Gruppe mit der groessten Ueberlappung auf (nicht in die mit dem naechsten haeufigsten Tempo).
+    Gibt die neue Einteilung zurueck, nach dem haeufigsten Tempo der Gruppen geordnet."""
+    kurven = kurven_von(m, teile)
+    partner = max((x for x in range(len(teile)) if x != i), key=lambda x: ueberdeckung(m, kurven[i], kurven[x]))
+    neu = [t for x, t in enumerate(teile) if x not in (i, partner)] + [teile[i] + teile[partner]]
+    rang = m.sortiert()
+    neu.sort(key=lambda t: gruppen_modus(m, [rang[r] for r in t]))
+    return neu
 
 def tabelle(zaehler, ab):
     werte = sorted(v for v in zaehler if v >= max(ab, 1))
@@ -397,7 +410,7 @@ def waehle_k(gerade, ungerade, ab):
     angepasste Geschwindigkeit.
 
     Links von ab ist die Verteilung nicht erfasst (nicht null): die Anpassung nutzt die Flanke im erfassten Bereich.
-    Kurven mit nahe beieinander liegendem haeufigsten Tempo bilden zusammen eine Gruppe (zusammenfassen); Stabilitaet, Groesse,
+    Kurven, deren Kernbereiche (mu +- s von ln v) sich ueberlappen, bilden zusammen eine Gruppe (zusammenfassen); Stabilitaet, Groesse,
     Trennung und Sichtbarkeit gelten fuer die Gruppen. Gibt dict mit k (Kurven), teile (Kurven je Gruppe), obere_gruppen_ueberlappen,
     auswahl (je K: gruppen, stabil, klein, sichtbar_min, d_unten, d_alle, modus_abstand, cv_gewinn, gegen_k) und mischung zurueck.
     cv_gewinn ist der Gewinn auf den jeweils anderen Tagen gegenueber der letzten gueltigen Anpassung gegen_k (zuerst K = 1).
@@ -411,8 +424,9 @@ def waehle_k(gerade, ungerade, ab):
     auswahl, mischungen, einteilung = [], {}, {}
     for k in range(2, K_MAX + 1):
         ma, mb, mt = anpassen(aw, aa, k, ab=ab), anpassen(bw, ba, k, ab=ab), anpassen(tw, ta, k, 4, ab=ab)
-        # Einteilung in Gruppen: erst nach dem Abstand der haeufigsten Tempi, dann so lange benachbarte Gruppen zusammenfassen, bis die
-        # Gruppen in beiden Haelften der Messtage wiederkehren (Kurven, die Masse tauschen, beschreiben dieselbe Gruppe)
+        # Einteilung in Gruppen: erst nach ueberlappenden Kernbereichen. Dann geht eine Gruppe, die in den Haelften der Messtage nicht
+        # wiederkehrt oder zu klein ist, in die Gruppe mit der groessten Ueberlappung auf, bis alle wiederkehren (Kurven, die Masse
+        # tauschen, beschreiben dieselbe Gruppe). Stabile Gruppen werden nie nur wegen ihrer Lage zusammengelegt.
         tr = zusammenfassen(mt)
         while True:
             pa, pb, pt = kurven_von(ma, tr), kurven_von(mb, tr), kurven_von(mt, tr)
@@ -423,8 +437,7 @@ def waehle_k(gerade, ungerade, ab):
             # die kleinste Problemgruppe geht in ihre naechste Nachbarin auf (statt dass die grossen Gruppen verschmelzen)
             probleme = set(problemgruppen(ma, pa, mb, pb)) | set(kleine_gruppen((mt,), tr))
             i = min(probleme, key=lambda i: min(gruppen_anteil(m_, kurven_von(m_, tr)[i]) for m_ in (ma, mb, mt)))
-            j = nachbar_paar(mt, tr, i)
-            tr = tr[:j] + [tr[j] + tr[j + 1]] + tr[j + 2:]
+            tr = zusammenlegen(mt, tr, i)
         # Gewinn auf den jeweils anderen Tagen gegenueber der letzten gueltigen Anpassung (nicht gegenueber K - 1): Eine Kurve, die
         # allein wenig bringt, soll eine zweite nicht verhindern, die erst zusammen mit ihr viel bringt
         gewinn = 0.5 * (ll_je_fahrzeug(ma, bw, ba) - ll_je_fahrzeug(basis[0], bw, ba)
@@ -443,10 +456,9 @@ def waehle_k(gerade, ungerade, ab):
     getrennt = [e["k"] for e in ok if e["d_alle"] is not None and e["d_alle"] >= D_MIN]
     unten = [e["k"] for e in ok if e["d_unten"] is not None and e["d_unten"] >= D_MIN]
     stark = [e["k"] for e in ok if e["cv_gewinn"] >= CV_GEWINN_STARK and (e["modus_abstand"] or 0) >= MODUS_ABSTAND_MIN]
-    lose = [e["k"] for e in ok if e["d_alle"] is not None and e["d_alle"] >= D_LOSE]  # alle Gruppen mindestens teilweise getrennt
     # Eine weitere Kurve innerhalb derselben Gruppen verfeinert nur die Form (die Zahl der Gruppen bleibt): Sie braucht nur den
     # Gewinn und die Stabilitaet, keine eigene Trennung und keinen starken Gewinn.
-    zulaessig = set(getrennt) | set(unten) | set(stark) | set(lose)
+    zulaessig = set(getrennt) | set(unten) | set(stark)
     vor = None  # die vorige gueltige Anpassung
     for e in ok:
         if e["k"] not in zulaessig and vor is not None and vor["k"] in zulaessig and vor["gruppen"] == e["gruppen"]:

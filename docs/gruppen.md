@@ -44,20 +44,29 @@ Geschwindigkeiten allein nicht entscheiden. Plausible Deutungen stehen als Hypot
    die breite Kurve, die die flache Schulter bei niedrigem Tempo trifft, die wenigen sehr schnellen Fahrzeuge miterklärt. Mit der
    Grenze (0,3: 12 Dateien, 0,25: 3 Dateien) besteht eine breite Schulter aus mehreren schmaleren Kurven, und der Ausläufer gehört der
    schnellen Gruppe.
-3. **Zahl der Kurven K und Einteilung in Gruppen, je Datei.** K wird für jede Datei einzeln bestimmt: Alle Werte von 2 bis 8 werden geprüft, die Suche bricht nicht ab (auch K = 5 kann\n   gut sein, wenn K = 3 nicht besser ist als K = 2). **Eine Gruppe besteht aus einer oder mehreren Kurven** (ihre Summe):
+3. **Zahl der Kurven K und Einteilung in Gruppen, je Datei.** K wird für jede Datei einzeln bestimmt: Alle Werte von 2 bis 8 werden geprüft, die Suche bricht nicht ab (auch K = 5 kann
+   gut sein, wenn K = 3 nicht besser ist als K = 2). **Eine Gruppe besteht aus einer oder mehreren Kurven** (ihre Summe):
    Eine Lognormal-Glocke trifft die Form einer Gruppe oft nicht ganz (ein schmaler Gipfel am Rand, eine Schulter), und eine
    zweite Kurve in derselben Gruppe verbessert nur die Form, ohne dass es eine zweite Gruppe wäre. Die Kurven werden deshalb
-   eingeteilt (`zusammenfassen`): Kurven, deren häufigstes Tempo weniger als 15 % (im Logarithmus 0,15) auseinanderliegt, bilden
-   eine Gruppe. Ist eine Gruppe in einer der beiden Hälften der Messtage oder in der Anpassung an alle Tage zu klein (unter 3 %) oder
-   stimmen Lage und Anteil nicht überein, geht die kleinste solche Gruppe in ihre Nachbarin mit dem näheren häufigsten Tempo auf.
-   Das wiederholt sich, bis alle Gruppen übereinstimmen (oder nur noch eine bleibt). Eine winzige Kurve (zum Beispiel 1 % bei
-   8 km/h) wird so Teil der benachbarten Gruppe, statt dass die großen Gruppen verschmelzen und die Zerlegung scheitert.
+   eingeteilt (`zusammenfassen`) nach ihren **Kernbereichen**: In ln v ist jede Kurve eine Gauß-Kurve mit Mitte μ und Streuung σ.
+   Die Kurven werden nach Anteil abnehmend betrachtet. Eine Kurve gehört zur Gruppe einer größeren, wenn sich ihr Kern (μ ± σ)
+   mit dem Kern einer Kurve dieser Gruppe überlappt, also |μₐ − μ_b| ≤ σₐ + σ_b (beide Streuungen gehen ein; `KERN_FAKTOR` = 1).
+   Liegt sie bei mehreren im Kern, gilt die mit der besten Überlappung. Sonst begründet sie eine neue Gruppe. Eine schmale Spitze
+   mit einem Hügel auf ihrer Flanke ist so eine Gruppe, zwei Gipfel mit getrennten Kernen sind zwei. Ein Tal wird nicht verlangt.
+   Danach wird nur aufgeräumt, was nicht wiederkehrt: Ist eine Gruppe in einer der beiden Hälften der Messtage oder in der
+   Anpassung an alle Tage zu klein oder stimmen Lage und Anteil nicht überein, geht die kleinste solche Gruppe in die Gruppe mit
+   der größten **Überlappung** auf (der Teil ihrer Masse, der unter der Massendichte der anderen liegt; nicht in die mit dem
+   nächsten häufigsten Tempo). Das wiederholt sich, bis alle Gruppen übereinstimmen (oder nur noch eine bleibt). Stabile Gruppen werden
+   nie nur wegen ihrer Lage zusammengelegt. Eine winzige Kurve (zum Beispiel 1 % bei 8 km/h) wird so Teil der überlappenden Gruppe,
+   statt dass die großen Gruppen verschmelzen und die Zerlegung scheitert.
    Kurven innerhalb einer Gruppe dürfen zwischen den Hälften Masse tauschen; belegt sein muss die Summe, nicht ihre Aufteilung.
    (Das Prinzip, Komponenten einer Mischung zu Gruppen zusammenzufassen, wo sich die Gruppen nicht trennen lassen, ist in der
    Literatur zur Cluster-Analyse mit Mischungen gebräuchlich, etwa Baudry u. a. 2010 und Hennig 2010.) Eine Kurve mehr gilt nur,
    wenn alles zutrifft:
    - **Gewinn auf den anderen Tagen:** Die Anpassung auf den geraden Messtagen beschreibt die ungeraden Tage um mindestens
-     0,005 nats je Fahrzeug besser als die letzte gültige Anpassung mit weniger Kurven (und umgekehrt); der Vergleich gilt nicht\n     nur gegenüber K − 1, denn eine Kurve, die allein wenig bringt, soll eine zweite nicht verhindern, die erst zusammen mit ihr viel\n     bringt. Die Schwelle ist eine
+     0,005 nats je Fahrzeug besser als die letzte gültige Anpassung mit weniger Kurven (und umgekehrt); der Vergleich gilt nicht
+     nur gegenüber K − 1, denn eine Kurve, die allein wenig bringt, soll eine zweite nicht verhindern, die erst zusammen mit ihr viel
+     bringt. Die Schwelle ist eine
      Effektgröße, kein Signifikanztest: Bei Zehntausenden Fahrzeugen belohnt jede Abweichung von der Lognormal-Form
      mit einem kleinen Gewinn.
    - **Stabil:** Die Gruppen aus den beiden Hälften der Messtage (gerade und ungerade Tage) stimmen in der Zahl, in der Lage
@@ -68,12 +77,12 @@ Geschwindigkeiten allein nicht entscheiden. Plausible Deutungen stehen als Hypot
      Ein deutlicher kleiner Gipfel (Nievenheimer Straße, 0,8 % der Fahrzeuge bei 9 km/h, rund 380 Fahrzeuge) wurde damit der
      Nachbargruppe zugeschlagen, obwohl er in beiden Hälften wiederkehrt.
    - **Sichtbar:** Jede Gruppe liegt zu mindestens 25 % im erfassten Bereich.
-   - **Getrennt:** Der Ashman-Abstand D = √2 · |μᵢ − μⱼ| / √(σᵢ² + σⱼ²) zwischen allen Gruppen (Mittel und Streuung von ln v der
-     Summenkurve) ist mindestens 1. Gibt es dafür keine Lösung, genügt ein Abstand von mindestens 0,5 zwischen allen Gruppen
-     (Festlegung, teilweise überlappende Gruppen), ein getrenntes Paar „langsamste Gruppe gegen die nächste“, oder ein Gewinn von
-     mindestens 0,02 nats, wenn die beiden langsamsten Gruppen im häufigsten Tempo um mindestens 15 % auseinanderliegen (breite
-     Gruppe neben einem schmalen Gipfel). Unter einem Abstand von 1 vermerkt die Seite, dass die Gruppen überlappen. Eine weitere
-     Kurve, die die Zahl der Gruppen nicht ändert, braucht nur den Gewinn und die Stabilität.
+   - **Getrennt:** Der Ashman-Abstand D = √2 · |μᵢ − μⱼ| / √(σᵢ² + σⱼ²) zwischen den Gruppen ist mindestens 1. Das ist durch die
+     Einteilung nach Kernbereichen schon erfüllt: Gruppen, deren Kerne sich nicht überlappen (|Δμ| > σᵢ + σⱼ), haben D > √2. Die
+     Prüfung bleibt als Sicherung (für Gruppen aus mehreren Kurven gilt sie nur näherungsweise), mit den Ausnahmen „langsamste
+     Gruppe gegen die nächste“ und einem Gewinn von mindestens 0,02 nats bei 15 % Abstand der häufigsten Tempi. Die Seite
+     vermerkt, wenn Gruppen unter D = 1 überlappen; bei den bisherigen Daten kommt das nicht vor. Eine weitere Kurve, die die Zahl
+     der Gruppen nicht ändert, braucht nur den Gewinn und die Stabilität.
    Gewählt wird das größte K, das alle Bedingungen erfüllt. Gibt es keins, bleibt es bei einer Gruppe
    (**keine Zerlegung**). Bei weniger als 5000 Fahrzeugen wird nicht zerlegt.
 4. **Feste Kurven für alle Stunden und Tage.** Form und Lage der Gruppen gelten für alle Tageszeiten und Tage gleich; nur
@@ -144,7 +153,7 @@ Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede j
 zerlegten Dateien sind es 2,1 % (Quartile 1,6 und 2,7), bei keiner mehr als 5 % (höchstens 4,0 %). Ab 10 % warnen die
 Seiten, dass das Modell schlecht passt. Bei 11 Gruppen liegt das häufigste Tempo nicht über dem Rand der Anpassung: Die Glocke ist
 dort am Rand abgeschnitten und wird aus ihrer sichtbaren Flanke angepasst (Schritt 2), das ist gewollt. Der **Rest** (Daten minus
-die Kurven, nie negativ) beträgt im Median 2,9 % der Fahrzeuge (Quartile 2,0 und 4,7 %). Er enthält auch die Fahrzeuge unter der
+die Kurven, nie negativ) beträgt im Median 2,9 % der Fahrzeuge (Quartile 1,8 und 4,6 %). Er enthält auch die Fahrzeuge unter der
 Anpassungsgrenze; die gibt es nur, wo ein Rauschboden abgezogen ist (41 der 97 Dateien) und der Abzug einen Teil der Fahrzeuge unterhalb der
 Grenze lässt (Rest bei der Feldstraße 58 % der Fahrzeuge, bei der Bauerbahn 42 %, bei der Martinstraße 41 %, fast alles davon unter der Grenze).
 
@@ -168,16 +177,17 @@ ihre Kurven verteilt ist, wird nicht ausgewiesen, weil sie zwischen den Hälften
 - Eine Glocke ist keine Fahrzeugart. Zusammenhänge mit Tageszeit, Wochentag oder Wetter können Hinweise geben, beweisen aber
   keine Zuordnung. Wetterdaten sind nicht eingebunden.
 - Bei überlappenden Gruppen ist die Trennung unsicher, auch wenn die Zerlegung stabil ist. Die Schwellen (0,005 und 0,02 nats, 7 %,
-  6 Prozentpunkte, 3 %, D ≥ 1 und D ≥ 0,5, 15 % Abstand der Modi, Streuung höchstens 0,25) sind Festlegungen, kein Befund. Bei 12 der 109 Dateien gibt es keine Zerlegung
-  (10 sind zu klein, bei 2 ist keine belegt); bei den übrigen 97 sind es 2 Gruppen (43 Dateien), 3 Gruppen (37), 4 Gruppen (12), 5 (3) oder 6 (2),
-  bei 6 davon mit überlappenden Gruppen. Bei 31 Dateien besteht jede Gruppe aus einer Kurve, bei 66 besteht mindestens eine Gruppe aus mehreren
-  Kurven (im Mittel 4,0 Kurven je Datei, bis zu 7). Gruppen unter 3 % der Fahrzeuge gibt es in 20 Dateien (27 Gruppen).
+  6 Prozentpunkte, 0,5 % und 150 Fahrzeuge, D ≥ 1, 15 % Abstand der Modi, Kernradius σ₁ + σ₂, Streuung höchstens 0,25) sind Festlegungen, kein Befund. Bei 12 der 109 Dateien gibt es keine Zerlegung
+  (10 sind zu klein, bei 2 ist keine belegt); bei den übrigen 97 sind es 2 Gruppen (58 Dateien), 3 Gruppen (33), 4 (5) oder 5 (1), bei
+  keiner mit überlappenden Gruppen. Bei 17 Dateien besteht jede Gruppe aus einer Kurve, bei 80 besteht mindestens eine Gruppe aus
+  mehreren Kurven (im Mittel 4,0 Kurven je Datei, bis zu 7; im Mittel 2,5 Gruppen). Gruppen unter 3 % der Fahrzeuge gibt es in 14
+  Dateien (23 Gruppen).
 - **Die Hälften der Messtage (gerade/ungerade) sind ein mildes Kriterium.** Gerade und ungerade Tage wechseln sich ab und haben
   dieselbe Mischung aus Wochentagen und Jahreszeit. Teilt man stattdessen den Zeitraum in eine erste und eine zweite Hälfte
-  (einmalige Prüfung, nicht Teil des Verfahrens), bleibt von 97 Zerlegungen nur bei 39 dieselbe Zerlegung bestehen (gleiche Zahl der Gruppen, Lage innerhalb von 15 %, Anteil innerhalb von
-  8 Prozentpunkten); bei 17 entsteht auf der zweiten Teilung keine, bei 41 eine andere (eine Datei wird nur auf der zweiten Teilung
-  zerlegt). Mit mehr Gruppen und kleineren Gruppen (ab 0,5 %) ändert sich bei einer anderen Teilung häufiger die Zahl der Gruppen. Vor der
-  Zusammenfassung von Kurven und der vollständigen Suche nach K war es ähnlich (von 81 Zerlegungen 38 gleich, 39 keine, 4 andere). Die Aussage ist
+  (einmalige Prüfung, nicht Teil des Verfahrens), bleibt von 97 Zerlegungen nur bei 47 dieselbe Zerlegung bestehen (gleiche Zahl der Gruppen, Lage innerhalb von 15 %, Anteil innerhalb von
+  8 Prozentpunkten); bei 21 entsteht auf der zweiten Teilung keine, bei 29 eine andere (eine Datei wird nur auf der zweiten Teilung
+  zerlegt). Vor der Zusammenfassung von Kurven und der vollständigen Suche nach K war es ähnlich (von 81 Zerlegungen 38 gleich, 39 keine,
+  4 andere). Die Aussage ist
   deshalb: Die Gruppen sind in einer Messung über gemischte Tage stabil; ihre Anteile und teils ihre Lage können von der Zeit
   (Jahreszeit, Wochentag, Baustellen) abhängen. Das ist kein Beleg, dass sie falsch sind, aber ein Grund, die Anteile nicht als
   feste Größe eines Standorts zu lesen.
