@@ -27,7 +27,8 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `<Standortordner>/metadaten.yaml` – zusätzlich erhobene Metadaten, siehe [docs/metadaten.md](docs/metadaten.md)
 - `belege/` – Ergebnisse der Prüfung (`uhr-bewertung.json`) und der Auswertung der Mitteilungen der
   Verwaltung (`ris.json`, `ris-messstellen.json`, `ris-zuordnung.json`, `metadaten.json`) sowie die
-  Korrekturen des Tempolimits, wo die Mitteilung ein anderes Limit nennt als die DSD (`korrekturen.json`)
+  Korrekturen des Tempolimits, wo die Mitteilung ein anderes Limit nennt als die DSD (`korrekturen.json`), und die
+  Wetterdaten des Deutschen Wetterdienstes je Tag (`wetter.json`, **CC BY 4.0**, siehe [Lizenz](#lizenz))
 - `tools/` – holt die Mitteilungen der Verwaltung aus dem Ratsinformationssystem und zerlegt sie
   (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`)
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
@@ -35,12 +36,14 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/rauschen.md` – Modell, Regeln und Grenzen des Rauschbodenabzugs
 - `docs/gruppen.md` – Zerlegung der Verteilung in Gruppen, Zeitscheiben und die Auswahl auf den Detailseiten
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
+- `docs/wetter.md` – Wetterdaten des DWD (Quelle, Lizenz, Stationswahl, Zeitangabe) und der Befund, dass Regen das Radar stört
 - `seiten_bauen.py` – baut je Standort eine Detailseite für die GitHub Pages (`standorte/<name>.html`), mit
   Geschwindigkeits-Histogrammen als Inline-SVG
 - `gruppen.py` – zerlegt die Verteilung je Datei in Gruppen (Lognormal-Mischung, Zahl der Kurven und Gruppen aus den Daten) und baut die Zellen für die Auswahl nach Tageszeit, Tagen und Gruppe
+- `wetter.py` – erzeugt `belege/wetter.json` aus den Daten des Deutschen Wetterdienstes (Niederschlag je Stunde und Tag, Tageswerte von Temperatur, Wind und Schnee); `tageslicht.py` – Sonnenaufgang, Sonnenuntergang und Dämmerung für Neuss, rein rechnerisch
 - `zwischenspeicher.py` – Zwischenspeicher für Ergebnisse je Datei (nur geänderte Dateien oder Skripte werden neu gerechnet)
 - `lokal_bauen.py` – baut die GitHub-Pages-Seite lokal nach `_vorschau/` und startet auf Wunsch einen lokalen Server, um sie vor dem Push im Browser anzusehen (`docs/betrieb.md`)
-- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py` – Tests (`python3 -m unittest -v`)
+- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py`, `test_wetter.py` – Tests (`python3 -m unittest -v`)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
 - `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz, dazu `filter.js` (kleines Skript für die Auswahl auf den Detailseiten, liest nur die Daten der eigenen Seite)
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
@@ -132,12 +135,18 @@ prüfen.
 
 ## Lizenz
 
-In diesem Repository gelten zwei Lizenzen:
+In diesem Repository gelten drei Lizenzen:
 
 | Was | Lizenz |
 |-----|--------|
 | Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
-| Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `metadaten.yaml`, `uhr-analyse.md`, `belege/`, `README.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
+| Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `metadaten.yaml`, `uhr-analyse.md`, `belege/` (außer `belege/wetter.json`), `README.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
+| Wetterdaten: `belege/wetter.json` (Daten des Deutschen Wetterdienstes, ausgewählt, auf Ortszeit-Tage umgerechnet und zusammengefasst) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de), **Quelle: Deutscher Wetterdienst** |
+
+Die Wetterdaten sind **nicht** CC0: Der Deutsche Wetterdienst gibt seine frei zugänglichen Wetter- und Klimadaten unter CC BY 4.0 mit
+Quellenvermerk frei (<https://www.dwd.de/DE/service/rechtliche_hinweise/rechtliche_hinweise_node.html>). Wer `belege/wetter.json` oder
+Auswertungen verwendet, die darauf beruhen (zum Beispiel die Einteilung in Regentage), muss den Deutschen Wetterdienst nennen und
+Änderungen kenntlich machen; Einzelheiten in `docs/wetter.md`.
 
 Die Quelldateien der Software tragen zusätzlich eine `SPDX-License-Identifier`-Zeile. Die Angaben in
 `metadaten.yaml` und `belege/` stammen aus öffentlichen Mitteilungen der Verwaltung im Ratsinformationssystem der Stadt
