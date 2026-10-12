@@ -255,6 +255,36 @@ class Seite(unittest.TestCase):
         h = self.html([], rows=[zeile(n=0)])
         self.assertIn("keine Fahrzeugdaten", h)
 
+    def test_geschaetzte_lage_mit_skizze_und_belegen(self):
+        import standorte
+        verz = standorte.Verzeichnis([standorte.Adresse("1", "Einsteinstraße", i, "", 1000.0 + (i % 2) * 20, 2000.0 + 10 * i) for i in range(1, 30)])
+        st = {"breite": 51.2, "laenge": 6.69, "utm32_ost": 1010, "utm32_nord": 2150, "unsicherheit_m": 90, "methode": "strasse",
+              "sicherheit": "manuell korrigiert", "strasse": "Einsteinstraße", "beschreibung": "Mitte <der> Straße",
+              "mehrdeutig": "Straße besteht aus getrennten Abschnitten",
+              "fahrtrichtung": {"ziel": "Hertzstraße", "peilung_grad": 197, "unsicherheit_grad": 26},
+              "belege": [{"art": "strasse", "text": "Einsteinstraße", "stufe": "benannt", "quelle": {"typ": "ordnername"}, "ort": "x",
+                          "radius_m": 90, "abstand_zum_ergebnis_m": 0, "verwendet": True, "widerspricht": False},
+                         {"art": "adresse", "text": "Nr. 3", "stufe": "vorschlag", "ort": "y", "radius_m": 30, "abstand_zum_ergebnis_m": 400,
+                          "quelle": {"typ": "ris", "vorlage": "69/1/2024", "sitzung": "2024-06-26", "dokument": "https://ris-neuss.itk-rheinland.de/x?id=2&type=do"},
+                          "verwendet": False, "widerspricht": True}]}
+        meta = {"standort": st, "messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}
+        h = s.seite("07_2024_ Einsteinstraße", [zeile()], meta, {}, None, verz)
+        self.assertIn("Geschätzte Lage", h)
+        self.assertIn("±90 m", h)
+        self.assertIn("manuell korrigiert", h)
+        self.assertIn('class="hist karte"', h)
+        self.assertIn("karte-kreis", h)
+        self.assertTrue(0 < h.count('class="karte-haus karte-eigene"') < 29)  # nur Häuser im Ausschnitt
+        self.assertIn("Kompassrichtung etwa 197°", h)
+        self.assertIn("widerspricht", h)
+        self.assertIn("Mitte &lt;der&gt; Straße", h)
+        self.assertIn("openstreetmap.org/?mlat=51.2&amp;mlon=6.69", h)
+        ohne = s.seite("07_2024_ Einsteinstraße", [zeile()], meta, {}, None, None)
+        self.assertNotIn("karte-kreis", ohne)
+        self.assertIn("Geschätzte Lage", ohne)
+        for url in re.findall(r'(?:href|src)="(https?://[^"]+)"', h):
+            self.assertRegex(url, r"^https://(github\.com/Khazuar|ris-neuss\.itk-rheinland\.de|creativecommons\.org|www\.openstreetmap\.org)")
+
     def test_keine_externen_adressen_ausser_github_und_ris(self):
         h = self.html([eintrag()])
         for url in re.findall(r'(?:href|src)="(https?://[^"]+)"', h):

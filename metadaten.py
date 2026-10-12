@@ -485,6 +485,7 @@ def main():
     ap.add_argument("--zuordnung", default="belege/ris-zuordnung.json")
     ap.add_argument("--json", default="belege/metadaten.json", help="alle Metadaten in einer Datei (fuer die Seiten)")
     ap.add_argument("--korrekturen", default="belege/korrekturen.json", help="Korrekturen des Tempolimits (fuer dsd2csv.py)")
+    ap.add_argument("--standorte", default="belege/standorte.json", help="Lage der Standortordner (fuer die Wahl der Wetterstation in dsd2csv.py)")
     ap.add_argument("--adressen", default="belege/neuss-adressen.csv", help="Hauskoordinaten (tools/adressen_laden.py); ohne Datei kein Standort")
     ap.add_argument("--standort-hinweise", default="belege/standort-hinweise.json", help="weitere Ortsangaben (docs/standorte.md)")
     a = ap.parse_args()
@@ -503,6 +504,12 @@ def main():
     with open(a.json, "w", encoding="utf-8", newline="\n") as fh:
         json.dump({"erzeugt_von": "metadaten.py", "standorte": alle}, fh, ensure_ascii=False, indent=1)
         fh.write("\n")
+    if verz is not None:  # nur die Lage, davon haengt die Wahl der Wetterstation ab (dsd2csv.py)
+        kurz = {rel: {k: s["standort"][k] for k in ("breite", "laenge", "unsicherheit_m", "sicherheit")} for rel, s in alle.items() if "standort" in s}
+        with open(a.standorte, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump({"erzeugt_von": "metadaten.py", "hinweis": "geschaetzte Lage der Standortordner, siehe docs/standorte.md", "standorte": kurz},
+                      fh, ensure_ascii=False, indent=1)
+            fh.write("\n")
 
     nicht_ausgewertet = [{"dokument": doc["dokument"], **x} for doc in quelle["dokumente"] for x in doc["nicht_ausgewertet"]]
     os.makedirs(os.path.dirname(a.zuordnung) or ".", exist_ok=True)

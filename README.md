@@ -31,7 +31,8 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
   Verwaltung (`ris.json`, `ris-messstellen.json`, `ris-zuordnung.json`, `metadaten.json`) sowie die
   Korrekturen des Tempolimits, wo die Mitteilung ein anderes Limit nennt als die DSD (`korrekturen.json`), und die
   Wetterdaten des Deutschen Wetterdienstes je Tag (`wetter.json`, **CC BY 4.0**, siehe [Lizenz](#lizenz)), die Hauskoordinaten der
-  Stadt Neuss (`neuss-adressen.csv`, Geobasis NRW, dl-de/zero-2-0) und die Ortshinweise zu den Messstellen (`standort-hinweise.json`)
+  Stadt Neuss (`neuss-adressen.csv`, Geobasis NRW, dl-de/zero-2-0), die Ortshinweise zu den Messstellen (`standort-hinweise.json`)
+  und die geschätzte Lage der Standortordner (`standorte.json`, bestimmt auch die Wetterstation je Messstelle)
 - `tools/` – holt die Mitteilungen der Verwaltung aus dem Ratsinformationssystem und zerlegt sie
   (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`) und die Hauskoordinaten von Geobasis NRW (`adressen_laden.py`)
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen

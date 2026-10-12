@@ -16,6 +16,7 @@ die Rechnung sucht deshalb den Abschnitt der Straße, nicht den Mast.
 | **Ordnername** | Straße, oft Hausnummer („Hauptstraße 13a“, „Cyriakusstraße 86-88“), „ggü. Nr.“, „Ecke“, „Höhe“, „zwischen A und B“ | die Ordner |
 | **Mitteilungen der Verwaltung** | Bezeichnung der Messstelle („Kreitzweg (Höhe Ludgerusring)“), Fahrtrichtung („FR Hertzstraße“), „beidseitige Messung“ | `metadaten.yaml`, `verwaltung[].bezeichnung` |
 | **Berichte der Messsoftware** (DataCollect-PDF der Verwaltung, nicht im Repository) | Name der Messstelle mit Hausnummer („Bataverstr. 103“) und die Querstraßen an den Enden der Messstrecke | `belege/standort-hinweise.json`, Quelle `datacollect` |
+| **Manuelle Korrektur** | Angaben des Betreibers, die in den Unterlagen fehlen (Anschrift einer Schule) | elege/standort-hinweise.json, Stufe manuell |
 | **Vorlagen und Anträge** im Ratsinformationssystem | Standortvorschläge der Bezirksausschüsse („Kaarster Straße, Höhe Nr. 71, FR Kaarst“) und ein Antrag mit der Fahrtrichtung zur Daimlerstraße 140 | `belege/standort-hinweise.json`, Quelle `ris`, mit Vorlage, Sitzung und Link |
 
 In den Beschlussvorlagen der Bezirksausschüsse, die festlegen sollen, welche der Vorschläge umgesetzt werden, sind die Plätze für die
@@ -48,6 +49,9 @@ eine Abweichung um einen Buchstaben („Eichendorfstraße“ statt „Eichendorf
 **`sicherheit`:**
 
 - `benannt` – die Verwaltung (Ordnername, Mitteilung, Bericht der Messsoftware) nennt den Ort.
+- `manuell korrigiert` – der Betreiber dieses Repositories hat die Lage von Hand angegeben (Stufe `manuell` in `belege/standort-hinweise.json`); sie geht
+  allen anderen Angaben vor. Bisher ein Ordner: `38_Konrad-Adenauer-Ring (Görresschule)`, Konrad-Adenauer-Ring 67 (die Anschrift der Schule; die
+  Unterlagen der Verwaltung nennen sie nicht).
 - `vermutet` – nur ein Standortvorschlag oder Antrag nennt die Hausnummer, und sie liegt auf der Straße des Ordners. Der Radius ist dann
   mindestens 60 m. Das trifft sieben Ordner; ob der Vorschlag umgesetzt wurde, steht nirgends.
 - `widersprüchlich` – zwei gleichrangige Angaben schließen sich aus. Das ist nur `07_Lupinen_Nierenhofstraße`: der Ordner nennt beide Straßen,
@@ -70,26 +74,26 @@ nur bei der Feldstraße, bei den anderen beiden ist die ganze Straße genauer.
 
 ## Ergebnis
 
-94 Standortordner, alle mit Standort. Der Radius liegt zwischen 30 und 1.387 m, im Median bei 237 m.
+94 Standortordner, alle mit Standort. Der Radius liegt zwischen 30 und 1.387 m, im Median bei 234 m.
 
 | Hinweis | Ordner | `sicherheit` |
 |---------|--------|--------------|
-| `adresse` | 12 | 6 benannt (Hausnummer im Ordnernamen oder Bericht), 6 vermutet (Vorschlag) |
+| `adresse` | 13 | 6 benannt (Hausnummer im Ordnernamen oder Bericht), 1 manuell korrigiert, 6 vermutet (Vorschlag) |
 | `zwischen_nr` | 1 | vermutet |
 | `kreuzung` | 3 | benannt |
 | `zwischen_strassen` | 2 | benannt |
-| `strasse` | 76 | 75 benannt, 1 widersprüchlich |
+| `strasse` | 75 | 74 benannt, 1 widersprüchlich |
 
 | Radius bis | Ordner |
 |------------|--------|
-| 50 m | 8 |
-| 100 m | 26 |
-| 200 m | 42 |
-| 300 m | 59 |
-| 500 m | 74 |
+| 50 m | 9 |
+| 100 m | 27 |
+| 200 m | 43 |
+| 300 m | 60 |
+| 500 m | 75 |
 | 1.000 m | 89 |
 
-Bei 76 von 94 Ordnern steht nur die Straße fest. Das ist der Kern der Unsicherheit: Der Radius ist dann die Ausdehnung der Straße,
+Bei 75 von 94 Ordnern steht nur die Straße fest. Das ist der Kern der Unsicherheit: Der Radius ist dann die Ausdehnung der Straße,
 nicht ein Messfehler. Eine Hausnummer, „Ecke“, „Höhe“ oder „zwischen“ im Namen verkleinert ihn auf 30 bis 110 m.
 
 ## Format
@@ -102,7 +106,7 @@ standort:
   utm32_nord: 5670298
   unsicherheit_m: 30         # Radius um den Punkt, ungefähr 90 %
   methode: "adresse"         # adresse | zwischen_nr | kreuzung | zwischen_strassen | strasse
-  sicherheit: "benannt"      # benannt | vermutet | widersprüchlich
+  sicherheit: "benannt"      # benannt | manuell korrigiert | vermutet | widersprüchlich
   strasse: "Hauptstraße"
   beschreibung: "Hausnummer 13a im Verzeichnis"
   mehrdeutig: "…"            # nur wenn die Straße aus getrennten Abschnitten besteht
@@ -111,7 +115,7 @@ standort:
   belege:                    # alle Hinweise, auch die nicht verwendeten, mit Quelle
     - art: "adresse"
       text: "Hauptstraße 13a"
-      stufe: "benannt"       # benannt | vorschlag
+      stufe: "benannt"       # manuell | benannt | vorschlag
       quelle: {typ: "ordnername", name: "03_2024_Hauptstraße 13a"}
       ort: "Hausnummer 13a im Verzeichnis"
       radius_m: 30
@@ -122,7 +126,9 @@ standort:
   nicht_auswertbar: […]      # Teile des Namens ohne Ort im Verzeichnis („Eingang“, „Görresschule“)
 ```
 
-Dieselben Angaben stehen in `belege/metadaten.json`.
+Dieselben Angaben stehen in `belege/metadaten.json`; `belege/standorte.json` enthält nur Lage und Unsicherheit (davon hängt die Wahl der
+Wetterstation ab). Die Detailseiten zeigen die Lage mit einer Skizze der Häuser der Umgebung, dem Unsicherheitskreis und den Hinweisen; sie
+laden keine Kartenkacheln und verweisen nur auf OpenStreetMap.
 
 ## Grenzen
 
@@ -145,6 +151,8 @@ python3 -I metadaten.py .                                         # schreibt Sta
 python3 -I standorte.py                                           # nur die Tabelle, ohne die DSD-Dateien zu lesen
 ```
 
+Die Wetterstation richtet sich seit Oktober 2026 nach dieser Lage ([wetter.md](wetter.md)).
+
 Die Hinweise aus Anträgen und Berichten stehen mit Zitat und Quelle in `belege/standort-hinweise.json`; neue Hinweise dort ergänzen und
 `metadaten.py` neu starten. `test_standorte.py` prüft die Rechnung an einem kleinen Verzeichnis und die Hinweise gegen das echte.
 
@@ -159,5 +167,4 @@ enthält davon nur Straße, Hausnummer, Zusatz, Lage und Qualitätsstufe der Adr
 - **Straßenachsen** aus einem Open-Data-Bestand (zum Beispiel das Basis-DLM von Geobasis NRW; vorher die Lizenz prüfen) statt der Häuserpunkte: Dann ließe
   sich „zwischen zwei Querstraßen“ und „Ende der Straße“ genau rechnen, und der Mast läge auf der Straße. Daten aus OpenStreetMap (Straßenlaternen,
   Orte) stehen unter der ODbL und passen nicht zu CC0.
-- **Wetterstation je Messstelle** statt je Stadt ([wetter.md](wetter.md)): Die Koordinaten erlauben, die nächste DWD-Station zu wählen.
 - Wer einzelne Standorte kennt (oder prüft), kann die Radien an echten Positionen eichen; ohne solche Vergleichswerte bleibt `ANNAHMEN` eine Annahme.

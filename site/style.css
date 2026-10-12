@@ -109,3 +109,11 @@ svg.hist .hist-modell { fill: none; stroke: var(--fg); stroke-width: 1.8; stroke
 svg.hist .hist-modell-links { fill: none; stroke: var(--fg); stroke-width: 1.5; stroke-dasharray: 5 4; stroke-linejoin: round; opacity: 0.75; }
 svg.hist .rausch-alle { fill: var(--h-gitter); }
 svg.hist .rausch-rot { fill: var(--h-ueber); }
+
+/* Lageskizze der Messstelle (seiten_bauen.py: karte_svg) */
+svg.karte { max-width: 480px; }
+svg.karte .karte-rahmen { fill: none; stroke: var(--line); }
+svg.karte .karte-haus { fill: var(--muted); fill-opacity: 0.45; }
+svg.karte .karte-eigene { fill: var(--fg); fill-opacity: 0.85; }
+svg.karte .karte-kreis { fill: var(--h-ueber); fill-opacity: 0.12; stroke: var(--h-ueber); stroke-width: 1.5; stroke-dasharray: 6 4; }
+svg.karte .karte-mitte { fill: none; stroke: var(--h-ueber); stroke-width: 2; }

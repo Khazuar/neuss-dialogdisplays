@@ -1,0 +1,570 @@
+{
+ "erzeugt_von": "metadaten.py",
+ "hinweis": "geschaetzte Lage der Standortordner, siehe docs/standorte.md",
+ "standorte": {
+  "02_2024_Bauerbahn, ggü. Nr. 3": {
+   "breite": 51.196436,
+   "laenge": 6.644156,
+   "unsicherheit_m": 45,
+   "sicherheit": "benannt"
+  },
+  "02_Föhrenstraße/2023_FR Fliederstraße": {
+   "breite": 51.124359,
+   "laenge": 6.728703,
+   "unsicherheit_m": 285,
+   "sicherheit": "benannt"
+  },
+  "03_2024_Hauptstraße 13a": {
+   "breite": 51.160833,
+   "laenge": 6.666808,
+   "unsicherheit_m": 30,
+   "sicherheit": "benannt"
+  },
+  "04_2024_Cyriakusstraße 86-88": {
+   "breite": 51.17791,
+   "laenge": 6.742979,
+   "unsicherheit_m": 47,
+   "sicherheit": "benannt"
+  },
+  "04_Cyriakusstraße": {
+   "breite": 51.17907,
+   "laenge": 6.741347,
+   "unsicherheit_m": 280,
+   "sicherheit": "benannt"
+  },
+  "05_Quinheimer Straße": {
+   "breite": 51.177667,
+   "laenge": 6.744146,
+   "unsicherheit_m": 166,
+   "sicherheit": "benannt"
+  },
+  "06_Rosellener Schulstraße": {
+   "breite": 51.12968,
+   "laenge": 6.727946,
+   "unsicherheit_m": 49,
+   "sicherheit": "benannt"
+  },
+  "07_2024_ Einsteinstraße": {
+   "breite": 51.183444,
+   "laenge": 6.671842,
+   "unsicherheit_m": 223,
+   "sicherheit": "benannt"
+  },
+  "07_Lupinen_Nierenhofstraße": {
+   "breite": 51.170017,
+   "laenge": 6.689734,
+   "unsicherheit_m": 540,
+   "sicherheit": "widersprüchlich"
+  },
+  "08_2024_Steinhausstraße": {
+   "breite": 51.209217,
+   "laenge": 6.661025,
+   "unsicherheit_m": 78,
+   "sicherheit": "vermutet"
+  },
+  "08_Kruppstraße": {
+   "breite": 51.158775,
+   "laenge": 6.742612,
+   "unsicherheit_m": 245,
+   "sicherheit": "benannt"
+  },
+  "09_2024_Hoistener Schulstraße": {
+   "breite": 51.140624,
+   "laenge": 6.701675,
+   "unsicherheit_m": 97,
+   "sicherheit": "benannt"
+  },
+  "09_Schellbergstraße": {
+   "breite": 51.166659,
+   "laenge": 6.735524,
+   "unsicherheit_m": 193,
+   "sicherheit": "benannt"
+  },
+  "100_Norfer Kirchstraße": {
+   "breite": 51.156428,
+   "laenge": 6.718886,
+   "unsicherheit_m": 346,
+   "sicherheit": "benannt"
+  },
+  "101_Nievenheimer Straße": {
+   "breite": 51.156601,
+   "laenge": 6.733079,
+   "unsicherheit_m": 234,
+   "sicherheit": "benannt"
+  },
+  "102_Gierer Straße": {
+   "breite": 51.135281,
+   "laenge": 6.732121,
+   "unsicherheit_m": 303,
+   "sicherheit": "benannt"
+  },
+  "103_Rheinfährstraße": {
+   "breite": 51.16266,
+   "laenge": 6.787059,
+   "unsicherheit_m": 591,
+   "sicherheit": "benannt"
+  },
+  "104_Bonner Straße": {
+   "breite": 51.173994,
+   "laenge": 6.749368,
+   "unsicherheit_m": 1387,
+   "sicherheit": "benannt"
+  },
+  "105_An der Obererft": {
+   "breite": 51.18708,
+   "laenge": 6.6978,
+   "unsicherheit_m": 413,
+   "sicherheit": "benannt"
+  },
+  "106_Düsseldorfer Straße": {
+   "breite": 51.215668,
+   "laenge": 6.693942,
+   "unsicherheit_m": 990,
+   "sicherheit": "benannt"
+  },
+  "107_Konradstraße": {
+   "breite": 51.183468,
+   "laenge": 6.717108,
+   "unsicherheit_m": 242,
+   "sicherheit": "benannt"
+  },
+  "108_Deichstraße": {
+   "breite": 51.168337,
+   "laenge": 6.791732,
+   "unsicherheit_m": 270,
+   "sicherheit": "benannt"
+  },
+  "109_Ruhrstraße": {
+   "breite": 51.161842,
+   "laenge": 6.736791,
+   "unsicherheit_m": 778,
+   "sicherheit": "benannt"
+  },
+  "10_2024_Vereinsstraße": {
+   "breite": 51.163333,
+   "laenge": 6.669517,
+   "unsicherheit_m": 375,
+   "sicherheit": "benannt"
+  },
+  "10_Holzbüttgener Straße": {
+   "breite": 51.209003,
+   "laenge": 6.650639,
+   "unsicherheit_m": 97,
+   "sicherheit": "benannt"
+  },
+  "110_Rosellener Kirchstraße": {
+   "breite": 51.129501,
+   "laenge": 6.72978,
+   "unsicherheit_m": 412,
+   "sicherheit": "benannt"
+  },
+  "111_Weckhovener Straße": {
+   "breite": 51.153664,
+   "laenge": 6.703711,
+   "unsicherheit_m": 844,
+   "sicherheit": "benannt"
+  },
+  "112_Liedberger Straße": {
+   "breite": 51.174622,
+   "laenge": 6.635631,
+   "unsicherheit_m": 129,
+   "sicherheit": "benannt"
+  },
+  "113_Am Leuchtenhof": {
+   "breite": 51.209592,
+   "laenge": 6.652385,
+   "unsicherheit_m": 163,
+   "sicherheit": "benannt"
+  },
+  "114_Niederdonker Weg": {
+   "breite": 51.227606,
+   "laenge": 6.682492,
+   "unsicherheit_m": 60,
+   "sicherheit": "vermutet"
+  },
+  "115_Breite Straße": {
+   "breite": 51.196468,
+   "laenge": 6.687273,
+   "unsicherheit_m": 400,
+   "sicherheit": "benannt"
+  },
+  "116_Martinstraße": {
+   "breite": 51.161682,
+   "laenge": 6.66977,
+   "unsicherheit_m": 122,
+   "sicherheit": "benannt"
+  },
+  "117_Euskirchener Straße": {
+   "breite": 51.168494,
+   "laenge": 6.724994,
+   "unsicherheit_m": 502,
+   "sicherheit": "benannt"
+  },
+  "118_Ruhrstraße": {
+   "breite": 51.161842,
+   "laenge": 6.736791,
+   "unsicherheit_m": 778,
+   "sicherheit": "benannt"
+  },
+  "11_Thywissenstraße": {
+   "breite": 51.191613,
+   "laenge": 6.683107,
+   "unsicherheit_m": 84,
+   "sicherheit": "benannt"
+  },
+  "12_2024_Hüsenstraße": {
+   "breite": 51.178273,
+   "laenge": 6.741476,
+   "unsicherheit_m": 52,
+   "sicherheit": "benannt"
+  },
+  "12_Berghäuschensweg": {
+   "breite": 51.179178,
+   "laenge": 6.715559,
+   "unsicherheit_m": 1104,
+   "sicherheit": "benannt"
+  },
+  "13_2024_Neukirchener Straße": {
+   "breite": 51.124953,
+   "laenge": 6.725401,
+   "unsicherheit_m": 492,
+   "sicherheit": "benannt"
+  },
+  "14_2024_Salzstraße": {
+   "breite": 51.203347,
+   "laenge": 6.688943,
+   "unsicherheit_m": 60,
+   "sicherheit": "vermutet"
+  },
+  "14_Eichendorfstraße": {
+   "breite": 51.186025,
+   "laenge": 6.693657,
+   "unsicherheit_m": 233,
+   "sicherheit": "benannt"
+  },
+  "15_2024_Martinusstraße": {
+   "breite": 51.16765,
+   "laenge": 6.787364,
+   "unsicherheit_m": 237,
+   "sicherheit": "benannt"
+  },
+  "15_Schluchenhausstraße": {
+   "breite": 51.146293,
+   "laenge": 6.69768,
+   "unsicherheit_m": 163,
+   "sicherheit": "benannt"
+  },
+  "17_Nordkanalallee": {
+   "breite": 51.191534,
+   "laenge": 6.696147,
+   "unsicherheit_m": 421,
+   "sicherheit": "benannt"
+  },
+  "18_Neuenberger Straße": {
+   "breite": 51.126938,
+   "laenge": 6.735694,
+   "unsicherheit_m": 267,
+   "sicherheit": "benannt"
+  },
+  "19_Bataverstraße": {
+   "breite": 51.232813,
+   "laenge": 6.688412,
+   "unsicherheit_m": 30,
+   "sicherheit": "benannt"
+  },
+  "20_Nievenheimer Straße": {
+   "breite": 51.156601,
+   "laenge": 6.733079,
+   "unsicherheit_m": 234,
+   "sicherheit": "benannt"
+  },
+  "21_Hermannstraße": {
+   "breite": 51.198831,
+   "laenge": 6.681154,
+   "unsicherheit_m": 55,
+   "sicherheit": "benannt"
+  },
+  "22_Meertal": {
+   "breite": 51.183697,
+   "laenge": 6.704076,
+   "unsicherheit_m": 247,
+   "sicherheit": "benannt"
+  },
+  "23-2023_Im_Tal": {
+   "breite": 51.214991,
+   "laenge": 6.679421,
+   "unsicherheit_m": 40,
+   "sicherheit": "benannt"
+  },
+  "24_Kreitzweg": {
+   "breite": 51.165561,
+   "laenge": 6.66056,
+   "unsicherheit_m": 59,
+   "sicherheit": "benannt"
+  },
+  "26_Buscherhofstraße": {
+   "breite": 51.16207,
+   "laenge": 6.63516,
+   "unsicherheit_m": 149,
+   "sicherheit": "benannt"
+  },
+  "33_Holzheimer Weg 109": {
+   "breite": 51.179984,
+   "laenge": 6.684408,
+   "unsicherheit_m": 30,
+   "sicherheit": "benannt"
+  },
+  "34_Holzheimer Weg (zwischen Bergheimer Straße und Am Krausenbaum)": {
+   "breite": 51.184987,
+   "laenge": 6.687719,
+   "unsicherheit_m": 111,
+   "sicherheit": "benannt"
+  },
+  "36_Lanzerather Buschweg": {
+   "breite": 51.175607,
+   "laenge": 6.634383,
+   "unsicherheit_m": 60,
+   "sicherheit": "vermutet"
+  },
+  "38_Konrad-Adenauer-Ring (Görresschule)": {
+   "breite": 51.193378,
+   "laenge": 6.670394,
+   "unsicherheit_m": 30,
+   "sicherheit": "manuell korrigiert"
+  },
+  "39_Weinstockstraße": {
+   "breite": 51.170361,
+   "laenge": 6.687089,
+   "unsicherheit_m": 160,
+   "sicherheit": "benannt"
+  },
+  "41_Breite Straße": {
+   "breite": 51.196468,
+   "laenge": 6.687273,
+   "unsicherheit_m": 400,
+   "sicherheit": "benannt"
+  },
+  "44_Am Röttgen": {
+   "breite": 51.178581,
+   "laenge": 6.750365,
+   "unsicherheit_m": 408,
+   "sicherheit": "benannt"
+  },
+  "45_St.Antoniusstraße": {
+   "breite": 51.143354,
+   "laenge": 6.722963,
+   "unsicherheit_m": 369,
+   "sicherheit": "benannt"
+  },
+  "46_Matthiasstraße": {
+   "breite": 51.166153,
+   "laenge": 6.788401,
+   "unsicherheit_m": 226,
+   "sicherheit": "benannt"
+  },
+  "47_Bonner Straße": {
+   "breite": 51.173994,
+   "laenge": 6.749368,
+   "unsicherheit_m": 1387,
+   "sicherheit": "benannt"
+  },
+  "48_Lanzerather Dorfstraße": {
+   "breite": 51.179568,
+   "laenge": 6.647628,
+   "unsicherheit_m": 130,
+   "sicherheit": "benannt"
+  },
+  "50_Norfer Kirchstraße": {
+   "breite": 51.156428,
+   "laenge": 6.718886,
+   "unsicherheit_m": 346,
+   "sicherheit": "benannt"
+  },
+  "53_Feldstraße": {
+   "breite": 51.220273,
+   "laenge": 6.652311,
+   "unsicherheit_m": 164,
+   "sicherheit": "benannt"
+  },
+  "54-2023_Holunderweg": {
+   "breite": 51.180508,
+   "laenge": 6.719374,
+   "unsicherheit_m": 96,
+   "sicherheit": "benannt"
+  },
+  "55_Alte Uferstraße": {
+   "breite": 51.142286,
+   "laenge": 6.704722,
+   "unsicherheit_m": 74,
+   "sicherheit": "benannt"
+  },
+  "57_Kuhweg": {
+   "breite": 51.172126,
+   "laenge": 6.75094,
+   "unsicherheit_m": 281,
+   "sicherheit": "benannt"
+  },
+  "59_Nierenhofstraße": {
+   "breite": 51.166769,
+   "laenge": 6.68809,
+   "unsicherheit_m": 161,
+   "sicherheit": "benannt"
+  },
+  "60_Mühlenstraße": {
+   "breite": 51.195347,
+   "laenge": 6.69543,
+   "unsicherheit_m": 114,
+   "sicherheit": "benannt"
+  },
+  "62_Hochstadenstraße": {
+   "breite": 51.144877,
+   "laenge": 6.702083,
+   "unsicherheit_m": 416,
+   "sicherheit": "benannt"
+  },
+  "70_Aloysiusstraße": {
+   "breite": 51.148472,
+   "laenge": 6.749487,
+   "unsicherheit_m": 76,
+   "sicherheit": "benannt"
+  },
+  "76_Daimlerstraße 140": {
+   "breite": 51.225523,
+   "laenge": 6.668943,
+   "unsicherheit_m": 30,
+   "sicherheit": "benannt"
+  },
+  "79_Rosmarinstraße": {
+   "breite": 51.172172,
+   "laenge": 6.683358,
+   "unsicherheit_m": 149,
+   "sicherheit": "benannt"
+  },
+  "80_Kaarster Straße": {
+   "breite": 51.219318,
+   "laenge": 6.656888,
+   "unsicherheit_m": 60,
+   "sicherheit": "vermutet"
+  },
+  "81_Gohrer Straße": {
+   "breite": 51.158884,
+   "laenge": 6.696596,
+   "unsicherheit_m": 258,
+   "sicherheit": "benannt"
+  },
+  "82_Lüttenglehner Straße": {
+   "breite": 51.171311,
+   "laenge": 6.633996,
+   "unsicherheit_m": 1107,
+   "sicherheit": "benannt"
+  },
+  "84_Am Alten Bach": {
+   "breite": 51.137592,
+   "laenge": 6.751601,
+   "unsicherheit_m": 517,
+   "sicherheit": "benannt"
+  },
+  "85_Berghäuschensweg": {
+   "breite": 51.179178,
+   "laenge": 6.715559,
+   "unsicherheit_m": 1104,
+   "sicherheit": "benannt"
+  },
+  "86_Rheinfährstraße": {
+   "breite": 51.16266,
+   "laenge": 6.787059,
+   "unsicherheit_m": 591,
+   "sicherheit": "benannt"
+  },
+  "87_Mühlenstraße": {
+   "breite": 51.195347,
+   "laenge": 6.69543,
+   "unsicherheit_m": 114,
+   "sicherheit": "benannt"
+  },
+  "88_Pomona (Eingang)": {
+   "breite": 51.179419,
+   "laenge": 6.691251,
+   "unsicherheit_m": 188,
+   "sicherheit": "benannt"
+  },
+  "89_Viersener Straße (Am Jröne Meerke)": {
+   "breite": 51.217698,
+   "laenge": 6.655745,
+   "unsicherheit_m": 52,
+   "sicherheit": "benannt"
+  },
+  "90_Krokusstraße (Ecke Tulpenstraße)": {
+   "breite": 51.171302,
+   "laenge": 6.679986,
+   "unsicherheit_m": 53,
+   "sicherheit": "benannt"
+  },
+  "91_Am Reckberg": {
+   "breite": 51.172851,
+   "laenge": 6.771924,
+   "unsicherheit_m": 971,
+   "sicherheit": "benannt"
+  },
+  "92_Konradstraße": {
+   "breite": 51.183468,
+   "laenge": 6.717108,
+   "unsicherheit_m": 242,
+   "sicherheit": "benannt"
+  },
+  "93_Föhrenstraße": {
+   "breite": 51.124359,
+   "laenge": 6.728703,
+   "unsicherheit_m": 285,
+   "sicherheit": "benannt"
+  },
+  "94_Ruhrstraße": {
+   "breite": 51.161842,
+   "laenge": 6.736791,
+   "unsicherheit_m": 778,
+   "sicherheit": "benannt"
+  },
+  "95_Reuschenberger Straße": {
+   "breite": 51.158404,
+   "laenge": 6.671273,
+   "unsicherheit_m": 60,
+   "sicherheit": "vermutet"
+  },
+  "96_An der Obererft": {
+   "breite": 51.18708,
+   "laenge": 6.6978,
+   "unsicherheit_m": 413,
+   "sicherheit": "benannt"
+  },
+  "97_Preußenstraße": {
+   "breite": 51.19049,
+   "laenge": 6.675357,
+   "unsicherheit_m": 549,
+   "sicherheit": "benannt"
+  },
+  "98_Erprather Straße": {
+   "breite": 51.162916,
+   "laenge": 6.688586,
+   "unsicherheit_m": 372,
+   "sicherheit": "benannt"
+  },
+  "99_Münchener Straße": {
+   "breite": 51.159369,
+   "laenge": 6.664845,
+   "unsicherheit_m": 60,
+   "sicherheit": "vermutet"
+  },
+  "Stationär_Villestraße/FR GV": {
+   "breite": 51.140043,
+   "laenge": 6.705468,
+   "unsicherheit_m": 719,
+   "sicherheit": "benannt"
+  },
+  "Stationär_Villestraße/FR Norf": {
+   "breite": 51.140043,
+   "laenge": 6.705468,
+   "unsicherheit_m": 719,
+   "sicherheit": "benannt"
+  }
+ }
+}

@@ -235,6 +235,16 @@ class Entscheidung(unittest.TestCase):
         self.assertEqual(e["utm32_nord"], 300)
         self.assertTrue([b for b in e["belege"] if b["stufe"] == "vorschlag"][0]["verwendet"])
 
+    def test_manuelle_korrektur_geht_vor(self):
+        h = [{"art": "adresse", "strasse": "Teststraße", "nr": "30", "stufe": "manuell", "text": "von Hand", "quelle": {"typ": "manuell"}},
+             {"art": "adresse", "strasse": "Teststraße", "nr": "10", "stufe": "benannt", "text": "x", "quelle": {"typ": "ris"}},
+             {"art": "adresse", "strasse": "Teststraße", "nr": "12", "stufe": "vorschlag", "text": "y", "quelle": {"typ": "ris"}}]
+        e = s.bestimme("05_Teststraße", self.v, h)
+        self.assertEqual(e["sicherheit"], "manuell korrigiert")
+        self.assertEqual(e["utm32_nord"], 300)
+        self.assertEqual(e["unsicherheit_m"], s.ANNAHMEN["adresse_m"])
+        self.assertEqual([b["verwendet"] for b in e["belege"] if b["stufe"] == "manuell"], [True])
+
     def test_vorschlag_ausserhalb_wird_ignoriert(self):
         h = [{"art": "adresse", "strasse": "Fernweg", "nr": "3", "stufe": "vorschlag", "text": "x", "quelle": {"typ": "ris"}}]
         e = s.bestimme("05_Teststraße", self.v, h)
@@ -315,6 +325,14 @@ class EchteDaten(unittest.TestCase):
     def metadaten():
         with open(os.path.join(HIER, "belege", "metadaten.json"), encoding="utf-8") as fh:
             return json.load(fh)["standorte"]
+
+    def test_hinweisdatei_hat_keine_doppelten_schluessel(self):
+        def paare(p):
+            schluessel = [k for k, _ in p]
+            self.assertEqual(len(schluessel), len(set(schluessel)), schluessel)
+            return dict(p)
+        with open(os.path.join(HIER, "belege", "standort-hinweise.json"), encoding="utf-8") as fh:
+            json.load(fh, object_pairs_hook=paare)
 
     def test_hinweise_gehoeren_zu_vorhandenen_ordnern_und_strassen(self):
         meta = self.metadaten()

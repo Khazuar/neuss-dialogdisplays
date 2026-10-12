@@ -56,7 +56,7 @@ ANNAHMEN = {
     "cluster_m": 400,            # Haeuser gleichen Namens mit mehr Abstand sind getrennte Strassenabschnitte
     "peilung_max_radius_m": 300,  # die Fahrtrichtung wird nur angegeben, wenn der Standort so genau bekannt ist
 }
-BEWERTUNG = {"belegt": 0, "benannt": 1, "vorschlag": 2}
+BEWERTUNG = {"manuell": 0, "belegt": 1, "benannt": 2, "vorschlag": 3}  # manuell: vom Betreiber dieses Repositories korrigiert
 
 
 # ------------------------------------------------------------------ Koordinaten (ETRS89 / UTM 32 <-> WGS84)
@@ -524,17 +524,18 @@ def bestimme(rel, verz, hinweise=(), fahrtrichtungen=(), texte=()):
     if not bewertet:
         return None
     # Genauigkeit: kleinster Radius; "vorschlag" nur wenn er im Kreis der anderen liegt
-    fest = [e for e in bewertet if e["stufe"] != "vorschlag"]
+    manuell = [e for e in bewertet if e["stufe"] == "manuell"]  # von Hand korrigiert: geht allem anderen vor
+    fest = [e for e in bewertet if e["stufe"] not in ("vorschlag", "manuell")]
     vorschlaege = [e for e in bewertet if e["stufe"] == "vorschlag"]
-    haupt = min(fest or vorschlaege, key=lambda e: (e["radius_m"], BEWERTUNG[e["stufe"]]))
+    haupt = min(manuell or fest or vorschlaege, key=lambda e: (e["radius_m"], BEWERTUNG[e["stufe"]]))
     gewaehlt, vermutet, benutzt = haupt, haupt["stufe"] == "vorschlag", [haupt]
-    for v in sorted(vorschlaege, key=lambda e: e["radius_m"]):
+    for v in sorted([] if manuell else vorschlaege, key=lambda e: e["radius_m"]):
         if fest and v["radius_m"] < haupt["radius_m"] and _abstand_zum_bereich(haupt, (v["ost"], v["nord"])) <= 0:
             gewaehlt = dict(v, radius_m=max(v["radius_m"], ANNAHMEN["vorschlag_min_m"]))
             vermutet, benutzt = True, [v]
             break
     widerspruch = []
-    if not vermutet:
+    if not vermutet and not manuell:
         # zwei gleichrangige Angaben, die sich ausschliessen ("Lupinen_Nierenhofstraße"): beide Kreise zusammenfassen
         for e in sorted(fest, key=lambda e: e["radius_m"]):
             if e is not haupt and _abstand_zum_bereich(e, (gewaehlt["ost"], gewaehlt["nord"])) > gewaehlt["radius_m"]:
@@ -557,7 +558,7 @@ def bestimme(rel, verz, hinweise=(), fahrtrichtungen=(), texte=()):
     erg["utm32_nord"] = round(gewaehlt["nord"])
     erg["unsicherheit_m"] = gewaehlt["radius_m"]
     erg["methode"] = gewaehlt["art"]
-    erg["sicherheit"] = "vermutet" if vermutet else ("widersprüchlich" if widerspruch else "benannt")
+    erg["sicherheit"] = ("manuell korrigiert" if manuell else "vermutet" if vermutet else "widersprüchlich" if widerspruch else "benannt")
     erg["strasse"] = gewaehlt.get("strasse")
     erg["beschreibung"] = gewaehlt["beschreibung"]
     if widerspruch:

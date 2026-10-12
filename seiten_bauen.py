@@ -8,6 +8,7 @@ Eingaben:
   auswertung.json          Kennzahlen je DSD-Datei (dsd2csv.py)
   belege/metadaten.json    Angaben der Verwaltung und Geraete-Konfiguration (metadaten.py)
   belege/uhr-bewertung.json  Urteil zur Geraeteuhr je Abschnitt (uhr_belege.py)
+  belege/neuss-adressen.csv  Hauskoordinaten fuer die Lageskizze (tools/adressen_laden.py), optional
 
 Die Seiten sind statisches HTML ohne Verbindungen zu anderen Servern. Nur die Auswahl nach Zeit, Tagen und Gruppe braucht
 ein kleines eigenes Skript (site/filter.js), das ausschliesslich die eingebettete Datentabelle liest. Alle Texte aus den
@@ -25,6 +26,7 @@ import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
 import gruppen  # noqa: E402
+import standorte  # noqa: E402
 from dsd2csv import aufprall_kmh, standort_slug  # noqa: E402
 from uhr_belege import gesamturteil  # noqa: E402
 
@@ -769,7 +771,78 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None):
     return "".join(z)
 
 
-def seite(rel, rows, meta_standort, uhr_dateien, zellen=None):
+QUELLE_TEXT = {"ordnername": "Ordnername", "mitteilung": "Mitteilung der Verwaltung", "ris": "Ratsinformationssystem",
+               "datacollect": "Bericht der Messsoftware (DataCollect)", "manuell": "von Hand korrigiert"}
+LAGE_METHODE_TEXT = {"adresse": "Hausnummer", "zwischen_nr": "zwischen zwei Hausnummern", "kreuzung": "Kreuzung",
+                "zwischen_strassen": "Abschnitt zwischen zwei Querstraßen", "strasse": "nur die Straße"}
+
+
+def karte_svg(st, verz, breite=420, hoehe=300):
+    """Lageskizze: Häuser der Umgebung (Hauskoordinaten), Kreis der Unsicherheit und Mittelpunkt. Ohne Kartenkacheln, ohne Abruf von außen."""
+    ox, oy, r = st["utm32_ost"], st["utm32_nord"], st["unsicherheit_m"]
+    halb = max(r * 1.35, 120.0)  # halbe Breite des Ausschnitts in Metern
+    m = breite / (2 * halb)
+    hoch = hoehe / m / 2
+    strasse = standorte.schluessel(st.get("strasse") or "")
+    punkte = []
+    for lst in verz.je_name.values():
+        for a in lst:
+            if abs(a.ost - ox) <= halb and abs(a.nord - oy) <= hoch:
+                punkte.append((a.ost, a.nord, standorte.schluessel(a.strasse) == strasse))
+
+    def px(x, y):
+        return (breite / 2 + (x - ox) * m, hoehe / 2 - (y - oy) * m)
+    s = [f'<svg class="hist karte" viewBox="0 0 {breite} {hoehe}" role="img" aria-label="Lageskizze: geschätzter Standort mit Unsicherheitskreis und Häusern der Umgebung">',
+         f'<rect class="karte-rahmen" x="0.5" y="0.5" width="{breite - 1}" height="{hoehe - 1}"/>']
+    for x, y, eigene in sorted(punkte, key=lambda p: p[2]):
+        cx, cy = px(x, y)
+        s.append(f'<circle class="karte-haus{" karte-eigene" if eigene else ""}" cx="{cx:.1f}" cy="{cy:.1f}" r="{2.6 if eigene else 1.8}"/>')
+    s.append(f'<circle class="karte-kreis" cx="{breite / 2}" cy="{hoehe / 2}" r="{r * m:.1f}"/>')
+    s.append(f'<path class="karte-mitte" d="M{breite / 2 - 6} {hoehe / 2}H{breite / 2 + 6}M{breite / 2} {hoehe / 2 - 6}V{hoehe / 2 + 6}"/>')
+    schritt = next(n for n in (10, 20, 50, 100, 200, 500, 1000, 2000) if n * m >= 40 or n == 2000)
+    x0, y0 = 10, hoehe - 14
+    s.append(f'<path class="karte-mitte" d="M{x0} {y0 - 4}V{y0}H{x0 + schritt * m:.1f}V{y0 - 4}"/>'
+             f'<text class="hist-text" x="{x0 + 3}" y="{y0 - 6}">{schritt} m</text>')
+    s.append(f'<text class="hist-text" x="{breite - 8}" y="14" text-anchor="end">N ↑</text></svg>')
+    return "".join(s)
+
+
+def standort_abschnitt(st, verz):
+    """Geschätzte Lage der Messstelle (metadaten.json, standorte.py) mit Skizze, Unsicherheit und Belegen."""
+    art = {"benannt": "ok", "manuell korrigiert": "ok", "vermutet": "mid", "widersprüchlich": "bad"}.get(st["sicherheit"], "mid")
+    lat, lon = st["breite"], st["laenge"]
+    osm = f"https://www.openstreetmap.org/?mlat={lat}&mlon={lon}#map=17/{lat}/{lon}"
+    t = [f'<h3>Geschätzte Lage</h3><p>{dez(lat, 5)}° N, {dez(lon, 5)}° O, Unsicherheit ±{ganz(st["unsicherheit_m"])} m '
+         f'{badge(st["sicherheit"], art)}<br><span class="muted">{e(LAGE_METHODE_TEXT.get(st["methode"], st["methode"]))}: {e(st["beschreibung"])}'
+         f' · <a href="{e(osm)}">auf OpenStreetMap ansehen</a> (öffnet eine fremde Seite)</span></p>']
+    if verz is not None:
+        t.append(karte_svg(st, verz))
+        t.append('<p class="muted">Punkte: Hauskoordinaten der Stadt Neuss (dunkel: dieselbe Straße), gestrichelter Kreis: Unsicherheit. '
+                 "Die Karte zeigt keine Straßen, nur Häuser.</p>")
+    if st.get("mehrdeutig"):
+        t.append(f'<p class="muted">{e(st["mehrdeutig"])}.</p>')
+    if st.get("widerspruch"):
+        t.append(f'<p class="muted">{e(st["widerspruch"])}.</p>')
+    fr = st.get("fahrtrichtung")
+    for f in ([fr] if isinstance(fr, dict) else fr or []):
+        t.append(f'<p class="muted">Fahrtrichtung zur {e(f["ziel"])}: Kompassrichtung etwa {ganz(f["peilung_grad"])}° (±{ganz(f["unsicherheit_grad"])}°).</p>')
+    zeilen = []
+    for b in st["belege"]:
+        q = b.get("quelle") or {}
+        quelle = QUELLE_TEXT.get(q.get("typ"), q.get("typ") or "")
+        if q.get("dokument"):
+            quelle = f'<a href="{e(q["dokument"])}">{e(quelle)}</a>' + (f' ({e(q["vorlage"])}, {e(iso_de(q["sitzung"]))})' if q.get("sitzung") else "")
+        else:
+            quelle = e(quelle)
+        zeilen.append(f'<tr><td>{e(b["text"] or "")}</td><td>{e(b["stufe"])}</td><td>{quelle}</td><td>±{ganz(b["radius_m"])} m</td>'
+                      f'<td>{"gewählt" if b["verwendet"] else "widerspricht" if b["widerspricht"] else "bestätigt"}</td></tr>')
+    t.append('<details><summary>Hinweise, aus denen die Lage folgt</summary><table><thead><tr><th>Hinweis</th><th>Stufe</th><th>Quelle</th>'
+             "<th>Radius</th><th>Verwendung</th></tr></thead><tbody>" + "".join(zeilen) + "</tbody></table>"
+             f'<p class="muted">Die Radien sind Annahmen, nicht gemessen; Verfahren und Grenzen in <a href="{REPO}/blob/main/docs/standorte.md">docs/standorte.md</a>.</p></details>')
+    return "".join(t)
+
+
+def seite(rel, rows, meta_standort, uhr_dateien, zellen=None, verz=None):
     name = bereinige(rel)
     meta_nach_datei = {m["datei"]: m for m in (meta_standort or {}).get("messungen", [])}
     eintraege = [(m["datei"], v) for m in (meta_standort or {}).get("messungen", []) for v in m.get("verwaltung", [])]
@@ -804,7 +877,10 @@ def seite(rel, rows, meta_standort, uhr_dateien, zellen=None):
         teile.append("<p>Zu dieser Messung liegt keine Beschreibung der Verwaltung vor. Die Verwaltung berichtet Ergebnisse "
                      "je Messstelle seit Februar 2024; für frühere Messungen gibt es nur den Namen des Ordners.</p>")
     limits = sorted({r["tempolimit_kmh"] for r in rows if r.get("tempolimit_kmh")})
-    teile.append(f'<p class="muted">Tempolimit laut DSD-Konfiguration: {e(", ".join(str(l) + " km/h" for l in limits)) or "unbekannt"}.</p></section>')
+    teile.append(f'<p class="muted">Tempolimit laut DSD-Konfiguration: {e(", ".join(str(l) + " km/h" for l in limits)) or "unbekannt"}.</p>')
+    if (meta_standort or {}).get("standort"):
+        teile.append(standort_abschnitt(meta_standort["standort"], verz))
+    teile.append("</section>")
     # Einschätzung und Maßnahmen
     teile.append("<section><h2>Einschätzung und Maßnahmen der Verwaltung</h2>")
     if eintraege:
@@ -847,7 +923,8 @@ def lade_zellen(ordner, rel, rows):
     return erg
 
 
-def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None):
+def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None):
+    verz = standorte.Verzeichnis.laden(adressen) if adressen and os.path.exists(adressen) else None
     je_standort = collections.OrderedDict()
     for row in auswertung["standorte"]:
         je_standort.setdefault(row["standort"], []).append(row)
@@ -861,7 +938,7 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None):
         for r in rows:
             if r.get("seite") != f"standorte/{slug}.html":
                 raise ValueError(f"Seitenlink passt nicht zum Standort: {r.get('seite')} / {rel}")
-        text = seite(rel, rows, metadaten["standorte"].get(rel), uhr["dateien"], lade_zellen(zellen_ordner, rel, rows))
+        text = seite(rel, rows, metadaten["standorte"].get(rel), uhr["dateien"], lade_zellen(zellen_ordner, rel, rows), verz)
         with open(os.path.join(ziel, "standorte", slug + ".html"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
     return slugs
@@ -873,6 +950,7 @@ def main():
     ap.add_argument("--auswertung", required=True, help="auswertung.json von dsd2csv.py")
     ap.add_argument("--metadaten", default=os.path.join(hier, "belege", "metadaten.json"))
     ap.add_argument("--uhr", default=os.path.join(hier, "belege", "uhr-bewertung.json"))
+    ap.add_argument("--adressen", default=os.path.join(hier, "belege", "neuss-adressen.csv"), help="Hauskoordinaten fuer die Lageskizze")
     ap.add_argument("--ziel", required=True, help="Ausgabeordner (die Seiten landen in <ziel>/standorte/)")
     ap.add_argument("--zellen", help="Ordner mit den .zellen.json von dsd2csv.py (Standard: Ordner der auswertung.json)")
     a = ap.parse_args()
@@ -880,7 +958,7 @@ def main():
     for pfad in (a.auswertung, a.metadaten, a.uhr):
         with open(pfad, encoding="utf-8") as fh:
             daten.append(json.load(fh))
-    slugs = bauen(*daten, a.ziel, a.zellen or os.path.dirname(os.path.abspath(a.auswertung)))
+    slugs = bauen(*daten, a.ziel, a.zellen or os.path.dirname(os.path.abspath(a.auswertung)), a.adressen)
     print(f"{len(slugs)} Standortseiten in {os.path.join(a.ziel, 'standorte')}", file=sys.stderr)
 
 

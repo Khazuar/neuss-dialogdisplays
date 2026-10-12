@@ -1,11 +1,19 @@
 {
  "erzeugt_von": "von Hand aus den Quellen zusammengestellt (docs/standorte.md); gelesen von standorte.py",
- "hinweis": "Ortsangaben zu den Messstellen, die nicht im Ordnernamen stehen. Stufe 'benannt': die Verwaltung nennt den Ort der Messung selbst (Bericht der Messsoftware). Stufe 'vorschlag': Standortvorschlag oder Antrag; ob und wo genau gemessen wurde, steht dort nicht. 'zitat' gibt die Stelle wörtlich wieder.",
+ "hinweis": "Ortsangaben zu den Messstellen, die nicht im Ordnernamen stehen. Stufe 'benannt': die Verwaltung nennt den Ort der Messung selbst (Bericht der Messsoftware). Stufe 'manuell': vom Betreiber dieses Repositories von Hand korrigiert, geht allen anderen Angaben vor. Stufe 'vorschlag': Standortvorschlag oder Antrag; ob und wo genau gemessen wurde, steht dort nicht. 'zitat' gibt die Stelle wörtlich wieder.",
  "quellen": {
   "datacollect": "Auswertungs-PDF der Verwaltung (DataCollect Webreporter), liegt neben den DSD-Dateien, ist nicht im Repository. Felder 'Rtg. kommend (Name)' und 'Rtg. gehend (Name)' nennen die Querstraßen an den Enden der Messstrecke.",
   "ris": "Ratsinformationssystem der Stadt Neuss (https://ris-neuss.itk-rheinland.de/sessionnetneubi/)"
  },
  "hinweise": {
+  "38_Konrad-Adenauer-Ring (Görresschule)": [
+   {"art": "adresse", "strasse": "Konrad-Adenauer-Ring", "nr": "67", "rolle": "hoehe", "stufe": "manuell",
+    "text": "Görresschule, Konrad-Adenauer-Ring 67, 41464 Neuss",
+    "quelle": {"typ": "manuell", "angabe": "Betreiber dieses Repositories, 2026-10-12; der Ordnername nennt die Görresschule, die Anschrift stammt nicht aus den Unterlagen der Verwaltung"}},
+   {"art": "zwischen_strassen", "strasse": "Konrad-Adenauer-Ring", "a": "Jülicher Straße", "b": "Rheydter Straße", "stufe": "benannt",
+    "text": "Rtg. kommend: Jülicher Straße, Rtg. gehend: Rheydter Straße",
+    "quelle": {"typ": "datacollect", "datei": "2023_07_27_Auswertung.dsd.pdf"}}
+  ],
   "53_Feldstraße": [
    {"art": "zwischen_strassen", "strasse": "Feldstraße", "a": "Lange Hecke", "b": "Lauvenburger Straße", "stufe": "benannt",
     "text": "Rtg. kommend: Lange Hecke, Rtg. gehend: Lauvenburger Str",
@@ -20,11 +28,6 @@
    {"art": "zwischen_strassen", "strasse": "Neuenberger Straße", "a": "Horremer Straße", "b": "Neukirchener Straße", "stufe": "benannt",
     "text": "Rtg. kommend: Horremer Straße, Rtg. gehend: Neukirchener Str",
     "quelle": {"typ": "datacollect", "datei": "2023_05_04_fehlerhaft_Neuenberger Str.pdf"}}
-  ],
-  "38_Konrad-Adenauer-Ring (Görresschule)": [
-   {"art": "zwischen_strassen", "strasse": "Konrad-Adenauer-Ring", "a": "Jülicher Straße", "b": "Rheydter Straße", "stufe": "benannt",
-    "text": "Rtg. kommend: Jülicher Straße, Rtg. gehend: Rheydter Straße",
-    "quelle": {"typ": "datacollect", "datei": "2023_07_27_Auswertung.dsd.pdf"}}
   ],
   "11_Thywissenstraße": [
    {"art": "zwischen_strassen", "strasse": "Thywissenstraße", "a": "Preußenstraße", "b": "Schorlemerstraße", "stufe": "benannt",

@@ -8,15 +8,15 @@
 # der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "38_Konrad-Adenauer-Ring (Görresschule)"
 standort:
-  breite: 51.188841
-  laenge: 6.67064
-  utm32_ost: 337224
-  utm32_nord: 5673404
-  unsicherheit_m: 793
-  methode: "strasse"
-  sicherheit: "benannt"
+  breite: 51.193378
+  laenge: 6.670394
+  utm32_ost: 337222
+  utm32_nord: 5673909
+  unsicherheit_m: 30
+  methode: "adresse"
+  sicherheit: "manuell korrigiert"
   strasse: "Konrad-Adenauer-Ring"
-  beschreibung: "Mitte der Straße (60 Hausnummern)"
+  beschreibung: "Hausnummer 67 im Verzeichnis"
   belege:
     - art: "strasse"
       text: "Konrad-Adenauer-Ring"
@@ -26,6 +26,17 @@ standort:
         name: "38_Konrad-Adenauer-Ring (Görresschule)"
       ort: "Mitte der Straße (60 Hausnummern)"
       radius_m: 793
+      abstand_zum_ergebnis_m: 505
+      verwendet: false
+      widerspricht: false
+    - art: "adresse"
+      text: "Görresschule, Konrad-Adenauer-Ring 67, 41464 Neuss"
+      stufe: "manuell"
+      quelle:
+        typ: "manuell"
+        angabe: "Betreiber dieses Repositories, 2026-10-12; der Ordnername nennt die Görresschule, die Anschrift stammt nicht aus den Unterlagen der Verwaltung"
+      ort: "Hausnummer 67 im Verzeichnis"
+      radius_m: 30
       abstand_zum_ergebnis_m: 0
       verwendet: true
       widerspricht: false
