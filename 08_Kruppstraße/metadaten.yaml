@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "08_Kruppstraße"
+standort:
+  breite: 51.158775
+  laenge: 6.742612
+  utm32_ost: 342150
+  utm32_nord: 5669904
+  unsicherheit_m: 245
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Kruppstraße"
+  beschreibung: "Mitte der Straße (8 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Kruppstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "08_Kruppstraße"
+      ort: "Mitte der Straße (8 Hausnummern)"
+      radius_m: 245
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD16735_6.dsd"
     geraet:

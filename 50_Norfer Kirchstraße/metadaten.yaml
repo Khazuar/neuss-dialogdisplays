@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "50_Norfer Kirchstraße"
+standort:
+  breite: 51.156428
+  laenge: 6.718886
+  utm32_ost: 340483
+  utm32_nord: 5669694
+  unsicherheit_m: 346
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Norfer Kirchstraße"
+  beschreibung: "Mitte der Straße (26 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Norfer Kirchstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "50_Norfer Kirchstraße"
+      ort: "Mitte der Straße (26 Hausnummern)"
+      radius_m: 346
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "20 kmh.dsd"
     geraet:

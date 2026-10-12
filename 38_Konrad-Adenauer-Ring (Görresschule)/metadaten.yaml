@@ -4,7 +4,37 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "38_Konrad-Adenauer-Ring (Görresschule)"
+standort:
+  breite: 51.188841
+  laenge: 6.67064
+  utm32_ost: 337224
+  utm32_nord: 5673404
+  unsicherheit_m: 793
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Konrad-Adenauer-Ring"
+  beschreibung: "Mitte der Straße (60 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Konrad-Adenauer-Ring"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "38_Konrad-Adenauer-Ring (Görresschule)"
+      ort: "Mitte der Straße (60 Hausnummern)"
+      radius_m: 793
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+  nicht_verwendet:
+    - hinweis: "Rtg. kommend: Jülicher Straße, Rtg. gehend: Rheydter Straße"
+      art: "zwischen_strassen"
+      grund: "Querstraße „Jülicher Straße“ beginnt nicht an dieser Straße (nächstes Haus 1021 m entfernt)"
+  nicht_auswertbar:
+    - "Görresschule"
 messungen:
   - datei: "_10.dsd"
     geraet:

@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "26_Buscherhofstraße"
+standort:
+  breite: 51.16207
+  laenge: 6.63516
+  utm32_ost: 334649
+  utm32_nord: 5670507
+  unsicherheit_m: 149
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Buscherhofstraße"
+  beschreibung: "Mitte der Straße (19 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Buscherhofstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "26_Buscherhofstraße"
+      ort: "Mitte der Straße (19 Hausnummern)"
+      radius_m: 149
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "2023_07_19_17386.dsd"
     geraet:

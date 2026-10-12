@@ -24,15 +24,19 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `<Standortordner>/uhr-analyse.md` – je Standort eine lesbare Fassung der Urteile mit allen Belegen
 - `metadaten.py` – ordnet die Angaben der Verwaltung (Messstelle, Fahrtrichtung, Zeitraum, Tempolimit, V85 …) den
   DSD-Dateien zu und schreibt je Standort eine `metadaten.yaml` mit Quellen
-- `<Standortordner>/metadaten.yaml` – zusätzlich erhobene Metadaten, siehe [docs/metadaten.md](docs/metadaten.md)
+- `<Standortordner>/metadaten.yaml` – zusätzlich erhobene Metadaten, siehe [docs/metadaten.md](docs/metadaten.md), darunter der
+  geschätzte Standort mit Koordinaten und Unsicherheit ([docs/standorte.md](docs/standorte.md))
+- `standorte.py` – schätzt aus Straße, Hausnummer und Ortsangaben die Koordinaten der Messstellen (`python3 -I standorte.py` zeigt die Tabelle)
 - `belege/` – Ergebnisse der Prüfung (`uhr-bewertung.json`) und der Auswertung der Mitteilungen der
   Verwaltung (`ris.json`, `ris-messstellen.json`, `ris-zuordnung.json`, `metadaten.json`) sowie die
   Korrekturen des Tempolimits, wo die Mitteilung ein anderes Limit nennt als die DSD (`korrekturen.json`), und die
-  Wetterdaten des Deutschen Wetterdienstes je Tag (`wetter.json`, **CC BY 4.0**, siehe [Lizenz](#lizenz))
+  Wetterdaten des Deutschen Wetterdienstes je Tag (`wetter.json`, **CC BY 4.0**, siehe [Lizenz](#lizenz)), die Hauskoordinaten der
+  Stadt Neuss (`neuss-adressen.csv`, Geobasis NRW, dl-de/zero-2-0) und die Ortshinweise zu den Messstellen (`standort-hinweise.json`)
 - `tools/` – holt die Mitteilungen der Verwaltung aus dem Ratsinformationssystem und zerlegt sie
-  (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`)
+  (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`) und die Hauskoordinaten von Geobasis NRW (`adressen_laden.py`)
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
 - `docs/metadaten.md` – Herkunft, Zuordnung und Abdeckung der Metadaten
+- `docs/standorte.md` – Standort der Messstellen: Quellen, Verfahren, Annahmen für die Unsicherheit, Ergebnis und Grenzen
 - `docs/rauschen.md` – Modell, Regeln und Grenzen des Rauschbodenabzugs
 - `docs/gruppen.md` – Zerlegung der Verteilung in Gruppen, Zeitscheiben und die Auswahl auf den Detailseiten
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
@@ -43,7 +47,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `wetter.py` – erzeugt `belege/wetter.json` aus den Daten des Deutschen Wetterdienstes (Niederschlag je Stunde und Tag, Tageswerte von Temperatur, Wind und Schnee); `tageslicht.py` – Sonnenaufgang, Sonnenuntergang und Dämmerung für Neuss, rein rechnerisch
 - `zwischenspeicher.py` – Zwischenspeicher für Ergebnisse je Datei (nur geänderte Dateien oder Skripte werden neu gerechnet)
 - `lokal_bauen.py` – baut die GitHub-Pages-Seite lokal nach `_vorschau/` und startet auf Wunsch einen lokalen Server, um sie vor dem Push im Browser anzusehen (`docs/betrieb.md`)
-- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py`, `test_wetter.py` – Tests (`python3 -m unittest -v`)
+- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py`, `test_wetter.py`, `test_standorte.py` – Tests (`python3 -m unittest -v`)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
 - `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz, dazu `filter.js` (kleines Skript für die Auswahl auf den Detailseiten, liest nur die Daten der eigenen Seite)
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
@@ -140,7 +144,7 @@ In diesem Repository gelten drei Lizenzen:
 
 | Was | Lizenz |
 |-----|--------|
-| Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
+| Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, `standorte.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
 | Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `metadaten.yaml`, `uhr-analyse.md`, `belege/` (außer `belege/wetter.json`), `README.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
 | Wetterdaten: `belege/wetter.json` (Daten des Deutschen Wetterdienstes, ausgewählt, auf Ortszeit-Tage umgerechnet und zusammengefasst) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de), **Quelle: Deutscher Wetterdienst** |
 
@@ -148,6 +152,10 @@ Die Wetterdaten sind **nicht** CC0: Der Deutsche Wetterdienst gibt seine frei zu
 Quellenvermerk frei (<https://www.dwd.de/DE/service/rechtliche_hinweise/rechtliche_hinweise_node.html>). Wer `belege/wetter.json` oder
 Auswertungen verwendet, die darauf beruhen (zum Beispiel die Einteilung in Regentage), muss den Deutschen Wetterdienst nennen und
 Änderungen kenntlich machen; Einzelheiten in `docs/wetter.md`.
+
+`belege/neuss-adressen.csv` enthält Hauskoordinaten der Stadt Neuss aus den Gebäudereferenzen von Geobasis NRW. Sie stehen unter der
+Datenlizenz Deutschland – Zero – Version 2.0 (<https://www.govdata.de/dl-de/zero-2-0>), also ohne Einschränkung und Bedingung und damit
+vereinbar mit CC0; die Quelle wird trotzdem genannt (Geobasis NRW, <https://www.opengeodata.nrw.de/produkte/geobasis/lk/akt/gebref_txt/>).
 
 Die Quelldateien der Software tragen zusätzlich eine `SPDX-License-Identifier`-Zeile. Die Angaben in
 `metadaten.yaml` und `belege/` stammen aus öffentlichen Mitteilungen der Verwaltung im Ratsinformationssystem der Stadt

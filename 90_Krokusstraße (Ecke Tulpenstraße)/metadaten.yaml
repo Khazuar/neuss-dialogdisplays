@@ -4,7 +4,42 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "90_Krokusstraße (Ecke Tulpenstraße)"
+standort:
+  breite: 51.171302
+  laenge: 6.679986
+  utm32_ost: 337815
+  utm32_nord: 5671433
+  unsicherheit_m: 53
+  methode: "kreuzung"
+  sicherheit: "benannt"
+  strasse: "Krokusstraße"
+  beschreibung: "an der Kreuzung mit Tulpenstraße"
+  belege:
+    - art: "kreuzung"
+      text: "Ecke Tulpenstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "90_Krokusstraße (Ecke Tulpenstraße)"
+      ort: "an der Kreuzung mit Tulpenstraße"
+      radius_m: 53
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+    - art: "strasse"
+      text: "Krokusstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "90_Krokusstraße (Ecke Tulpenstraße)"
+      ort: "Mitte der Straße (28 Hausnummern)"
+      radius_m: 170
+      abstand_zum_ergebnis_m: 157
+      verwendet: false
+      widerspricht: false
 messungen:
   - datei: "DSD17400 Tempo30_6.dsd"
     geraet:

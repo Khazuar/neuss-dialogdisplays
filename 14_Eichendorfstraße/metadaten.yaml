@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "14_Eichendorfstraße"
+standort:
+  breite: 51.186025
+  laenge: 6.693657
+  utm32_ost: 338822
+  utm32_nord: 5673040
+  unsicherheit_m: 233
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Eichendorffstraße"
+  beschreibung: "Mitte der Straße (78 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Eichendorfstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "14_Eichendorfstraße"
+      ort: "Mitte der Straße (78 Hausnummern)"
+      radius_m: 233
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_4.dsd"
     geraet:

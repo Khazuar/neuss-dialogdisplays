@@ -4,7 +4,42 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "04_2024_Cyriakusstraße 86-88"
+standort:
+  breite: 51.17791
+  laenge: 6.742979
+  utm32_ost: 342241
+  utm32_nord: 5672031
+  unsicherheit_m: 47
+  methode: "adresse"
+  sicherheit: "benannt"
+  strasse: "Cyriakusstraße"
+  beschreibung: "Hausnummer 86–88 im Verzeichnis"
+  belege:
+    - art: "adresse"
+      text: "Cyriakusstraße 86-88"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "04_2024_Cyriakusstraße 86-88"
+      ort: "Hausnummer 86–88 im Verzeichnis"
+      radius_m: 47
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+    - art: "strasse"
+      text: "Cyriakusstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "04_2024_Cyriakusstraße 86-88"
+      ort: "Mitte der Straße (65 Hausnummern)"
+      radius_m: 280
+      abstand_zum_ergebnis_m: 172
+      verwendet: false
+      widerspricht: false
 messungen:
   - datei: "DSD14180 Tempo30_3.dsd"
     geraet:

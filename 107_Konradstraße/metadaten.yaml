@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "107_Konradstraße"
+standort:
+  breite: 51.183468
+  laenge: 6.717108
+  utm32_ost: 340452
+  utm32_nord: 5672705
+  unsicherheit_m: 242
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Konradstraße"
+  beschreibung: "Mitte der Straße (45 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Konradstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "107_Konradstraße"
+      ort: "Mitte der Straße (45 Hausnummern)"
+      radius_m: 242
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD14180 Tempo30_5.dsd"
     geraet:

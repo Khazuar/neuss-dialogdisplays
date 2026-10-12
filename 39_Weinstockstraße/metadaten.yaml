@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "39_Weinstockstraße"
+standort:
+  breite: 51.170361
+  laenge: 6.687089
+  utm32_ost: 338308
+  utm32_nord: 5671313
+  unsicherheit_m: 160
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Weinstockstraße"
+  beschreibung: "Mitte der Straße (54 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Weinstockstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "39_Weinstockstraße"
+      ort: "Mitte der Straße (54 Hausnummern)"
+      radius_m: 160
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_5.dsd"
     geraet:

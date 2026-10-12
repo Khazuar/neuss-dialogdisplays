@@ -4,7 +4,34 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "Stationär_Villestraße/FR GV"
+standort:
+  breite: 51.140043
+  laenge: 6.705468
+  utm32_ost: 339488
+  utm32_nord: 5667902
+  unsicherheit_m: 719
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Villestraße"
+  beschreibung: "Mitte der Straße (11 Hausnummern)"
+  mehrdeutig: "Straße besteht aus getrennten Abschnitten; der Standort kann in jedem liegen"
+  belege:
+    - art: "strasse"
+      text: "Villestraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "Stationär_Villestraße"
+      ort: "Mitte der Straße (11 Hausnummern)"
+      radius_m: 719
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+  nicht_auswertbar:
+    - "Fahrtrichtung Grevenbroich"
 messungen:
   - datei: "0000000000000000_2.dsd"
     geraet:

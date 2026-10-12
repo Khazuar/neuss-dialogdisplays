@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "46_Matthiasstraße"
+standort:
+  breite: 51.166153
+  laenge: 6.788401
+  utm32_ost: 345376
+  utm32_nord: 5670627
+  unsicherheit_m: 226
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Matthiasstraße"
+  beschreibung: "Mitte der Straße (57 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Matthiasstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "46_Matthiasstraße"
+      ort: "Mitte der Straße (57 Hausnummern)"
+      radius_m: 226
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_13.dsd"
     geraet:

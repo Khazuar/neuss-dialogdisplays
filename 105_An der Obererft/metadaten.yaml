@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "105_An der Obererft"
+standort:
+  breite: 51.18708
+  laenge: 6.6978
+  utm32_ost: 339115
+  utm32_nord: 5673148
+  unsicherheit_m: 413
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "An der Obererft"
+  beschreibung: "Mitte der Straße (122 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "An der Obererft"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "105_An der Obererft"
+      ort: "Mitte der Straße (122 Hausnummern)"
+      radius_m: 413
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_19.dsd"
     geraet:

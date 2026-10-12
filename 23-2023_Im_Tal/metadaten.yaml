@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "23-2023_Im_Tal"
+standort:
+  breite: 51.214991
+  laenge: 6.679421
+  utm32_ost: 337929
+  utm32_nord: 5676292
+  unsicherheit_m: 40
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Im Tal"
+  beschreibung: "Mitte der Straße (4 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Im Tal"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "23-2023_Im_Tal"
+      ort: "Mitte der Straße (4 Hausnummern)"
+      radius_m: 40
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD16734 Tempo30_3.dsd"
     geraet:

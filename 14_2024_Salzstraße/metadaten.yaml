@@ -4,7 +4,50 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "14_2024_Salzstraße"
+standort:
+  breite: 51.203347
+  laenge: 6.688943
+  utm32_ost: 338553
+  utm32_nord: 5674976
+  unsicherheit_m: 60
+  methode: "adresse"
+  sicherheit: "vermutet"
+  strasse: "Salzstraße"
+  beschreibung: "Hausnummer 41 im Verzeichnis"
+  fahrtrichtung:
+    ziel: "Neumarkt"
+    peilung_grad: 159
+    unsicherheit_grad: 29
+  belege:
+    - art: "strasse"
+      text: "Salzstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "14_2024_Salzstraße"
+      ort: "Mitte der Straße (23 Hausnummern)"
+      radius_m: 127
+      abstand_zum_ergebnis_m: 0
+      verwendet: false
+      widerspricht: false
+    - art: "adresse"
+      text: "Salzstraße, Höhe Nr. 41"
+      stufe: "vorschlag"
+      quelle:
+        typ: "ris"
+        vorlage: "69/271/2024"
+        gremium: "Bezirksausschuss I - Innenstadt"
+        sitzung: "2024-06-19"
+        dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=208294&type=do"
+        titel: "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk I - Innenstadt"
+      ort: "Hausnummer 41 im Verzeichnis"
+      radius_m: 30
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD17385 Tempo30_4.dsd"
     geraet:

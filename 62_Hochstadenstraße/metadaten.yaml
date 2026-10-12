@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "62_Hochstadenstraße"
+standort:
+  breite: 51.144877
+  laenge: 6.702083
+  utm32_ost: 339268
+  utm32_nord: 5668447
+  unsicherheit_m: 416
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Hochstadenstraße"
+  beschreibung: "Mitte der Straße (60 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Hochstadenstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "62_Hochstadenstraße"
+      ort: "Mitte der Straße (60 Hausnummern)"
+      radius_m: 416
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD17386 Tempo40.dsd"
     geraet:

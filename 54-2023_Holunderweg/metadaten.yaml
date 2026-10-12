@@ -4,7 +4,42 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "54-2023_Holunderweg"
+standort:
+  breite: 51.180508
+  laenge: 6.719374
+  utm32_ost: 340600
+  utm32_nord: 5672371
+  unsicherheit_m: 96
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Holunderweg"
+  beschreibung: "Mitte der Straße (23 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Holunderweg"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "54-2023_Holunderweg"
+      ort: "Mitte der Straße (23 Hausnummern)"
+      radius_m: 96
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+    - art: "zwischen_strassen"
+      text: "Rtg. kommend: Wacholderweg, Rtg. gehend: Weißdornweg"
+      stufe: "benannt"
+      quelle:
+        typ: "datacollect"
+        datei: "2023_05_04_Holunderweg.pdf"
+      ort: "zwischen Wacholderweg und Weißdornweg"
+      radius_m: 129
+      abstand_zum_ergebnis_m: 4
+      verwendet: false
+      widerspricht: false
 messungen:
   - datei: "DSD16733 Tempo30_4.dsd"
     geraet:

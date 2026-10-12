@@ -4,7 +4,33 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "15_2024_Martinusstraße"
+standort:
+  breite: 51.16765
+  laenge: 6.787364
+  utm32_ost: 345309
+  utm32_nord: 5670796
+  unsicherheit_m: 237
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Martinusstraße"
+  beschreibung: "Mitte der Straße (30 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Martinusstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "15_2024_Martinusstraße"
+      ort: "Mitte der Straße (30 Hausnummern)"
+      radius_m: 237
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+  nicht_auswertbar:
+    - "der gemessene Bereich war vor dem Beginn des verkehrsberuhigten Bereiches"
 messungen:
   - datei: "DSD 14178 325er_2.dsd"
     geraet:

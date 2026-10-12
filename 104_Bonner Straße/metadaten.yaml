@@ -4,7 +4,32 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "104_Bonner Straße"
+standort:
+  breite: 51.173994
+  laenge: 6.749368
+  utm32_ost: 342674
+  utm32_nord: 5671582
+  unsicherheit_m: 1387
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Bonner Straße"
+  beschreibung: "Mitte der Straße (85 Hausnummern)"
+  mehrdeutig: "Straße besteht aus getrennten Abschnitten; der Standort kann in jedem liegen"
+  belege:
+    - art: "strasse"
+      text: "Bonner Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "104_Bonner Straße"
+      ort: "Mitte der Straße (85 Hausnummern)"
+      radius_m: 1387
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD14180 Tempo40_3.dsd"
     geraet:

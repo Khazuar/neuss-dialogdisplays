@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "93_Föhrenstraße"
+standort:
+  breite: 51.124359
+  laenge: 6.728703
+  utm32_ost: 341059
+  utm32_nord: 5666107
+  unsicherheit_m: 285
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Föhrenstraße"
+  beschreibung: "Mitte der Straße (50 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Föhrenstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "93_Föhrenstraße"
+      ort: "Mitte der Straße (50 Hausnummern)"
+      radius_m: 285
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_8.dsd"
     geraet:

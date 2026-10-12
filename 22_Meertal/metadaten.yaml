@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "22_Meertal"
+standort:
+  breite: 51.183697
+  laenge: 6.704076
+  utm32_ost: 339542
+  utm32_nord: 5672758
+  unsicherheit_m: 247
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Meertal"
+  beschreibung: "Mitte der Straße (137 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Meertal"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "22_Meertal"
+      ort: "Mitte der Straße (137 Hausnummern)"
+      radius_m: 247
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_6.dsd"
     geraet:

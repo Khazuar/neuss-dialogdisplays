@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "113_Am Leuchtenhof"
+standort:
+  breite: 51.209592
+  laenge: 6.652385
+  utm32_ost: 336022
+  utm32_nord: 5675752
+  unsicherheit_m: 163
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Am Leuchtenhof"
+  beschreibung: "Mitte der Straße (18 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Am Leuchtenhof"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "113_Am Leuchtenhof"
+      ort: "Mitte der Straße (18 Hausnummern)"
+      radius_m: 163
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD14178 Tempo30_6.dsd"
     geraet:

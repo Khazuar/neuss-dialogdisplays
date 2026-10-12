@@ -4,7 +4,35 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "17_Nordkanalallee"
+standort:
+  breite: 51.191534
+  laenge: 6.696147
+  utm32_ost: 339015
+  utm32_nord: 5673647
+  unsicherheit_m: 421
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Nordkanalallee"
+  beschreibung: "Mitte der Straße (50 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Nordkanalallee"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "17_Nordkanalallee"
+      ort: "Mitte der Straße (50 Hausnummern)"
+      radius_m: 421
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+  nicht_verwendet:
+    - hinweis: "Rtg. kommend: Bergheimer Stra, Rtg. gehend: Berghäuschensweg"
+      art: "zwischen_strassen"
+      grund: "Querstraße „Berghäuschensweg“ beginnt nicht an dieser Straße (nächstes Haus 309 m entfernt)"
 messungen:
   - datei: "DSD14178 Tempo30_2.dsd"
     geraet:

@@ -4,7 +4,46 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "99_Münchener Straße"
+standort:
+  breite: 51.159369
+  laenge: 6.664845
+  utm32_ost: 336715
+  utm32_nord: 5670140
+  unsicherheit_m: 60
+  methode: "adresse"
+  sicherheit: "vermutet"
+  strasse: "Münchener Straße"
+  beschreibung: "Hausnummer 40 im Verzeichnis"
+  belege:
+    - art: "strasse"
+      text: "Münchener Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "99_Münchener Straße"
+      ort: "Mitte der Straße (73 Hausnummern)"
+      radius_m: 195
+      abstand_zum_ergebnis_m: 140
+      verwendet: false
+      widerspricht: false
+    - art: "adresse"
+      text: "Münchener Straße, Höhe Nr. 40, beidseitig"
+      stufe: "vorschlag"
+      quelle:
+        typ: "ris"
+        vorlage: "69/294/2024"
+        gremium: "Bezirksausschuss IV - Holzheim"
+        sitzung: "2024-07-02"
+        dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=210013&type=do"
+        titel: "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk IV - Holzheim"
+      ort: "Hausnummer 40 im Verzeichnis"
+      radius_m: 30
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_9.dsd"
     geraet:

@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "12_Berghäuschensweg"
+standort:
+  breite: 51.179178
+  laenge: 6.715559
+  utm32_ost: 340329
+  utm32_nord: 5672231
+  unsicherheit_m: 1104
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Berghäuschensweg"
+  beschreibung: "Mitte der Straße (242 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Berghäuschensweg"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "12_Berghäuschensweg"
+      ort: "Mitte der Straße (242 Hausnummern)"
+      radius_m: 1104
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD_16735_7.dsd"
     geraet:

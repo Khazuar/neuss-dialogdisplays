@@ -4,7 +4,32 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "106_Düsseldorfer Straße"
+standort:
+  breite: 51.215668
+  laenge: 6.693942
+  utm32_ost: 338946
+  utm32_nord: 5676336
+  unsicherheit_m: 990
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Düsseldorfer Straße"
+  beschreibung: "Mitte der Straße (78 Hausnummern)"
+  beidseitige_messung: true
+  belege:
+    - art: "strasse"
+      text: "Düsseldorfer Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "106_Düsseldorfer Straße"
+      ort: "Mitte der Straße (78 Hausnummern)"
+      radius_m: 990
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD17400 Tempo50_2.dsd"
     geraet:

@@ -4,7 +4,46 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "36_Lanzerather Buschweg"
+standort:
+  breite: 51.175607
+  laenge: 6.634383
+  utm32_ost: 334643
+  utm32_nord: 5672014
+  unsicherheit_m: 60
+  methode: "adresse"
+  sicherheit: "vermutet"
+  strasse: "Lanzerather Buschweg"
+  beschreibung: "Hausnummer 101 im Verzeichnis"
+  belege:
+    - art: "strasse"
+      text: "Lanzerather Buschweg"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "36_Lanzerather Buschweg"
+      ort: "Mitte der Straße (56 Hausnummern)"
+      radius_m: 769
+      abstand_zum_ergebnis_m: 168
+      verwendet: false
+      widerspricht: false
+    - art: "adresse"
+      text: "geplanter Standort in Höhe der Hausnummer 101 kurz vor Ende der Straße (2023 stattdessen am Ende der Straße installiert)"
+      stufe: "vorschlag"
+      quelle:
+        typ: "ris"
+        vorlage: "Antrag SPD und BÜNDNIS 90/DIE GRÜNEN"
+        gremium: "Bezirksausschuss IV - Holzheim"
+        sitzung: "2024-03-05"
+        dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=203100&type=do"
+        titel: "Einsatz von Dialog-Displays in Holzheim/Grefrath"
+      ort: "Hausnummer 101 im Verzeichnis"
+      radius_m: 30
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD 14178 325er.dsd"
     geraet:

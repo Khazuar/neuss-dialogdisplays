@@ -4,7 +4,35 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "81_Gohrer Straße"
+standort:
+  breite: 51.158884
+  laenge: 6.696596
+  utm32_ost: 338933
+  utm32_nord: 5670016
+  unsicherheit_m: 258
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Gohrer Straße"
+  beschreibung: "Mitte der Straße (43 Hausnummern)"
+  fahrtrichtung:
+    ziel: "Maximilian-Kolbe-Straße"
+    peilung_grad: 151
+    unsicherheit_grad: 27
+  belege:
+    - art: "strasse"
+      text: "Gohrer Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "81_Gohrer Straße"
+      ort: "Mitte der Straße (43 Hausnummern)"
+      radius_m: 258
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD17400 Tempo30_5.dsd"
     geraet:

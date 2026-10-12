@@ -6,7 +6,10 @@ Aufruf:
     -> <Standortordner>/metadaten.yaml (neben den DSD-Dateien)
        belege/ris-zuordnung.json (welche Angabe der Verwaltung zu welcher DSD-Datei, und was offen blieb)
 
-Eingabe: belege/ris-messstellen.json (tools/ris_messstellen.py) und die DSD-Dateien.
+Eingabe: belege/ris-messstellen.json (tools/ris_messstellen.py) und die DSD-Dateien; fuer den Standort belege/neuss-adressen.csv
+(tools/adressen_laden.py) und belege/standort-hinweise.json.
+
+Je Ordner steht in der YAML `standort`: geschaetzte Koordinaten und Unsicherheit (standorte.py, docs/standorte.md).
 
 Je DSD-Datei steht in der YAML:
   geraet        Konfiguration aus der DSD (Geraet, Name, Tempolimit der Anzeige, Erfassung ab, verdeckte Messung)
@@ -38,6 +41,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
 import dsd2csv as d  # noqa: E402
+import standorte  # noqa: E402
 from uhr_belege import messort_namen, schluessel  # noqa: E402
 
 SCHWELLEN = {
@@ -407,9 +411,20 @@ def eintrag(block, bew, datei=None):
     return e
 
 
-def schreibe(wurzel, dateien, zugeordnet, doppelt=None):
+def standort_von(rel, messungen, verz, hinweise):
+    """Koordinaten und Unsicherheit des Standortordners (standorte.py), aus Ordnername, Mitteilungen und weiteren Hinweisen."""
+    if verz is None:
+        return None
+    ver = [v for m in messungen for v in m["verwaltung"]]
+    fr = sorted({v["fahrtrichtung"] for v in ver if v.get("fahrtrichtung")})
+    texte = sorted({v["bezeichnung"] for v in ver if v.get("bezeichnung")})
+    return standorte.bestimme(rel, verz, hinweise.get(rel, []), fr, texte)
+
+
+def schreibe(wurzel, dateien, zugeordnet, doppelt=None, verz=None, hinweise=None):
     """Schreibt je Standortordner metadaten.yaml und gibt alle Daten als Dict zurueck (fuer belege/metadaten.json)."""
     doppelt = doppelt or {}
+    hinweise = hinweise or {}
     je_ordner = collections.defaultdict(list)
     for f in dateien:
         je_ordner[f["rel"]].append(f)
@@ -421,7 +436,9 @@ def schreibe(wurzel, dateien, zugeordnet, doppelt=None):
                   "# DSD stammt unter 'geraet' und 'abgleich_dsd'.",
                   "# Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den",
                   "# DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.",
-                  f"ordner: {d.yaml_skalar(rel)}", "messungen:"]
+                  "# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius",
+                  "# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.",
+                  f"ordner: {d.yaml_skalar(rel)}"]
         messungen = []
         for f in sorted(liste, key=lambda x: x["datei"]):
             eintraege = [eintrag(b, e, f) for b, e in sorted(zugeordnet.get((rel, f["datei"]), []),
@@ -430,11 +447,18 @@ def schreibe(wurzel, dateien, zugeordnet, doppelt=None):
             if doppelt.get((rel, f["datei"])):
                 m["doppelte_daten"] = doppelt[(rel, f["datei"])]
             messungen.append(m)
+        standort = standort_von(rel, messungen, verz, hinweise)
+        if standort:
+            zeilen += d.yaml_zeilen({"standort": standort})
+        zeilen.append("messungen:")
+        for m in messungen:
             teil = d.yaml_zeilen(m, 2)
             teil[0] = "  - " + teil[0].lstrip()
             zeilen += teil
         d.schreibe_yaml(os.path.join(wurzel, *rel.split("/"), "metadaten.yaml"), zeilen)
         alle[rel] = {"ordner": rel, "messungen": messungen}
+        if standort:
+            alle[rel] = {"ordner": rel, "standort": standort, "messungen": messungen}  # Reihenfolge wie in der YAML
     return alle
 
 
@@ -461,13 +485,16 @@ def main():
     ap.add_argument("--zuordnung", default="belege/ris-zuordnung.json")
     ap.add_argument("--json", default="belege/metadaten.json", help="alle Metadaten in einer Datei (fuer die Seiten)")
     ap.add_argument("--korrekturen", default="belege/korrekturen.json", help="Korrekturen des Tempolimits (fuer dsd2csv.py)")
+    ap.add_argument("--adressen", default="belege/neuss-adressen.csv", help="Hauskoordinaten (tools/adressen_laden.py); ohne Datei kein Standort")
+    ap.add_argument("--standort-hinweise", default="belege/standort-hinweise.json", help="weitere Ortsangaben (docs/standorte.md)")
     a = ap.parse_args()
 
     bloecke, quelle = lade_bloecke(a.messstellen)
     dateien = lade_dsd(a.eingabe)
     zugeordnet, offen = zuordnen(bloecke, dateien)
     doppelt = doppelte_daten(dateien)
-    alle = schreibe(a.eingabe, dateien, zugeordnet, doppelt)
+    verz = standorte.Verzeichnis.laden(a.adressen) if os.path.exists(a.adressen) else None
+    alle = schreibe(a.eingabe, dateien, zugeordnet, doppelt, verz, standorte.lade_hinweise(a.standort_hinweise))
     kor = korrekturen(alle)
     with open(a.korrekturen, "w", encoding="utf-8", newline="\n") as fh:
         json.dump({"erzeugt_von": "metadaten.py", "hinweis": "Korrekturen aus den Mitteilungen der Verwaltung, siehe docs/metadaten.md",

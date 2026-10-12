@@ -4,7 +4,35 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "18_Neuenberger Straße"
+standort:
+  breite: 51.126938
+  laenge: 6.735694
+  utm32_ost: 341557
+  utm32_nord: 5666379
+  unsicherheit_m: 267
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Neuenberger Straße"
+  beschreibung: "Mitte der Straße (69 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Neuenberger Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "18_Neuenberger Straße"
+      ort: "Mitte der Straße (69 Hausnummern)"
+      radius_m: 267
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+  nicht_verwendet:
+    - hinweis: "Rtg. kommend: Horremer Straße, Rtg. gehend: Neukirchener Str"
+      art: "zwischen_strassen"
+      grund: "Querstraße „Horremer Straße“ beginnt nicht an dieser Straße (nächstes Haus 1034 m entfernt)"
 messungen:
   - datei: "23_05_04_Neuenberger Straße.dsd"
     geraet:

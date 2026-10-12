@@ -36,6 +36,10 @@ Je DSD-Datei im Ordner:
 Eine Angabe, die die Mitteilung nicht enthält, fehlt auch hier. Die Zahlen der Verwaltung stehen so wie
 mitgeteilt (gerundet), sie werden nicht korrigiert.
 
+Je Ordner steht außerdem `standort`: **geschätzte Koordinaten und ein Radius der Unsicherheit** aus Straße, Hausnummer und Ortsangaben
+(Ordnername, Mitteilungen, Berichte der Messsoftware, Anträge), mit allen herangezogenen Hinweisen und ihrer Quelle. Verfahren, Annahmen
+und Grenzen: [standorte.md](standorte.md).
+
 ## Zuordnung
 
 Die Mitteilungen nennen weder Dateinamen noch Gerät. Die Zuordnung zu den DSD-Dateien macht `metadaten.py`
@@ -139,9 +143,12 @@ Fahrzeuge in 302 Tagen, also rund 2.980 je Tag; die DSD liegt bei etwa 3.160 bis
 python3 -I tools/ris_sammeln.py ris_roh
 PYPDF_PFAD=<Ordner mit pypdf> python3 -I tools/ris_messstellen.py ris_roh belege/ris-messstellen.json
 
-# Messstellen den DSD-Dateien zuordnen und metadaten.yaml schreiben (nur Standardbibliothek)
+# Messstellen den DSD-Dateien zuordnen und metadaten.yaml schreiben, mit den geschätzten Standorten (nur Standardbibliothek)
 python3 -I metadaten.py .
 ```
+
+Für den Standort braucht `metadaten.py` `belege/neuss-adressen.csv` (`tools/adressen_laden.py`) und liest `belege/standort-hinweise.json`;
+fehlt die Adressdatei, fehlt der Block `standort`.
 
 `ris_roh/` steht nicht im Repository. Die Zerlegung (`tools/ris_messstellen.py`) und die Zuordnung (`metadaten.py`)
 sind in `test_metadaten.py` getestet, auch mit den Trennfehlern aus dem PDF-Text der Mitteilungen.

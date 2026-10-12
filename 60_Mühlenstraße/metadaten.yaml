@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "60_Mühlenstraße"
+standort:
+  breite: 51.195347
+  laenge: 6.69543
+  utm32_ost: 338978
+  utm32_nord: 5674073
+  unsicherheit_m: 114
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Mühlenstraße"
+  beschreibung: "Mitte der Straße (45 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Mühlenstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "60_Mühlenstraße"
+      ort: "Mitte der Straße (45 Hausnummern)"
+      radius_m: 114
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD 14180 325er.dsd"
     geraet:

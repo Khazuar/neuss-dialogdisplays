@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "109_Ruhrstraße"
+standort:
+  breite: 51.161842
+  laenge: 6.736791
+  utm32_ost: 341753
+  utm32_nord: 5670258
+  unsicherheit_m: 778
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Ruhrstraße"
+  beschreibung: "Mitte der Straße (47 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Ruhrstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "109_Ruhrstraße"
+      ort: "Mitte der Straße (47 Hausnummern)"
+      radius_m: 778
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_10.dsd"
     geraet:

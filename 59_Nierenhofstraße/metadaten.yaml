@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "59_Nierenhofstraße"
+standort:
+  breite: 51.166769
+  laenge: 6.68809
+  utm32_ost: 338366
+  utm32_nord: 5670911
+  unsicherheit_m: 161
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Nierenhofstraße"
+  beschreibung: "Mitte der Straße (43 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Nierenhofstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "59_Nierenhofstraße"
+      ort: "Mitte der Straße (43 Hausnummern)"
+      radius_m: 161
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_8.dsd"
     geraet:

@@ -4,7 +4,32 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "79_Rosmarinstraße"
+standort:
+  breite: 51.172172
+  laenge: 6.683358
+  utm32_ost: 338054
+  utm32_nord: 5671522
+  unsicherheit_m: 149
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Rosmarinstraße"
+  beschreibung: "Mitte der Straße (53 Hausnummern)"
+  beidseitige_messung: true
+  belege:
+    - art: "strasse"
+      text: "Rosmarinstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "79_Rosmarinstraße"
+      ort: "Mitte der Straße (53 Hausnummern)"
+      radius_m: 149
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_16.dsd"
     geraet:

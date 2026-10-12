@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "111_Weckhovener Straße"
+standort:
+  breite: 51.153664
+  laenge: 6.703711
+  utm32_ost: 339412
+  utm32_nord: 5669420
+  unsicherheit_m: 844
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Weckhovener Straße"
+  beschreibung: "Mitte der Straße (78 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Weckhovener Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "111_Weckhovener Straße"
+      ort: "Mitte der Straße (78 Hausnummern)"
+      radius_m: 844
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD17385 Tempo30_8.dsd"
     geraet:

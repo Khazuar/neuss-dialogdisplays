@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "108_Deichstraße"
+standort:
+  breite: 51.168337
+  laenge: 6.791732
+  utm32_ost: 345616
+  utm32_nord: 5670863
+  unsicherheit_m: 270
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Deichstraße"
+  beschreibung: "Mitte der Straße (81 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Deichstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "108_Deichstraße"
+      ort: "Mitte der Straße (81 Hausnummern)"
+      radius_m: 270
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD16734 Tempo30_7.dsd"
     geraet:

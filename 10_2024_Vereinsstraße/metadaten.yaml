@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "10_2024_Vereinsstraße"
+standort:
+  breite: 51.163333
+  laenge: 6.669517
+  utm32_ost: 337055
+  utm32_nord: 5670570
+  unsicherheit_m: 375
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Vereinsstraße"
+  beschreibung: "Mitte der Straße (61 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Vereinsstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "10_2024_Vereinsstraße"
+      ort: "Mitte der Straße (61 Hausnummern)"
+      radius_m: 375
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD14180 Tempo40.dsd"
     geraet:

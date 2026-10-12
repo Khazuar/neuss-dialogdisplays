@@ -4,7 +4,42 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "19_Bataverstraße"
+standort:
+  breite: 51.232813
+  laenge: 6.688412
+  utm32_ost: 338619
+  utm32_nord: 5678254
+  unsicherheit_m: 30
+  methode: "adresse"
+  sicherheit: "benannt"
+  strasse: "Bataverstraße"
+  beschreibung: "Hausnummer 103 im Verzeichnis"
+  belege:
+    - art: "strasse"
+      text: "Bataverstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "19_Bataverstraße"
+      ort: "Mitte der Straße (52 Hausnummern)"
+      radius_m: 622
+      abstand_zum_ergebnis_m: 566
+      verwendet: false
+      widerspricht: false
+    - art: "adresse"
+      text: "Name der Messstelle: Bataverstr. 103"
+      stufe: "benannt"
+      quelle:
+        typ: "datacollect"
+        datei: "2023_05_04_Bataverstr. 103.pdf"
+      ort: "Hausnummer 103 im Verzeichnis"
+      radius_m: 30
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "23_05_04_Bataverstraße.dsd"
     geraet:

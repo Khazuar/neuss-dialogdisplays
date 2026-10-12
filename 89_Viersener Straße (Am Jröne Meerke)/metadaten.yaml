@@ -4,7 +4,42 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "89_Viersener Straße (Am Jröne Meerke)"
+standort:
+  breite: 51.217698
+  laenge: 6.655745
+  utm32_ost: 336285
+  utm32_nord: 5676646
+  unsicherheit_m: 52
+  methode: "kreuzung"
+  sicherheit: "benannt"
+  strasse: "Viersener Straße"
+  beschreibung: "an der Kreuzung mit Am Jröne Meerke"
+  belege:
+    - art: "kreuzung"
+      text: "Am Jröne Meerke"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "89_Viersener Straße (Am Jröne Meerke)"
+      ort: "an der Kreuzung mit Am Jröne Meerke"
+      radius_m: 52
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+    - art: "strasse"
+      text: "Viersener Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "89_Viersener Straße (Am Jröne Meerke)"
+      ort: "Mitte der Straße (82 Hausnummern)"
+      radius_m: 359
+      abstand_zum_ergebnis_m: 314
+      verwendet: false
+      widerspricht: false
 messungen:
   - datei: "DSD17386 Tempo30_5.dsd"
     geraet:

@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "103_Rheinfährstraße"
+standort:
+  breite: 51.16266
+  laenge: 6.787059
+  utm32_ost: 345271
+  utm32_nord: 5670242
+  unsicherheit_m: 591
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Rheinfährstraße"
+  beschreibung: "Mitte der Straße (221 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Rheinfährstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "103_Rheinfährstraße"
+      ort: "Mitte der Straße (221 Hausnummern)"
+      radius_m: 591
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD16734 Tempo50_2.dsd"
     geraet:

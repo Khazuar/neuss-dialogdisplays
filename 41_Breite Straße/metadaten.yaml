@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "41_Breite Straße"
+standort:
+  breite: 51.196468
+  laenge: 6.687273
+  utm32_ost: 338413
+  utm32_nord: 5674215
+  unsicherheit_m: 400
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Breite Straße"
+  beschreibung: "Mitte der Straße (145 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Breite Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "41_Breite Straße"
+      ort: "Mitte der Straße (145 Hausnummern)"
+      radius_m: 400
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_9.dsd"
     geraet:

@@ -3,6 +3,47 @@
  "standorte": {
   "02_2024_Bauerbahn, ggü. Nr. 3": {
    "ordner": "02_2024_Bauerbahn, ggü. Nr. 3",
+   "standort": {
+    "breite": 51.196436,
+    "laenge": 6.644156,
+    "utm32_ost": 335400,
+    "utm32_nord": 5674307,
+    "unsicherheit_m": 45,
+    "methode": "adresse",
+    "sicherheit": "benannt",
+    "strasse": "Bauerbahn",
+    "beschreibung": "Hausnummer 3 im Verzeichnis, gegenüber",
+    "belege": [
+     {
+      "art": "adresse",
+      "text": "ggü. Nr. 3",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "02_2024_Bauerbahn, ggü. Nr. 3"
+      },
+      "ort": "Hausnummer 3 im Verzeichnis, gegenüber",
+      "radius_m": 45,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Bauerbahn",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "02_2024_Bauerbahn, ggü. Nr. 3"
+      },
+      "ort": "Mitte der Straße (20 Hausnummern)",
+      "radius_m": 222,
+      "abstand_zum_ergebnis_m": 71,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "20 km.dsd",
@@ -74,6 +115,33 @@
   },
   "02_Föhrenstraße/2023_FR Fliederstraße": {
    "ordner": "02_Föhrenstraße/2023_FR Fliederstraße",
+   "standort": {
+    "breite": 51.124359,
+    "laenge": 6.728703,
+    "utm32_ost": 341059,
+    "utm32_nord": 5666107,
+    "unsicherheit_m": 285,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Föhrenstraße",
+    "beschreibung": "Mitte der Straße (50 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Föhrenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "02_Föhrenstraße"
+      },
+      "ort": "Mitte der Straße (50 Hausnummern)",
+      "radius_m": 285,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "23_05_04_Föhrenstr_FR_Flieder.dsd",
@@ -90,6 +158,47 @@
   },
   "03_2024_Hauptstraße 13a": {
    "ordner": "03_2024_Hauptstraße 13a",
+   "standort": {
+    "breite": 51.160833,
+    "laenge": 6.666808,
+    "utm32_ost": 336857,
+    "utm32_nord": 5670298,
+    "unsicherheit_m": 30,
+    "methode": "adresse",
+    "sicherheit": "benannt",
+    "strasse": "Hauptstraße",
+    "beschreibung": "Hausnummer 13a im Verzeichnis",
+    "belege": [
+     {
+      "art": "adresse",
+      "text": "Hauptstraße 13a",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "03_2024_Hauptstraße 13a"
+      },
+      "ort": "Hausnummer 13a im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Hauptstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "03_2024_Hauptstraße 13a"
+      },
+      "ort": "Mitte der Straße (92 Hausnummern)",
+      "radius_m": 201,
+      "abstand_zum_ergebnis_m": 180,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17385 Tempo30_3.dsd",
@@ -154,6 +263,47 @@
   },
   "04_2024_Cyriakusstraße 86-88": {
    "ordner": "04_2024_Cyriakusstraße 86-88",
+   "standort": {
+    "breite": 51.17791,
+    "laenge": 6.742979,
+    "utm32_ost": 342241,
+    "utm32_nord": 5672031,
+    "unsicherheit_m": 47,
+    "methode": "adresse",
+    "sicherheit": "benannt",
+    "strasse": "Cyriakusstraße",
+    "beschreibung": "Hausnummer 86–88 im Verzeichnis",
+    "belege": [
+     {
+      "art": "adresse",
+      "text": "Cyriakusstraße 86-88",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "04_2024_Cyriakusstraße 86-88"
+      },
+      "ort": "Hausnummer 86–88 im Verzeichnis",
+      "radius_m": 47,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Cyriakusstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "04_2024_Cyriakusstraße 86-88"
+      },
+      "ort": "Mitte der Straße (65 Hausnummern)",
+      "radius_m": 280,
+      "abstand_zum_ergebnis_m": 172,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14180 Tempo30_3.dsd",
@@ -218,6 +368,33 @@
   },
   "04_Cyriakusstraße": {
    "ordner": "04_Cyriakusstraße",
+   "standort": {
+    "breite": 51.17907,
+    "laenge": 6.741347,
+    "utm32_ost": 342131,
+    "utm32_nord": 5672163,
+    "unsicherheit_m": 280,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Cyriakusstraße",
+    "beschreibung": "Mitte der Straße (65 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Cyriakusstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "04_Cyriakusstraße"
+      },
+      "ort": "Mitte der Straße (65 Hausnummern)",
+      "radius_m": 280,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "23_05_04_Cyriakusstraße.dsd",
@@ -234,6 +411,33 @@
   },
   "05_Quinheimer Straße": {
    "ordner": "05_Quinheimer Straße",
+   "standort": {
+    "breite": 51.177667,
+    "laenge": 6.744146,
+    "utm32_ost": 342322,
+    "utm32_nord": 5672001,
+    "unsicherheit_m": 166,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Quinheimer Straße",
+    "beschreibung": "Mitte der Straße (64 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Quinheimer Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "05_Quinheimer Straße"
+      },
+      "ort": "Mitte der Straße (64 Hausnummern)",
+      "radius_m": 166,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_5.dsd",
@@ -299,6 +503,33 @@
   },
   "06_Rosellener Schulstraße": {
    "ordner": "06_Rosellener Schulstraße",
+   "standort": {
+    "breite": 51.12968,
+    "laenge": 6.727946,
+    "utm32_ost": 341024,
+    "utm32_nord": 5666701,
+    "unsicherheit_m": 49,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Rosellener Schulstraße",
+    "beschreibung": "Mitte der Straße (11 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Rosellener Schulstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "06_Rosellener Schulstraße"
+      },
+      "ort": "Mitte der Straße (11 Hausnummern)",
+      "radius_m": 49,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_7.dsd",
@@ -323,6 +554,34 @@
   },
   "07_2024_ Einsteinstraße": {
    "ordner": "07_2024_ Einsteinstraße",
+   "standort": {
+    "breite": 51.183444,
+    "laenge": 6.671842,
+    "utm32_ost": 337289,
+    "utm32_nord": 5672801,
+    "unsicherheit_m": 223,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Einsteinstraße",
+    "beschreibung": "Mitte der Straße (115 Hausnummern)",
+    "beidseitige_messung": true,
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Einsteinstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "07_2024_ Einsteinstraße"
+      },
+      "ort": "Mitte der Straße (115 Hausnummern)",
+      "radius_m": 223,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_15.dsd",
@@ -388,6 +647,55 @@
   },
   "07_Lupinen_Nierenhofstraße": {
    "ordner": "07_Lupinen_Nierenhofstraße",
+   "standort": {
+    "breite": 51.170017,
+    "laenge": 6.689734,
+    "utm32_ost": 338492,
+    "utm32_nord": 5671269,
+    "unsicherheit_m": 540,
+    "methode": "strasse",
+    "sicherheit": "widersprüchlich",
+    "strasse": "Nierenhofstraße",
+    "beschreibung": "Mitte der Straße (43 Hausnummern) und Mitte der Straße (135 Hausnummern)",
+    "widerspruch": "Angaben schließen sich aus (Nierenhofstraße; Lupinenstraße); der Kreis umfasst beide",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Lupinenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "07_Lupinen_Nierenhofstraße"
+      },
+      "ort": "Mitte der Straße (135 Hausnummern)",
+      "radius_m": 308,
+      "abstand_zum_ergebnis_m": 232,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Nierenhofstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "07_Lupinen_Nierenhofstraße"
+      },
+      "ort": "Mitte der Straße (43 Hausnummern)",
+      "radius_m": 161,
+      "abstand_zum_ergebnis_m": 379,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ],
+    "nicht_verwendet": [
+     {
+      "hinweis": "Lupinenstraße / Nierenhofstraße",
+      "art": "kreuzung",
+      "grund": "Querstraße „Nierenhofstraße“ beginnt nicht an dieser Straße (nächstes Haus 475 m entfernt)"
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_4.dsd",
@@ -458,6 +766,51 @@
   },
   "08_2024_Steinhausstraße": {
    "ordner": "08_2024_Steinhausstraße",
+   "standort": {
+    "breite": 51.209217,
+    "laenge": 6.661025,
+    "utm32_ost": 336624,
+    "utm32_nord": 5675691,
+    "unsicherheit_m": 78,
+    "methode": "zwischen_nr",
+    "sicherheit": "vermutet",
+    "strasse": "Steinhausstraße",
+    "beschreibung": "zwischen Nr. 116 und 126",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Steinhausstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "08_2024_Steinhausstraße"
+      },
+      "ort": "Mitte der Straße (85 Hausnummern)",
+      "radius_m": 703,
+      "abstand_zum_ergebnis_m": 759,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "zwischen_nr",
+      "text": "Steinhausstraße, zwischen Nr. 116 und 126",
+      "stufe": "vorschlag",
+      "quelle": {
+       "typ": "ris",
+       "vorlage": "69/286/2024",
+       "gremium": "Bezirksausschuss II - Nordstadt",
+       "sitzung": "2024-06-26",
+       "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209519&type=do",
+       "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk II - Nordstadt"
+      },
+      "ort": "zwischen Nr. 116 und 126",
+      "radius_m": 78,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17386 Tempo30_3.dsd",
@@ -524,6 +877,33 @@
   },
   "08_Kruppstraße": {
    "ordner": "08_Kruppstraße",
+   "standort": {
+    "breite": 51.158775,
+    "laenge": 6.742612,
+    "utm32_ost": 342150,
+    "utm32_nord": 5669904,
+    "unsicherheit_m": 245,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Kruppstraße",
+    "beschreibung": "Mitte der Straße (8 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Kruppstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "08_Kruppstraße"
+      },
+      "ort": "Mitte der Straße (8 Hausnummern)",
+      "radius_m": 245,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD16735_6.dsd",
@@ -540,6 +920,33 @@
   },
   "09_2024_Hoistener Schulstraße": {
    "ordner": "09_2024_Hoistener Schulstraße",
+   "standort": {
+    "breite": 51.140624,
+    "laenge": 6.701675,
+    "utm32_ost": 339225,
+    "utm32_nord": 5667975,
+    "unsicherheit_m": 97,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Hoistener Schulstraße",
+    "beschreibung": "Mitte der Straße (20 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Hoistener Schulstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "09_2024_Hoistener Schulstraße"
+      },
+      "ort": "Mitte der Straße (20 Hausnummern)",
+      "radius_m": 97,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17400 Tempo30_4.dsd",
@@ -606,6 +1013,33 @@
   },
   "09_Schellbergstraße": {
    "ordner": "09_Schellbergstraße",
+   "standort": {
+    "breite": 51.166659,
+    "laenge": 6.735524,
+    "utm32_ost": 341681,
+    "utm32_nord": 5670796,
+    "unsicherheit_m": 193,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Schellbergstraße",
+    "beschreibung": "Mitte der Straße (18 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Schellbergstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "09_Schellbergstraße"
+      },
+      "ort": "Mitte der Straße (18 Hausnummern)",
+      "radius_m": 193,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_5.dsd",
@@ -622,6 +1056,33 @@
   },
   "100_Norfer Kirchstraße": {
    "ordner": "100_Norfer Kirchstraße",
+   "standort": {
+    "breite": 51.156428,
+    "laenge": 6.718886,
+    "utm32_ost": 340483,
+    "utm32_nord": 5669694,
+    "unsicherheit_m": 346,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Norfer Kirchstraße",
+    "beschreibung": "Mitte der Straße (26 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Norfer Kirchstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "100_Norfer Kirchstraße"
+      },
+      "ort": "Mitte der Straße (26 Hausnummern)",
+      "radius_m": 346,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14178 Tempo30_4.dsd",
@@ -685,6 +1146,33 @@
   },
   "101_Nievenheimer Straße": {
    "ordner": "101_Nievenheimer Straße",
+   "standort": {
+    "breite": 51.156601,
+    "laenge": 6.733079,
+    "utm32_ost": 341476,
+    "utm32_nord": 5669683,
+    "unsicherheit_m": 234,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Nievenheimer Straße",
+    "beschreibung": "Mitte der Straße (51 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Nievenheimer Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "101_Nievenheimer Straße"
+      },
+      "ort": "Mitte der Straße (51 Hausnummern)",
+      "radius_m": 234,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17350 Tempo50_4.dsd",
@@ -747,6 +1235,33 @@
   },
   "102_Gierer Straße": {
    "ordner": "102_Gierer Straße",
+   "standort": {
+    "breite": 51.135281,
+    "laenge": 6.732121,
+    "utm32_ost": 341336,
+    "utm32_nord": 5667314,
+    "unsicherheit_m": 303,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Gierer Straße",
+    "beschreibung": "Mitte der Straße (83 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Gierer Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "102_Gierer Straße"
+      },
+      "ort": "Mitte der Straße (83 Hausnummern)",
+      "radius_m": 303,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17385 Tempo30_7.dsd",
@@ -809,6 +1324,33 @@
   },
   "103_Rheinfährstraße": {
    "ordner": "103_Rheinfährstraße",
+   "standort": {
+    "breite": 51.16266,
+    "laenge": 6.787059,
+    "utm32_ost": 345271,
+    "utm32_nord": 5670242,
+    "unsicherheit_m": 591,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Rheinfährstraße",
+    "beschreibung": "Mitte der Straße (221 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Rheinfährstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "103_Rheinfährstraße"
+      },
+      "ort": "Mitte der Straße (221 Hausnummern)",
+      "radius_m": 591,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD16734 Tempo50_2.dsd",
@@ -876,6 +1418,34 @@
   },
   "104_Bonner Straße": {
    "ordner": "104_Bonner Straße",
+   "standort": {
+    "breite": 51.173994,
+    "laenge": 6.749368,
+    "utm32_ost": 342674,
+    "utm32_nord": 5671582,
+    "unsicherheit_m": 1387,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Bonner Straße",
+    "beschreibung": "Mitte der Straße (85 Hausnummern)",
+    "mehrdeutig": "Straße besteht aus getrennten Abschnitten; der Standort kann in jedem liegen",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Bonner Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "104_Bonner Straße"
+      },
+      "ort": "Mitte der Straße (85 Hausnummern)",
+      "radius_m": 1387,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14180 Tempo40_3.dsd",
@@ -942,6 +1512,33 @@
   },
   "105_An der Obererft": {
    "ordner": "105_An der Obererft",
+   "standort": {
+    "breite": 51.18708,
+    "laenge": 6.6978,
+    "utm32_ost": 339115,
+    "utm32_nord": 5673148,
+    "unsicherheit_m": 413,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "An der Obererft",
+    "beschreibung": "Mitte der Straße (122 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "An der Obererft",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "105_An der Obererft"
+      },
+      "ort": "Mitte der Straße (122 Hausnummern)",
+      "radius_m": 413,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_19.dsd",
@@ -1012,6 +1609,34 @@
   },
   "106_Düsseldorfer Straße": {
    "ordner": "106_Düsseldorfer Straße",
+   "standort": {
+    "breite": 51.215668,
+    "laenge": 6.693942,
+    "utm32_ost": 338946,
+    "utm32_nord": 5676336,
+    "unsicherheit_m": 990,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Düsseldorfer Straße",
+    "beschreibung": "Mitte der Straße (78 Hausnummern)",
+    "beidseitige_messung": true,
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Düsseldorfer Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "106_Düsseldorfer Straße"
+      },
+      "ort": "Mitte der Straße (78 Hausnummern)",
+      "radius_m": 990,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17400 Tempo50_2.dsd",
@@ -1083,6 +1708,33 @@
   },
   "107_Konradstraße": {
    "ordner": "107_Konradstraße",
+   "standort": {
+    "breite": 51.183468,
+    "laenge": 6.717108,
+    "utm32_ost": 340452,
+    "utm32_nord": 5672705,
+    "unsicherheit_m": 242,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Konradstraße",
+    "beschreibung": "Mitte der Straße (45 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Konradstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "107_Konradstraße"
+      },
+      "ort": "Mitte der Straße (45 Hausnummern)",
+      "radius_m": 242,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14180 Tempo30_5.dsd",
@@ -1099,6 +1751,33 @@
   },
   "108_Deichstraße": {
    "ordner": "108_Deichstraße",
+   "standort": {
+    "breite": 51.168337,
+    "laenge": 6.791732,
+    "utm32_ost": 345616,
+    "utm32_nord": 5670863,
+    "unsicherheit_m": 270,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Deichstraße",
+    "beschreibung": "Mitte der Straße (81 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Deichstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "108_Deichstraße"
+      },
+      "ort": "Mitte der Straße (81 Hausnummern)",
+      "radius_m": 270,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD16734 Tempo30_7.dsd",
@@ -1165,6 +1844,33 @@
   },
   "109_Ruhrstraße": {
    "ordner": "109_Ruhrstraße",
+   "standort": {
+    "breite": 51.161842,
+    "laenge": 6.736791,
+    "utm32_ost": 341753,
+    "utm32_nord": 5670258,
+    "unsicherheit_m": 778,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Ruhrstraße",
+    "beschreibung": "Mitte der Straße (47 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Ruhrstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "109_Ruhrstraße"
+      },
+      "ort": "Mitte der Straße (47 Hausnummern)",
+      "radius_m": 778,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_10.dsd",
@@ -1231,6 +1937,33 @@
   },
   "10_2024_Vereinsstraße": {
    "ordner": "10_2024_Vereinsstraße",
+   "standort": {
+    "breite": 51.163333,
+    "laenge": 6.669517,
+    "utm32_ost": 337055,
+    "utm32_nord": 5670570,
+    "unsicherheit_m": 375,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Vereinsstraße",
+    "beschreibung": "Mitte der Straße (61 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Vereinsstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "10_2024_Vereinsstraße"
+      },
+      "ort": "Mitte der Straße (61 Hausnummern)",
+      "radius_m": 375,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14180 Tempo40.dsd",
@@ -1294,6 +2027,33 @@
   },
   "10_Holzbüttgener Straße": {
    "ordner": "10_Holzbüttgener Straße",
+   "standort": {
+    "breite": 51.209003,
+    "laenge": 6.650639,
+    "utm32_ost": 335898,
+    "utm32_nord": 5675690,
+    "unsicherheit_m": 97,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Holzbüttgener Straße",
+    "beschreibung": "Mitte der Straße (20 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Holzbüttgener Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "10_Holzbüttgener Straße"
+      },
+      "ort": "Mitte der Straße (20 Hausnummern)",
+      "radius_m": 97,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_6.dsd",
@@ -1361,6 +2121,33 @@
   },
   "110_Rosellener Kirchstraße": {
    "ordner": "110_Rosellener Kirchstraße",
+   "standort": {
+    "breite": 51.129501,
+    "laenge": 6.72978,
+    "utm32_ost": 341152,
+    "utm32_nord": 5666677,
+    "unsicherheit_m": 412,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Rosellener Kirchstraße",
+    "beschreibung": "Mitte der Straße (41 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Rosellener Kirchstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "110_Rosellener Kirchstraße"
+      },
+      "ort": "Mitte der Straße (41 Hausnummern)",
+      "radius_m": 412,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17350 Tempo30_6.dsd",
@@ -1431,6 +2218,33 @@
   },
   "111_Weckhovener Straße": {
    "ordner": "111_Weckhovener Straße",
+   "standort": {
+    "breite": 51.153664,
+    "laenge": 6.703711,
+    "utm32_ost": 339412,
+    "utm32_nord": 5669420,
+    "unsicherheit_m": 844,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Weckhovener Straße",
+    "beschreibung": "Mitte der Straße (78 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Weckhovener Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "111_Weckhovener Straße"
+      },
+      "ort": "Mitte der Straße (78 Hausnummern)",
+      "radius_m": 844,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17385 Tempo30_8.dsd",
@@ -1447,6 +2261,33 @@
   },
   "112_Liedberger Straße": {
    "ordner": "112_Liedberger Straße",
+   "standort": {
+    "breite": 51.174622,
+    "laenge": 6.635631,
+    "utm32_ost": 334727,
+    "utm32_nord": 5671901,
+    "unsicherheit_m": 129,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Liedberger Straße",
+    "beschreibung": "Mitte der Straße (38 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Liedberger Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "112_Liedberger Straße"
+      },
+      "ort": "Mitte der Straße (38 Hausnummern)",
+      "radius_m": 129,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14178 Tempo30_5.dsd",
@@ -1513,6 +2354,33 @@
   },
   "113_Am Leuchtenhof": {
    "ordner": "113_Am Leuchtenhof",
+   "standort": {
+    "breite": 51.209592,
+    "laenge": 6.652385,
+    "utm32_ost": 336022,
+    "utm32_nord": 5675752,
+    "unsicherheit_m": 163,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Am Leuchtenhof",
+    "beschreibung": "Mitte der Straße (18 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Am Leuchtenhof",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "113_Am Leuchtenhof"
+      },
+      "ort": "Mitte der Straße (18 Hausnummern)",
+      "radius_m": 163,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14178 Tempo30_6.dsd",
@@ -1529,6 +2397,51 @@
   },
   "114_Niederdonker Weg": {
    "ordner": "114_Niederdonker Weg",
+   "standort": {
+    "breite": 51.227606,
+    "laenge": 6.682492,
+    "utm32_ost": 338188,
+    "utm32_nord": 5677688,
+    "unsicherheit_m": 60,
+    "methode": "adresse",
+    "sicherheit": "vermutet",
+    "strasse": "Niederdonker Weg",
+    "beschreibung": "Hausnummer 4 im Verzeichnis",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Niederdonker Weg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "114_Niederdonker Weg"
+      },
+      "ort": "Mitte der Straße (28 Hausnummern)",
+      "radius_m": 261,
+      "abstand_zum_ergebnis_m": 155,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "adresse",
+      "text": "Niederdonker Weg, Höhe Nr. 4",
+      "stufe": "vorschlag",
+      "quelle": {
+       "typ": "ris",
+       "vorlage": "69/286/2024",
+       "gremium": "Bezirksausschuss II - Nordstadt",
+       "sitzung": "2024-06-26",
+       "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209519&type=do",
+       "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk II - Nordstadt"
+      },
+      "ort": "Hausnummer 4 im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17386 Tempo30_6.dsd",
@@ -1545,6 +2458,33 @@
   },
   "115_Breite Straße": {
    "ordner": "115_Breite Straße",
+   "standort": {
+    "breite": 51.196468,
+    "laenge": 6.687273,
+    "utm32_ost": 338413,
+    "utm32_nord": 5674215,
+    "unsicherheit_m": 400,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Breite Straße",
+    "beschreibung": "Mitte der Straße (145 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Breite Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "115_Breite Straße"
+      },
+      "ort": "Mitte der Straße (145 Hausnummern)",
+      "radius_m": 400,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_20.dsd",
@@ -1561,6 +2501,33 @@
   },
   "116_Martinstraße": {
    "ordner": "116_Martinstraße",
+   "standort": {
+    "breite": 51.161682,
+    "laenge": 6.66977,
+    "utm32_ost": 337067,
+    "utm32_nord": 5670386,
+    "unsicherheit_m": 122,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Martinstraße",
+    "beschreibung": "Mitte der Straße (32 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Martinstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "116_Martinstraße"
+      },
+      "ort": "Mitte der Straße (32 Hausnummern)",
+      "radius_m": 122,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD16734 Tempo30_8.dsd",
@@ -1577,6 +2544,33 @@
   },
   "117_Euskirchener Straße": {
    "ordner": "117_Euskirchener Straße",
+   "standort": {
+    "breite": 51.168494,
+    "laenge": 6.724994,
+    "utm32_ost": 340952,
+    "utm32_nord": 5671023,
+    "unsicherheit_m": 502,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Euskirchener Straße",
+    "beschreibung": "Mitte der Straße (81 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Euskirchener Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "117_Euskirchener Straße"
+      },
+      "ort": "Mitte der Straße (81 Hausnummern)",
+      "radius_m": 502,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17350 Tempo30_7.dsd",
@@ -1593,6 +2587,33 @@
   },
   "118_Ruhrstraße": {
    "ordner": "118_Ruhrstraße",
+   "standort": {
+    "breite": 51.161842,
+    "laenge": 6.736791,
+    "utm32_ost": 341753,
+    "utm32_nord": 5670258,
+    "unsicherheit_m": 778,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Ruhrstraße",
+    "beschreibung": "Mitte der Straße (47 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Ruhrstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "118_Ruhrstraße"
+      },
+      "ort": "Mitte der Straße (47 Hausnummern)",
+      "radius_m": 778,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_11.dsd",
@@ -1609,6 +2630,47 @@
   },
   "11_Thywissenstraße": {
    "ordner": "11_Thywissenstraße",
+   "standort": {
+    "breite": 51.191613,
+    "laenge": 6.683107,
+    "utm32_ost": 338104,
+    "utm32_nord": 5673685,
+    "unsicherheit_m": 84,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Thywissenstraße",
+    "beschreibung": "Mitte der Straße (34 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Thywissenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "11_Thywissenstraße"
+      },
+      "ort": "Mitte der Straße (34 Hausnummern)",
+      "radius_m": 84,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "zwischen_strassen",
+      "text": "zwei Auswertungen, 'FR Preußenstraße' und 'FR Schorlemerstraße'",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "datacollect",
+       "datei": "2022_11_Thywissenstraße_FR. Preußenstraße.pdf; 2022_11_Thywissenstraße_FR_Schorlemerstraße.pdf"
+      },
+      "ort": "zwischen Preußenstraße und Schorlemerstraße",
+      "radius_m": 133,
+      "abstand_zum_ergebnis_m": 46,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "2022_11_Thywissen_FR_Preussenstr.dsd",
@@ -1636,6 +2698,34 @@
   },
   "12_2024_Hüsenstraße": {
    "ordner": "12_2024_Hüsenstraße",
+   "standort": {
+    "breite": 51.178273,
+    "laenge": 6.741476,
+    "utm32_ost": 342137,
+    "utm32_nord": 5672074,
+    "unsicherheit_m": 52,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Hüsenstraße",
+    "beschreibung": "Mitte der Straße (12 Hausnummern)",
+    "beidseitige_messung": true,
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Hüsenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "12_2024_Hüsenstraße"
+      },
+      "ort": "Mitte der Straße (12 Hausnummern)",
+      "radius_m": 52,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_6.dsd",
@@ -1701,6 +2791,33 @@
   },
   "12_Berghäuschensweg": {
    "ordner": "12_Berghäuschensweg",
+   "standort": {
+    "breite": 51.179178,
+    "laenge": 6.715559,
+    "utm32_ost": 340329,
+    "utm32_nord": 5672231,
+    "unsicherheit_m": 1104,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Berghäuschensweg",
+    "beschreibung": "Mitte der Straße (242 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Berghäuschensweg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "12_Berghäuschensweg"
+      },
+      "ort": "Mitte der Straße (242 Hausnummern)",
+      "radius_m": 1104,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD_16735_7.dsd",
@@ -1744,6 +2861,33 @@
   },
   "13_2024_Neukirchener Straße": {
    "ordner": "13_2024_Neukirchener Straße",
+   "standort": {
+    "breite": 51.124953,
+    "laenge": 6.725401,
+    "utm32_ost": 340830,
+    "utm32_nord": 5666181,
+    "unsicherheit_m": 492,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Neukirchener Straße",
+    "beschreibung": "Mitte der Straße (130 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Neukirchener Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "13_2024_Neukirchener Straße"
+      },
+      "ort": "Mitte der Straße (130 Hausnummern)",
+      "radius_m": 492,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17350 Tempo30_2.dsd",
@@ -1811,6 +2955,56 @@
   },
   "14_2024_Salzstraße": {
    "ordner": "14_2024_Salzstraße",
+   "standort": {
+    "breite": 51.203347,
+    "laenge": 6.688943,
+    "utm32_ost": 338553,
+    "utm32_nord": 5674976,
+    "unsicherheit_m": 60,
+    "methode": "adresse",
+    "sicherheit": "vermutet",
+    "strasse": "Salzstraße",
+    "beschreibung": "Hausnummer 41 im Verzeichnis",
+    "fahrtrichtung": {
+     "ziel": "Neumarkt",
+     "peilung_grad": 159,
+     "unsicherheit_grad": 29
+    },
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Salzstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "14_2024_Salzstraße"
+      },
+      "ort": "Mitte der Straße (23 Hausnummern)",
+      "radius_m": 127,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "adresse",
+      "text": "Salzstraße, Höhe Nr. 41",
+      "stufe": "vorschlag",
+      "quelle": {
+       "typ": "ris",
+       "vorlage": "69/271/2024",
+       "gremium": "Bezirksausschuss I - Innenstadt",
+       "sitzung": "2024-06-19",
+       "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=208294&type=do",
+       "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk I - Innenstadt"
+      },
+      "ort": "Hausnummer 41 im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17385 Tempo30_4.dsd",
@@ -1874,6 +3068,33 @@
   },
   "14_Eichendorfstraße": {
    "ordner": "14_Eichendorfstraße",
+   "standort": {
+    "breite": 51.186025,
+    "laenge": 6.693657,
+    "utm32_ost": 338822,
+    "utm32_nord": 5673040,
+    "unsicherheit_m": 233,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Eichendorffstraße",
+    "beschreibung": "Mitte der Straße (78 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Eichendorfstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "14_Eichendorfstraße"
+      },
+      "ort": "Mitte der Straße (78 Hausnummern)",
+      "radius_m": 233,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_4.dsd",
@@ -1890,6 +3111,36 @@
   },
   "15_2024_Martinusstraße": {
    "ordner": "15_2024_Martinusstraße",
+   "standort": {
+    "breite": 51.16765,
+    "laenge": 6.787364,
+    "utm32_ost": 345309,
+    "utm32_nord": 5670796,
+    "unsicherheit_m": 237,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Martinusstraße",
+    "beschreibung": "Mitte der Straße (30 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Martinusstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "15_2024_Martinusstraße"
+      },
+      "ort": "Mitte der Straße (30 Hausnummern)",
+      "radius_m": 237,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ],
+    "nicht_auswertbar": [
+     "der gemessene Bereich war vor dem Beginn des verkehrsberuhigten Bereiches"
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD 14178 325er_2.dsd",
@@ -1959,6 +3210,33 @@
   },
   "15_Schluchenhausstraße": {
    "ordner": "15_Schluchenhausstraße",
+   "standort": {
+    "breite": 51.146293,
+    "laenge": 6.69768,
+    "utm32_ost": 338965,
+    "utm32_nord": 5668614,
+    "unsicherheit_m": 163,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Schluchenhausstraße",
+    "beschreibung": "Mitte der Straße (94 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Schluchenhausstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "15_Schluchenhausstraße"
+      },
+      "ort": "Mitte der Straße (94 Hausnummern)",
+      "radius_m": 163,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_7.dsd",
@@ -1975,6 +3253,40 @@
   },
   "17_Nordkanalallee": {
    "ordner": "17_Nordkanalallee",
+   "standort": {
+    "breite": 51.191534,
+    "laenge": 6.696147,
+    "utm32_ost": 339015,
+    "utm32_nord": 5673647,
+    "unsicherheit_m": 421,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Nordkanalallee",
+    "beschreibung": "Mitte der Straße (50 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Nordkanalallee",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "17_Nordkanalallee"
+      },
+      "ort": "Mitte der Straße (50 Hausnummern)",
+      "radius_m": 421,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ],
+    "nicht_verwendet": [
+     {
+      "hinweis": "Rtg. kommend: Bergheimer Stra, Rtg. gehend: Berghäuschensweg",
+      "art": "zwischen_strassen",
+      "grund": "Querstraße „Berghäuschensweg“ beginnt nicht an dieser Straße (nächstes Haus 309 m entfernt)"
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14178 Tempo30_2.dsd",
@@ -2052,6 +3364,40 @@
   },
   "18_Neuenberger Straße": {
    "ordner": "18_Neuenberger Straße",
+   "standort": {
+    "breite": 51.126938,
+    "laenge": 6.735694,
+    "utm32_ost": 341557,
+    "utm32_nord": 5666379,
+    "unsicherheit_m": 267,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Neuenberger Straße",
+    "beschreibung": "Mitte der Straße (69 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Neuenberger Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "18_Neuenberger Straße"
+      },
+      "ort": "Mitte der Straße (69 Hausnummern)",
+      "radius_m": 267,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ],
+    "nicht_verwendet": [
+     {
+      "hinweis": "Rtg. kommend: Horremer Straße, Rtg. gehend: Neukirchener Str",
+      "art": "zwischen_strassen",
+      "grund": "Querstraße „Horremer Straße“ beginnt nicht an dieser Straße (nächstes Haus 1034 m entfernt)"
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "23_05_04_Neuenberger Straße.dsd",
@@ -2068,6 +3414,47 @@
   },
   "19_Bataverstraße": {
    "ordner": "19_Bataverstraße",
+   "standort": {
+    "breite": 51.232813,
+    "laenge": 6.688412,
+    "utm32_ost": 338619,
+    "utm32_nord": 5678254,
+    "unsicherheit_m": 30,
+    "methode": "adresse",
+    "sicherheit": "benannt",
+    "strasse": "Bataverstraße",
+    "beschreibung": "Hausnummer 103 im Verzeichnis",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Bataverstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "19_Bataverstraße"
+      },
+      "ort": "Mitte der Straße (52 Hausnummern)",
+      "radius_m": 622,
+      "abstand_zum_ergebnis_m": 566,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "adresse",
+      "text": "Name der Messstelle: Bataverstr. 103",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "datacollect",
+       "datei": "2023_05_04_Bataverstr. 103.pdf"
+      },
+      "ort": "Hausnummer 103 im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "23_05_04_Bataverstraße.dsd",
@@ -2084,6 +3471,33 @@
   },
   "20_Nievenheimer Straße": {
    "ordner": "20_Nievenheimer Straße",
+   "standort": {
+    "breite": 51.156601,
+    "laenge": 6.733079,
+    "utm32_ost": 341476,
+    "utm32_nord": 5669683,
+    "unsicherheit_m": 234,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Nievenheimer Straße",
+    "beschreibung": "Mitte der Straße (51 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Nievenheimer Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "20_Nievenheimer Straße"
+      },
+      "ort": "Mitte der Straße (51 Hausnummern)",
+      "radius_m": 234,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "0000000000000000_12.dsd",
@@ -2145,6 +3559,33 @@
   },
   "21_Hermannstraße": {
    "ordner": "21_Hermannstraße",
+   "standort": {
+    "breite": 51.198831,
+    "laenge": 6.681154,
+    "utm32_ost": 337993,
+    "utm32_nord": 5674492,
+    "unsicherheit_m": 55,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Hermannstraße",
+    "beschreibung": "Mitte der Straße (32 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Hermannstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "21_Hermannstraße"
+      },
+      "ort": "Mitte der Straße (32 Hausnummern)",
+      "radius_m": 55,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "0000000000000000_6.dsd",
@@ -2200,6 +3641,33 @@
   },
   "22_Meertal": {
    "ordner": "22_Meertal",
+   "standort": {
+    "breite": 51.183697,
+    "laenge": 6.704076,
+    "utm32_ost": 339542,
+    "utm32_nord": 5672758,
+    "unsicherheit_m": 247,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Meertal",
+    "beschreibung": "Mitte der Straße (137 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Meertal",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "22_Meertal"
+      },
+      "ort": "Mitte der Straße (137 Hausnummern)",
+      "radius_m": 247,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_6.dsd",
@@ -2216,6 +3684,33 @@
   },
   "23-2023_Im_Tal": {
    "ordner": "23-2023_Im_Tal",
+   "standort": {
+    "breite": 51.214991,
+    "laenge": 6.679421,
+    "utm32_ost": 337929,
+    "utm32_nord": 5676292,
+    "unsicherheit_m": 40,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Im Tal",
+    "beschreibung": "Mitte der Straße (4 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Im Tal",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "23-2023_Im_Tal"
+      },
+      "ort": "Mitte der Straße (4 Hausnummern)",
+      "radius_m": 40,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD16734 Tempo30_3.dsd",
@@ -2283,6 +3778,47 @@
   },
   "24_Kreitzweg": {
    "ordner": "24_Kreitzweg",
+   "standort": {
+    "breite": 51.165561,
+    "laenge": 6.66056,
+    "utm32_ost": 336437,
+    "utm32_nord": 5670838,
+    "unsicherheit_m": 59,
+    "methode": "kreuzung",
+    "sicherheit": "benannt",
+    "strasse": "Kreitzweg",
+    "beschreibung": "an der Kreuzung mit Ludgerusring",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Kreitzweg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "24_Kreitzweg"
+      },
+      "ort": "Mitte der Straße (31 Hausnummern)",
+      "radius_m": 335,
+      "abstand_zum_ergebnis_m": 394,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "kreuzung",
+      "text": "Höhe Ludgerusring",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "mitteilung",
+       "bezeichnung": "Kreitzweg (Höhe Ludgerusring)"
+      },
+      "ort": "an der Kreuzung mit Ludgerusring",
+      "radius_m": 59,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "0000000000000000_13.dsd",
@@ -2338,6 +3874,33 @@
   },
   "26_Buscherhofstraße": {
    "ordner": "26_Buscherhofstraße",
+   "standort": {
+    "breite": 51.16207,
+    "laenge": 6.63516,
+    "utm32_ost": 334649,
+    "utm32_nord": 5670507,
+    "unsicherheit_m": 149,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Buscherhofstraße",
+    "beschreibung": "Mitte der Straße (19 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Buscherhofstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "26_Buscherhofstraße"
+      },
+      "ort": "Mitte der Straße (19 Hausnummern)",
+      "radius_m": 149,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "2023_07_19_17386.dsd",
@@ -2354,6 +3917,47 @@
   },
   "33_Holzheimer Weg 109": {
    "ordner": "33_Holzheimer Weg 109",
+   "standort": {
+    "breite": 51.179984,
+    "laenge": 6.684408,
+    "utm32_ost": 338155,
+    "utm32_nord": 5672389,
+    "unsicherheit_m": 30,
+    "methode": "adresse",
+    "sicherheit": "benannt",
+    "strasse": "Holzheimer Weg",
+    "beschreibung": "Hausnummer 109 im Verzeichnis",
+    "belege": [
+     {
+      "art": "adresse",
+      "text": "Holzheimer Weg 109",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "33_Holzheimer Weg 109"
+      },
+      "ort": "Hausnummer 109 im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Holzheimer Weg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "33_Holzheimer Weg 109"
+      },
+      "ort": "Mitte der Straße (75 Hausnummern)",
+      "radius_m": 422,
+      "abstand_zum_ergebnis_m": 240,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_7.dsd",
@@ -2370,6 +3974,47 @@
   },
   "34_Holzheimer Weg (zwischen Bergheimer Straße und Am Krausenbaum)": {
    "ordner": "34_Holzheimer Weg (zwischen Bergheimer Straße und Am Krausenbaum)",
+   "standort": {
+    "breite": 51.184987,
+    "laenge": 6.687719,
+    "utm32_ost": 338404,
+    "utm32_nord": 5672938,
+    "unsicherheit_m": 111,
+    "methode": "zwischen_strassen",
+    "sicherheit": "benannt",
+    "strasse": "Holzheimer Weg",
+    "beschreibung": "zwischen Bergheimer Straße und Am Krausenbaum",
+    "belege": [
+     {
+      "art": "zwischen_strassen",
+      "text": "zwischen Bergheimer Straße und Am Krausenbaum",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "34_Holzheimer Weg (zwischen Bergheimer Straße und Am Krausenbaum)"
+      },
+      "ort": "zwischen Bergheimer Straße und Am Krausenbaum",
+      "radius_m": 111,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Holzheimer Weg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "34_Holzheimer Weg (zwischen Bergheimer Straße und Am Krausenbaum)"
+      },
+      "ort": "Mitte der Straße (75 Hausnummern)",
+      "radius_m": 422,
+      "abstand_zum_ergebnis_m": 363,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "0000000000000000_5.dsd",
@@ -2386,6 +4031,51 @@
   },
   "36_Lanzerather Buschweg": {
    "ordner": "36_Lanzerather Buschweg",
+   "standort": {
+    "breite": 51.175607,
+    "laenge": 6.634383,
+    "utm32_ost": 334643,
+    "utm32_nord": 5672014,
+    "unsicherheit_m": 60,
+    "methode": "adresse",
+    "sicherheit": "vermutet",
+    "strasse": "Lanzerather Buschweg",
+    "beschreibung": "Hausnummer 101 im Verzeichnis",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Lanzerather Buschweg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "36_Lanzerather Buschweg"
+      },
+      "ort": "Mitte der Straße (56 Hausnummern)",
+      "radius_m": 769,
+      "abstand_zum_ergebnis_m": 168,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "adresse",
+      "text": "geplanter Standort in Höhe der Hausnummer 101 kurz vor Ende der Straße (2023 stattdessen am Ende der Straße installiert)",
+      "stufe": "vorschlag",
+      "quelle": {
+       "typ": "ris",
+       "vorlage": "Antrag SPD und BÜNDNIS 90/DIE GRÜNEN",
+       "gremium": "Bezirksausschuss IV - Holzheim",
+       "sitzung": "2024-03-05",
+       "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=203100&type=do",
+       "titel": "Einsatz von Dialog-Displays in Holzheim/Grefrath"
+      },
+      "ort": "Hausnummer 101 im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD 14178 325er.dsd",
@@ -2457,6 +4147,43 @@
   },
   "38_Konrad-Adenauer-Ring (Görresschule)": {
    "ordner": "38_Konrad-Adenauer-Ring (Görresschule)",
+   "standort": {
+    "breite": 51.188841,
+    "laenge": 6.67064,
+    "utm32_ost": 337224,
+    "utm32_nord": 5673404,
+    "unsicherheit_m": 793,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Konrad-Adenauer-Ring",
+    "beschreibung": "Mitte der Straße (60 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Konrad-Adenauer-Ring",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "38_Konrad-Adenauer-Ring (Görresschule)"
+      },
+      "ort": "Mitte der Straße (60 Hausnummern)",
+      "radius_m": 793,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ],
+    "nicht_verwendet": [
+     {
+      "hinweis": "Rtg. kommend: Jülicher Straße, Rtg. gehend: Rheydter Straße",
+      "art": "zwischen_strassen",
+      "grund": "Querstraße „Jülicher Straße“ beginnt nicht an dieser Straße (nächstes Haus 1021 m entfernt)"
+     }
+    ],
+    "nicht_auswertbar": [
+     "Görresschule"
+    ]
+   },
    "messungen": [
     {
      "datei": "_10.dsd",
@@ -2473,6 +4200,33 @@
   },
   "39_Weinstockstraße": {
    "ordner": "39_Weinstockstraße",
+   "standort": {
+    "breite": 51.170361,
+    "laenge": 6.687089,
+    "utm32_ost": 338308,
+    "utm32_nord": 5671313,
+    "unsicherheit_m": 160,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Weinstockstraße",
+    "beschreibung": "Mitte der Straße (54 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Weinstockstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "39_Weinstockstraße"
+      },
+      "ort": "Mitte der Straße (54 Hausnummern)",
+      "radius_m": 160,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_5.dsd",
@@ -2489,6 +4243,33 @@
   },
   "41_Breite Straße": {
    "ordner": "41_Breite Straße",
+   "standort": {
+    "breite": 51.196468,
+    "laenge": 6.687273,
+    "utm32_ost": 338413,
+    "utm32_nord": 5674215,
+    "unsicherheit_m": 400,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Breite Straße",
+    "beschreibung": "Mitte der Straße (145 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Breite Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "41_Breite Straße"
+      },
+      "ort": "Mitte der Straße (145 Hausnummern)",
+      "radius_m": 400,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_9.dsd",
@@ -2505,6 +4286,33 @@
   },
   "44_Am Röttgen": {
    "ordner": "44_Am Röttgen",
+   "standort": {
+    "breite": 51.178581,
+    "laenge": 6.750365,
+    "utm32_ost": 342759,
+    "utm32_nord": 5672090,
+    "unsicherheit_m": 408,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Am Röttgen",
+    "beschreibung": "Mitte der Straße (41 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Am Röttgen",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "44_Am Röttgen"
+      },
+      "ort": "Mitte der Straße (41 Hausnummern)",
+      "radius_m": 408,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "23_05_04_Am Röttgen.dsd",
@@ -2521,6 +4329,33 @@
   },
   "45_St.Antoniusstraße": {
    "ordner": "45_St.Antoniusstraße",
+   "standort": {
+    "breite": 51.143354,
+    "laenge": 6.722963,
+    "utm32_ost": 340723,
+    "utm32_nord": 5668232,
+    "unsicherheit_m": 369,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "St.Antoniusstraße",
+    "beschreibung": "Mitte der Straße (84 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "St.Antoniusstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "45_St.Antoniusstraße"
+      },
+      "ort": "Mitte der Straße (84 Hausnummern)",
+      "radius_m": 369,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD_14180_2023_03_15.dsd",
@@ -2537,6 +4372,33 @@
   },
   "46_Matthiasstraße": {
    "ordner": "46_Matthiasstraße",
+   "standort": {
+    "breite": 51.166153,
+    "laenge": 6.788401,
+    "utm32_ost": 345376,
+    "utm32_nord": 5670627,
+    "unsicherheit_m": 226,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Matthiasstraße",
+    "beschreibung": "Mitte der Straße (57 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Matthiasstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "46_Matthiasstraße"
+      },
+      "ort": "Mitte der Straße (57 Hausnummern)",
+      "radius_m": 226,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_13.dsd",
@@ -2602,6 +4464,34 @@
   },
   "47_Bonner Straße": {
    "ordner": "47_Bonner Straße",
+   "standort": {
+    "breite": 51.173994,
+    "laenge": 6.749368,
+    "utm32_ost": 342674,
+    "utm32_nord": 5671582,
+    "unsicherheit_m": 1387,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Bonner Straße",
+    "beschreibung": "Mitte der Straße (85 Hausnummern)",
+    "mehrdeutig": "Straße besteht aus getrennten Abschnitten; der Standort kann in jedem liegen",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Bonner Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "47_Bonner Straße"
+      },
+      "ort": "Mitte der Straße (85 Hausnummern)",
+      "radius_m": 1387,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_12.dsd",
@@ -2618,6 +4508,33 @@
   },
   "48_Lanzerather Dorfstraße": {
    "ordner": "48_Lanzerather Dorfstraße",
+   "standort": {
+    "breite": 51.179568,
+    "laenge": 6.647628,
+    "utm32_ost": 335583,
+    "utm32_nord": 5672424,
+    "unsicherheit_m": 130,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Lanzerather Dorfstraße",
+    "beschreibung": "Mitte der Straße (40 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Lanzerather Dorfstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "48_Lanzerather Dorfstraße"
+      },
+      "ort": "Mitte der Straße (40 Hausnummern)",
+      "radius_m": 130,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "23_05_04_Lanzerather Dorfstraße.dsd",
@@ -2653,6 +4570,33 @@
   },
   "50_Norfer Kirchstraße": {
    "ordner": "50_Norfer Kirchstraße",
+   "standort": {
+    "breite": 51.156428,
+    "laenge": 6.718886,
+    "utm32_ost": 340483,
+    "utm32_nord": 5669694,
+    "unsicherheit_m": 346,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Norfer Kirchstraße",
+    "beschreibung": "Mitte der Straße (26 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Norfer Kirchstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "50_Norfer Kirchstraße"
+      },
+      "ort": "Mitte der Straße (26 Hausnummern)",
+      "radius_m": 346,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "20 kmh.dsd",
@@ -2713,6 +4657,47 @@
   },
   "53_Feldstraße": {
    "ordner": "53_Feldstraße",
+   "standort": {
+    "breite": 51.220273,
+    "laenge": 6.652311,
+    "utm32_ost": 336055,
+    "utm32_nord": 5676940,
+    "unsicherheit_m": 164,
+    "methode": "zwischen_strassen",
+    "sicherheit": "benannt",
+    "strasse": "Feldstraße",
+    "beschreibung": "zwischen Lange Hecke und Lauvenburger Straße",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Feldstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "53_Feldstraße"
+      },
+      "ort": "Mitte der Straße (62 Hausnummern)",
+      "radius_m": 192,
+      "abstand_zum_ergebnis_m": 94,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "zwischen_strassen",
+      "text": "Rtg. kommend: Lange Hecke, Rtg. gehend: Lauvenburger Str",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "datacollect",
+       "datei": "Feldstraße.pdf"
+      },
+      "ort": "zwischen Lange Hecke und Lauvenburger Straße",
+      "radius_m": 164,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD16733 Tempo30_3.dsd",
@@ -2729,6 +4714,47 @@
   },
   "54-2023_Holunderweg": {
    "ordner": "54-2023_Holunderweg",
+   "standort": {
+    "breite": 51.180508,
+    "laenge": 6.719374,
+    "utm32_ost": 340600,
+    "utm32_nord": 5672371,
+    "unsicherheit_m": 96,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Holunderweg",
+    "beschreibung": "Mitte der Straße (23 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Holunderweg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "54-2023_Holunderweg"
+      },
+      "ort": "Mitte der Straße (23 Hausnummern)",
+      "radius_m": 96,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "zwischen_strassen",
+      "text": "Rtg. kommend: Wacholderweg, Rtg. gehend: Weißdornweg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "datacollect",
+       "datei": "2023_05_04_Holunderweg.pdf"
+      },
+      "ort": "zwischen Wacholderweg und Weißdornweg",
+      "radius_m": 129,
+      "abstand_zum_ergebnis_m": 4,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD16733 Tempo30_4.dsd",
@@ -2745,6 +4771,33 @@
   },
   "55_Alte Uferstraße": {
    "ordner": "55_Alte Uferstraße",
+   "standort": {
+    "breite": 51.142286,
+    "laenge": 6.704722,
+    "utm32_ost": 339444,
+    "utm32_nord": 5668153,
+    "unsicherheit_m": 74,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Alte Uferstraße",
+    "beschreibung": "Mitte der Straße (25 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Alte Uferstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "55_Alte Uferstraße"
+      },
+      "ort": "Mitte der Straße (25 Hausnummern)",
+      "radius_m": 74,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_2.dsd",
@@ -2761,6 +4814,33 @@
   },
   "57_Kuhweg": {
    "ordner": "57_Kuhweg",
+   "standort": {
+    "breite": 51.172126,
+    "laenge": 6.75094,
+    "utm32_ost": 342778,
+    "utm32_nord": 5671371,
+    "unsicherheit_m": 281,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Kuhweg",
+    "beschreibung": "Mitte der Straße (73 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Kuhweg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "57_Kuhweg"
+      },
+      "ort": "Mitte der Straße (73 Hausnummern)",
+      "radius_m": 281,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_8.dsd",
@@ -2777,6 +4857,33 @@
   },
   "59_Nierenhofstraße": {
    "ordner": "59_Nierenhofstraße",
+   "standort": {
+    "breite": 51.166769,
+    "laenge": 6.68809,
+    "utm32_ost": 338366,
+    "utm32_nord": 5670911,
+    "unsicherheit_m": 161,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Nierenhofstraße",
+    "beschreibung": "Mitte der Straße (43 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Nierenhofstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "59_Nierenhofstraße"
+      },
+      "ort": "Mitte der Straße (43 Hausnummern)",
+      "radius_m": 161,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_8.dsd",
@@ -2793,6 +4900,33 @@
   },
   "60_Mühlenstraße": {
    "ordner": "60_Mühlenstraße",
+   "standort": {
+    "breite": 51.195347,
+    "laenge": 6.69543,
+    "utm32_ost": 338978,
+    "utm32_nord": 5674073,
+    "unsicherheit_m": 114,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Mühlenstraße",
+    "beschreibung": "Mitte der Straße (45 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Mühlenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "60_Mühlenstraße"
+      },
+      "ort": "Mitte der Straße (45 Hausnummern)",
+      "radius_m": 114,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD 14180 325er.dsd",
@@ -2863,6 +4997,33 @@
   },
   "62_Hochstadenstraße": {
    "ordner": "62_Hochstadenstraße",
+   "standort": {
+    "breite": 51.144877,
+    "laenge": 6.702083,
+    "utm32_ost": 339268,
+    "utm32_nord": 5668447,
+    "unsicherheit_m": 416,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Hochstadenstraße",
+    "beschreibung": "Mitte der Straße (60 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Hochstadenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "62_Hochstadenstraße"
+      },
+      "ort": "Mitte der Straße (60 Hausnummern)",
+      "radius_m": 416,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17386 Tempo40.dsd",
@@ -2879,6 +5040,33 @@
   },
   "70_Aloysiusstraße": {
    "ordner": "70_Aloysiusstraße",
+   "standort": {
+    "breite": 51.148472,
+    "laenge": 6.749487,
+    "utm32_ost": 342596,
+    "utm32_nord": 5668744,
+    "unsicherheit_m": 76,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Aloysiusstraße",
+    "beschreibung": "Mitte der Straße (17 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Aloysiusstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "70_Aloysiusstraße"
+      },
+      "ort": "Mitte der Straße (17 Hausnummern)",
+      "radius_m": 76,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17386 Tempo30_2.dsd",
@@ -2943,6 +5131,47 @@
   },
   "76_Daimlerstraße 140": {
    "ordner": "76_Daimlerstraße 140",
+   "standort": {
+    "breite": 51.225523,
+    "laenge": 6.668943,
+    "utm32_ost": 337234,
+    "utm32_nord": 5677486,
+    "unsicherheit_m": 30,
+    "methode": "adresse",
+    "sicherheit": "benannt",
+    "strasse": "Daimlerstraße",
+    "beschreibung": "Hausnummer 140 im Verzeichnis",
+    "belege": [
+     {
+      "art": "adresse",
+      "text": "Daimlerstraße 140",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "76_Daimlerstraße 140"
+      },
+      "ort": "Hausnummer 140 im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Daimlerstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "76_Daimlerstraße 140"
+      },
+      "ort": "Mitte der Straße (259 Hausnummern)",
+      "radius_m": 455,
+      "abstand_zum_ergebnis_m": 359,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD16135 Tempo30.dsd",
@@ -3010,6 +5239,34 @@
   },
   "79_Rosmarinstraße": {
    "ordner": "79_Rosmarinstraße",
+   "standort": {
+    "breite": 51.172172,
+    "laenge": 6.683358,
+    "utm32_ost": 338054,
+    "utm32_nord": 5671522,
+    "unsicherheit_m": 149,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Rosmarinstraße",
+    "beschreibung": "Mitte der Straße (53 Hausnummern)",
+    "beidseitige_messung": true,
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Rosmarinstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "79_Rosmarinstraße"
+      },
+      "ort": "Mitte der Straße (53 Hausnummern)",
+      "radius_m": 149,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_16.dsd",
@@ -3075,6 +5332,51 @@
   },
   "80_Kaarster Straße": {
    "ordner": "80_Kaarster Straße",
+   "standort": {
+    "breite": 51.219318,
+    "laenge": 6.656888,
+    "utm32_ost": 336371,
+    "utm32_nord": 5676823,
+    "unsicherheit_m": 60,
+    "methode": "adresse",
+    "sicherheit": "vermutet",
+    "strasse": "Kaarster Straße",
+    "beschreibung": "Hausnummer 71 im Verzeichnis",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Kaarster Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "80_Kaarster Straße"
+      },
+      "ort": "Mitte der Straße (308 Hausnummern)",
+      "radius_m": 1098,
+      "abstand_zum_ergebnis_m": 966,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "adresse",
+      "text": "Kaarster Straße, Höhe Nr. 71, FR Kaarst",
+      "stufe": "vorschlag",
+      "quelle": {
+       "typ": "ris",
+       "vorlage": "69/286/2024",
+       "gremium": "Bezirksausschuss II - Nordstadt",
+       "sitzung": "2024-06-26",
+       "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209519&type=do",
+       "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk II - Nordstadt"
+      },
+      "ort": "Hausnummer 71 im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17386 Tempo50_2.dsd",
@@ -3138,6 +5440,38 @@
   },
   "81_Gohrer Straße": {
    "ordner": "81_Gohrer Straße",
+   "standort": {
+    "breite": 51.158884,
+    "laenge": 6.696596,
+    "utm32_ost": 338933,
+    "utm32_nord": 5670016,
+    "unsicherheit_m": 258,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Gohrer Straße",
+    "beschreibung": "Mitte der Straße (43 Hausnummern)",
+    "fahrtrichtung": {
+     "ziel": "Maximilian-Kolbe-Straße",
+     "peilung_grad": 151,
+     "unsicherheit_grad": 27
+    },
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Gohrer Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "81_Gohrer Straße"
+      },
+      "ort": "Mitte der Straße (43 Hausnummern)",
+      "radius_m": 258,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17400 Tempo30_5.dsd",
@@ -3201,6 +5535,34 @@
   },
   "82_Lüttenglehner Straße": {
    "ordner": "82_Lüttenglehner Straße",
+   "standort": {
+    "breite": 51.171311,
+    "laenge": 6.633996,
+    "utm32_ost": 334601,
+    "utm32_nord": 5671537,
+    "unsicherheit_m": 1107,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Lüttenglehner Straße",
+    "beschreibung": "Mitte der Straße (67 Hausnummern)",
+    "mehrdeutig": "Straße besteht aus getrennten Abschnitten; der Standort kann in jedem liegen",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Lüttenglehner Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "82_Lüttenglehner Straße"
+      },
+      "ort": "Mitte der Straße (67 Hausnummern)",
+      "radius_m": 1107,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14180 Tempo50_2.dsd",
@@ -3217,6 +5579,48 @@
   },
   "84_Am Alten Bach": {
    "ordner": "84_Am Alten Bach",
+   "standort": {
+    "breite": 51.137592,
+    "laenge": 6.751601,
+    "utm32_ost": 342706,
+    "utm32_nord": 5667530,
+    "unsicherheit_m": 517,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Am Alten Bach",
+    "beschreibung": "Mitte der Straße (91 Hausnummern)",
+    "beidseitige_messung": true,
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Am Alten Bach",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "84_Am Alten Bach"
+      },
+      "ort": "Mitte der Straße (91 Hausnummern)",
+      "radius_m": 517,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Am alten Bach",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "mitteilung",
+       "bezeichnung": "Am alten Bach, FR Supermarkt Rewe, beidseitige Messung"
+      },
+      "ort": "Mitte der Straße (91 Hausnummern)",
+      "radius_m": 517,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_7.dsd",
@@ -3282,6 +5686,33 @@
   },
   "85_Berghäuschensweg": {
    "ordner": "85_Berghäuschensweg",
+   "standort": {
+    "breite": 51.179178,
+    "laenge": 6.715559,
+    "utm32_ost": 340329,
+    "utm32_nord": 5672231,
+    "unsicherheit_m": 1104,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Berghäuschensweg",
+    "beschreibung": "Mitte der Straße (242 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Berghäuschensweg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "85_Berghäuschensweg"
+      },
+      "ort": "Mitte der Straße (242 Hausnummern)",
+      "radius_m": 1104,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17350 Tempo50_2.dsd",
@@ -3345,6 +5776,33 @@
   },
   "86_Rheinfährstraße": {
    "ordner": "86_Rheinfährstraße",
+   "standort": {
+    "breite": 51.16266,
+    "laenge": 6.787059,
+    "utm32_ost": 345271,
+    "utm32_nord": 5670242,
+    "unsicherheit_m": 591,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Rheinfährstraße",
+    "beschreibung": "Mitte der Straße (221 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Rheinfährstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "86_Rheinfährstraße"
+      },
+      "ort": "Mitte der Straße (221 Hausnummern)",
+      "radius_m": 591,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17385 Tempo50_2.dsd",
@@ -3412,6 +5870,38 @@
   },
   "87_Mühlenstraße": {
    "ordner": "87_Mühlenstraße",
+   "standort": {
+    "breite": 51.195347,
+    "laenge": 6.69543,
+    "utm32_ost": 338978,
+    "utm32_nord": 5674073,
+    "unsicherheit_m": 114,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Mühlenstraße",
+    "beschreibung": "Mitte der Straße (45 Hausnummern)",
+    "fahrtrichtung": {
+     "ziel": "Windmühlengasse",
+     "peilung_grad": 131,
+     "unsicherheit_grad": 21
+    },
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Mühlenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "87_Mühlenstraße"
+      },
+      "ort": "Mitte der Straße (45 Hausnummern)",
+      "radius_m": 114,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD 14178 325er_3.dsd",
@@ -3486,6 +5976,44 @@
   },
   "88_Pomona (Eingang)": {
    "ordner": "88_Pomona (Eingang)",
+   "standort": {
+    "breite": 51.179419,
+    "laenge": 6.691251,
+    "utm32_ost": 338631,
+    "utm32_nord": 5672311,
+    "unsicherheit_m": 188,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Pomona",
+    "beschreibung": "Mitte der Straße (143 Hausnummern)",
+    "beidseitige_messung": true,
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Pomona",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "88_Pomona (Eingang)"
+      },
+      "ort": "Mitte der Straße (143 Hausnummern)",
+      "radius_m": 188,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ],
+    "nicht_verwendet": [
+     {
+      "hinweis": "Eingang Pomona",
+      "art": "strasse",
+      "grund": "Straße nicht im Adressverzeichnis"
+     }
+    ],
+    "nicht_auswertbar": [
+     "Eingang"
+    ]
+   },
    "messungen": [
     {
      "datei": "_17.dsd",
@@ -3554,6 +6082,47 @@
   },
   "89_Viersener Straße (Am Jröne Meerke)": {
    "ordner": "89_Viersener Straße (Am Jröne Meerke)",
+   "standort": {
+    "breite": 51.217698,
+    "laenge": 6.655745,
+    "utm32_ost": 336285,
+    "utm32_nord": 5676646,
+    "unsicherheit_m": 52,
+    "methode": "kreuzung",
+    "sicherheit": "benannt",
+    "strasse": "Viersener Straße",
+    "beschreibung": "an der Kreuzung mit Am Jröne Meerke",
+    "belege": [
+     {
+      "art": "kreuzung",
+      "text": "Am Jröne Meerke",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "89_Viersener Straße (Am Jröne Meerke)"
+      },
+      "ort": "an der Kreuzung mit Am Jröne Meerke",
+      "radius_m": 52,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Viersener Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "89_Viersener Straße (Am Jröne Meerke)"
+      },
+      "ort": "Mitte der Straße (82 Hausnummern)",
+      "radius_m": 359,
+      "abstand_zum_ergebnis_m": 314,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17386 Tempo30_5.dsd",
@@ -3581,6 +6150,47 @@
   },
   "90_Krokusstraße (Ecke Tulpenstraße)": {
    "ordner": "90_Krokusstraße (Ecke Tulpenstraße)",
+   "standort": {
+    "breite": 51.171302,
+    "laenge": 6.679986,
+    "utm32_ost": 337815,
+    "utm32_nord": 5671433,
+    "unsicherheit_m": 53,
+    "methode": "kreuzung",
+    "sicherheit": "benannt",
+    "strasse": "Krokusstraße",
+    "beschreibung": "an der Kreuzung mit Tulpenstraße",
+    "belege": [
+     {
+      "art": "kreuzung",
+      "text": "Ecke Tulpenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "90_Krokusstraße (Ecke Tulpenstraße)"
+      },
+      "ort": "an der Kreuzung mit Tulpenstraße",
+      "radius_m": 53,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     },
+     {
+      "art": "strasse",
+      "text": "Krokusstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "90_Krokusstraße (Ecke Tulpenstraße)"
+      },
+      "ort": "Mitte der Straße (28 Hausnummern)",
+      "radius_m": 170,
+      "abstand_zum_ergebnis_m": 157,
+      "verwendet": false,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17400 Tempo30_6.dsd",
@@ -3597,6 +6207,34 @@
   },
   "91_Am Reckberg": {
    "ordner": "91_Am Reckberg",
+   "standort": {
+    "breite": 51.172851,
+    "laenge": 6.771924,
+    "utm32_ost": 344247,
+    "utm32_nord": 5671407,
+    "unsicherheit_m": 971,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Am Reckberg",
+    "beschreibung": "Mitte der Straße (12 Hausnummern)",
+    "mehrdeutig": "Straße besteht aus getrennten Abschnitten; der Standort kann in jedem liegen",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Am Reckberg",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "91_Am Reckberg"
+      },
+      "ort": "Mitte der Straße (12 Hausnummern)",
+      "radius_m": 971,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14180 Tempo50_3.dsd",
@@ -3613,6 +6251,33 @@
   },
   "92_Konradstraße": {
    "ordner": "92_Konradstraße",
+   "standort": {
+    "breite": 51.183468,
+    "laenge": 6.717108,
+    "utm32_ost": 340452,
+    "utm32_nord": 5672705,
+    "unsicherheit_m": 242,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Konradstraße",
+    "beschreibung": "Mitte der Straße (45 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Konradstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "92_Konradstraße"
+      },
+      "ort": "Mitte der Straße (45 Hausnummern)",
+      "radius_m": 242,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD16734 Tempo30_5.dsd",
@@ -3629,6 +6294,33 @@
   },
   "93_Föhrenstraße": {
    "ordner": "93_Föhrenstraße",
+   "standort": {
+    "breite": 51.124359,
+    "laenge": 6.728703,
+    "utm32_ost": 341059,
+    "utm32_nord": 5666107,
+    "unsicherheit_m": 285,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Föhrenstraße",
+    "beschreibung": "Mitte der Straße (50 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Föhrenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "93_Föhrenstraße"
+      },
+      "ort": "Mitte der Straße (50 Hausnummern)",
+      "radius_m": 285,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_8.dsd",
@@ -3645,6 +6337,33 @@
   },
   "94_Ruhrstraße": {
    "ordner": "94_Ruhrstraße",
+   "standort": {
+    "breite": 51.161842,
+    "laenge": 6.736791,
+    "utm32_ost": 341753,
+    "utm32_nord": 5670258,
+    "unsicherheit_m": 778,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Ruhrstraße",
+    "beschreibung": "Mitte der Straße (47 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Ruhrstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "94_Ruhrstraße"
+      },
+      "ort": "Mitte der Straße (47 Hausnummern)",
+      "radius_m": 778,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17350 Tempo30_4.dsd",
@@ -3661,6 +6380,51 @@
   },
   "95_Reuschenberger Straße": {
    "ordner": "95_Reuschenberger Straße",
+   "standort": {
+    "breite": 51.158404,
+    "laenge": 6.671273,
+    "utm32_ost": 337161,
+    "utm32_nord": 5670018,
+    "unsicherheit_m": 60,
+    "methode": "adresse",
+    "sicherheit": "vermutet",
+    "strasse": "Reuschenberger Straße",
+    "beschreibung": "Hausnummer 14 im Verzeichnis",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Reuschenberger Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "95_Reuschenberger Straße"
+      },
+      "ort": "Mitte der Straße (87 Hausnummern)",
+      "radius_m": 292,
+      "abstand_zum_ergebnis_m": 242,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "adresse",
+      "text": "Reuschenberger Straße, Höhe Nr. 14, beidseitig",
+      "stufe": "vorschlag",
+      "quelle": {
+       "typ": "ris",
+       "vorlage": "69/294/2024",
+       "gremium": "Bezirksausschuss IV - Holzheim",
+       "sitzung": "2024-07-02",
+       "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=210013&type=do",
+       "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk IV - Holzheim"
+      },
+      "ort": "Hausnummer 14 im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17385 Tempo30_6.dsd",
@@ -3677,6 +6441,33 @@
   },
   "96_An der Obererft": {
    "ordner": "96_An der Obererft",
+   "standort": {
+    "breite": 51.18708,
+    "laenge": 6.6978,
+    "utm32_ost": 339115,
+    "utm32_nord": 5673148,
+    "unsicherheit_m": 413,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "An der Obererft",
+    "beschreibung": "Mitte der Straße (122 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "An der Obererft",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "96_An der Obererft"
+      },
+      "ort": "Mitte der Straße (122 Hausnummern)",
+      "radius_m": 413,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD14178 Tempo30_3.dsd",
@@ -3693,6 +6484,33 @@
   },
   "97_Preußenstraße": {
    "ordner": "97_Preußenstraße",
+   "standort": {
+    "breite": 51.19049,
+    "laenge": 6.675357,
+    "utm32_ost": 337559,
+    "utm32_nord": 5673577,
+    "unsicherheit_m": 549,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Preußenstraße",
+    "beschreibung": "Mitte der Straße (98 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Preußenstraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "97_Preußenstraße"
+      },
+      "ort": "Mitte der Straße (98 Hausnummern)",
+      "radius_m": 549,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_18.dsd",
@@ -3767,6 +6585,33 @@
   },
   "98_Erprather Straße": {
    "ordner": "98_Erprather Straße",
+   "standort": {
+    "breite": 51.162916,
+    "laenge": 6.688586,
+    "utm32_ost": 338387,
+    "utm32_nord": 5670482,
+    "unsicherheit_m": 372,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Erprather Straße",
+    "beschreibung": "Mitte der Straße (79 Hausnummern)",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Erprather Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "98_Erprather Straße"
+      },
+      "ort": "Mitte der Straße (79 Hausnummern)",
+      "radius_m": 372,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "DSD17400 Tempo50.dsd",
@@ -3829,6 +6674,51 @@
   },
   "99_Münchener Straße": {
    "ordner": "99_Münchener Straße",
+   "standort": {
+    "breite": 51.159369,
+    "laenge": 6.664845,
+    "utm32_ost": 336715,
+    "utm32_nord": 5670140,
+    "unsicherheit_m": 60,
+    "methode": "adresse",
+    "sicherheit": "vermutet",
+    "strasse": "Münchener Straße",
+    "beschreibung": "Hausnummer 40 im Verzeichnis",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Münchener Straße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "99_Münchener Straße"
+      },
+      "ort": "Mitte der Straße (73 Hausnummern)",
+      "radius_m": 195,
+      "abstand_zum_ergebnis_m": 140,
+      "verwendet": false,
+      "widerspricht": false
+     },
+     {
+      "art": "adresse",
+      "text": "Münchener Straße, Höhe Nr. 40, beidseitig",
+      "stufe": "vorschlag",
+      "quelle": {
+       "typ": "ris",
+       "vorlage": "69/294/2024",
+       "gremium": "Bezirksausschuss IV - Holzheim",
+       "sitzung": "2024-07-02",
+       "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=210013&type=do",
+       "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk IV - Holzheim"
+      },
+      "ort": "Hausnummer 40 im Verzeichnis",
+      "radius_m": 30,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ]
+   },
    "messungen": [
     {
      "datei": "_9.dsd",
@@ -3892,6 +6782,37 @@
   },
   "Stationär_Villestraße/FR GV": {
    "ordner": "Stationär_Villestraße/FR GV",
+   "standort": {
+    "breite": 51.140043,
+    "laenge": 6.705468,
+    "utm32_ost": 339488,
+    "utm32_nord": 5667902,
+    "unsicherheit_m": 719,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Villestraße",
+    "beschreibung": "Mitte der Straße (11 Hausnummern)",
+    "mehrdeutig": "Straße besteht aus getrennten Abschnitten; der Standort kann in jedem liegen",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Villestraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "Stationär_Villestraße"
+      },
+      "ort": "Mitte der Straße (11 Hausnummern)",
+      "radius_m": 719,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ],
+    "nicht_auswertbar": [
+     "Fahrtrichtung Grevenbroich"
+    ]
+   },
    "messungen": [
     {
      "datei": "0000000000000000_2.dsd",
@@ -4104,6 +7025,37 @@
   },
   "Stationär_Villestraße/FR Norf": {
    "ordner": "Stationär_Villestraße/FR Norf",
+   "standort": {
+    "breite": 51.140043,
+    "laenge": 6.705468,
+    "utm32_ost": 339488,
+    "utm32_nord": 5667902,
+    "unsicherheit_m": 719,
+    "methode": "strasse",
+    "sicherheit": "benannt",
+    "strasse": "Villestraße",
+    "beschreibung": "Mitte der Straße (11 Hausnummern)",
+    "mehrdeutig": "Straße besteht aus getrennten Abschnitten; der Standort kann in jedem liegen",
+    "belege": [
+     {
+      "art": "strasse",
+      "text": "Villestraße",
+      "stufe": "benannt",
+      "quelle": {
+       "typ": "ordnername",
+       "name": "Stationär_Villestraße"
+      },
+      "ort": "Mitte der Straße (11 Hausnummern)",
+      "radius_m": 719,
+      "abstand_zum_ergebnis_m": 0,
+      "verwendet": true,
+      "widerspricht": false
+     }
+    ],
+    "nicht_auswertbar": [
+     "Fahrtrichtung Norf"
+    ]
+   },
    "messungen": [
     {
      "datei": "0000000000000000_4.dsd",

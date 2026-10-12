@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "13_2024_Neukirchener Straße"
+standort:
+  breite: 51.124953
+  laenge: 6.725401
+  utm32_ost: 340830
+  utm32_nord: 5666181
+  unsicherheit_m: 492
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Neukirchener Straße"
+  beschreibung: "Mitte der Straße (130 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Neukirchener Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "13_2024_Neukirchener Straße"
+      ort: "Mitte der Straße (130 Hausnummern)"
+      radius_m: 492
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD17350 Tempo30_2.dsd"
     geraet:

@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "116_Martinstraße"
+standort:
+  breite: 51.161682
+  laenge: 6.66977
+  utm32_ost: 337067
+  utm32_nord: 5670386
+  unsicherheit_m: 122
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Martinstraße"
+  beschreibung: "Mitte der Straße (32 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Martinstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "116_Martinstraße"
+      ort: "Mitte der Straße (32 Hausnummern)"
+      radius_m: 122
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD16734 Tempo30_8.dsd"
     geraet:

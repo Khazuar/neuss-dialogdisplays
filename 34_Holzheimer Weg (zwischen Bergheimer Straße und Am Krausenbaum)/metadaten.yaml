@@ -4,7 +4,42 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "34_Holzheimer Weg (zwischen Bergheimer Straße und Am Krausenbaum)"
+standort:
+  breite: 51.184987
+  laenge: 6.687719
+  utm32_ost: 338404
+  utm32_nord: 5672938
+  unsicherheit_m: 111
+  methode: "zwischen_strassen"
+  sicherheit: "benannt"
+  strasse: "Holzheimer Weg"
+  beschreibung: "zwischen Bergheimer Straße und Am Krausenbaum"
+  belege:
+    - art: "zwischen_strassen"
+      text: "zwischen Bergheimer Straße und Am Krausenbaum"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "34_Holzheimer Weg (zwischen Bergheimer Straße und Am Krausenbaum)"
+      ort: "zwischen Bergheimer Straße und Am Krausenbaum"
+      radius_m: 111
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
+    - art: "strasse"
+      text: "Holzheimer Weg"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "34_Holzheimer Weg (zwischen Bergheimer Straße und Am Krausenbaum)"
+      ort: "Mitte der Straße (75 Hausnummern)"
+      radius_m: 422
+      abstand_zum_ergebnis_m: 363
+      verwendet: false
+      widerspricht: false
 messungen:
   - datei: "0000000000000000_5.dsd"
     geraet:

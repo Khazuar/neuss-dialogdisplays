@@ -4,7 +4,31 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "55_Alte Uferstraße"
+standort:
+  breite: 51.142286
+  laenge: 6.704722
+  utm32_ost: 339444
+  utm32_nord: 5668153
+  unsicherheit_m: 74
+  methode: "strasse"
+  sicherheit: "benannt"
+  strasse: "Alte Uferstraße"
+  beschreibung: "Mitte der Straße (25 Hausnummern)"
+  belege:
+    - art: "strasse"
+      text: "Alte Uferstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "55_Alte Uferstraße"
+      ort: "Mitte der Straße (25 Hausnummern)"
+      radius_m: 74
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "_2.dsd"
     geraet:

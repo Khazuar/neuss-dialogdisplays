@@ -4,7 +4,46 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "08_2024_Steinhausstraße"
+standort:
+  breite: 51.209217
+  laenge: 6.661025
+  utm32_ost: 336624
+  utm32_nord: 5675691
+  unsicherheit_m: 78
+  methode: "zwischen_nr"
+  sicherheit: "vermutet"
+  strasse: "Steinhausstraße"
+  beschreibung: "zwischen Nr. 116 und 126"
+  belege:
+    - art: "strasse"
+      text: "Steinhausstraße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "08_2024_Steinhausstraße"
+      ort: "Mitte der Straße (85 Hausnummern)"
+      radius_m: 703
+      abstand_zum_ergebnis_m: 759
+      verwendet: false
+      widerspricht: false
+    - art: "zwischen_nr"
+      text: "Steinhausstraße, zwischen Nr. 116 und 126"
+      stufe: "vorschlag"
+      quelle:
+        typ: "ris"
+        vorlage: "69/286/2024"
+        gremium: "Bezirksausschuss II - Nordstadt"
+        sitzung: "2024-06-26"
+        dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209519&type=do"
+        titel: "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk II - Nordstadt"
+      ort: "zwischen Nr. 116 und 126"
+      radius_m: 78
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD17386 Tempo30_3.dsd"
     geraet:

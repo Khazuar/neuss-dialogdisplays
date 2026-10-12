@@ -4,7 +4,46 @@
 # DSD stammt unter 'geraet' und 'abgleich_dsd'.
 # Eigene Berechnung, nicht amtlich. Fehler in der Auswertung, auch in der Zuordnung der Angaben zu den
 # DSD-Dateien, können nicht ausgeschlossen werden; alle Angaben ohne Gewähr.
+# 'standort' ist geschätzt (docs/standorte.md): Koordinaten in Grad (WGS84) und Metern (ETRS89/UTM 32), Radius
+# der Unsicherheit in Metern, abgeleitet aus Straße, Hausnummer und Ortsangaben; die DSD enthält keine Position.
 ordner: "80_Kaarster Straße"
+standort:
+  breite: 51.219318
+  laenge: 6.656888
+  utm32_ost: 336371
+  utm32_nord: 5676823
+  unsicherheit_m: 60
+  methode: "adresse"
+  sicherheit: "vermutet"
+  strasse: "Kaarster Straße"
+  beschreibung: "Hausnummer 71 im Verzeichnis"
+  belege:
+    - art: "strasse"
+      text: "Kaarster Straße"
+      stufe: "benannt"
+      quelle:
+        typ: "ordnername"
+        name: "80_Kaarster Straße"
+      ort: "Mitte der Straße (308 Hausnummern)"
+      radius_m: 1098
+      abstand_zum_ergebnis_m: 966
+      verwendet: false
+      widerspricht: false
+    - art: "adresse"
+      text: "Kaarster Straße, Höhe Nr. 71, FR Kaarst"
+      stufe: "vorschlag"
+      quelle:
+        typ: "ris"
+        vorlage: "69/286/2024"
+        gremium: "Bezirksausschuss II - Nordstadt"
+        sitzung: "2024-06-26"
+        dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209519&type=do"
+        titel: "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk II - Nordstadt"
+      ort: "Hausnummer 71 im Verzeichnis"
+      radius_m: 30
+      abstand_zum_ergebnis_m: 0
+      verwendet: true
+      widerspricht: false
 messungen:
   - datei: "DSD17386 Tempo50_2.dsd"
     geraet:
