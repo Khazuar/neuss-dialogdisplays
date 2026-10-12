@@ -16,6 +16,7 @@ Daten werden maskiert. Der Wortlaut der Verwaltung steht als Auszug da; massgebl
 """
 import argparse
 import collections
+import datetime
 import html
 import json
 import math
@@ -102,11 +103,15 @@ def badge(text, art):
 
 # ------------------------------------------------------------------ Bausteine
 
-def kennzahlen_tabelle(row):
-    """Tabelle der Kennzahlen: alle Fahrzeuge, bereinigt und die Teilzeiträume."""
+def kennzahlen_tabelle(row, abschnitt=False):
+    """Tabelle der Kennzahlen: alle Fahrzeuge, bereinigt und die Teilzeiträume (bei einem Abschnitt der Messung nur Fahrzeuge mit nutzbarer Zeit)."""
     quellen = {"alle": row, "bereinigt": row.get("bereinigt") or {}, **(row.get("teilzeitraeume") or {})}
     zeilen = []
     for key, label in ZEITRAEUME:
+        if abschnitt and key == "bereinigt":
+            continue
+        if abschnitt and key == "alle":
+            label = "Alle Fahrzeuge des Abschnitts (nutzbare Zeit)"
         q = quellen.get(key) or {}
         n = q.get("anzahl_fahrzeuge")
         g, h = q.get("geschwindigkeit_kmh") or {}, q.get("einhaltung") or {}
@@ -560,7 +565,7 @@ def gruppen_zeile(name, anteil, modus, sichtbar, g):
             f'<td class="num{klasse_quote(g.get("qualifizierte_einhaltungsquote_prozent"))}">{dez(g.get("qualifizierte_einhaltungsquote_prozent"), 1)}&nbsp;%</td></tr>')
 
 
-def gruppen_abschnitt(row):
+def gruppen_abschnitt(row, mit_auswahl=True):
     """Zerlegung in Gruppen (gruppen.py): Tabelle mit Anteil, Lage und Kennzahlen je Gruppe und Rest, auch ohne JavaScript sichtbar."""
     g = row.get("gruppen")
     if not g:
@@ -602,8 +607,9 @@ def gruppen_abschnitt(row):
     if g.get("fahrzeuge_unter_grenze"):
         z.append(f'<p class="muted">{ganz(g["fahrzeuge_unter_grenze"])} Fahrzeuge unter {g["angepasst_ab_kmh"]}&nbsp;km/h (Rand der Erfassung) '
                  'sind nicht angepasst und stehen im Rest.</p>')
-    z.append(f'<p class="muted">Verfahren und Grenzen: <a href="{REPO}/blob/main/docs/gruppen.md">Gruppen</a>. Auswahl nach Zeit, Tagen und Gruppe: '
-             'im Abschnitt „Auswertung nach Zeit, Tagen und Gruppe“ (benötigt JavaScript).</p>')
+    z.append(f'<p class="muted">Verfahren und Grenzen: <a href="{REPO}/blob/main/docs/gruppen.md">Gruppen</a>.'
+             + (' Auswahl nach Zeit, Tagen und Gruppe: im Abschnitt „Auswertung nach Zeit, Tagen und Gruppe“ (benötigt JavaScript).' if mit_auswahl else '')
+             + '</p>')
     return "".join(z)
 
 
@@ -719,7 +725,92 @@ def widersprueche(row, meta_messung):
     return z
 
 
-def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None):
+def wahrscheinlichkeit_text(p):
+    return "über 99,9&nbsp;%" if p >= 0.999 else f"{dez(100 * p, 1)}&nbsp;%"
+
+
+def _tage_zwischen(a, b):
+    return abs((datetime.date.fromisoformat(a) - datetime.date.fromisoformat(b)).days)
+
+
+def bruch_begruendung(bruch, verw, gleich, standort_name):
+    """Begründung eines Bruchs als Liste von HTML-Sätzen: Statistik, Lücke, Zeiträume der Verwaltung, Brüche an anderen Standorten am selben Tag."""
+    z = [e(s) for s in bruch.get("begruendung", [])]
+    for v in verw:
+        zr = v.get("zeitraum")
+        if not zr or len(zr) != 2:
+            continue
+        for rolle, tag, rest in (("Beginn", zr[0], bruch["datum"]), ("Ende", zr[1], bruch["vorher_bis"])):
+            if _tage_zwischen(tag, rest) <= 3:
+                z.append(f'Die Mitteilung nennt für „{e(v.get("bezeichnung"))}“ den Erfassungszeitraum {iso_de(zr[0])} bis {iso_de(zr[1])}; '
+                         f'der {rolle.lower()} dieses Zeitraums ({iso_de(tag)}) liegt {_tage_zwischen(tag, rest)} Tage vom Bruch.')
+    andere = sorted({s for (s, _), tage in gleich.items() if s != standort_name and any(_tage_zwischen(t, bruch["datum"]) <= 1 for t in tage)})
+    if andere:
+        z.append(f'Am selben Tag (±1 Tag) gibt es Brüche in Messreihen von {len(andere)} anderen Standorten. Das spricht für einen gemeinsamen Anlass '
+                 '(Geräte wurden umgehängt), nicht für Wetter an einem Ort.')
+    return z
+
+
+def abschnitte_abschnitt(row, meta_messung, gleich, standort_name):
+    """Die Messreihe an den erkannten Brüchen zerlegt und je Abschnitt einzeln ausgewertet (bruch.py, docs/abschnitte.md)."""
+    a = row.get("abschnitte")
+    if not a:
+        return ""
+    z = ["<h4>Abschnitte der Messung</h4>"]
+    if not a.get("geprueft"):
+        return z[0] + f'<p>Nicht geprüft: {e(a.get("grund"))}.</p>'
+    nachsatz = ""
+    if a.get("ausschlaege"):
+        nachsatz += (' Kurze Ausschläge, nach denen der Verkehr zum alten Niveau zurückkehrt (zum Beispiel Feiertage), sind keine Brüche: '
+                     + ", ".join(f'{iso_de(x["von"])} bis {iso_de(x["bis"])}' for x in a["ausschlaege"]) + ".")
+    if not a.get("liste"):
+        return z[0] + (f'<p>In den {ganz(a["tage"])} vollständig aufgezeichneten Tagen wurde kein Bruch erkannt: Die Geschwindigkeitsverteilung ändert sich '
+                       f'nicht so stark, dass die Messung getrennt ausgewertet werden müsste (Verfahren: <a href="{REPO}/blob/main/docs/abschnitte.md">Abschnitte</a>).'
+                       f'{nachsatz}</p>')
+    verw = (meta_messung or {}).get("verwaltung", [])
+    z.append(f'<p>Das Verhalten des Verkehrs ändert sich in dieser Messreihe an {a["brueche"]} {"Stelle" if a["brueche"] == 1 else "Stellen"} so stark, '
+             'dass die Teile getrennt ausgewertet werden: Wahrscheinlich hing das Gerät danach an einer anderen Stelle oder war anders eingestellt. '
+             'Die Gesamtauswertung oben (alle Daten) bleibt zum Vergleich mit den Angaben der Verwaltung; für die Verteilung selbst und für die '
+             'Gruppen sind die Abschnitte maßgeblich. Der Grund dieser Änderung lässt sich aus den Daten nicht sagen. Die Wahrscheinlichkeit sagt, '
+             f'wie sicher ein Bruch an dieser Stelle im statistischen Modell ist (Tageswerte, ohne Wochentagsunterschiede), nicht, was geschah.{nachsatz}</p>')
+    zeilen = []
+    for ab in a["liste"]:
+        g, h = ab.get("geschwindigkeit_kmh") or {}, ab.get("einhaltung") or {}
+        beginn = ab["beginn"]
+        grund = "Beginn der Messung" if beginn["art"] != "Bruch" else f'Bruch, {wahrscheinlichkeit_text(beginn["wahrscheinlichkeit"])}'
+        zeilen.append(f'<tr><th scope="row"><a href="#{e(standort_slug(row["datei"]))}-abschnitt-{ab["nr"]}">Abschnitt {ab["nr"]}</a></th>'
+                      f'<td>{iso_de(ab["von"])} bis {iso_de(ab["bis"])}</td><td class="num">{ganz(ab["tage"])}</td>'
+                      f'<td class="num">{ganz(ab.get("anzahl_fahrzeuge"))}</td><td class="num">{dez(g.get("mittel"))}</td><td class="num">{ganz(g.get("v85"))}</td>'
+                      f'<td class="num{klasse_quote(h.get("einhaltungsquote_prozent"))}">{dez(h.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
+                      f'<td>{grund}</td></tr>')
+    z.append('<div class="tablewrap"><table><caption class="muted">Abschnitte, an Brüchen getrennt (Fahrzeuge mit nutzbarer Zeit)</caption><thead><tr>'
+             '<th>Abschnitt</th><th>Zeitraum</th><th class="num">Tage</th><th class="num">Fahrzeuge</th><th class="num">Ø km/h</th><th class="num">V85</th>'
+             '<th class="num">Einhaltung</th><th>Beginn</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
+    for ab in a["liste"]:
+        zz = [f'<section class="abschnitt" id="{e(standort_slug(row["datei"]))}-abschnitt-{ab["nr"]}"><h5>Abschnitt {ab["nr"]}: {iso_de(ab["von"])} bis {iso_de(ab["bis"])} '
+              f'({ganz(ab["tage"])} Tage, {ganz(ab.get("anzahl_fahrzeuge"))} Fahrzeuge)</h5>']
+        beginn = ab["beginn"]
+        if beginn["art"] == "Bruch":
+            sätze = bruch_begruendung(beginn, verw, gleich, standort_name)
+            zz.append(f'<p><strong>Getrennt vom vorigen Abschnitt am {iso_de(beginn["datum"])}</strong>, Wahrscheinlichkeit eines Bruchs '
+                      f'{wahrscheinlichkeit_text(beginn["wahrscheinlichkeit"])}.</p><ul>' + "".join(f"<li>{s}</li>" for s in sätze) + "</ul>")
+        else:
+            zz.append("<p>Beginn der Messung.</p>")
+        if ab.get("anzahl_fahrzeuge"):
+            sub = dict(ab, tempolimit_kmh=row.get("tempolimit_kmh"))
+            zz.append(kennzahlen_tabelle(sub, abschnitt=True))
+            zz.append(histogramm_abschnitt(sub))
+            zz.append(gruppen_abschnitt(sub, mit_auswahl=False))
+        else:
+            zz.append("<p>Keine Fahrzeuge mit nutzbarer Zeit.</p>")
+        zz.append("</section>")
+        z.append("".join(zz).replace("<h4>", "<h6>").replace("</h4>", "</h6>"))
+    z.append(f'<p class="muted">Verfahren, Schwellen und Grenzen: <a href="{REPO}/blob/main/docs/abschnitte.md">Abschnitte</a>. Der Rauschboden ist wie in der '
+             'Gesamtauswertung herausgerechnet (für die ganze Datei geschätzt); die Gruppen sind je Abschnitt neu angepasst.</p>')
+    return "".join(z)
+
+
+def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None, gleich=None, standort_name=""):
     g = (meta_messung or {}).get("geraet", {})
     limit = row.get("tempolimit_kmh")
     verw = (meta_messung or {}).get("verwaltung", [])
@@ -750,6 +841,10 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None):
     if wid:
         z.append('<div class="notice" role="note"><strong>Widersprüche und Auffälligkeiten zwischen DSD und Mitteilung:</strong><ul>' +
                  "".join(f"<li>{w}</li>" for w in wid) + "</ul></div>")
+    mit_bruch = bool((row.get("abschnitte") or {}).get("liste"))
+    if mit_bruch:
+        z.append('<h4>Gesamtauswertung (alle Daten der Datei)</h4><p class="muted">Sie vergleicht sich mit den Angaben der Verwaltung. Diese Messreihe enthält '
+                 'aber Brüche (siehe „Abschnitte der Messung“ weiter unten): Die Gesamtverteilung mischt dann Messungen, die nicht zusammengehören.</p>')
     if row.get("anzahl_fahrzeuge"):
         auswahl = filter_abschnitt(row, daten, standort_slug(row["datei"]))
         tabelle = kennzahlen_tabelle(row)
@@ -761,6 +856,7 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None):
         z.append(gruppen_abschnitt(row))
         z.append(schaetzung_tabellen(row))
         z.append(nacht_abschnitt(row))
+        z.append(abschnitte_abschnitt(row, meta_messung, gleich or {}, standort_name))
     else:
         z.append("<p>Die Datei enthält keine Fahrzeugdaten.</p>")
     z.append(uhr_abschnitt(row, abschnitte, rel))
@@ -842,7 +938,7 @@ def standort_abschnitt(st, verz):
     return "".join(t)
 
 
-def seite(rel, rows, meta_standort, uhr_dateien, zellen=None, verz=None):
+def seite(rel, rows, meta_standort, uhr_dateien, zellen=None, verz=None, gleich=None):
     name = bereinige(rel)
     meta_nach_datei = {m["datei"]: m for m in (meta_standort or {}).get("messungen", [])}
     eintraege = [(m["datei"], v) for m in (meta_standort or {}).get("messungen", []) for v in m.get("verwaltung", [])]
@@ -895,7 +991,7 @@ def seite(rel, rows, meta_standort, uhr_dateien, zellen=None, verz=None):
     for row in sorted(rows, key=lambda r: r["datei"]):
         teile.append(messung_abschnitt(row, meta_nach_datei.get(row["datei"]),
                                        (uhr_dateien.get(f'{rel}/{row["datei"]}') or {}).get("abschnitte", []), rel,
-                                       (zellen or {}).get(row["datei"])))
+                                       (zellen or {}).get(row["datei"]), gleich, rel))
     teile.append("</section>")
     teile.append(f"""<footer class="muted">
 <p>Rohdaten und Skripte: <a href="{REPO}/tree/main/{quote_pfad(rel)}">GitHub</a> ·
@@ -925,6 +1021,9 @@ def lade_zellen(ordner, rel, rows):
 
 def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None):
     verz = standorte.Verzeichnis.laden(adressen) if adressen and os.path.exists(adressen) else None
+    # Tage der Brüche je Messreihe, um Brüche am selben Tag an anderen Standorten zu nennen
+    gleich = {(r["standort"], r["datei"]): [ab["beginn"]["datum"] for ab in (r.get("abschnitte") or {}).get("liste", []) if ab["beginn"]["art"] == "Bruch"]
+              for r in auswertung["standorte"]}
     je_standort = collections.OrderedDict()
     for row in auswertung["standorte"]:
         je_standort.setdefault(row["standort"], []).append(row)
@@ -938,7 +1037,7 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None):
         for r in rows:
             if r.get("seite") != f"standorte/{slug}.html":
                 raise ValueError(f"Seitenlink passt nicht zum Standort: {r.get('seite')} / {rel}")
-        text = seite(rel, rows, metadaten["standorte"].get(rel), uhr["dateien"], lade_zellen(zellen_ordner, rel, rows), verz)
+        text = seite(rel, rows, metadaten["standorte"].get(rel), uhr["dateien"], lade_zellen(zellen_ordner, rel, rows), verz, gleich)
         with open(os.path.join(ziel, "standorte", slug + ".html"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
     return slugs

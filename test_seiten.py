@@ -255,6 +255,35 @@ class Seite(unittest.TestCase):
         h = self.html([], rows=[zeile(n=0)])
         self.assertIn("keine Fahrzeugdaten", h)
 
+    def test_abschnitte_mit_begruendung_wahrscheinlichkeit_und_gleichzeitigen_bruechen(self):
+        def abschnitt(nr, von, bis, beginn):
+            z = zeile()
+            return {"nr": nr, "von": von, "bis": bis, "tage": 30, "anzahl_fahrzeuge": 5000, "beginn": beginn,
+                    "geschwindigkeit_kmh": z["geschwindigkeit_kmh"], "einhaltung": z["einhaltung"], "teilzeitraeume": z["teilzeitraeume"],
+                    "tempolimit_kmh": 30, "gruppen": {"geprueft": False, "grund": "zu wenig <Fahrzeuge>"}}
+        bruch = {"art": "Bruch", "datum": "2025-04-14", "vorher_bis": "2025-04-13", "wahrscheinlichkeit": 0.9995, "luecke_tage": 0,
+                 "unterschied_der_verteilungen": 0.4, "begruendung": ["Die Verteilung unterscheidet sich <um> 40 %."]}
+        row = dict(zeile(), abschnitte={"geprueft": True, "tage": 60, "anzahl": 2, "brueche": 1, "ausschlaege": [{"von": "2025-03-01", "bis": "2025-03-05"}],
+                                        "liste": [abschnitt(1, "2025-03-01", "2025-04-13", {"art": "Beginn der Messung"}),
+                                                  abschnitt(2, "2025-04-14", "2025-05-30", bruch)]})
+        meta = {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": [eintrag(zeitraum=["2025-04-15", "2025-06-30"], bezeichnung="Test")]}]}
+        gleich = {("andere Strasse", "x.dsd"): ["2025-04-15"], ("07_2024_ Einsteinstraße", "_15.dsd"): ["2025-04-14"]}
+        h = s.seite("07_2024_ Einsteinstraße", [row], meta, {}, None, None, gleich)
+        self.assertIn("Gesamtauswertung (alle Daten der Datei)", h)
+        self.assertIn("Abschnitte der Messung", h)
+        self.assertIn("Abschnitt 2: 14.04.2025 bis 30.05.2025", h)
+        self.assertIn("über 99,9&nbsp;%", h)
+        self.assertIn("Die Verteilung unterscheidet sich &lt;um&gt; 40 %.", h)
+        self.assertIn("Erfassungszeitraum 15.04.2025 bis 30.06.2025", h)
+        self.assertIn("von 1 anderen Standorten", h)  # nur der andere Standort zaehlt
+        self.assertIn("Kurze Ausschläge", h)
+        self.assertIn("zu wenig &lt;Fahrzeuge&gt;", h)
+        self.assertNotIn("<h4>Gruppen in der Verteilung", h.split("Abschnitt 2:")[1])  # im Abschnitt Ueberschrift eine Ebene tiefer
+        ohne = s.seite("07_2024_ Einsteinstraße", [zeile()], {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}, {})
+        self.assertNotIn("Gesamtauswertung (alle Daten der Datei)", ohne)
+        kein = dict(zeile(), abschnitte={"geprueft": True, "tage": 60, "anzahl": 1, "brueche": 0, "liste": [], "ausschlaege": []})
+        self.assertIn("kein Bruch erkannt", s.seite("07_2024_ Einsteinstraße", [kein], meta, {}))
+
     def test_geschaetzte_lage_mit_skizze_und_belegen(self):
         import standorte
         verz = standorte.Verzeichnis([standorte.Adresse("1", "Einsteinstraße", i, "", 1000.0 + (i % 2) * 20, 2000.0 + 10 * i) for i in range(1, 30)])
