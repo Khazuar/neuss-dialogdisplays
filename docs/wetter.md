@@ -73,7 +73,7 @@ etwa zwei Stunden kürzer pro Monat).
 
 ## Befund: Regen stört das Radar
 
-Die Messungen enthalten bei Regen sehr viele langsame Datensätze, die nicht von Fahrzeugen stammen. Verhältnis der Datensätze je Stunde
+Die Messungen enthalten bei Regen sehr viele langsame Datensätze, die nicht von Fahrzeugen stammen (ohne Abzug gemessen). Verhältnis der Datensätze je Stunde
 in Regenstunden zur selben Tageszeit bei Trockenheit (Mittel über alle Dateien, Düsseldorf; Referenz: Stunde und die drei davor unter 0,1 mm;
 87 Dateien, 190 699 Stunden, davon 21 001 mit mindestens 0,1 mm):
 
@@ -92,12 +92,26 @@ in Regenstunden zur selben Tageszeit bei Trockenheit (Mittel über alle Dateien,
   14- bis 17-fach mit den Neusser Stationen gegen 10- bis 11-fach mit Düsseldorf.
 - Bei den Fahrzeugen ab halbem Tempolimit ändert sich das Tempo bei Regen nicht (+0,0 km/h bei Regentagen, −0,03 km/h bei Regenstunden); das
   scheinbar langsamere Fahren (Tag −1,1 km/h, Regenstunde −3,1 km/h, bei Dateien mit abgezogenem Rauschboden −2,0 bzw. −4,6 km/h) ist das
-  Störsignal. Der Rauschboden-Abzug ([rauschen.md](rauschen.md)) kennt keinen Regen und fängt das nicht auf: Der abgezogene Rauschboden ist bei
-  Regen im Median 2,8-fach (Regentag) bzw. 6,4-fach (Regenstunde), in 38 von 39 bis 40 Dateien höher.
+  Störsignal. Der frühere Rauschboden-Abzug kannte keinen Regen und fing das nicht auf: Der abgezogene Rauschboden war bei Regen im Median
+  2,8-fach (Regentag) bzw. 6,4-fach (Regenstunde) so hoch, in 38 von 39 bis 40 Dateien. Das ist jetzt berücksichtigt (nächster Abschnitt).
 - Ab 18 km/h sinken die Zahlen bei stärkerem Regen um 10 bis 25 %. Möglicherweise verdecken die Stördatensätze Fahrzeuge, weil jeder Datensatz
   das Gerät für einige Sekunden sperrt: In 100 von 106 Dateien kommt kein Abstand unter 2 bis 8 s zwischen zwei Datensätzen vor (bei
   80 Dateien 5 s, passend zu `ar_timeout = 05` bzw. `dead_time` in der Gerätekonfiguration). Ob die Stördatensätze Fahrzeuge so verdecken,
   ist nicht geprüft; es kann auch ein echter Rückgang sein. Die Verkehrsmenge in Regenstunden ist deshalb nicht verlässlich.
+
+## Regenmodell im Rauschboden
+
+`rauschen.py` schätzt mit diesen Wetterdaten für jede Regenklasse einen Regenanteil und rechnet ihn heraus; Verfahren, Schwellen und Grenzen
+in [rauschen.md](rauschen.md). Ergebnis auf den 109 Dateien (99 geprüft): Regenanteil **belegt bei 64**, bei 51 davon als einziger Abzug
+(kein trockener Rauschboden belegt). Der trockene Rauschboden ist nur noch bei 14 Dateien belegt (vorher 41; der Rest war zu großen Teilen Regen). Abgezogen
+wird im Median 4,2 % der Fahrzeuge je Datei (Quartile 1,1 und 10,0 %), am meisten bei `02_2024_Bauerbahn` (40 %: 344 Regenstunden mit im
+Mittel 55 Stördatensätzen bis 8 km/h bei Tempo 20 und wenig Verkehr), `53_Feldstraße` (29 %) und `54-2023_Holunderweg` (21 %).
+
+Kontrolle an den Daten (Regenstunden gegen trockene Stunden, gleiche Tagesart, Tageszeit und gleicher Monat): Der Tempo-Unterschied der
+bereinigten Fahrzeuge fällt im Median von −3,13 auf −0,24 km/h, bei Regentagen von −1,06 auf −0,29 km/h; bei den Dateien mit belegtem Regenanteil
+von −4,5 auf −0,4 km/h (Regenstunden). Das Tempo der Fahrzeuge ab halbem Limit wird nicht verändert (−0,01 km/h), die Menge ab halbem Limit auch
+nicht (0,965). Die Verzerrung bleibt bei den Dateien ohne belegten Regenanteil, bei etwa einem Drittel von ihnen über 1 km/h. Fahrzeuge ohne
+nutzbare Uhrzeit sind nicht korrigiert (Gesamtwerte): Ohne Uhrzeit weiß man nicht, ob es regnete.
 
 ## Erzeugen
 

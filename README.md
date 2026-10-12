@@ -90,7 +90,8 @@ sinnvoll.
     Hinweisen und den Uhr-Segmenten. Sie sagt nicht, ob die Uhrzeit stimmt; das belegt `uhr_belege.py`
     (`plausibel`, `eingeschraenkt`, `unbrauchbar`, `belege/uhr-bewertung.json`),
   - `rauschen` – Rauschboden: `belegt`, `abgezogen_fahrzeuge`, Anteil, Mittel und Obergrenze in km/h, Stabilität und das
-    `spektrum` (Fahrten je 1000 Stunden, verkehrsunabhängig und insgesamt); `fahrzeuge_in_datei` ist die Zahl vor dem Abzug,
+    `spektrum` (Fahrten je 1000 Stunden, verkehrsunabhängig und insgesamt) und `regen` (zusätzliche langsame Datensätze bei Regen,
+    siehe `docs/wetter.md`); `fahrzeuge_in_datei` ist die Zahl vor dem Abzug,
   - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit nutzbarer Zeit,
   - `teilzeitraeume` – dieselben Kennzahlen für `nacht` (22–6 Uhr), `vormittag` (6–12), `nachmittag` (12–19), `abend` (19–22)
     und `schulweg` (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,

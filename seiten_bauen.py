@@ -510,6 +510,16 @@ def rauschen_abschnitt(row, mit_filter=False):
     else:
         z.append(f'<p>Ein verkehrsunabhängiger Anteil von etwa {dez(r.get("anteil_prozent"), 1)}&nbsp;% wurde geschätzt, ist aber nicht belegt '
                  f'({e(r.get("grund"))}). Es wurde nichts herausgerechnet; die Kennzahlen enthalten alle aufgezeichneten Fahrzeuge.</p>')
+    rg = r.get("regen")
+    if rg and rg.get("belegt"):
+        z.append(f'<p>Bei Regen kommen weitere langsame Datensätze hinzu, die nicht von Fahrzeugen stammen: In den {ganz(rg["regenstunden"])} Regenstunden '
+                 f'dieser Datei sind es im Mittel {dez(rg["zusatz_je_regenstunde"], 1)} je Stunde, 95&nbsp;% davon unter {rg["obergrenze_kmh"]}&nbsp;km/h. '
+                 f'Sie sind herausgerechnet ({ganz(rg.get("abgezogen_fahrzeuge", 0))} Fahrzeuge). Die Verkehrsmenge in Regenstunden bleibt unsicher, weil '
+                 'jeder dieser Datensätze das Gerät kurz sperrt und Fahrzeuge verdecken kann. Niederschlag: Quelle: Deutscher Wetterdienst '
+                 f'(<a href="{REPO}/blob/main/docs/wetter.md">Wetterdaten</a>).</p>')
+    elif rg and rg.get("grund") and rg.get("regenstunden"):
+        z.append(f'<p class="muted">Ein Regenanteil ist nicht belegt ({e(rg["grund"])}); bei Regen wurde nichts zusätzlich herausgerechnet. '
+                 'Niederschlag: Quelle: Deutscher Wetterdienst.</p>')
     sp = r.get("spektrum")
     if sp and sp.get("alle"):
         bild = ('<figure class="histfig">' + rausch_svg(sp) + '<figcaption class="muted">Fahrten je Stunde nach Geschwindigkeit: grau alle, '

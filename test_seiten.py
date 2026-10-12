@@ -146,6 +146,26 @@ class Seite(unittest.TestCase):
                            "spektrum": {"ab_kmh": 3, "rausch": [2040, 1590, 970, 590], "alle": [3130, 2270, 1610, 980]}, **kw}
         return row
 
+    def test_regenanteil_mit_quellenvermerk(self):
+        zl = self.rauschzeile()
+        zl["rauschen"]["regen"] = {"belegt": True, "regenstunden": 240, "zusatz_je_regenstunde": 12.4, "obergrenze_kmh": 11,
+                                   "abgezogen_fahrzeuge": 2976, "stabil": True}
+        h = s.rauschen_abschnitt(zl)
+        self.assertIn("Bei Regen kommen weitere langsame Datensätze hinzu", h)
+        self.assertIn("In den 240 Regenstunden", h)
+        self.assertIn("im Mittel 12,4 je Stunde", h)
+        self.assertIn("unter 11&nbsp;km/h", h)
+        self.assertIn("2.976 Fahrzeuge", h)
+        self.assertIn("Quelle: Deutscher Wetterdienst", h)  # Quellenvermerk des DWD (CC BY 4.0) an der Information
+        self.assertIn("Die Verkehrsmenge in Regenstunden bleibt unsicher", h)
+        zl["rauschen"]["regen"] = {"belegt": False, "regenstunden": 5, "grund": "weniger als 12 Regenstunden in der Datei"}
+        h = s.rauschen_abschnitt(zl)
+        self.assertIn("Ein Regenanteil ist nicht belegt (weniger als 12 Regenstunden in der Datei)", h)
+        self.assertIn("Quelle: Deutscher Wetterdienst", h)
+        zl["rauschen"]["regen"] = {"belegt": False, "regenstunden": 0, "grund": "x"}  # kein Regen in der Messung: nichts sagen
+        self.assertNotIn("Regenanteil", s.rauschen_abschnitt(zl))
+        self.assertNotIn("Regenanteil", s.rauschen_abschnitt(self.rauschzeile()))  # ohne Wetterdaten
+
     def test_rauschboden_belegt_mit_bild(self):
         h = self.html([], rows=[self.rauschzeile()])
         self.assertIn("Rauschboden (verkehrsunabhängige Messwerte)", h)

@@ -749,7 +749,29 @@ HINWEIS_AUSWERTUNG = ("Eigene Berechnung aus den Rohdaten, nicht amtlich. Fehler
                       "Zuordnung) können nicht ausgeschlossen werden; ohne Gewähr.")
 
 
-def rauschen_block(rb, abgezogen, roh=0):
+WETTER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "belege", "wetter.json")
+
+
+@functools.lru_cache(maxsize=None)
+def regenfunktion(pfad=WETTER):
+    """Funktion (Datum, Stunde) -> Niederschlag der Ortszeit-Stunde in mm oder None (kein Wert) aus belege/wetter.json (wetter.py);
+    None, wenn es die Datei nicht gibt. Tage ohne Eintrag und Stunden ohne Wert liefern None."""
+    if not os.path.exists(pfad):
+        return None
+    with open(pfad, encoding="utf-8") as fh:
+        tage = json.load(fh)["tage"]
+
+    def regen(datum, stunde):
+        tag = tage.get(datum.isoformat())
+        if not tag or "mm" not in tag:
+            return None
+        if "std" not in tag:
+            return 0.0  # Tag unter 0,1 mm
+        return tag["std"][stunde]
+    return regen
+
+
+def rauschen_block(rb, abgezogen, roh=0, regen_abgezogen=0):
     """YAML-Block zum Rauschboden (rauschen.pruefen). abgezogen: Zahl der herausgerechneten Fahrzeuge, roh: Fahrzeuge in der Datei."""
     if rb is None:
         return {"geprueft": False, "grund": f"weniger als {rauschen.MIN_FAHRZEUGE} Fahrzeuge mit nutzbarer Zeit oder kein Tempolimit"}
@@ -768,10 +790,23 @@ def rauschen_block(rb, abgezogen, roh=0):
     b["verkehrsschwelle_kmh"] = round(rb["verkehrsschwelle_kmh"], 1)
     if "spektrum" in rb:
         b["spektrum"] = rb["spektrum"]  # Fahrten je 1000 Stunden: rausch = verkehrsunabhaengig, alle = insgesamt
+    rg = rb.get("regen")
+    if rg:  # Regenanteil (docs/wetter.md): Datensaetze, die bei Regen zusaetzlich zum trockenen Rauschboden auftreten
+        r = {"belegt": rg["belegt"], "regenstunden": rg["regenstunden"], "stunden_je_klasse": rg["stunden_je_klasse"],
+             "zusatz_je_regenstunde": rg["zusatz_je_regenstunde"], "stabil": rg["stabil"]}
+        if rg["grund"]:
+            r["grund"] = rg["grund"]
+        if rg["mittel_kmh"] is not None:
+            r["mittel_kmh"] = rg["mittel_kmh"]
+            r["obergrenze_kmh"] = rg["obergrenze_kmh"]
+        r["zusatz_je_klasse"] = rg["zusatz_je_klasse"]
+        if regen_abgezogen:
+            r["abgezogen_fahrzeuge"] = regen_abgezogen
+        b["regen"] = r
     return b
 
 
-CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py")  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
+CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", os.path.join("belege", "wetter.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
 
 
 def _code_hash(dateien=CODE_DATEIEN):
@@ -783,14 +818,17 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     """Alle Kennzahlen einer Datei. Gibt (res, daten) zurueck; daten sind die Zellen fuer die Filter der Detailseite."""
     lim, quelle = tempolimit(meta, limit, kor)
     uhr, bereinigt, teil, spannen = analysiere_uhr(veh, status, mit_spannen=True)
-    rb = rauschen.pruefen(bereinigt, spannen, lim)
+    rb = rauschen.pruefen(bereinigt, spannen, lim, regen=regenfunktion())
     anzahl_roh = len(veh)
     bereinigt_vorher = bereinigt
-    belegt = bool(rb and rb["belegt"])
-    if belegt:  # verkehrsunabhaengigen Rauschboden herausrechnen (docs/rauschen.md)
+    belegt = bool(rb and rb["abzug"])  # trockener Rauschboden und/oder Regenanteil belegt
+    regen_abgezogen = 0
+    if belegt:  # verkehrsunabhaengigen Rauschboden und Regenanteil herausrechnen (docs/rauschen.md, docs/wetter.md)
         modell = rb["_modell"]
         veh = rauschen.ohne_rauschen_je_v(veh, modell)
         bereinigt = rauschen.ohne_rauschen(bereinigt, modell)
+        if modell.get("regen"):  # davon der Regenanteil: Unterschied zum Abzug ohne ihn
+            regen_abgezogen = len(rauschen.ohne_rauschen(bereinigt_vorher, dict(modell, regen=None))) - len(bereinigt)
         teil = {k: rauschen.ohne_rauschen(v, modell) for k, v in teil.items()}
     res = {
         "standort": standort,
@@ -816,10 +854,10 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
 
     res.update(zusatz(veh))
     res["uhr"] = uhr
-    res["rauschen"] = rauschen_block(rb, anzahl_roh - len(veh) if belegt else 0, anzahl_roh)
+    res["rauschen"] = rauschen_block(rb, anzahl_roh - len(veh) if belegt else 0, anzahl_roh, regen_abgezogen)
     zd = gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen)
     res["gruppen"], daten = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
-                                                 rb["obergrenze_kmh"] if belegt else None)
+                                                 rb["obergrenze_abzug_kmh"] if belegt else None)
     b = stats(bereinigt, lim, min_kmh) or {"anzahl_fahrzeuge": 0}
     res["bereinigt"] = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit nutzbarer Zeit (siehe uhr), Zeiten in Ortszeit",
                         **b, **zusatz(bereinigt)}

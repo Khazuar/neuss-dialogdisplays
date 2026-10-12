@@ -170,13 +170,14 @@ abgezogen ist) bleiben alle aufgezeichneten Fahrten der Auswahl, Fahrzeuge und R
 herausgerechnete Rauschboden. So lässt er sich im Gesamtbild nachvollziehen.
 
 **Passung des Modells.** `modellabweichung_prozent` ist der Anteil der Fahrzeuge, die die angepasste Mischung an einer anderen
-Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h, ab der Anpassungsgrenze). Im Median über die 97
-zerlegten Dateien sind es 2,1 % (Quartile 1,6 und 2,7), bei keiner mehr als 5 % (höchstens 4,0 %). Ab 10 % warnen die
-Seiten, dass das Modell schlecht passt. Bei 11 Gruppen liegt das häufigste Tempo nicht über dem Rand der Anpassung: Die Glocke ist
+Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h, ab der Anpassungsgrenze). Im Median über die 98
+zerlegten Dateien sind es 1,9 % (Quartile 1,5 und 2,7), bei einer Datei mehr als 5 % (Pomona 5,5 %), bei keiner mehr als 10 %. Ab 10 % warnen die
+Seiten, dass das Modell schlecht passt. Bei 6 Gruppen liegt das häufigste Tempo nicht über dem Rand der Anpassung: Die Glocke ist
 dort am Rand abgeschnitten und wird aus ihrer sichtbaren Flanke angepasst (Schritt 2), das ist gewollt. Der **Rest** (Daten minus
-die Kurven, nie negativ) beträgt im Median 2,9 % der Fahrzeuge (Quartile 1,8 und 4,6 %). Er enthält auch die Fahrzeuge unter der
-Anpassungsgrenze; die gibt es nur, wo ein Rauschboden abgezogen ist (41 der 97 Dateien) und der Abzug einen Teil der Fahrzeuge unterhalb der
-Grenze lässt (Rest bei der Feldstraße 58 % der Fahrzeuge, bei der Bauerbahn 42 %, bei der Martinstraße 41 %, fast alles davon unter der Grenze).
+die Kurven, nie negativ) beträgt im Median 4,3 % der Fahrzeuge (Quartile 2,5 und 11,4 %). Er enthält auch die Fahrzeuge unter der
+Anpassungsgrenze; die gibt es nur, wo etwas abgezogen ist (trockener Rauschboden oder Regenanteil; 65 der 98 Dateien) und der Abzug einen Teil der
+Fahrzeuge unterhalb der Grenze lässt (Rest bei der Feldstraße 65 % der Fahrzeuge, bei der Alten Uferstraße 50 %, bei der Bauerbahn 45 %, fast alles davon unter
+der Grenze).
 
 Die Zellen enthalten nur vollständig aufgezeichnete Stunden mit nutzbarer Zeit; die Zahl der Fahrzeuge einer Auswahl kann
 deshalb geringfügig unter der Zahl in den Tabellen liegen.
@@ -198,17 +199,18 @@ ihre Kurven verteilt ist, wird nicht ausgewiesen, weil sie zwischen den Hälften
 - Eine Glocke ist keine Fahrzeugart. Zusammenhänge mit Tageszeit, Wochentag oder Wetter können Hinweise geben, beweisen aber
   keine Zuordnung. Wetterdaten sind nicht eingebunden.
 - Bei überlappenden Gruppen ist die Trennung unsicher, auch wenn die Zerlegung stabil ist. Die Schwellen (0,005 und 0,02 nats, 7 %,
-  6 Prozentpunkte, 0,5 % und 150 Fahrzeuge, D ≥ 1, 15 % Abstand der Modi, Kernradius σ₁ + σ₂, Streuung höchstens 0,25) sind Festlegungen, kein Befund. Bei 12 der 109 Dateien gibt es keine Zerlegung
-  (10 sind zu klein, bei 2 ist keine belegt); bei den übrigen 97 sind es 2 Gruppen (58 Dateien), 3 Gruppen (33), 4 (5) oder 5 (1), bei
-  keiner mit überlappenden Gruppen. Bei 17 Dateien besteht jede Gruppe aus einer Kurve, bei 80 besteht mindestens eine Gruppe aus
-  mehreren Kurven (im Mittel 4,0 Kurven je Datei, bis zu 7; im Mittel 2,5 Gruppen). Gruppen unter 3 % der Fahrzeuge gibt es in 14
-  Dateien (23 Gruppen).
+  6 Prozentpunkte, 0,5 % und 150 Fahrzeuge, D ≥ 1, 15 % Abstand der Modi, Kernradius σ₁ + σ₂, Streuung höchstens 0,25) sind Festlegungen, kein Befund. Bei 11 der 109 Dateien gibt es keine Zerlegung
+  (10 sind zu klein, bei 1 ist keine belegt); bei den übrigen 98 sind es 2 Gruppen (73 Dateien), 3 Gruppen (21), 4 (3) oder 5 (1), bei
+  keiner mit überlappenden Gruppen. Bei 19 Dateien besteht jede Gruppe aus einer Kurve, bei 79 besteht mindestens eine Gruppe aus
+  mehreren Kurven (im Mittel 3,7 Kurven je Datei, bis zu 8; im Mittel 2,3 Gruppen). Gruppen unter 3 % der Fahrzeuge gibt es in 18
+  Dateien (28 Gruppen). Mit dem Regenanteil im Rauschboden ([rauschen.md](rauschen.md)) hat sich die Zerlegung verschoben: Es gibt weniger Gruppen
+  und weniger langsame Randgruppen, die vermutlich zum Teil Regen-Störsignal beschrieben haben (vorher 58 Dateien mit 2 Gruppen, 33 mit 3,
+  5 mit 4, 1 mit 5 Gruppen; 11 Gruppen mit dem häufigsten Tempo am Rand, jetzt 6).
 - **Die Hälften der Messtage (gerade/ungerade) sind ein mildes Kriterium.** Gerade und ungerade Tage wechseln sich ab und haben
   dieselbe Mischung aus Wochentagen und Jahreszeit. Teilt man stattdessen den Zeitraum in eine erste und eine zweite Hälfte
-  (einmalige Prüfung, nicht Teil des Verfahrens), bleibt von 97 Zerlegungen nur bei 47 dieselbe Zerlegung bestehen (gleiche Zahl der Gruppen, Lage innerhalb von 15 %, Anteil innerhalb von
-  8 Prozentpunkten); bei 21 entsteht auf der zweiten Teilung keine, bei 29 eine andere (eine Datei wird nur auf der zweiten Teilung
-  zerlegt). Vor der Zusammenfassung von Kurven und der vollständigen Suche nach K war es ähnlich (von 81 Zerlegungen 38 gleich, 39 keine,
-  4 andere). Die Aussage ist
+  (einmalige Prüfung, nicht Teil des Verfahrens), bleibt von 98 Zerlegungen nur bei 53 dieselbe Zerlegung bestehen (gleiche Zahl der Gruppen, Lage innerhalb von 15 %, Anteil innerhalb von
+  8 Prozentpunkten); bei 18 entsteht auf der zweiten Teilung keine, bei 27 eine andere. Vor dem Regenabzug waren es 39 von 97 (17 keine,
+  41 andere), vor der Zusammenfassung von Kurven und der vollständigen Suche nach K 38 von 81 (39 keine, 4 andere). Die Aussage ist
   deshalb: Die Gruppen sind in einer Messung über gemischte Tage stabil; ihre Anteile und teils ihre Lage können von der Zeit
   (Jahreszeit, Wochentag, Baustellen) abhängen. Das ist kein Beleg, dass sie falsch sind, aber ein Grund, die Anteile nicht als
   feste Größe eines Standorts zu lesen.
