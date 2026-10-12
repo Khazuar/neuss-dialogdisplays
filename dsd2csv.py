@@ -65,6 +65,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
+import bruch  # noqa: E402
 import gruppen  # noqa: E402
 import rauschen  # noqa: E402
 import zwischenspeicher  # noqa: E402
@@ -848,7 +849,7 @@ def rauschen_block(rb, abgezogen, roh=0, regen_abgezogen=0):
     return b
 
 
-CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", os.path.join("belege", "wetter.json"), os.path.join("belege", "standorte.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
+CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", "bruch.py",os.path.join("belege", "wetter.json"), os.path.join("belege", "standorte.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
 
 
 def _code_hash(dateien=CODE_DATEIEN):
@@ -905,16 +906,70 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     zd = gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen)
     res["gruppen"], daten = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
                                                  rb["obergrenze_abzug_kmh"] if belegt else None)
+    res["bereinigt"], res["teilzeitraeume"] = kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz)
+    res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt if x[1] >= min_kmh], spannen, lim)
+    # Brueche in der Messreihe und getrennte Auswertung der Abschnitte (docs/abschnitte.md)
+    br = bruch.erkenne(bereinigt, spannen, max(10, int(round(0.5 * lim))) if lim else 15, lim)
+    res["abschnitte"] = abschnitte_auswerten(br, bereinigt_vorher, bereinigt, teil, spannen, lim, min_kmh, zusatz, belegt, rb, speicher)
+    return res, daten
+
+
+def kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz):
+    """(Block 'bereinigt', Block 'teilzeitraeume') fuer Fahrzeuge mit nutzbarer Zeit und die Tageszeit-Teilmengen."""
     b = stats(bereinigt, lim, min_kmh) or {"anzahl_fahrzeuge": 0}
-    res["bereinigt"] = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit nutzbarer Zeit (siehe uhr), Zeiten in Ortszeit",
-                        **b, **zusatz(bereinigt)}
-    res["teilzeitraeume"] = {}
+    bereinigt_block = {"beschreibung": "alle Tageszeiten, nur Fahrzeuge mit nutzbarer Zeit (siehe uhr), Zeiten in Ortszeit",
+                       **b, **zusatz(bereinigt)}
+    teilzeitraeume = {}
     for tname, (definition, _) in TEILZEITRAEUME.items():
         t = stats(teil[tname], lim, min_kmh) or {"anzahl_fahrzeuge": 0}
         t.pop("messzeitraum", None)
-        res["teilzeitraeume"][tname] = {"definition": definition, **t, **zusatz(teil[tname])}
-    res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt if x[1] >= min_kmh], spannen, lim)
-    return res, daten
+        teilzeitraeume[tname] = {"definition": definition, **t, **zusatz(teil[tname])}
+    return bereinigt_block, teilzeitraeume
+
+
+def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusatz, belegt, rb, speicher):
+    """Block 'abschnitte': die Messreihe an den erkannten Bruechen zerlegt, jeder Abschnitt einzeln ausgewertet (wie die ganze Datei).
+
+    Gleiche Rauschbodenabzuege wie fuer die ganze Datei; die Gruppen werden je Abschnitt neu angepasst."""
+    if not br.get("geprueft"):
+        return {"geprueft": False, "grund": br["grund"]}
+    blk = {"geprueft": True, "tage": br["tage"], "ab_kmh": br["ab_kmh"], "autokorrelation": br["autokorrelation"],
+           "aufblaehung": br["aufblaehung"], "anzahl": len(br["abschnitte"]), "brueche": len(br["brueche"]),
+           "moegliche_brueche": br["moegliche_brueche"], "ausschlaege": br["ausschlaege"],
+           "verworfen_kleiner_unterschied": br["verworfen_kleiner_unterschied"], "liste": []}
+    if not br["brueche"]:
+        return blk
+    grenzen = [dt.date.fromisoformat(b["datum"]) for b in br["brueche"]]
+
+    def nr_von(datum):
+        return bisect.bisect_right(grenzen, datum)
+    n_abs = len(grenzen) + 1
+    teile_v, teile_n = [[] for _ in range(n_abs)], [[] for _ in range(n_abs)]
+    for f in vorher:
+        teile_v[nr_von(f[0].date())].append(f)
+    for f in nachher:
+        teile_n[nr_von(f[0].date())].append(f)
+    teile_t = [{k: [] for k in TEILZEITRAEUME} for _ in range(n_abs)]
+    for k, lst in teil.items():
+        for f in lst:
+            teile_t[nr_von(f[0].date())][k].append(f)
+    for i in range(n_abs):
+        a = br["abschnitte"][i]
+        von = dt.datetime.combine(dt.date.fromisoformat(a["von"]) if i == 0 else grenzen[i - 1], dt.time())
+        bis = dt.datetime.combine(grenzen[i], dt.time()) if i < len(grenzen) else dt.datetime.max
+        sp = [(max(s0, von), min(s1, bis)) for s0, s1 in spannen if s1 >= von and s0 < bis]
+        e = {"nr": i + 1, "von": a["von"], "bis": a["bis"], "tage": a["tage"], "anzahl_fahrzeuge_gesamt": len(teile_n[i])}
+        e["beginn"] = ({"art": "Beginn der Messung"} if i == 0 else
+                       {"art": "Bruch", **br["brueche"][i - 1]})
+        e.update(stats(teile_n[i], lim, min_kmh) or {"anzahl_fahrzeuge": 0})
+        if e["anzahl_fahrzeuge"]:
+            e.update(zusatz(teile_n[i]))
+            e["teilzeitraeume"] = kennzahlen_je_zeitraum(teile_n[i], teile_t[i], lim, min_kmh, zusatz)[1]  # 'bereinigt' waere dasselbe wie oben
+            zd = gruppen.zellen_bauen(teile_v[i], teile_n[i], sp)
+            e["gruppen"], _ = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
+                                                 rb["obergrenze_abzug_kmh"] if belegt else None)
+        blk["liste"].append(e)
+    return blk
 
 
 def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None, speicher=None, csv_schreiben=True):
