@@ -130,6 +130,35 @@ class Tabelle(unittest.TestCase):
         self.assertEqual(t["quellenvermerk"], "Quelle: Deutscher Wetterdienst")
         self.assertIn("Deutscher Wetterdienst", t["aenderungen"])
 
+    def test_reihen_je_station_und_regenfunktion_je_messstelle(self):
+        import json
+        import tempfile
+        import dsd2csv
+
+        def werte(regen):
+            return {(dt.datetime(2025, 5, 1) + dt.timedelta(hours=i)).strftime("%Y%m%d%H"): (regen if i == 20 else 0.0) for i in range(24 * 2 + 6)}
+        info = {"nord": {"id": "nord", "name": "Nord", "km": 1.0, "breite": 51.30, "laenge": 6.70},
+                "sued": {"id": "sued", "name": "Sued", "km": 2.0, "breite": 51.10, "laenge": 6.70}}
+        t = w.bauen(dt.date(2025, 5, 1), dt.date(2025, 5, 2), [("nord", werte(1.0)), ("sued", werte(0.4))], {}, info)
+        self.assertEqual(sorted(t["reihen"]), ["nord", "sued"])
+        self.assertEqual((t["reihen"]["sued"]["breite"], t["reihen"]["sued"]["name"]), (51.10, "Sued"))
+        self.assertEqual(t["reihen"]["nord"]["tage"]["2025-05-01"]["mm"], 1.0)
+        with tempfile.TemporaryDirectory() as ordner:
+            pfad = os.path.join(ordner, "wetter.json")
+            with open(pfad, "w", encoding="utf-8") as fh:
+                json.dump(t, fh)
+            tag = dt.date(2025, 5, 1)
+            stunde = next(h for h in range(24) if t["reihen"]["nord"]["tage"]["2025-05-01"]["std"][h])
+            ohne_ort = dsd2csv.regenfunktion(pfad)
+            im_norden = dsd2csv.regenfunktion(pfad, ort=(51.29, 6.70))
+            im_sueden = dsd2csv.regenfunktion(pfad, ort=(51.11, 6.70))
+            self.assertEqual(ohne_ort(tag, stunde), 1.0)  # Tabelle fuer Neuss: naechste Station laut Stadtmitte
+            self.assertEqual(im_norden(tag, stunde), 1.0)
+            self.assertEqual(im_sueden(tag, stunde), 0.4)
+            self.assertEqual([n for _, _, n in dsd2csv.stationen_nach_abstand((51.11, 6.70), pfad)], ["Sued", "Nord"])
+            self.assertEqual(dsd2csv.stationen_nach_abstand(None, pfad), [])
+            self.assertIsNone(im_sueden(dt.date(2030, 1, 1), 5))  # kein Wert
+
     def test_tage_ohne_jede_station_haben_nur_klimawerte_oder_fehlen(self):
         klima = {dt.date(2025, 5, 2): {"tmk": 5.0}}
         t = w.bauen(dt.date(2025, 5, 1), dt.date(2025, 5, 3), [], klima, {})

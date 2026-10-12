@@ -752,22 +752,64 @@ HINWEIS_AUSWERTUNG = ("Eigene Berechnung aus den Rohdaten, nicht amtlich. Fehler
 WETTER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "belege", "wetter.json")
 
 
+STANDORTE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "belege", "standorte.json")
+
+
+def _km(a, b):
+    """Abstand zweier Punkte (Breite, Laenge in Grad) in km."""
+    p = math.pi / 180
+    x = math.sin((b[0] - a[0]) * p / 2) ** 2 + math.cos(a[0] * p) * math.cos(b[0] * p) * math.sin((b[1] - a[1]) * p / 2) ** 2
+    return 12742 * math.asin(math.sqrt(x))
+
+
 @functools.lru_cache(maxsize=None)
-def regenfunktion(pfad=WETTER):
-    """Funktion (Datum, Stunde) -> Niederschlag der Ortszeit-Stunde in mm oder None (kein Wert) aus belege/wetter.json (wetter.py);
-    None, wenn es die Datei nicht gibt. Tage ohne Eintrag und Stunden ohne Wert liefern None."""
+def _wetter(pfad):
     if not os.path.exists(pfad):
         return None
     with open(pfad, encoding="utf-8") as fh:
-        tage = json.load(fh)["tage"]
+        return json.load(fh)
+
+
+@functools.lru_cache(maxsize=None)
+def koordinaten(standort, pfad=STANDORTE):
+    """(Breite, Laenge) des Standortordners aus belege/standorte.json (metadaten.py, docs/standorte.md) oder None."""
+    if not os.path.exists(pfad):
+        return None
+    with open(pfad, encoding="utf-8") as fh:
+        s = json.load(fh)["standorte"].get(standort)
+    return (s["breite"], s["laenge"]) if s else None
+
+
+def stationen_nach_abstand(ort, pfad=WETTER):
+    """[(Abstand km, ID, Name)] der Stationen mit Niederschlagsreihe, naechste zuerst; [] ohne Ort oder Reihen."""
+    w = _wetter(pfad)
+    if not w or not ort or not w.get("reihen"):
+        return []
+    return sorted((round(_km(ort, (s["breite"], s["laenge"])), 1), sid, s["name"]) for sid, s in w["reihen"].items()
+                  if s.get("breite") is not None)
+
+
+@functools.lru_cache(maxsize=None)
+def regenfunktion(pfad=WETTER, ort=None):
+    """Funktion (Datum, Stunde) -> Niederschlag der Ortszeit-Stunde in mm oder None (kein Wert) aus belege/wetter.json (wetter.py);
+    None, wenn es die Datei nicht gibt. Tage ohne Eintrag und Stunden ohne Wert liefern None.
+
+    Mit `ort` (Breite, Laenge) gilt je Tag die naechste Station, die fuer den Tag Werte hat; ohne `ort` (oder ohne Reihen in der
+    Datei) die Tabelle fuer Neuss, die wetter.py je Tag nach dem Abstand zur Stadtmitte gewaehlt hat."""
+    w = _wetter(pfad)
+    if w is None:
+        return None
+    folge = [w["reihen"][sid]["tage"] for _, sid, _ in stationen_nach_abstand(ort, pfad)]
+    if not folge:
+        folge = [w["tage"]]
 
     def regen(datum, stunde):
-        tag = tage.get(datum.isoformat())
-        if not tag or "mm" not in tag:
-            return None
-        if "std" not in tag:
-            return 0.0  # Tag unter 0,1 mm
-        return tag["std"][stunde]
+        k = datum.isoformat()
+        for tage in folge:
+            tag = tage.get(k)
+            if tag and "mm" in tag:
+                return 0.0 if "std" not in tag else tag["std"][stunde]  # ohne std: Tag unter 0,1 mm
+        return None
     return regen
 
 
@@ -806,7 +848,7 @@ def rauschen_block(rb, abgezogen, roh=0, regen_abgezogen=0):
     return b
 
 
-CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", os.path.join("belege", "wetter.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
+CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", os.path.join("belege", "wetter.json"), os.path.join("belege", "standorte.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
 
 
 def _code_hash(dateien=CODE_DATEIEN):
@@ -818,7 +860,8 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     """Alle Kennzahlen einer Datei. Gibt (res, daten) zurueck; daten sind die Zellen fuer die Filter der Detailseite."""
     lim, quelle = tempolimit(meta, limit, kor)
     uhr, bereinigt, teil, spannen = analysiere_uhr(veh, status, mit_spannen=True)
-    rb = rauschen.pruefen(bereinigt, spannen, lim, regen=regenfunktion())
+    ort = koordinaten(standort)
+    rb = rauschen.pruefen(bereinigt, spannen, lim, regen=regenfunktion(ort=ort))
     anzahl_roh = len(veh)
     bereinigt_vorher = bereinigt
     belegt = bool(rb and rb["abzug"])  # trockener Rauschboden und/oder Regenanteil belegt
@@ -855,6 +898,10 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     res.update(zusatz(veh))
     res["uhr"] = uhr
     res["rauschen"] = rauschen_block(rb, anzahl_roh - len(veh) if belegt else 0, anzahl_roh, regen_abgezogen)
+    nah = stationen_nach_abstand(ort)
+    if nah and "regen" in res["rauschen"]:  # Station, deren Niederschlag fuer diese Messstelle gilt (Rueckfall: naechste weitere)
+        res["rauschen"]["regen"]["wetterstation"] = {"name": nah[0][2], "abstand_km": nah[0][0],
+                                                     "weitere": [f"{n} ({k} km)" for k, _, n in nah[1:3]]}
     zd = gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen)
     res["gruppen"], daten = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
                                                  rb["obergrenze_abzug_kmh"] if belegt else None)

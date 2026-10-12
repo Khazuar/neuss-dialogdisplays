@@ -49,7 +49,16 @@ Temperatur, Wind und Schnee sind die Tageswerte der DWD-Station Düsseldorf (11,
 DWD-Tageswert des Niederschlags (`RSK`) gilt nicht für den Kalendertag (06 bis 06 Uhr UTC); der Niederschlag des Tages ist deshalb aus den
 Stundenwerten gebildet.
 
-**Station je Tag.** Für den Niederschlag nimmt `wetter.py` je Tag die nächstgelegene Station (Abstand zur Stadtmitte Neuss; die
+**Station je Messstelle.** Seit Oktober 2026 rechnet `dsd2csv.py` den Regen einer Datei nicht mehr mit der Tabelle für Neuss, sondern mit der
+Station, die der geschätzten Lage des Standortordners am nächsten liegt ([standorte.md](standorte.md), `belege/standorte.json`). Dazu enthält
+`belege/wetter.json` unter `reihen` den Niederschlag jeder Station einzeln (Tage mit mindestens 22 gültigen Stunden, Felder `mm` und `std` wie
+unten, dazu Name und Lage). Je Tag gilt die nächste Station, die für den Tag Werte hat; vor August 2024, als es in Neuss noch keine Stationen
+gab, und bei Lücken ist das der Rückfall auf Düsseldorf, Dormagen-Zons oder eine weiter entfernte Station. Die Station steht in der
+Auswertung unter `rauschen.regen.wetterstation` (nächste Station und die beiden nächsten danach). Das Ergebnis: Von 99 Dateien mit Regenblock
+sind 65 belegt (vorher mit der Stadtmitte als Bezug 64). Einen Vorteil gegenüber der Stadtmitte belegt das nicht; die Stationen in Neuss liegen
+höchstens 8 km auseinander, der Regen fällt nicht überall gleich, die Entscheidung folgt aber der Lage.
+
+**Station je Tag (Tabelle `tage`, Bezugsort Neuss).** Für den Niederschlag nimmt `wetter.py` je Tag die nächstgelegene Station (Abstand zur Stadtmitte Neuss; die
 Messstellen haben im Datenbestand keine Koordinaten), die für den Tag mindestens 22 gültige Stunden hat. Seit August 2024 gibt es in Neuss
 sieben Stationen (Kennungen 19833 bis 19839); vorher und bei Lücken dienen Düsseldorf (01078, 11,7 km) und Dormagen-Zons (01024, 15,0 km)
 als Rückfall. Berücksichtigt werden nur Stationen mit „Abgabe: Frei“ im Umkreis von 25 km (Grevenbroich und Korschenbroich stehen in

@@ -162,6 +162,22 @@ def bauen(von, bis, reihe, klima, stationen_info):
         if eintrag:
             tage[tag.isoformat()] = eintrag
         tag += dt.timedelta(days=1)
+    reihen = {}  # je Station alle Tage mit mindestens MIN_STUNDEN gueltigen Stunden: daraus waehlt dsd2csv.py die Station je Messstelle
+    for sid, werte in reihe:
+        info = stationen_info.get(sid, {})
+        t_station = {}
+        tag = von
+        while tag <= bis:
+            std = ortszeit_stunden(tag, werte)
+            gueltig = [x for x in std if x is not None]
+            if len(gueltig) >= MIN_STUNDEN:
+                e = {"mm": round(sum(gueltig), 1)}
+                if e["mm"] >= 0.1:
+                    e["std"] = [None if x is None else round(x, 1) for x in std]
+                t_station[tag.isoformat()] = e
+            tag += dt.timedelta(days=1)
+        if t_station:
+            reihen[sid] = {"name": info.get("name"), "breite": info.get("breite"), "laenge": info.get("laenge"), "tage": t_station}
     wechsel = sum(1 for a, b in zip(sorted(tage), sorted(tage)[1:]) if tage[a].get("st") and tage[b].get("st") and tage[a]["st"] != tage[b]["st"])
     return {"quelle": "Deutscher Wetterdienst (DWD), Climate Data Center, " + BASIS.rsplit("/", 2)[0] + "/",
             "lizenz": "CC BY 4.0 (Creative Commons Namensnennung, https://creativecommons.org/licenses/by/4.0/), nicht CC0",
@@ -175,6 +191,9 @@ def bauen(von, bis, reihe, klima, stationen_info):
                        "shk": "Schneehoehe, cm"},
             "stationen": {sid: stationen_info[sid] for sid in sorted({t["st"] for t in tage.values() if t.get("st")})},
             "klimastation": stationen_info.get(KLIMA_STATION, {"id": KLIMA_STATION}),
+            "reihen": reihen,
+            "reihen_hinweis": "Niederschlag je Station (mm, std wie bei tage); die Auswertung nimmt je Messstelle und Tag die naechste Station mit "
+                              "mindestens 22 gueltigen Stunden. 'tage' gilt fuer den Bezugsort Neuss.",
             "stationswechsel": wechsel, "von": von.isoformat(), "bis": bis.isoformat(), "tage": tage}
 
 
@@ -224,7 +243,7 @@ def sammle(roh, laden, von, bis):
                     werte.update(stundenwerte(lies_zip(open(p, "rb").read())))
         if werte:
             reihe.append((s["id"], werte))
-            info[s["id"]] = {"id": s["id"], "name": s["name"], "km": s["km"]}
+            info[s["id"]] = {"id": s["id"], "name": s["name"], "km": s["km"], "breite": s["breite"], "laenge": s["laenge"]}
     # Klimastation
     klima = {}
     ks = next((s for s in liste if s["id"] == KLIMA_STATION), None)
@@ -237,7 +256,8 @@ def sammle(roh, laden, von, bis):
             if re.fullmatch(muster % KLIMA_STATION, n):
                 klima.update(tageswerte(lies_zip(open(os.path.join(roh, n), "rb").read())))
     if ks:
-        info[KLIMA_STATION] = {"id": KLIMA_STATION, "name": ks["name"], "km": round(km(BEZUG, (ks["breite"], ks["laenge"])), 1)}
+        info[KLIMA_STATION] = {"id": KLIMA_STATION, "name": ks["name"], "km": round(km(BEZUG, (ks["breite"], ks["laenge"])), 1),
+                               "breite": ks["breite"], "laenge": ks["laenge"]}
     return reihe, klima, info
 
 
