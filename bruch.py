@@ -38,10 +38,12 @@ def perzentil(sortiert, p):
     return sortiert[min(len(sortiert) - 1, int(math.ceil(p / 100.0 * len(sortiert))) - 1)]
 
 
-def tagesmerkmale(fahrzeuge, spannen, ab, limit):
-    """[(Datum, [Merkmale], Fahrzeuge)] fuer vollstaendig aufgezeichnete Tage mit genug Fahrzeugen ab `ab` km/h."""
+def tagesmerkmale(fahrzeuge, spannen, ab, limit, ausnehmen=None):
+    """[(Datum, [Merkmale], Fahrzeuge)] fuer vollstaendig aufgezeichnete Tage mit genug Fahrzeugen ab `ab` km/h.
+
+    ausnehmen: Funktion Datum -> Grund oder None; Tage mit Grund (Schulferien, Feiertage) zaehlen nicht."""
     zaehler = collections.Counter(d for d, _ in rauschen.abgedeckte_stunden(spannen))
-    voll = {d for d, c in zaehler.items() if c == 24}
+    voll = {d for d, c in zaehler.items() if c == 24 and not (ausnehmen and ausnehmen(d))}
     je_tag = collections.defaultdict(list)
     for t, v in fahrzeuge:
         d = t.date()
@@ -181,16 +183,21 @@ def begruendung(b, ab):
     s.append("; ".join(teile) + ".")
     if b["luecke_tage"]:
         s.append(f"Davor fehlen {b['luecke_tage']} Tage ohne vollständige Aufzeichnung.")
+    aus = b.get("ausgenommene_tage_davor") or {}
+    if aus:
+        namen = {"ferien": "Schulferien", "feiertag": "Feiertage"}
+        s.append("Unmittelbar davor liegen " + " und ".join(f"{n} Tage {namen.get(k, k)}" for k, n in sorted(aus.items())) +
+                 ", die bei der Suche nach Brüchen nicht zählen; ob die Änderung in oder nach dieser Zeit geschah, ist offen.")
     return s
 
 
-def erkenne(fahrzeuge, spannen, ab, limit):
+def erkenne(fahrzeuge, spannen, ab, limit, ausnehmen=None):
     """Brueche einer Messreihe.
 
     fahrzeuge: [(Ortszeit, v)] mit nutzbarer Zeit, spannen: [(erste, letzte Ortszeit)] je Uhr-Abschnitt.
     Gibt dict: geprueft (bool), grund, tage, abschnitte [{von, bis, tage}] und brueche [{datum, wahrscheinlichkeit, ...}] zurueck.
     """
-    tm = tagesmerkmale(fahrzeuge, spannen, ab, limit)
+    tm = tagesmerkmale(fahrzeuge, spannen, ab, limit, ausnehmen)
     if len(tm) < 2 * MIN_ABSCHNITT_TAGE:
         return {"geprueft": False, "grund": f"weniger als {2 * MIN_ABSCHNITT_TAGE} vollständig aufgezeichnete Tage", "tage": len(tm)}
     tage = [t[0] for t in tm]
@@ -277,9 +284,12 @@ def erkenne(fahrzeuge, spannen, ab, limit):
         links = [sum(roh[x][j] for x in range(pos[i], k)) / (k - pos[i]) for j in range(d)]
         rechts = [sum(roh[x][j] for x in range(k, pos[i + 2] if i + 2 < len(pos) else len(y))) / ((pos[i + 2] if i + 2 < len(pos) else len(y)) - k) for j in range(d)]
         verschiebung = [(rechts[j] - links[j]) / s[j] for j in range(d)]
-        luecke = (tage[k] - tage[k - 1]).days - 1
+        zwischen = [tage[k - 1] + dt.timedelta(days=x) for x in range(1, (tage[k] - tage[k - 1]).days)]
+        besondere = collections.Counter(ausnehmen(t) for t in zwischen if ausnehmen and ausnehmen(t))
+        luecke = len(zwischen) - sum(besondere.values())  # Tage ohne vollstaendige Aufzeichnung (nicht Ferien/Feiertage)
         brueche.append({"datum": tage[k].isoformat(), "vorher_bis": tage[k - 1].isoformat(), "wahrscheinlichkeit": round(p, 4),
-                        "luecke_tage": max(luecke, 0), "unterschied_der_verteilungen": round(tv_wert[k], 3),
+                        "luecke_tage": max(luecke, 0), "ausgenommene_tage_davor": dict(besondere),
+                        "unterschied_der_verteilungen": round(tv_wert[k], 3),
                         "vorher": {m: round(links[j], 3) for j, m in enumerate(MERKMALE)},
                         "nachher": {m: round(rechts[j], 3) for j, m in enumerate(MERKMALE)},
                         "verschiebung_in_streuungen": {m: round(verschiebung[j], 1) for j, m in enumerate(MERKMALE)}})

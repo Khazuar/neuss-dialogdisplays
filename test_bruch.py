@@ -102,6 +102,32 @@ class Erkennung(unittest.TestCase):
         self.assertEqual(b.erkenne(fz, sp, 15, 50)["brueche"], [])
 
 
+class Ferien(unittest.TestCase):
+    def test_kalender(self):
+        import kalender
+        self.assertEqual(kalender.schulferien(dt.date(2025, 4, 14)), "Osterferien")
+        self.assertIsNone(kalender.schulferien(dt.date(2025, 4, 27)))
+        self.assertEqual(kalender.besonderer_tag(dt.date(2025, 4, 21)), "feiertag")  # Ostermontag in den Ferien
+        self.assertEqual(kalender.besonderer_tag(dt.date(2025, 4, 22)), "ferien")
+        self.assertIsNone(kalender.besonderer_tag(dt.date(2025, 5, 6)))
+        for von, bis, _ in kalender.SCHULFERIEN_NRW:
+            self.assertLessEqual(von, bis)
+
+    def test_ferien_sind_kein_bruch_aber_ein_wechsel_in_den_ferien_schon(self):
+        ferien = set(range(30, 44))  # zwei Wochen mit anderem Verkehr
+        aus = (lambda d: "ferien" if (d - START).days in ferien else None)
+        fz, sp = reihe(80, lambda i: 32 if i in ferien else 40)
+        self.assertEqual(b.erkenne(fz, sp, 15, 50, aus)["brueche"], [])
+        # nach den Ferien bleibt es anders: ein Bruch am ersten Tag nach den Ferien, die Ferientage stehen in der Begruendung
+        fz, sp = reihe(80, lambda i: 40 if i < 30 else 30)
+        r = b.erkenne(fz, sp, 15, 50, aus)
+        self.assertEqual(len(r["brueche"]), 1)
+        self.assertEqual(r["brueche"][0]["datum"], (START + dt.timedelta(days=44)).isoformat())
+        self.assertEqual(r["brueche"][0]["ausgenommene_tage_davor"], {"ferien": 14})
+        self.assertEqual(r["brueche"][0]["luecke_tage"], 0)
+        self.assertIn("14 Tage Schulferien", " ".join(r["brueche"][0]["begruendung"]))
+
+
 class Auswertung(unittest.TestCase):
     def test_abschnitte_werden_einzeln_ausgewertet(self):
         import dsd2csv

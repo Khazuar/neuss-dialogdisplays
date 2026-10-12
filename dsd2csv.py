@@ -66,6 +66,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
 import bruch  # noqa: E402
+import kalender  # noqa: E402
 import gruppen  # noqa: E402
 import rauschen  # noqa: E402
 import zwischenspeicher  # noqa: E402
@@ -849,7 +850,7 @@ def rauschen_block(rb, abgezogen, roh=0, regen_abgezogen=0):
     return b
 
 
-CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", "bruch.py",os.path.join("belege", "wetter.json"), os.path.join("belege", "standorte.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
+CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", "bruch.py", "kalender.py", os.path.join("belege", "wetter.json"), os.path.join("belege", "standorte.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
 
 
 def _code_hash(dateien=CODE_DATEIEN):
@@ -909,7 +910,7 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     res["bereinigt"], res["teilzeitraeume"] = kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz)
     res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt if x[1] >= min_kmh], spannen, lim)
     # Brueche in der Messreihe und getrennte Auswertung der Abschnitte (docs/abschnitte.md)
-    br = bruch.erkenne(bereinigt, spannen, max(10, int(round(0.5 * lim))) if lim else 15, lim)
+    br = bruch.erkenne(bereinigt, spannen, max(10, int(round(0.5 * lim))) if lim else 15, lim, kalender.besonderer_tag)
     res["abschnitte"] = abschnitte_auswerten(br, bereinigt_vorher, bereinigt, teil, spannen, lim, min_kmh, zusatz, belegt, rb, speicher)
     return res, daten
 
@@ -958,7 +959,12 @@ def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusat
         von = dt.datetime.combine(dt.date.fromisoformat(a["von"]) if i == 0 else grenzen[i - 1], dt.time())
         bis = dt.datetime.combine(grenzen[i], dt.time()) if i < len(grenzen) else dt.datetime.max
         sp = [(max(s0, von), min(s1, bis)) for s0, s1 in spannen if s1 >= von and s0 < bis]
-        e = {"nr": i + 1, "von": a["von"], "bis": a["bis"], "tage": a["tage"], "anzahl_fahrzeuge_gesamt": len(teile_n[i])}
+        daten = [f[0].date() for f in teile_n[i]]
+        d0 = min(daten) if daten else dt.date.fromisoformat(a["von"])
+        d1 = max(daten) if daten else dt.date.fromisoformat(a["bis"])
+        # Zeitraum nach den Fahrzeugen (auch Ferien, Feiertage, Teiltage); die Suche nach Bruechen zaehlte nur vollstaendige Schultage
+        e = {"nr": i + 1, "von": d0.isoformat(), "bis": d1.isoformat(), "tage": (d1 - d0).days + 1,
+             "tage_fuer_bruchsuche": a["tage"], "anzahl_fahrzeuge_gesamt": len(teile_n[i])}
         e["beginn"] = ({"art": "Beginn der Messung"} if i == 0 else
                        {"art": "Bruch", **br["brueche"][i - 1]})
         e.update(stats(teile_n[i], lim, min_kmh) or {"anzahl_fahrzeuge": 0})

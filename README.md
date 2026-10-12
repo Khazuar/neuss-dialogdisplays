@@ -41,10 +41,13 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/rauschen.md` – Modell, Regeln und Grenzen des Rauschbodenabzugs
 - `docs/gruppen.md` – Zerlegung der Verteilung in Gruppen, Zeitscheiben und die Auswahl auf den Detailseiten
 - `docs/abschnitte.md` – Brüche in einer Messreihe (Geräte umgehängt?) und die getrennte Auswertung der Abschnitte
+- `docs/verhalten.md` – Forschungsstand: Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter und Ferien), mit Placebo-Prüfung
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `docs/wetter.md` – Wetterdaten des DWD (Quelle, Lizenz, Stationswahl, Zeitangabe) und der Befund, dass Regen das Radar stört
 - `seiten_bauen.py` – baut je Standort eine Detailseite für die GitHub Pages (`standorte/<name>.html`), mit
   Geschwindigkeits-Histogrammen als Inline-SVG
+- `kalender.py` – Schulferien und Feiertage in NRW
+- `tools/verhalten/` – Skripte der Verhaltensanalyse (brauchen numpy, nicht Teil der Auswertung)
 - `bruch.py` – erkennt Brüche in der Messreihe einer Datei (Verhalten des Verkehrs ändert sich dauerhaft) und zerlegt sie in Abschnitte mit Begründung und Wahrscheinlichkeit; `dsd2csv.py` wertet jeden Abschnitt einzeln aus (YAML-Block `abschnitte`)
 - `gruppen.py` – zerlegt die Verteilung je Datei in Gruppen (Lognormal-Mischung, Zahl der Kurven und Gruppen aus den Daten) und baut die Zellen für die Auswahl nach Tageszeit, Tagen und Gruppe
 - `wetter.py` – erzeugt `belege/wetter.json` aus den Daten des Deutschen Wetterdienstes (Niederschlag je Stunde und Tag, Tageswerte von Temperatur, Wind und Schnee); `tageslicht.py` – Sonnenaufgang, Sonnenuntergang und Dämmerung für Neuss, rein rechnerisch
@@ -147,7 +150,7 @@ In diesem Repository gelten drei Lizenzen:
 
 | Was | Lizenz |
 |-----|--------|
-| Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, `standorte.py`, `bruch.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
+| Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, `standorte.py`, `bruch.py`, `kalender.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
 | Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `metadaten.yaml`, `uhr-analyse.md`, `belege/` (außer `belege/wetter.json`), `README.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
 | Wetterdaten: `belege/wetter.json` (Daten des Deutschen Wetterdienstes, ausgewählt, auf Ortszeit-Tage umgerechnet und zusammengefasst) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de), **Quelle: Deutscher Wetterdienst** |
 
