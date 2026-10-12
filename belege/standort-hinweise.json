@@ -1,0 +1,108 @@
+{
+ "erzeugt_von": "von Hand aus den Quellen zusammengestellt (docs/standorte.md); gelesen von standorte.py",
+ "hinweis": "Ortsangaben zu den Messstellen, die nicht im Ordnernamen stehen. Stufe 'benannt': die Verwaltung nennt den Ort der Messung selbst (Bericht der Messsoftware). Stufe 'vorschlag': Standortvorschlag oder Antrag; ob und wo genau gemessen wurde, steht dort nicht. 'zitat' gibt die Stelle wörtlich wieder.",
+ "quellen": {
+  "datacollect": "Auswertungs-PDF der Verwaltung (DataCollect Webreporter), liegt neben den DSD-Dateien, ist nicht im Repository. Felder 'Rtg. kommend (Name)' und 'Rtg. gehend (Name)' nennen die Querstraßen an den Enden der Messstrecke.",
+  "ris": "Ratsinformationssystem der Stadt Neuss (https://ris-neuss.itk-rheinland.de/sessionnetneubi/)"
+ },
+ "hinweise": {
+  "53_Feldstraße": [
+   {"art": "zwischen_strassen", "strasse": "Feldstraße", "a": "Lange Hecke", "b": "Lauvenburger Straße", "stufe": "benannt",
+    "text": "Rtg. kommend: Lange Hecke, Rtg. gehend: Lauvenburger Str",
+    "quelle": {"typ": "datacollect", "datei": "Feldstraße.pdf"}}
+  ],
+  "54-2023_Holunderweg": [
+   {"art": "zwischen_strassen", "strasse": "Holunderweg", "a": "Wacholderweg", "b": "Weißdornweg", "stufe": "benannt",
+    "text": "Rtg. kommend: Wacholderweg, Rtg. gehend: Weißdornweg",
+    "quelle": {"typ": "datacollect", "datei": "2023_05_04_Holunderweg.pdf"}}
+  ],
+  "18_Neuenberger Straße": [
+   {"art": "zwischen_strassen", "strasse": "Neuenberger Straße", "a": "Horremer Straße", "b": "Neukirchener Straße", "stufe": "benannt",
+    "text": "Rtg. kommend: Horremer Straße, Rtg. gehend: Neukirchener Str",
+    "quelle": {"typ": "datacollect", "datei": "2023_05_04_fehlerhaft_Neuenberger Str.pdf"}}
+  ],
+  "38_Konrad-Adenauer-Ring (Görresschule)": [
+   {"art": "zwischen_strassen", "strasse": "Konrad-Adenauer-Ring", "a": "Jülicher Straße", "b": "Rheydter Straße", "stufe": "benannt",
+    "text": "Rtg. kommend: Jülicher Straße, Rtg. gehend: Rheydter Straße",
+    "quelle": {"typ": "datacollect", "datei": "2023_07_27_Auswertung.dsd.pdf"}}
+  ],
+  "11_Thywissenstraße": [
+   {"art": "zwischen_strassen", "strasse": "Thywissenstraße", "a": "Preußenstraße", "b": "Schorlemerstraße", "stufe": "benannt",
+    "text": "zwei Auswertungen, 'FR Preußenstraße' und 'FR Schorlemerstraße'",
+    "quelle": {"typ": "datacollect", "datei": "2022_11_Thywissenstraße_FR. Preußenstraße.pdf; 2022_11_Thywissenstraße_FR_Schorlemerstraße.pdf"}}
+  ],
+  "17_Nordkanalallee": [
+   {"art": "zwischen_strassen", "strasse": "Nordkanalallee", "a": "Bergheimer Straße", "b": "Berghäuschensweg", "stufe": "benannt",
+    "text": "Rtg. kommend: Bergheimer Stra, Rtg. gehend: Berghäuschensweg",
+    "quelle": {"typ": "datacollect", "datei": "2022_05_Nordkanalallee_MessfehlerDatum.pdf"}}
+  ],
+  "19_Bataverstraße": [
+   {"art": "adresse", "strasse": "Bataverstraße", "nr": "103", "rolle": "hoehe", "stufe": "benannt",
+    "text": "Name der Messstelle: Bataverstr. 103",
+    "quelle": {"typ": "datacollect", "datei": "2023_05_04_Bataverstr. 103.pdf"}}
+  ],
+  "80_Kaarster Straße": [
+   {"art": "adresse", "strasse": "Kaarster Straße", "nr": "71", "rolle": "hoehe", "stufe": "vorschlag",
+    "text": "Kaarster Straße, Höhe Nr. 71, FR Kaarst",
+    "quelle": {"typ": "ris", "vorlage": "69/286/2024", "gremium": "Bezirksausschuss II - Nordstadt", "sitzung": "2024-06-26",
+               "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209519&type=do",
+               "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk II - Nordstadt"}}
+  ],
+  "114_Niederdonker Weg": [
+   {"art": "adresse", "strasse": "Niederdonker Weg", "nr": "4", "rolle": "hoehe", "stufe": "vorschlag",
+    "text": "Niederdonker Weg, Höhe Nr. 4",
+    "quelle": {"typ": "ris", "vorlage": "69/286/2024", "gremium": "Bezirksausschuss II - Nordstadt", "sitzung": "2024-06-26",
+               "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209519&type=do",
+               "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk II - Nordstadt"}}
+  ],
+  "08_2024_Steinhausstraße": [
+   {"art": "zwischen_nr", "strasse": "Steinhausstraße", "von": 116, "bis": 126, "stufe": "vorschlag",
+    "text": "Steinhausstraße, zwischen Nr. 116 und 126",
+    "quelle": {"typ": "ris", "vorlage": "69/286/2024", "gremium": "Bezirksausschuss II - Nordstadt", "sitzung": "2024-06-26",
+               "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209519&type=do",
+               "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk II - Nordstadt"}}
+  ],
+  "14_2024_Salzstraße": [
+   {"art": "adresse", "strasse": "Salzstraße", "nr": "41", "rolle": "hoehe", "stufe": "vorschlag",
+    "text": "Salzstraße, Höhe Nr. 41",
+    "quelle": {"typ": "ris", "vorlage": "69/271/2024", "gremium": "Bezirksausschuss I - Innenstadt", "sitzung": "2024-06-19",
+               "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=208294&type=do",
+               "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk I - Innenstadt"}}
+  ],
+  "95_Reuschenberger Straße": [
+   {"art": "adresse", "strasse": "Reuschenberger Straße", "nr": "14", "rolle": "hoehe", "stufe": "vorschlag",
+    "text": "Reuschenberger Straße, Höhe Nr. 14, beidseitig",
+    "quelle": {"typ": "ris", "vorlage": "69/294/2024", "gremium": "Bezirksausschuss IV - Holzheim", "sitzung": "2024-07-02",
+               "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=210013&type=do",
+               "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk IV - Holzheim"}}
+  ],
+  "99_Münchener Straße": [
+   {"art": "adresse", "strasse": "Münchener Straße", "nr": "40", "rolle": "hoehe", "stufe": "vorschlag",
+    "text": "Münchener Straße, Höhe Nr. 40, beidseitig",
+    "quelle": {"typ": "ris", "vorlage": "69/294/2024", "gremium": "Bezirksausschuss IV - Holzheim", "sitzung": "2024-07-02",
+               "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=210013&type=do",
+               "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk IV - Holzheim"}}
+  ],
+  "112_Liedberger Straße": [
+   {"art": "fahrtrichtung", "ziel": "Lanzerather Straße", "stufe": "vorschlag",
+    "text": "Liedberger Straße, FR Lanzerather Straße",
+    "quelle": {"typ": "ris", "vorlage": "69/294/2024", "gremium": "Bezirksausschuss IV - Holzheim", "sitzung": "2024-07-02",
+               "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=210013&type=do",
+               "titel": "Offene Standortvorschläge für Dialog-Displays im Stadtbezirk IV - Holzheim"}}
+  ],
+  "36_Lanzerather Buschweg": [
+   {"art": "adresse", "strasse": "Lanzerather Buschweg", "nr": "101", "rolle": "hoehe", "stufe": "vorschlag",
+    "text": "geplanter Standort in Höhe der Hausnummer 101 kurz vor Ende der Straße (2023 stattdessen am Ende der Straße installiert)",
+    "quelle": {"typ": "ris", "vorlage": "Antrag SPD und BÜNDNIS 90/DIE GRÜNEN", "gremium": "Bezirksausschuss IV - Holzheim", "sitzung": "2024-03-05",
+               "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=203100&type=do",
+               "titel": "Einsatz von Dialog-Displays in Holzheim/Grefrath"}}
+  ],
+  "76_Daimlerstraße 140": [
+   {"art": "fahrtrichtung", "ziel": "Römerstraße", "stufe": "benannt",
+    "text": "Daimlerstraße Hausnummer 140 / Fahrtrichtung Römerstraße",
+    "quelle": {"typ": "ris", "vorlage": "Antrag UWG/Aktiv", "gremium": "Bezirksausschuss II - Nordstadt", "sitzung": "2023-12-06",
+               "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=198032&type=do",
+               "titel": "Anbringung der Dialogdisplays auf der Daimlerstraße zur Geschwindigkeitsreduzierung"}}
+  ]
+ }
+}
