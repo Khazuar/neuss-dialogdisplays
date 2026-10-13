@@ -1060,7 +1060,185 @@ def standort_abschnitt(st, verz):
     return "".join(t)
 
 
-REITER = [("allgemein", "Allgemein"), ("verwaltung", "Verwaltung"), ("messung", "Messung"), ("analyse", "Analyse"), ("vergleich", "Vergleich"),
+# ------------------------------------------------------------------ Verhaltensgruppen (belege/verhaltensgruppen.json, docs/verhalten.md)
+
+VG_DEUTUNG = {
+    "haupt": "Der größte Teil des Verkehrs an dieser Stelle. Die anderen Gruppen werden mit ihr verglichen.",
+    "rauschen": ("Keine Fahrzeuge. Diese Gruppe entsteht bei Regen (stadtweit gesichert), und ihre Menge hängt nicht vom Verkehr ab: "
+                 "Es sind Störungen, Regen und Dinge, die kein Fahrzeug sind (Fußgänger, Tiere, Echos). Sie entspricht dem Rauschboden, "
+                 "den die Auswertung herausrechnet, wo er sich belegen lässt."),
+    "langsam": ("Kandidat: Radfahrende, vielleicht auf dem Schulweg. Die Gruppe fährt um 20 km/h und ist in den Schulferien seltener (stadtweit "
+                "gesichert); dass sie bei Regen seltener wird, zeigt nur das Modell ohne Verkehrsmenge. Was sie ist, lässt sich aus den Daten nicht sagen."),
+    "etwas_langsamer": "Ohne Deutung: etwas langsamer als die Hauptgruppe; stadtweit kein einheitliches Verhalten.",
+    "schnell": ("Schnell bei freier Straße: Diese Gruppe ist nachts viel häufiger als tagsüber und bei Schnee und in der Dämmerung seltener "
+                "(stadtweit gesichert). Ihr Ferien- und Regeneffekt erklärt sich über die Verkehrsmenge. Ob es eine Gruppe von Menschen ist oder "
+                "die Lage „freie Fahrt“, lässt sich nicht trennen."),
+}
+VG_FARBEN = 5
+
+
+def _kosinus(a, b):
+    na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(x * x for x in b))
+    return sum(x * y for x, y in zip(a, b)) / (na * nb) if na and nb else 0.0
+
+
+def _korrelation(a, b):
+    """Korrelation zweier Verhaltensmuster (z-Werte der Effekte gegen die Hauptgruppe), nur gemeinsame Merkmale."""
+    if not a or not b:
+        return None
+    k = [c for c in a if c in b and a[c].get("z") is not None and b[c].get("z") is not None]
+    if len(k) < 4:
+        return None
+    x = [max(-10, min(10, a[c]["z"])) for c in k]
+    y = [max(-10, min(10, b[c]["z"])) for c in k]
+    mx, my = sum(x) / len(x), sum(y) / len(y)
+    sx = math.sqrt(sum((v - mx) ** 2 for v in x))
+    sy = math.sqrt(sum((v - my) ** 2 for v in y))
+    return sum((u - mx) * (v - my) for u, v in zip(x, y)) / (sx * sy) if sx and sy else None
+
+
+def vg_index(vg):
+    idx = collections.defaultdict(list)
+    for a in (vg or {}).get("abschnitte", []):
+        idx[(a["standort"], a["datei"])].append(a)
+    return idx
+
+
+def _merkmale_kurz(g, merkmale, n=3):
+    """Die deutlichsten Unterschiede zur Hauptgruppe am Ort, als Text."""
+    eff = g.get("effekte_gegen_haupt") or {}
+    liste = sorted(((abs(v["z"]), c, v["faktor"]) for c, v in eff.items() if v.get("z") is not None and abs(v["z"]) >= 3), reverse=True)[:n]
+    return "; ".join(f'{e(merkmale.get(c, c))} ×{dez(f, 2)}' for _, c, f in liste) or "–"
+
+
+def _beste(g, kandidaten):
+    """Ähnlichste Gruppe gleicher Art unter den Kandidaten: (Gruppe, Kosinus der Profile, Korrelation des Verhaltens, Beschreibung)."""
+    beste = None
+    for c, beschr in kandidaten:
+        if c["klasse"] != g["klasse"]:
+            continue
+        cos = _kosinus(g["profil"], c["profil"])
+        if beste is None or cos > beste[1]:
+            beste = (c, cos, _korrelation(g.get("effekte_gegen_haupt"), c.get("effekte_gegen_haupt")), beschr)
+    return beste
+
+
+def vg_profil_svg(gruppen, breite=600, hoehe=220):
+    """Geschwindigkeitsprofile der Gruppen eines Abschnitts als Linien (Anteil je km/h innerhalb der Gruppe), 0 bis 90 km/h."""
+    if not gruppen:
+        return ""
+    ol, orr, ot, ou = 44, 12, 12, 34
+    pw, ph = breite - ol - orr, hoehe - ot - ou
+    werte = [[100 * p / 2 for p in g["profil"][:-1]] for g in gruppen]  # Prozent je km/h
+    ymax = max(max(w) for w in werte) or 1
+    schritt = schritt_nice(ymax, 4)
+    ytop = max(schritt, -(-ymax // schritt) * schritt)
+
+    def x(v):
+        return ol + v / 90 * pw
+
+    def y(a):
+        return ot + ph * (1 - a / ytop)
+    s = [f'<svg class="hist" viewBox="0 0 {breite} {hoehe}" role="img" aria-label="Geschwindigkeitsprofile der Verhaltensgruppen">']
+    for i in range(int(ytop / schritt + 0.5) + 1):
+        a = i * schritt
+        s.append(f'<line class="hist-gitter" x1="{ol}" x2="{breite - orr}" y1="{y(a):.1f}" y2="{y(a):.1f}"/>'
+                 f'<text class="hist-text" x="{ol - 5}" y="{y(a) + 4:.1f}" text-anchor="end">{dez(a, 1 if schritt < 1 else 0)}&#8239;%</text>')
+    for v in range(0, 91, 10):
+        s.append(f'<text class="hist-text" x="{x(v):.1f}" y="{ot + ph + 16}" text-anchor="middle">{v}</text>')
+    s.append(f'<text class="hist-text" x="{ol + pw / 2}" y="{hoehe - 4}" text-anchor="middle">Geschwindigkeit in km/h</text>')
+    for i, w in enumerate(werte):
+        punkte = " ".join(f"{x(2 * j + 1):.1f},{y(a):.1f}" for j, a in enumerate(w))
+        s.append(f'<polyline class="hist-linie vg-{i % VG_FARBEN + 1}" points="{punkte}"><title>Gruppe {i + 1}</title></polyline>')
+    s.append("</svg>")
+    return "".join(s)
+
+def gruppen_teil(m, vg, vidx, auf_seite):
+    """Reiter Gruppen: Verhaltensgruppen je Abschnitt, Beziehungen zu Nachbarabschnitten, anderen Messungen am Standort und stadtweit."""
+    z = [""]
+    return _gruppen_teil(m, vg, vidx, auf_seite, z)
+
+
+def gruppen_einleitung():
+    return ('<p>Verhaltensgruppen sind Teile des Verkehrs mit festem Geschwindigkeitsprofil, deren Menge sich auf ihre eigene Weise mit Tageszeit, '
+         'Wochentag, Licht, Regen, Temperatur, Schnee, Ferien und Verkehrsmenge ändert. Anders als die Gruppen im Reiter „Analyse“, die nur die Form der '
+         'Verteilung beschreiben, sind sie durch die Vorhersage ungesehener Wochen und einen Vergleich mit verschobenem Wetter geprüft '
+            f'(<a href="{REPO}/blob/main/docs/verhalten.md">Verfahren und Grenzen</a>). Forschungsstand: Die Gruppen fließen noch in keine Kennzahl ein.</p>')
+
+
+def _gruppen_teil(m, vg, vidx, auf_seite, z):
+    eigene = sorted(vidx.get((m["rel"], m["row"]["datei"]), []), key=lambda a: a["abschnitt"])
+    if not vg:
+        return z[0] + "<p>Für diese Seite liegen keine Verhaltensgruppen vor.</p>"
+    if not eigene:
+        return z[0] + ("<p>Für diese Messung gibt es kein Verhaltensmodell: Kein Abschnitt hat mindestens 14 vollständig aufgezeichnete Tage "
+                       "und 5.000 Fahrzeuge.</p>")
+    merkmale = vg.get("merkmale", {})
+    namen = vg.get("klassen_namen", {})
+    for a in eigene:
+        titel = f'Abschnitt {a["abschnitt"]}' if len(eigene) > 1 or a["abschnitt"] > 1 else "Ganze Messung"
+        z.append(f'<h4>{titel} ({ganz(a["tage"])} Tage)</h4>')
+        if a["gruppen_zahl"] == 1:
+            z.append("<p>Eine Gruppe reicht: Mehrere Gruppen sagen ungesehene Wochen nicht besser voraus. Der Verkehr ändert hier seine Menge, aber "
+                     "kaum seine Zusammensetzung.</p>")
+            continue
+        z.append(f'<p class="muted">Mit {a["gruppen_zahl"]} Gruppen werden ungesehene Wochen um {dez(1000 * a["vorhersagegewinn"][a["gruppen_zahl"] - 1], 1)} '
+                 'Tausendstel nats je Fahrzeug besser vorhergesagt als mit einer.</p>')
+        z.append('<figure class="histfig">' + vg_profil_svg(a["gruppen"]) + '<figcaption class="muted">Geschwindigkeitsprofile der Gruppen '
+                 '(jede Linie zeigt die Verteilung innerhalb ihrer Gruppe).</figcaption></figure>')
+        zeilen = []
+        nachbarn = [(c, f'Abschnitt {b["abschnitt"]}') for b in eigene if b is not a for c in b["gruppen"]]
+        andere = [(c, f'{beschr}, Abschnitt {b["abschnitt"]}') for (rel, datei, beschr) in auf_seite if (rel, datei) != (m["rel"], m["row"]["datei"])
+                  for b in vidx.get((rel, datei), []) for c in b["gruppen"]]
+        for i, g in enumerate(a["gruppen"]):
+            bez = []
+            for kandidaten, art in ((nachbarn, "Nachbarabschnitt"), (andere, "andere Messung am Standort")):
+                b = _beste(g, kandidaten)
+                if b and b[1] >= 0.8:
+                    korr = f', Verhalten r = {dez(b[2], 2)}' if b[2] is not None else ""
+                    bez.append(f'{art}: {e(b[3])} (Profil {dez(b[1], 2)}{korr})')
+            kl = (vg.get("klassen") or {}).get(g["klasse"])
+            if kl and g["klasse"] != "haupt":
+                bez.append(f'stadtweit: {ganz(kl["standorte"])} Standorte')
+            vorbehalt = "" if g["belastbar"] else ' <span class="muted">(klein oder instabil)</span>'
+            zeilen.append(f'<tr><th scope="row"><span class="vg-marke vg-{i % VG_FARBEN + 1}"></span>Gruppe {i + 1}</th>'
+                          f'<td>{e(namen.get(g["klasse"], g["klasse"]))}{vorbehalt}</td><td class="num">{ganz(int(g["modus_kmh"]))}</td>'
+                          f'<td class="num">{dez(100 * g["anteil"], 1)}&nbsp;%</td><td class="num">{dez(g["stabil"], 2) if g["stabil"] is not None else "–"}</td>'
+                          f'<td>{_merkmale_kurz(g, merkmale) if g["klasse"] != "haupt" else "Bezug"}</td><td>{"<br>".join(bez) or "–"}</td></tr>')
+        z.append('<div class="tablewrap"><table><caption class="muted">Gruppen dieses Abschnitts. Modus: häufigstes Tempo (2-km/h-Klassen). Stabil: '
+                 'Übereinstimmung des Profils zwischen geraden und ungeraden Wochen (1 = gleich). Verhalten: die deutlichsten Unterschiede zur Hauptgruppe '
+                 'am selben Ort (Faktor auf die Menge). Beziehungen: die ähnlichste Gruppe gleicher Art (Profil als Kosinus, Verhalten als Korrelation der '
+                 'Effekte).</caption><thead><tr><th>Gruppe</th><th>Art</th><th class="num">Modus km/h</th><th class="num">Anteil</th><th class="num">Stabil</th>'
+                 '<th>Verhalten</th><th>Beziehungen</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
+        arten = list(collections.OrderedDict((g["klasse"], None) for g in a["gruppen"]))
+        z.append("<dl class=\"facts\">" + "".join(f'<dt>{e(namen.get(k, k))}</dt><dd>{e(VG_DEUTUNG.get(k, ""))}</dd>' for k in arten) + "</dl>")
+    return "".join(z)
+
+
+def gruppen_stadtweit(vg):
+    """Stadtweite Übersicht der Gruppenarten (Allgemein-Text im Reiter Gruppen, für alle Messungen gleich)."""
+    if not vg or not vg.get("klassen"):
+        return ""
+    merkmale = vg.get("merkmale", {})
+    u = vg.get("uebersicht") or {}
+    z = [f'<h3>Stadtweit</h3><p>In {ganz(u.get("mit_mehreren_gruppen"))} von {ganz(u.get("abschnitte"))} Abschnitten braucht es mehr als eine Gruppe'
+         + (f' (mit verschobenem Wetter, Licht und Ferien nur in {ganz(u.get("placebo_mit_mehreren_gruppen"))})' if u.get("placebo_mit_mehreren_gruppen") is not None else "")
+         + '. Gesichert heißt: Der Effekt ist über alle Abschnitte deutlich von 1 verschieden und deutlich stärker als im Durchgang mit verschobenem Wetter.</p>']
+    zeilen = []
+    for k, kl in vg["klassen"].items():
+        gesichert = [(c, v) for c, v in kl["effekte"].items() if v["gesichert"]]
+        text = "; ".join(f'{e(merkmale.get(c, c))} ×{dez(v["faktor"], 2)} ({dez(v["von"], 2)}–{dez(v["bis"], 2)}, Placebo {dez(v["placebo"], 2) if v["placebo"] is not None else "–"})'
+                         for c, v in gesichert) or "nichts gesichert"
+        zeilen.append(f'<tr><th scope="row">{e(kl["name"])}</th><td class="num">{ganz(kl["standorte"])}</td><td class="num">{dez(kl["modus_median_kmh"], 0)}</td>'
+                      f'<td>{text}</td></tr>')
+    z.append('<div class="tablewrap"><table><caption class="muted">Gruppenarten über alle Standorte: Zahl der Standorte, häufigstes Tempo (Median) und die '
+             'gesicherten Unterschiede zur Hauptgruppe am selben Ort (Faktor auf die Menge, 95-%-Bereich, Wert im Placebo).</caption><thead><tr><th>Art</th>'
+             '<th class="num">Standorte</th><th class="num">Modus km/h</th><th>Gesichertes Verhalten</th></tr></thead><tbody>' + "".join(zeilen) +
+             "</tbody></table></div>")
+    return "".join(z)
+
+
+REITER = [("allgemein", "Allgemein"), ("verwaltung", "Verwaltung"), ("messung", "Messung"), ("analyse", "Analyse"), ("gruppen", "Gruppen"), ("vergleich", "Vergleich"),
           ("gefaehrdung", "Gefährdung"), ("laerm", "Lärm")]
 
 
@@ -1230,7 +1408,7 @@ def reiter_html(reiter_id, titel, teile, messungen):
     return "".join(z)
 
 
-def standortseite(name, messungen, verz=None, gleich=None):
+def standortseite(name, messungen, verz=None, gleich=None, vg=None):
     """Seite eines Standorts mit allen Messungen. messungen: [dict(id, rel, row, meta_messung, uhr_abschnitte, zellen, metadaten)]."""
     gleich = gleich or {}
     teile = [f"""<!doctype html>
@@ -1259,6 +1437,11 @@ def standortseite(name, messungen, verz=None, gleich=None):
     teile.append(reiter_html("verwaltung", "Verwaltung", verwaltung_teil, messungen))
     teile.append(reiter_html("messung", "Messung", lambda m: messung_teil(m, gleich), messungen))
     teile.append(reiter_html("analyse", "Analyse", lambda m: analyse_teil(m["row"], m["zellen"], m["id"]), messungen))
+    vidx = vg_index(vg)
+    auf_seite = [(m["rel"], m["row"]["datei"], messung_label(m).split(" · ")[0]) for m in messungen]
+    teile.append(reiter_html("gruppen", "Verhaltensgruppen", lambda m: gruppen_teil(m, vg, vidx, auf_seite), messungen)
+                 .replace("<h2>Verhaltensgruppen</h2>", "<h2>Verhaltensgruppen</h2>" + gruppen_einleitung(), 1)
+                 .replace("</section>", gruppen_stadtweit(vg) + "</section>"))
     teile.append(reiter_html("vergleich", "Vergleich mit der Verwaltung", lambda m: vergleich_teil(m["row"], m["meta_messung"]), messungen))
     teile.append(reiter_html("gefaehrdung", "Gefährdung", lambda m: je_abschnitt(m["row"], gefaehrdung_teil, m["id"], "gefaehrdung"), messungen))
     teile.append(reiter_html("laerm", "Lärm", lambda m: je_abschnitt(m["row"], laerm_tabelle, m["id"], "laerm"), messungen))
@@ -1290,12 +1473,12 @@ def _beginn(m):
     return (bz.get("start") or "9999", m["rel"], m["row"]["datei"])
 
 
-def seite(rel, rows, meta_standort, uhr_dateien, zellen=None, verz=None, gleich=None):
+def seite(rel, rows, meta_standort, uhr_dateien, zellen=None, verz=None, gleich=None, vg=None):
     """Seite für einen einzelnen Ordner (für Tests und Aufrufe ohne Standortgruppen)."""
     metadaten = {"standorte": {rel: meta_standort or {}}}
     messungen = sorted((messung_eintrag(rel, r, metadaten, uhr_dateien, zellen) for r in rows), key=_beginn)
     st = (meta_standort or {}).get("standort") or {}
-    return standortseite(st.get("strasse") or bereinige(rel), messungen, verz, gleich)
+    return standortseite(st.get("strasse") or bereinige(rel), messungen, verz, gleich, vg)
 
 
 def weiterleitung(ziel, titel):
@@ -1315,9 +1498,13 @@ def lade_zellen(ordner, rel, rows):
     return erg
 
 
-def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None):
+def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, verhalten=None):
     """Eine Seite je Standort, Weiterleitungen von den alten Seiten je Ordner und uebersicht.json für die Übersichtsseite."""
     verz = standorte.Verzeichnis.laden(adressen) if adressen and os.path.exists(adressen) else None
+    vg = None
+    if verhalten and os.path.exists(verhalten):
+        with open(verhalten, encoding="utf-8") as fh:
+            vg = json.load(fh)
     # Tage der Brüche je Messreihe, um Brüche am selben Tag an anderen Standorten zu nennen
     gleich = {(r["standort"], r["datei"]): [ab["beginn"]["datum"] for ab in (r.get("abschnitte") or {}).get("liste", []) if ab["beginn"]["art"] == "Bruch"]
               for r in auswertung["standorte"]}
@@ -1337,7 +1524,7 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None):
             messungen += [messung_eintrag(rel, r, metadaten, uhr["dateien"], zellen) for r in rows]
         messungen.sort(key=_beginn)
         with open(os.path.join(ziel, "standorte", slug + ".html"), "w", encoding="utf-8", newline="\n") as fh:
-            fh.write(standortseite(name, messungen, verz, gleich))
+            fh.write(standortseite(name, messungen, verz, gleich, vg))
         seiten[slug] = rels
         for m in messungen:
             verw = [v.get("bezeichnung") for v in (m["meta_messung"] or {}).get("verwaltung", []) if v.get("bezeichnung")]
@@ -1360,6 +1547,8 @@ def main():
     ap.add_argument("--metadaten", default=os.path.join(hier, "belege", "metadaten.json"))
     ap.add_argument("--uhr", default=os.path.join(hier, "belege", "uhr-bewertung.json"))
     ap.add_argument("--adressen", default=os.path.join(hier, "belege", "neuss-adressen.csv"), help="Hauskoordinaten fuer die Lageskizze")
+    ap.add_argument("--verhalten", default=os.path.join(hier, "belege", "verhaltensgruppen.json"),
+                    help="Verhaltensgruppen (tools/verhalten/belege.py), optional")
     ap.add_argument("--ziel", required=True, help="Ausgabeordner (die Seiten landen in <ziel>/standorte/)")
     ap.add_argument("--zellen", help="Ordner mit den .zellen.json von dsd2csv.py (Standard: Ordner der auswertung.json)")
     a = ap.parse_args()
@@ -1367,7 +1556,7 @@ def main():
     for pfad in (a.auswertung, a.metadaten, a.uhr):
         with open(pfad, encoding="utf-8") as fh:
             daten.append(json.load(fh))
-    slugs = bauen(*daten, a.ziel, a.zellen or os.path.dirname(os.path.abspath(a.auswertung)), a.adressen)
+    slugs = bauen(*daten, a.ziel, a.zellen or os.path.dirname(os.path.abspath(a.auswertung)), a.adressen, a.verhalten)
     print(f"{len(slugs)} Standortseiten in {os.path.join(a.ziel, 'standorte')}", file=sys.stderr)
 
 

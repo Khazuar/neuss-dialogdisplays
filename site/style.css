@@ -128,3 +128,14 @@ svg.karte .karte-mitte { fill: none; stroke: var(--h-ueber); stroke-width: 2; }
 .messwahl select { max-width: 100%; }
 details.abschnitt { margin: 8px 0; }
 .abschnitt-titel { margin-bottom: 0; }
+
+/* Verhaltensgruppen: Linien und Marken (seiten_bauen.py: vg_profil_svg) */
+:root { --vg-1: #3b82c4; --vg-2: #d9622b; --vg-3: #2f9e5b; --vg-4: #7a3fc4; --vg-5: #8a8f96; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --vg-1: #6cb2f2; --vg-2: #f0925b; --vg-3: #5fd08f; --vg-4: #c39bf2; --vg-5: #b5bcc4; }
+}
+svg.hist .vg-1 { stroke: var(--vg-1); } svg.hist .vg-2 { stroke: var(--vg-2); } svg.hist .vg-3 { stroke: var(--vg-3); }
+svg.hist .vg-4 { stroke: var(--vg-4); } svg.hist .vg-5 { stroke: var(--vg-5); }
+.vg-marke { display: inline-block; width: 14px; height: 4px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+.vg-marke.vg-1 { background: var(--vg-1); } .vg-marke.vg-2 { background: var(--vg-2); } .vg-marke.vg-3 { background: var(--vg-3); }
+.vg-marke.vg-4 { background: var(--vg-4); } .vg-marke.vg-5 { background: var(--vg-5); }

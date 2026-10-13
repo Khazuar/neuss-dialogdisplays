@@ -32,7 +32,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
   Korrekturen des Tempolimits, wo die Mitteilung ein anderes Limit nennt als die DSD (`korrekturen.json`), und die
   Wetterdaten des Deutschen Wetterdienstes je Tag (`wetter.json`, **CC BY 4.0**, siehe [Lizenz](#lizenz)), die Hauskoordinaten der
   Stadt Neuss (`neuss-adressen.csv`, Geobasis NRW, dl-de/zero-2-0), die Ortshinweise zu den Messstellen (`standort-hinweise.json`)
-  und die geschätzte Lage der Standortordner (`standorte.json`, bestimmt auch die Wetterstation je Messstelle)
+  die geschätzte Lage der Standortordner (`standorte.json`, bestimmt auch die Wetterstation je Messstelle) und die Verhaltensgruppen je Abschnitt (`verhaltensgruppen.json`, aus `tools/verhalten/`, Forschungsstand)
 - `tools/` – holt die Mitteilungen der Verwaltung aus dem Ratsinformationssystem und zerlegt sie
   (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`) und die Hauskoordinaten von Geobasis NRW (`adressen_laden.py`)
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
@@ -44,7 +44,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/verhalten.md` – Forschungsstand: Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter und Ferien), mit Placebo-Prüfung
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `docs/wetter.md` – Wetterdaten des DWD (Quelle, Lizenz, Stationswahl, Zeitangabe) und der Befund, dass Regen das Radar stört
-- `seiten_bauen.py` – baut je Standort (gleiche Straße, sich überlappende Lage; alle Messungen und Fahrtrichtungen zusammen) eine Detailseite für die GitHub Pages (`standorte/<name>.html`) mit den Reitern Allgemein, Verwaltung, Messung, Analyse, Vergleich, Gefährdung und Lärm, dazu Weiterleitungen von den alten Seiten je Ordner und `uebersicht.json` für die Übersicht;
+- `seiten_bauen.py` – baut je Standort (gleiche Straße, sich überlappende Lage; alle Messungen und Fahrtrichtungen zusammen) eine Detailseite für die GitHub Pages (`standorte/<name>.html`) mit den Reitern Allgemein, Verwaltung, Messung, Analyse, Gruppen, Vergleich, Gefährdung und Lärm, dazu Weiterleitungen von den alten Seiten je Ordner und `uebersicht.json` für die Übersicht;
   Geschwindigkeits-Histogrammen als Inline-SVG
 - `kalender.py` – Schulferien und Feiertage in NRW
 - `tools/verhalten/` – Skripte der Verhaltensanalyse (brauchen numpy, nicht Teil der Auswertung)

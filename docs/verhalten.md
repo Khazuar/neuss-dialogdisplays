@@ -111,6 +111,24 @@ zusätzlichen Datensätze je Regenstunde 0,78), die Höhe unterscheidet sich abe
 grob: Die Grundrate der Gruppe enthält Regenstunden, und ihr Profil reicht über die Obergrenze des Abzugs hinaus. Bevor die Gruppe den Abzug
 ergänzt oder ersetzt, muss dieser Unterschied geklärt sein.
 
+## Auf den Seiten
+
+Der Reiter **Gruppen** jeder Standortseite zeigt die Verhaltensgruppen je Abschnitt aus dem Modell mit Verkehrsdichte
+(`belege/verhaltensgruppen.json`, erzeugt von `belege.py`; die Seiten brauchen kein numpy): Profil, Anteil, Stabilität, die deutlichsten
+Unterschiede zur Hauptgruppe am Ort, die ähnlichste Gruppe gleicher Art in den Nachbarabschnitten und in den anderen Messungen am Standort
+(Profil als Kosinus, Verhalten als Korrelation der Effekte), die Zahl der Standorte mit dieser Gruppenart und eine Deutung. Darunter steht die
+stadtweite Übersicht: je Art die Effekte, die über alle Abschnitte deutlich von 1 verschieden **und** deutlich stärker als im Placebo-Durchgang
+(ebenfalls mit Verkehrsdichte) sind. Mit Verkehrsdichte sind das:
+
+| Art | Standorte | Gesichert |
+|---|---|---|
+| sehr langsam (unter 12 km/h) | 40 | Regen 0,1–0,5 mm ×5,6, 0,5–2 mm ×17, ab 2 mm ×43, nach Regen ×1,9; bei 2,7-mal so viel Verkehr ×0,26 |
+| langsam (12–28 km/h) | 7 | Schulferien ×0,67 |
+| etwas langsamer als die Hauptgruppe | 11 | bei 2,7-mal so viel Verkehr ×0,54 |
+| schneller als die Hauptgruppe | 45 | Dämmerung ×0,91, Schnee ×0,73 |
+
+Die Verkehrsdichte ist im Placebo nicht verschoben; für sie gilt nur der 95-%-Bereich. Die Gruppen fließen in keine Kennzahl ein.
+
 ## Was daraus folgt
 
 - **Gruppen lassen sich über Verhalten belegen.** Für die sehr langsame und die schnelle Gruppe ist das gelungen, für die langsame ein Anfang.
@@ -142,6 +160,8 @@ NUMPY_PFAD=... python3 -I tools/verhalten/langsam.py                            
 NUMPY_PFAD=... VERHALTEN_DICHTE=1 python3 -I tools/verhalten/modell.py --jobs 8   # mit Verkehrsdichte -> modell_dichte.json
 NUMPY_PFAD=... python3 -I tools/verhalten/stadtweit.py modell_dichte.json
 NUMPY_PFAD=... python3 -I tools/verhalten/rauschboden.py                           # Vergleich mit rauschen.py
+NUMPY_PFAD=... VERHALTEN_DICHTE=1 VERHALTEN_PLACEBO=1 python3 -I tools/verhalten/modell.py --jobs 8
+NUMPY_PFAD=... python3 -I tools/verhalten/belege.py                               # -> belege/verhaltensgruppen.json (für die Seiten)
 ```
 
 Zwischenergebnisse liegen in `_verhalten/` (nicht im Repository).

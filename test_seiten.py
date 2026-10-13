@@ -69,6 +69,39 @@ class Hilfen(unittest.TestCase):
         self.assertTrue(all(re.fullmatch(r"[a-z0-9-]+", x) for x in slugs))
 
 
+class Verhaltensgruppen(unittest.TestCase):
+    def vg(self):
+        def gruppe(klasse, modus, anteil, effekte=None):
+            prof = [0.0] * 46
+            prof[modus // 2] = 1.0
+            return {"klasse": klasse, "anteil": anteil, "fahrzeuge": 1000, "modus_kmh": modus, "mittel_kmh": modus, "streuung_kmh": 3,
+                    "profil": prof, "stabil": 0.99, "belastbar": True, "tagesgang": [1.0] * 24,
+                    "effekte_gegen_haupt": effekte}
+        eff = {"regen_2": {"faktor": 40.0, "z": 9.0}, "nacht": {"faktor": 1.1, "z": 0.5}, "ferien": {"faktor": 0.9, "z": -1.0},
+               "schnee": {"faktor": 1.0, "z": 0.1}, "dichte_log": {"faktor": 0.3, "z": -6.0}}
+        return {"klassen_namen": {"haupt": "Hauptgruppe", "rauschen": "sehr langsam <x>"}, "merkmale": {"regen_2": "Regen ab 2 mm"},
+                "uebersicht": {"abschnitte": 10, "mit_mehreren_gruppen": 6, "placebo_mit_mehreren_gruppen": 3},
+                "klassen": {"rauschen": {"name": "sehr langsam", "standorte": 5, "gruppen": 6, "modus_median_kmh": 7, "anteil_median": 0.1,
+                                         "placebo_gruppen": 2, "effekte": {"regen_2": {"faktor": 40.0, "von": 20.0, "bis": 80.0, "placebo": 0.8, "gesichert": True}}}},
+                "abschnitte": [{"standort": "07_2024_ Einsteinstraße", "datei": "_15.dsd", "abschnitt": 1, "tage": 50, "gruppen_zahl": 2,
+                                "vorhersagegewinn": [0.0, 0.02], "gruppen": [gruppe("rauschen", 8, 0.05, eff), gruppe("haupt", 30, 0.95)]},
+                               {"standort": "07_2024_ Einsteinstraße", "datei": "_15.dsd", "abschnitt": 2, "tage": 40, "gruppen_zahl": 2,
+                                "vorhersagegewinn": [0.0, 0.01], "gruppen": [gruppe("rauschen", 8, 0.04, eff), gruppe("haupt", 32, 0.96)]}]}
+
+    def test_reiter_gruppen(self):
+        h = s.seite("07_2024_ Einsteinstraße", [zeile()], {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}, {}, vg=self.vg())
+        self.assertIn('id="r-gruppen"', h)
+        self.assertIn("Abschnitt 2 (40 Tage)", h)
+        self.assertIn("sehr langsam &lt;x&gt;", h)  # maskiert
+        self.assertIn("Regen ab 2 mm ×40,00", h)
+        self.assertIn("Nachbarabschnitt: Abschnitt 2 (Profil 1,00, Verhalten r = 1,00)", h)
+        self.assertIn("In 6 von 10 Abschnitten", h)
+        self.assertIn("Placebo 0,80", h)
+        self.assertEqual(h.count("Verhaltensgruppen sind Teile des Verkehrs"), 1)
+        ohne = s.seite("01_Anders", [zeile("01_Anders", "x.dsd")], {"messungen": []}, {}, vg=self.vg())
+        self.assertIn("kein Verhaltensmodell", ohne)
+
+
 class Seite(unittest.TestCase):
     def test_reiter_und_abschnittsauswahl(self):
         z = zeile()
