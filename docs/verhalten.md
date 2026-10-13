@@ -89,6 +89,28 @@ Regen fernbleiben; mehr als ein Kandidat ist es nicht. Rennradfahrer lassen sich
 Jahreszeit steckt darin, nicht das Wetter. Gleiches gilt für ihren Ferieneffekt. Die Einzeltests je Gruppe sind zu optimistisch (auch im Placebo
 sind viele Gruppen einzeln „deutlich“); belastbar sind nur die Metaanalyse über viele Abschnitte und der Vergleich mit dem Placebo.
 
+**5. Verkehrsdichte als Merkmal** (`VERHALTEN_DICHTE=1`): Als weiteres Merkmal kommt die Zahl der Fahrzeuge ab dem halben Tempolimit in der
+Stunde dazu (Logarithmus). Damit wird die Geschwindigkeit teilweise mit sich selbst verglichen; das ist gewollt, denn es trennt „wer fährt“
+von „wie voll ist die Straße“.
+
+- Mehr Abschnitte brauchen dann mehrere Gruppen (81 statt 74 von 119), und der Vorhersagegewinn mit zwei Gruppen verdoppelt sich (Median
+  +0,0135 statt +0,0065 nats je Fahrzeug).
+- **Rauschboden:** Die sehr langsame Gruppe wird bei 2,7-mal so viel Verkehr gegenüber der Hauptgruppe auf das 0,26-Fache seltener
+  (0,21–0,33; 47 von 53 Gruppen einzeln deutlich). Das heißt: Ihre Menge hängt nicht vom Verkehr ab; genau das nimmt das Rauschbodenmodell
+  an ([rauschen.md](rauschen.md)). Ihr Regeneffekt bleibt (Faktor 43 ab 2 mm).
+- **Schnelle Gruppe:** Ihr Ferieneffekt (vorher 1,22) und ihr Regeneffekt (vorher 0,81) verschwinden (1,02 und 0,97), Schnee (0,73) und
+  Dämmerung (0,91) bleiben. In den Ferien und bei Regen ändert sich also vor allem die Verkehrsmenge, und die schnelle Gruppe folgt ihr; Schnee und
+  Dämmerung wirken darüber hinaus. Bei gleicher Stunde und gleichem Wochentag hängt ihr Anteil kaum von der Verkehrsmenge ab (Faktor 0,97); die
+  nächtliche Häufung steckt in Stunde und Wochentag und lässt sich von der Verkehrsmenge mit diesen Daten nicht trennen. Ob die schnelle Gruppe
+  eine Gruppe von Menschen oder die Lage „freie Straße“ ist, bleibt damit offen; die Verkehrsmenge erklärt einen Teil ihres Verhaltens, nicht alles.
+
+**6. Rauschboden zweimal** (`rauschboden.py`): In 47 von 97 Dateien gibt es die sehr langsame Gruppe. In 32 Dateien, in denen `rauschen.py`
+keinen Regenanteil belegen kann, findet das Verhaltensmodell sie mit einem Regenfaktor (ab 2 mm, gegenüber der Hauptgruppe) von im Median 64;
+in 28 davon über 3. Wo beide Verfahren den Regenanteil schätzen (15 Dateien), ordnen sie die Dateien ähnlich (Korrelation der Logarithmen der
+zusätzlichen Datensätze je Regenstunde 0,78), die Höhe unterscheidet sich aber um den Faktor 10 im Median (Quartile 2,5–32). Diese Rechnung ist
+grob: Die Grundrate der Gruppe enthält Regenstunden, und ihr Profil reicht über die Obergrenze des Abzugs hinaus. Bevor die Gruppe den Abzug
+ergänzt oder ersetzt, muss dieser Unterschied geklärt sein.
+
 ## Was daraus folgt
 
 - **Gruppen lassen sich über Verhalten belegen.** Für die sehr langsame und die schnelle Gruppe ist das gelungen, für die langsame ein Anfang.
@@ -117,6 +139,9 @@ NUMPY_PFAD=... python3 -I tools/verhalten/stadtweit.py                          
 NUMPY_PFAD=... python3 -I tools/verhalten/stadtweit.py modell_placebo.json        # Placebo
 NUMPY_PFAD=... python3 -I tools/verhalten/entfernung.py [modell_placebo.json]     # Wiederkehr und Entfernung
 NUMPY_PFAD=... python3 -I tools/verhalten/langsam.py                              # langsame Gruppen einzeln
+NUMPY_PFAD=... VERHALTEN_DICHTE=1 python3 -I tools/verhalten/modell.py --jobs 8   # mit Verkehrsdichte -> modell_dichte.json
+NUMPY_PFAD=... python3 -I tools/verhalten/stadtweit.py modell_dichte.json
+NUMPY_PFAD=... python3 -I tools/verhalten/rauschboden.py                           # Vergleich mit rauschen.py
 ```
 
 Zwischenergebnisse liegen in `_verhalten/` (nicht im Repository).

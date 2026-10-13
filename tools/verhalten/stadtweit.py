@@ -19,7 +19,7 @@ KOV = ["daemmerung", "tiefe_sonne", "nacht", "regen_0_1", "regen_0_5", "regen_2"
        "schnee", "ferien", "feiertag"]
 NAMEN = {"daemmerung": "Dämmerung", "tiefe_sonne": "tiefe Sonne", "nacht": "Dunkelheit", "regen_0_1": "Regen 0,1–0,5", "regen_0_5": "Regen 0,5–2",
          "regen_2": "Regen ≥2 mm", "nach_regen": "nach Regen", "temp_10c": "+10 °C", "frost": "Frost", "wind_10ms": "+10 m/s Wind",
-         "schnee": "Schnee", "ferien": "Schulferien", "feiertag": "Feiertag"}
+         "schnee": "Schnee", "ferien": "Schulferien", "feiertag": "Feiertag", "dichte_log": "Verkehr x2,7"}
 
 
 def meta(werte, se):
@@ -42,7 +42,10 @@ def meta(werte, se):
 
 
 def main(pfad):
+    global KOV
     G = json.load(open(pfad, encoding="utf-8"))
+    if G and "dichte_log" in G[0]["effekte"]:
+        KOV = KOV + ["dichte_log"]
     seg = collections.OrderedDict()
     for g in G:
         seg.setdefault((g["datei"], g["abschnitt"]), []).append(g)

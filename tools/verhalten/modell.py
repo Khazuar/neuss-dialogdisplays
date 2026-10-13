@@ -27,10 +27,13 @@ KOV = ["daemmerung", "tiefe_sonne", "nacht", "regen_0_1", "regen_0_5", "regen_2"
 
 
 PLACEBO = os.environ.get("VERHALTEN_PLACEBO") == "1"
-ORDNER = "modell_placebo" if PLACEBO else "modell"
+DICHTE = os.environ.get("VERHALTEN_DICHTE") == "1"  # Verkehrsdichte (Fahrzeuge ab halbem Tempolimit je Stunde, log) als weiteres Merkmal
+ORDNER = ("modell_placebo" if PLACEBO else "modell") + ("_dichte" if DICHTE else "")
+if DICHTE:
+    KOV = KOV + ["dichte_log"]
 
 
-def entwurf(c):
+def entwurf(c, M=None, lim=None):
     r0, rp, rn, tmk, tnk, fx, shk, ele, wd, hr, tag, fer, fei = [c[:, i] for i in range(13)]
     if PLACEBO:  # Wetter, Licht und Ferien gegen die Stunden verschieben: echte Zusammenhaenge brechen, Selbstaehnlichkeit bleibt
         r0, rp, rn, tmk, tnk, fx, shk = [np.roll(x, 24 * 37) for x in (r0, rp, rn, tmk, tnk, fx, shk)]
@@ -44,6 +47,10 @@ def entwurf(c):
            (r >= 0.1) & (r < 0.5), (r >= 0.5) & (r < 2), r >= 2, (r < 0.1) & (rp >= 0.1),
            (tmk - 10) / 10.0, tnk < 0, fx / 10.0 - 1, shk > 0, fer > 0, fei > 0]
     cols += [np.asarray(x, dtype=float) for x in kov]
+    if DICHTE:
+        n = M[:, int(0.5 * lim) // 2:].sum(1)
+        ln = np.log(n + 1.0)
+        cols.append(ln - np.median(ln))
     t = (tag - tag.mean()) / 30.0
     cols += [t, t * t]  # langsamer Trend (Jahreszeit, Bauzustand)
     return np.stack(cols, axis=1)
@@ -121,7 +128,7 @@ def _segment(pfad):
         tage = len(np.unique(c[:, 10]))
         if tage < MIN_TAGE or M.sum() < MIN_FAHRZEUGE:
             continue
-        X = entwurf(c)
+        X = entwurf(c, M, lim)
         wo = ((c[:, 10] - c[:, 10].min()) // 7).astype(int)
         gerade = wo % 2 == 0
         if gerade.sum() < 24 * 5 or (~gerade).sum() < 24 * 5:
