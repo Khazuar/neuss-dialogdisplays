@@ -396,10 +396,63 @@
     var daten;
     try { daten = JSON.parse(tabelle.textContent); } catch (fehler) { return; }
     var felder = abschnitt.querySelectorAll("select[data-feld]");
+    var abWahl = abschnitt.querySelector('select[data-feld="abschnitt"]'), grWahl = abschnitt.querySelector('select[data-feld="gruppe"]');
+    var abInfo = abschnitt.querySelector(".filter-abschnitt-info"), aktivNr = null;
+    function aktiveDaten() {  // ganze Messung oder ein Abschnitt (eigene Zellen und eigene Gruppen, gleiches Tempolimit)
+      if (!abWahl || abWahl.value === "alle" || !daten.abschnitte) { return daten; }
+      var nr = parseInt(abWahl.value, 10);
+      for (var i = 0; i < daten.abschnitte.length; i++) {
+        if (daten.abschnitte[i].nr === nr) {
+          var d = {}, k;
+          for (k in daten.abschnitte[i]) { d[k] = daten.abschnitte[i][k]; }
+          d.limit = daten.limit;
+          d.v = daten.v;
+          return d;
+        }
+      }
+      return daten;
+    }
+    function gruppenOptionen(d) {  // die Gruppen gehoeren zur gewaehlten Messung oder zum Abschnitt
+      if (!grWahl) { return; }
+      var alt = grWahl.value, opts = [], i;
+      if (d.gruppen && d.gruppen.length) {
+        opts.push(["alle", "Alle Daten"]);
+        for (i = 0; i < d.gruppen.length; i++) {
+          var g = d.gruppen[i];
+          opts.push(["g" + g.nr, "Gruppe " + g.nr + " (Modus " + de(g.modus, 0) + " km/h, " + de(g.anteil, 0) + " %)"]);
+        }
+        opts.push(["rest", "Rest (nicht erklärt)"]);
+      } else {
+        opts.push(["alle", "Alle Daten (nicht in Gruppen zerlegt)"]);
+      }
+      var r = d.r, hatRausch = false;
+      for (i in r) { if (r.hasOwnProperty(i)) { hatRausch = true; break; } }
+      if (hatRausch) { opts.push(["rausch", "Rauschboden (herausgerechnet)"]); }
+      grWahl.innerHTML = "";
+      var gefunden = false;
+      for (i = 0; i < opts.length; i++) {
+        var o = wurzel.document.createElement("option");
+        o.value = opts[i][0];
+        o.textContent = opts[i][1];
+        if (opts[i][0] === alt) { o.selected = true; gefunden = true; }
+        grWahl.appendChild(o);
+      }
+      if (!gefunden) { grWahl.value = "alle"; }
+    }
     function zeichnen() {
+      var d = aktiveDaten();
+      var nr = abWahl ? abWahl.value : null;
+      if (nr !== aktivNr) {
+        aktivNr = nr;
+        gruppenOptionen(d);
+        if (abInfo) {
+          abInfo.textContent = (d === daten || !d.von) ? "Ganze Messung." :
+            "Abschnitt " + d.nr + ": " + d.von.split("-").reverse().join(".") + " bis " + d.bis.split("-").reverse().join(".") + ".";
+        }
+      }
       var auswahl = {};
       for (var i = 0; i < felder.length; i++) { auswahl[felder[i].getAttribute("data-feld")] = felder[i].value; }
-      ziel.innerHTML = ergebnisHtml(daten, auswahl);
+      ziel.innerHTML = ergebnisHtml(d, auswahl);
     }
     for (var i = 0; i < felder.length; i++) { felder[i].addEventListener("change", zeichnen); }
     abschnitt.hidden = false;

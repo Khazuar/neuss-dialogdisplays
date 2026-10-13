@@ -6,7 +6,7 @@
 Dieselben Schritte wie .github/workflows/pages.yml (ohne Tests):
   1. dsd2csv.py   Auswertungen, Zellen und Zusammenfassungen aus den DSD-Dateien (mit Zwischenspeicher, mehrere Prozesse)
   2. seiten_bauen.py   Detailseiten der Standorte
-  3. site/*       Uebersichtsseite, Datenschutz, Stylesheet und filter.js
+  3. site/*       Uebersichtsseite, Datenschutz, Stylesheet, filter.js und seite.js
   4. Impressum aus den Umgebungsvariablen IMPRESSUM_STRASSE, IMPRESSUM_ORT, IMPRESSUM_TELEFON (ohne sie bleiben die Felder leer)
 
 Aufruf:
@@ -27,7 +27,7 @@ import sys
 import webbrowser
 
 HIER = os.path.dirname(os.path.abspath(__file__))
-SEITEN = ("index.html", "datenschutz.html", "style.css", "filter.js")
+SEITEN = ("index.html", "datenschutz.html", "style.css", "filter.js", "seite.js")
 
 
 def befehle(eingabe, ziel, cache, jobs):

@@ -117,3 +117,14 @@ svg.karte .karte-haus { fill: var(--muted); fill-opacity: 0.45; }
 svg.karte .karte-eigene { fill: var(--fg); fill-opacity: 0.85; }
 svg.karte .karte-kreis { fill: var(--h-ueber); fill-opacity: 0.12; stroke: var(--h-ueber); stroke-width: 1.5; stroke-dasharray: 6 4; }
 svg.karte .karte-mitte { fill: none; stroke: var(--h-ueber); stroke-width: 2; }
+
+/* Reiter der Standortseiten (seite.js) */
+.reiter { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 2px solid var(--line); margin: 18px 0 0; }
+.reiter button { font: inherit; border: 1px solid var(--line); border-bottom: none; background: var(--head); color: var(--fg); padding: 6px 12px; border-radius: 6px 6px 0 0; cursor: pointer; }
+.reiter button[aria-selected="true"] { background: var(--bg); border-color: var(--link); color: var(--link); font-weight: 600; }
+.reiter button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.reiter-inhalt { padding-top: 6px; }
+.reiter-inhalt > h2 { margin-top: 18px; }
+.messwahl select { max-width: 100%; }
+details.abschnitt { margin: 8px 0; }
+.abschnitt-titel { margin-bottom: 0; }

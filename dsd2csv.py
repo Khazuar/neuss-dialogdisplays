@@ -911,7 +911,10 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt if x[1] >= min_kmh], spannen, lim)
     # Brueche in der Messreihe und getrennte Auswertung der Abschnitte (docs/abschnitte.md)
     br = bruch.erkenne(bereinigt, spannen, max(10, int(round(0.5 * lim))) if lim else 15, lim, kalender.besonderer_tag)
-    res["abschnitte"] = abschnitte_auswerten(br, bereinigt_vorher, bereinigt, teil, spannen, lim, min_kmh, zusatz, belegt, rb, speicher)
+    res["abschnitte"], daten_abschnitte = abschnitte_auswerten(br, bereinigt_vorher, bereinigt, teil, spannen, lim, min_kmh, zusatz,
+                                                               belegt, rb, speicher)
+    if daten and daten_abschnitte:  # Zellen je Abschnitt fuer die Auswahl auf der Detailseite
+        daten["abschnitte"] = daten_abschnitte
     return res, daten
 
 
@@ -929,17 +932,17 @@ def kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz):
 
 
 def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusatz, belegt, rb, speicher):
-    """Block 'abschnitte': die Messreihe an den erkannten Bruechen zerlegt, jeder Abschnitt einzeln ausgewertet (wie die ganze Datei).
-
-    Gleiche Rauschbodenabzuege wie fuer die ganze Datei; die Gruppen werden je Abschnitt neu angepasst."""
+    """(Block 'abschnitte', Zellen je Abschnitt): die Messreihe an den erkannten Bruechen zerlegt, jeder Abschnitt einzeln ausgewertet
+    (wie die ganze Datei). Gleiche Rauschbodenabzuege wie fuer die ganze Datei; die Gruppen werden je Abschnitt neu angepasst.
+    Die Zellen (Liste, eine je Abschnitt, wie die Zellen der Datei) braucht die Auswahl auf der Detailseite."""
     if not br.get("geprueft"):
-        return {"geprueft": False, "grund": br["grund"]}
+        return {"geprueft": False, "grund": br["grund"]}, []
     blk = {"geprueft": True, "tage": br["tage"], "ab_kmh": br["ab_kmh"], "autokorrelation": br["autokorrelation"],
            "aufblaehung": br["aufblaehung"], "anzahl": len(br["abschnitte"]), "brueche": len(br["brueche"]),
            "moegliche_brueche": br["moegliche_brueche"], "ausschlaege": br["ausschlaege"],
            "verworfen_kleiner_unterschied": br["verworfen_kleiner_unterschied"], "liste": []}
     if not br["brueche"]:
-        return blk
+        return blk, []
     grenzen = [dt.date.fromisoformat(b["datum"]) for b in br["brueche"]]
 
     def nr_von(datum):
@@ -951,12 +954,13 @@ def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusat
     for f in nachher:
         teile_n[nr_von(f[0].date())].append(f)
     teile_t = [{k: [] for k in TEILZEITRAEUME} for _ in range(n_abs)]
+    daten_liste = []
     for k, lst in teil.items():
         for f in lst:
             teile_t[nr_von(f[0].date())][k].append(f)
     for i in range(n_abs):
         a = br["abschnitte"][i]
-        von = dt.datetime.combine(dt.date.fromisoformat(a["von"]) if i == 0 else grenzen[i - 1], dt.time())
+        von = dt.datetime.min if i == 0 else dt.datetime.combine(grenzen[i - 1], dt.time())
         bis = dt.datetime.combine(grenzen[i], dt.time()) if i < len(grenzen) else dt.datetime.max
         sp = [(max(s0, von), min(s1, bis)) for s0, s1 in spannen if s1 >= von and s0 < bis]
         daten = [f[0].date() for f in teile_n[i]]
@@ -972,10 +976,12 @@ def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusat
             e.update(zusatz(teile_n[i]))
             e["teilzeitraeume"] = kennzahlen_je_zeitraum(teile_n[i], teile_t[i], lim, min_kmh, zusatz)[1]  # 'bereinigt' waere dasselbe wie oben
             zd = gruppen.zellen_bauen(teile_v[i], teile_n[i], sp)
-            e["gruppen"], _ = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
-                                                 rb["obergrenze_abzug_kmh"] if belegt else None)
+            e["gruppen"], zellen = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
+                                                      rb["obergrenze_abzug_kmh"] if belegt else None)
+            if zellen:
+                daten_liste.append({"nr": i + 1, "von": e["von"], "bis": e["bis"], **zellen})
         blk["liste"].append(e)
-    return blk
+    return blk, daten_liste
 
 
 def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None, speicher=None, csv_schreiben=True):

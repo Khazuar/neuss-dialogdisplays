@@ -262,20 +262,34 @@ HINWEIS = ("Eigene Berechnungen aus den Rohdaten, nicht amtlich. Fehler in der A
            "Schätzungen und kein Gutachten.")
 
 
+def gefaehrdung_tabelle(row):
+    """Gefaehrdung je Zeitraum mit Erklaerung."""
+    return _schaetzung(row, True, False)
+
+
+def laerm_tabelle(row):
+    """Laerm je Zeitraum mit Erklaerung."""
+    return _schaetzung(row, False, True)
+
+
 def schaetzung_tabellen(row):
     """Gefaehrdung und Laerm je Zeitraum (zwei kleine Tabellen mit Erklaerung)."""
+    return _schaetzung(row, True, True)
+
+
+def _schaetzung(row, mit_gefaehrdung, mit_laerm):
     quellen = {"alle": row, "bereinigt": row.get("bereinigt") or {}, **(row.get("teilzeitraeume") or {})}
     gz, lz = [], []
     for key, label in ZEITRAEUME:
         q = quellen.get(key) or {}
         g, l = q.get("gefaehrdung"), q.get("laerm")
-        if g:
+        if g and mit_gefaehrdung:
             gz.append(f'<tr><th scope="row">{e(label)}</th><td class="num">{dez(g["risikoindex_nilsson"], 2)}</td>'
                       f'<td class="num">{dez(g.get("aufprall_anteil_prozent"), 1)}&nbsp;%</td>'
                       f'<td class="num">{dez(g.get("aufprall_mittel_kmh"))}</td>'
                       f'<td class="num">{dez(g.get("aufprall_mittel_der_aufprallenden_kmh"))}</td>'
                       f'<td class="num">{dez(g.get("aufprall_p95_kmh"))}</td><td class="num">{dez(g.get("aufprall_p99_kmh"))}</td></tr>')
-        if l:
+        if l and mit_laerm:
             lz.append(f'<tr><th scope="row">{e(label)}</th><td class="num">{dez(l["mittelungspegel_gegenueber_limit_db"])}&nbsp;dB</td>'
                       f'<td class="num">{dez(l["spitzenpegel_p99_gegenueber_limit_db"])}&nbsp;dB</td>'
                       f'<td class="num">{dez(l["anteil_mind_3_db_lauter_prozent"], 1)}&nbsp;%</td>'
@@ -624,8 +638,13 @@ def filter_abschnitt(row, daten, sid):
     Das Feld "Gruppe" gibt es nur, wenn die Datei in Gruppen zerlegt ist."""
     if not daten or not daten.get("z"):
         return ""
+    abschnitte_ = daten.get("abschnitte") or []
+    abschnitt_opt = []
+    if abschnitte_:
+        abschnitt_opt = [("alle", "Ganze Messung")] + [(str(a["nr"]), f'Abschnitt {a["nr"]} ({iso_de(a["von"])} bis {iso_de(a["bis"])})')
+                                                        for a in abschnitte_]
     gruppen_opt = []
-    if daten.get("gruppen"):
+    if daten.get("gruppen") or any(a.get("gruppen") for a in abschnitte_):
         gruppen_opt = [("alle", "Alle Daten")]
         for g in daten["gruppen"]:
             gruppen_opt.append((f'g{g["nr"]}', f'Gruppe {g["nr"]} (Modus {dez(g["modus"], 0)} km/h, {dez(g["anteil"], 0)} %)'))
@@ -638,16 +657,19 @@ def filter_abschnitt(row, daten, sid):
                 "".join(f'<option value="{e(v)}">{e(t)}</option>' for v, t in opts) + "</select></div>")
 
     warnung = modell_warnung(row) if gruppen_opt else ""
-    felder = auswahl("zeit", "Tageszeit", ZEIT_OPTIONEN) + auswahl("tage", "Tage", TAGE_OPTIONEN) + (auswahl("gruppe", "Gruppe", gruppen_opt) if gruppen_opt else "")
+    felder = (auswahl("zeit", "Tageszeit", ZEIT_OPTIONEN) + auswahl("tage", "Tage", TAGE_OPTIONEN) +
+              (auswahl("abschnitt", "Abschnitt", abschnitt_opt) if abschnitt_opt else "") +
+              (auswahl("gruppe", "Gruppe", gruppen_opt) if gruppen_opt else ""))
     return ('<noscript><p class="muted">Die Auswahl nach Tageszeit, Wochentag und Gruppe benötigt JavaScript. Ohne JavaScript zeigt diese Seite '
             'die Auswertung für alle Fahrzeuge (Tabellen und Histogramm) und die Zeiträume in den Tabellen.</p></noscript>'
-            f'<section class="filter" data-filter hidden><h4>Auswertung nach Zeit, Tagen und Gruppe</h4>'
+            f'<section class="filter" data-filter hidden><h4>Auswertung nach Zeit, Tagen, Abschnitt und Gruppe</h4>'
             '<p class="muted">Wählen Sie Tageszeit, Tage' + (' und Gruppe' if gruppen_opt else '') + '; Kennzahlen und Verteilung gelten dann für diese Auswahl. '
             'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt. '
             + ('Bei einer Gruppe bleiben alle Fahrzeuge der Auswahl grau sichtbar, farbig ist, was die Kurve der Gruppe davon erklärt. '
                'Die Kurven werden für die Auswahl nachgepasst (Anteil, Lage und Breite, gebunden an die Anpassung über alle Daten); bei sehr '
                'wenigen Fahrzeugen bleiben sie fest.' if gruppen_opt else '') +
-            '</p>' + warnung + '<div class="controls">' + felder + '</div>'
+            '</p>' + warnung + '<div class="controls">' + felder + '</div>' +
+            ('<p class="muted filter-abschnitt-info"></p>' if abschnitt_opt else '') +
             '<div class="filter-ergebnis" aria-live="polite"></div>'
             f'<script type="application/json" class="filter-daten">{json_in_html(daten)}</script></section>')
 
@@ -751,51 +773,66 @@ def bruch_begruendung(bruch, verw, gleich, standort_name):
     return z
 
 
-def abschnitte_abschnitt(row, meta_messung, gleich, standort_name):
-    """Die Messreihe an den erkannten Brüchen zerlegt und je Abschnitt einzeln ausgewertet (bruch.py, docs/abschnitte.md)."""
-    a = row.get("abschnitte")
+def abschnitte_text(a):
+    """Einleitung zu den Abschnitten einer Messreihe (oder warum es keine gibt). Leer ohne Block."""
     if not a:
         return ""
-    z = ["<h4>Abschnitte der Messung</h4>"]
     if not a.get("geprueft"):
-        return z[0] + f'<p>Nicht geprüft: {e(a.get("grund"))}.</p>'
+        return f'<p>Brüche nicht geprüft: {e(a.get("grund"))}.</p>'
     nachsatz = ""
     if a.get("ausschlaege"):
         nachsatz += (' Kurze Ausschläge, nach denen der Verkehr zum alten Niveau zurückkehrt (zum Beispiel Feiertage), sind keine Brüche: '
                      + ", ".join(f'{iso_de(x["von"])} bis {iso_de(x["bis"])}' for x in a["ausschlaege"]) + ".")
     if not a.get("liste"):
-        return z[0] + (f'<p>In den {ganz(a["tage"])} vollständig aufgezeichneten Tagen wurde kein Bruch erkannt: Die Geschwindigkeitsverteilung ändert sich '
-                       f'nicht so stark, dass die Messung getrennt ausgewertet werden müsste (Verfahren: <a href="{REPO}/blob/main/docs/abschnitte.md">Abschnitte</a>).'
-                       f'{nachsatz}</p>')
+        return (f'<p>In den {ganz(a["tage"])} vollständig aufgezeichneten Tagen wurde kein Bruch erkannt: Die Geschwindigkeitsverteilung ändert sich '
+                f'nicht so stark, dass die Messung getrennt ausgewertet werden müsste (Verfahren: <a href="{REPO}/blob/main/docs/abschnitte.md">Abschnitte</a>).'
+                f'{nachsatz}</p>')
+    return (f'<p>Das Verhalten des Verkehrs ändert sich in dieser Messreihe an {a["brueche"]} {"Stelle" if a["brueche"] == 1 else "Stellen"} so stark, '
+            'dass die Teile getrennt ausgewertet werden: Wahrscheinlich hing das Gerät danach an einer anderen Stelle oder war anders eingestellt. '
+            'Der Grund lässt sich aus den Daten nicht sagen. Die Wahrscheinlichkeit sagt, wie sicher ein Bruch an dieser Stelle im statistischen Modell '
+            f'ist (Tageswerte, ohne Wochentagsunterschiede, Schulferien und Feiertage), nicht, was geschah.{nachsatz}</p>')
+
+
+def bruch_uebersicht(row, meta_messung, gleich, standort_name, mid):
+    """Reiter Messung: Abschnitte der Messreihe mit Zeitraum, Fahrzeugen und der Begründung jedes Bruchs."""
+    a = row.get("abschnitte")
+    if not a:
+        return ""
+    z = ["<h4>Abschnitte der Messung</h4>", abschnitte_text(a)]
+    if not a.get("liste"):
+        return "".join(z)
     verw = (meta_messung or {}).get("verwaltung", [])
-    z.append(f'<p>Das Verhalten des Verkehrs ändert sich in dieser Messreihe an {a["brueche"]} {"Stelle" if a["brueche"] == 1 else "Stellen"} so stark, '
-             'dass die Teile getrennt ausgewertet werden: Wahrscheinlich hing das Gerät danach an einer anderen Stelle oder war anders eingestellt. '
-             'Die Gesamtauswertung oben (alle Daten) bleibt zum Vergleich mit den Angaben der Verwaltung; für die Verteilung selbst und für die '
-             'Gruppen sind die Abschnitte maßgeblich. Der Grund dieser Änderung lässt sich aus den Daten nicht sagen. Die Wahrscheinlichkeit sagt, '
-             f'wie sicher ein Bruch an dieser Stelle im statistischen Modell ist (Tageswerte, ohne Wochentagsunterschiede), nicht, was geschah.{nachsatz}</p>')
     zeilen = []
     for ab in a["liste"]:
-        g, h = ab.get("geschwindigkeit_kmh") or {}, ab.get("einhaltung") or {}
         beginn = ab["beginn"]
         grund = "Beginn der Messung" if beginn["art"] != "Bruch" else f'Bruch, {wahrscheinlichkeit_text(beginn["wahrscheinlichkeit"])}'
-        zeilen.append(f'<tr><th scope="row"><a href="#{e(standort_slug(row["datei"]))}-abschnitt-{ab["nr"]}">Abschnitt {ab["nr"]}</a></th>'
-                      f'<td>{iso_de(ab["von"])} bis {iso_de(ab["bis"])}</td><td class="num">{ganz(ab["tage"])}</td>'
-                      f'<td class="num">{ganz(ab.get("anzahl_fahrzeuge"))}</td><td class="num">{dez(g.get("mittel"))}</td><td class="num">{ganz(g.get("v85"))}</td>'
-                      f'<td class="num{klasse_quote(h.get("einhaltungsquote_prozent"))}">{dez(h.get("einhaltungsquote_prozent"), 1)}&nbsp;%</td>'
-                      f'<td>{grund}</td></tr>')
+        zeilen.append(f'<tr><th scope="row">Abschnitt {ab["nr"]}</th><td>{iso_de(ab["von"])} bis {iso_de(ab["bis"])}</td>'
+                      f'<td class="num">{ganz(ab["tage"])}</td><td class="num">{ganz(ab.get("anzahl_fahrzeuge"))}</td><td>{grund}</td></tr>')
     z.append('<div class="tablewrap"><table><caption class="muted">Abschnitte, an Brüchen getrennt (Fahrzeuge mit nutzbarer Zeit)</caption><thead><tr>'
-             '<th>Abschnitt</th><th>Zeitraum</th><th class="num">Tage</th><th class="num">Fahrzeuge</th><th class="num">Ø km/h</th><th class="num">V85</th>'
-             '<th class="num">Einhaltung</th><th>Beginn</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
+             '<th>Abschnitt</th><th>Zeitraum</th><th class="num">Tage</th><th class="num">Fahrzeuge</th><th>Beginn</th></tr></thead><tbody>' +
+             "".join(zeilen) + "</tbody></table></div>")
     for ab in a["liste"]:
-        zz = [f'<section class="abschnitt" id="{e(standort_slug(row["datei"]))}-abschnitt-{ab["nr"]}"><h5>Abschnitt {ab["nr"]}: {iso_de(ab["von"])} bis {iso_de(ab["bis"])} '
-              f'({ganz(ab["tage"])} Tage, {ganz(ab.get("anzahl_fahrzeuge"))} Fahrzeuge)</h5>']
         beginn = ab["beginn"]
-        if beginn["art"] == "Bruch":
-            sätze = bruch_begruendung(beginn, verw, gleich, standort_name)
-            zz.append(f'<p><strong>Getrennt vom vorigen Abschnitt am {iso_de(beginn["datum"])}</strong>, Wahrscheinlichkeit eines Bruchs '
-                      f'{wahrscheinlichkeit_text(beginn["wahrscheinlichkeit"])}.</p><ul>' + "".join(f"<li>{s}</li>" for s in sätze) + "</ul>")
-        else:
-            zz.append("<p>Beginn der Messung.</p>")
+        if beginn["art"] != "Bruch":
+            continue
+        sätze = bruch_begruendung(beginn, verw, gleich, standort_name)
+        z.append(f'<p id="{e(mid)}-bruch-{ab["nr"]}"><strong>Bruch vor Abschnitt {ab["nr"]} am {iso_de(beginn["datum"])}</strong>, Wahrscheinlichkeit '
+                 f'{wahrscheinlichkeit_text(beginn["wahrscheinlichkeit"])}:</p><ul>' + "".join(f"<li>{s}</li>" for s in sätze) + "</ul>")
+    z.append(f'<p class="muted">Verfahren, Schwellen und Grenzen: <a href="{REPO}/blob/main/docs/abschnitte.md">Abschnitte</a>. Die Abschnitte lassen sich '
+             'im Reiter „Analyse“ einzeln auswerten.</p>')
+    return "".join(z)
+
+
+def abschnitte_einzeln(row):
+    """Reiter Analyse, ohne JavaScript: Kennzahlen, Verteilung und Gruppen je Abschnitt als aufklappbare Blöcke."""
+    a = row.get("abschnitte") or {}
+    if not a.get("liste"):
+        return ""
+    z = ['<h4>Abschnitte einzeln</h4><p class="muted">Dieselbe Auswertung je Abschnitt der Messung (Rauschboden wie für die ganze Datei herausgerechnet, '
+         'Gruppen je Abschnitt neu angepasst). Mit JavaScript lässt sich ein Abschnitt oben in der Auswahl wählen.</p>']
+    for ab in a["liste"]:
+        zz = [f'<details class="abschnitt"><summary>Abschnitt {ab["nr"]}: {iso_de(ab["von"])} bis {iso_de(ab["bis"])} '
+              f'({ganz(ab["tage"])} Tage, {ganz(ab.get("anzahl_fahrzeuge"))} Fahrzeuge)</summary>']
         if ab.get("anzahl_fahrzeuge"):
             sub = dict(ab, tempolimit_kmh=row.get("tempolimit_kmh"))
             zz.append(kennzahlen_tabelle(sub, abschnitt=True))
@@ -803,20 +840,17 @@ def abschnitte_abschnitt(row, meta_messung, gleich, standort_name):
             zz.append(gruppen_abschnitt(sub, mit_auswahl=False))
         else:
             zz.append("<p>Keine Fahrzeuge mit nutzbarer Zeit.</p>")
-        zz.append("</section>")
-        z.append("".join(zz).replace("<h4>", "<h6>").replace("</h4>", "</h6>"))
-    z.append(f'<p class="muted">Verfahren, Schwellen und Grenzen: <a href="{REPO}/blob/main/docs/abschnitte.md">Abschnitte</a>. Der Rauschboden ist wie in der '
-             'Gesamtauswertung herausgerechnet (für die ganze Datei geschätzt); die Gruppen sind je Abschnitt neu angepasst.</p>')
+        zz.append("</details>")
+        z.append("".join(zz).replace("<h4>", "<h5>").replace("</h4>", "</h5>"))
     return "".join(z)
 
 
-def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None, gleich=None, standort_name=""):
+def messung_fakten(row, meta_messung):
     g = (meta_messung or {}).get("geraet", {})
     limit = row.get("tempolimit_kmh")
-    verw = (meta_messung or {}).get("verwaltung", [])
-    z = [f'<section class="messung" id="{e(standort_slug(row["datei"]))}"><h3>{e(row["datei"])}</h3>']
     quelle = {"mitteilung_verwaltung": "laut Mitteilung der Verwaltung", "parameter": "vorgegeben"}.get(row.get("tempolimit_quelle"), "aus der DSD-Konfiguration")
-    fakten = [("Tempolimit", f'{limit}&nbsp;km/h ({quelle}{"; DSD-Konfiguration " + str(row["tempolimit_dsd_kmh"]) + " km/h" if row.get("tempolimit_dsd_kmh") else ""})' if limit else "unbekannt"),
+    fakten = [("Datei", e(row["datei"])),
+              ("Tempolimit", f'{limit}&nbsp;km/h ({quelle}{"; DSD-Konfiguration " + str(row["tempolimit_dsd_kmh"]) + " km/h" if row.get("tempolimit_dsd_kmh") else ""})' if limit else "unbekannt"),
               ("Fahrzeuge in der Datei", ganz(row.get("fahrzeuge_in_datei"))),
               ("Fahrzeuge in der Auswertung", ganz(row.get("anzahl_fahrzeuge")))]
     ab, unter = row.get("auswertung_ab_kmh"), row.get("fahrzeuge_unter_auswertung_ab")
@@ -827,44 +861,132 @@ def messung_abschnitt(row, meta_messung, abschnitte, rel, daten=None, gleich=Non
         fakten.append(("Zeitstempel in der Datei", f'{zeit_de(mz["start"])} bis {zeit_de(mz["ende"])} (Gerätezeit)'))
     bz = (row.get("bereinigt") or {}).get("messzeitraum")
     if bz:
-        fakten.append(("Davon mit nutzbarer Zeit", f'{zeit_de(bz["start"])} bis {zeit_de(bz["ende"])}'))
+        fakten.append(("Davon mit nutzbarer Zeit", f'{zeit_de(bz["start"])} bis {zeit_de(bz["ende"])} (Ortszeit), '
+                                                   f'{ganz((row.get("bereinigt") or {}).get("anzahl_fahrzeuge"))} Fahrzeuge'))
     if g.get("konfiguration"):
         fakten.append(("Gerät (Konfiguration)", e(g["konfiguration"])))
     if g.get("name"):
         fakten.append(("Name im Gerät", e(g["name"])))
+    if g.get("tempolimit_anzeige_kmh"):
+        fakten.append(("Anzeige-Schwelle", f'{g["tempolimit_anzeige_kmh"]}&nbsp;km/h'))
     if g.get("erfassung_ab_kmh") is not None:
         fakten.append(("Erfassung ab", f'{g["erfassung_ab_kmh"]}&nbsp;km/h'))
     if g.get("verdeckte_messung"):
         fakten.append(("Anzeige", "verdeckte Messung (Display zeigte nichts an)"))
-    z.append('<dl class="facts">' + "".join(f"<dt>{e(k)}</dt><dd>{v}</dd>" for k, v in fakten) + "</dl>")
+    if row.get("warnungen"):
+        fakten.append(("Übersprungene Datensätze", f'{ganz(row["warnungen"])} mit ungültigem Zeitstempel'))
+    return '<dl class="facts">' + "".join(f"<dt>{e(k)}</dt><dd>{v}</dd>" for k, v in fakten) + "</dl>"
+
+
+def ausfaelle(uhr_abschnitte):
+    """Lücken zwischen den Abschnitten der Aufzeichnung (Gerätezeit), ab einer Stunde."""
+    if len(uhr_abschnitte) < 2:
+        return ""
+    z = []
+    ab = sorted(uhr_abschnitte, key=lambda a: a["start"])
+    for a, b in zip(ab, ab[1:]):
+        try:
+            t0 = datetime.datetime.fromisoformat(a["ende"])
+            t1 = datetime.datetime.fromisoformat(b["start"])
+        except (ValueError, TypeError):
+            continue
+        dauer = (t1 - t0).total_seconds() / 3600
+        if dauer >= 1:
+            z.append(f'<li>{e(zeit_de(a["ende"]))} bis {e(zeit_de(b["start"]))}: {dez(dauer / 24, 1) + " Tage" if dauer >= 48 else dez(dauer, 0) + " Stunden"} '
+                     'ohne Aufzeichnung</li>')
+    if not z:
+        return ""
+    return ('<h4>Ausfälle</h4><p class="muted">Lücken zwischen den Abschnitten der Aufzeichnung (Gerätezeit; bei verstellter Uhr nur ungefähr).</p><ul>' +
+            "".join(z) + "</ul>")
+
+
+def messqualitaet(row, mit_filter):
+    """Rauschboden, Regenphantome und die Wetterstation."""
+    z = [rauschen_abschnitt(row, mit_filter=mit_filter)]
+    rg = (row.get("rauschen") or {}).get("regen") or {}
+    st = rg.get("wetterstation")
+    if st:
+        z.append(f'<p class="muted">Niederschlag von der Station {e(st["name"])} ({dez(st["abstand_km"], 1)}&nbsp;km von der geschätzten Lage); fehlen dort '
+                 f'Werte, gilt die nächste weitere ({e(", ".join(st.get("weitere", [])))}). Quelle: Deutscher Wetterdienst.</p>')
+    return "".join(z)
+
+
+def vergleich_teil(row, meta_messung):
+    """Reiter Vergleich: Angaben der Verwaltung gegen die DSD (roh, im Erfassungszeitraum) und gegen diese Auswertung (bereinigt)."""
+    verw = (meta_messung or {}).get("verwaltung", [])
+    z = []
     wid = widersprueche(row, meta_messung)
     if wid:
         z.append('<div class="notice" role="note"><strong>Widersprüche und Auffälligkeiten zwischen DSD und Mitteilung:</strong><ul>' +
                  "".join(f"<li>{w}</li>" for w in wid) + "</ul></div>")
-    mit_bruch = bool((row.get("abschnitte") or {}).get("liste"))
-    if mit_bruch:
-        z.append('<h4>Gesamtauswertung (alle Daten der Datei)</h4><p class="muted">Sie vergleicht sich mit den Angaben der Verwaltung. Diese Messreihe enthält '
-                 'aber Brüche (siehe „Abschnitte der Messung“ weiter unten): Die Gesamtverteilung mischt dann Messungen, die nicht zusammengehören.</p>')
-    if row.get("anzahl_fahrzeuge"):
-        auswahl = filter_abschnitt(row, daten, standort_slug(row["datei"]))
-        tabelle = kennzahlen_tabelle(row)
-        # Mit der Auswahl (JavaScript) zeigt sie die Kennzahlen je Tageszeit und Tage; die feste Tabelle steht dann nur noch ohne JavaScript.
-        z.append("<noscript>" + tabelle + "</noscript>" if auswahl else tabelle)
-        z.append(auswahl)
-        z.append(histogramm_abschnitt(row, mit_filter=bool(auswahl)))
-        z.append(rauschen_abschnitt(row, mit_filter=bool(auswahl and daten and daten.get("r"))))
-        z.append(gruppen_abschnitt(row))
-        z.append(schaetzung_tabellen(row))
-        z.append(nacht_abschnitt(row))
-        z.append(abschnitte_abschnitt(row, meta_messung, gleich or {}, standort_name))
-    else:
-        z.append("<p>Die Datei enthält keine Fahrzeugdaten.</p>")
-    z.append(uhr_abschnitt(row, abschnitte, rel))
-    abgl = "".join(f'<h5>{e(v.get("bezeichnung"))}</h5>' + t for v, t in ((v, abgleich_tabelle(v)) for v in verw) if t)
-    if abgl:
-        z.append("<h4>Abgleich mit den Angaben der Verwaltung</h4>" + abgl)
-    z.append("</section>")
+    if not verw:
+        z.append("<p>Zu dieser Messung liegen keine Angaben der Verwaltung vor, mit denen sich vergleichen ließe.</p>")
+        return "".join(z)
+    b = row.get("bereinigt") or {}
+    gb = b.get("geschwindigkeit_kmh") or {}
+    for v in verw:
+        ab = v.get("abgleich_dsd") or {}
+
+        def zeile(name, verw_, roh, unser):
+            return f'<tr><th scope="row">{e(name)}</th><td class="num">{verw_}</td><td class="num">{roh}</td><td class="num">{unser}</td></tr>'
+        zz = []
+        if v.get("v85_kmh") is not None:
+            zz.append(zeile("V85 (km/h)", ganz(v["v85_kmh"]), ganz(ab.get("v85_kmh")), ganz(gb.get("v85"))))
+        if v.get("mittel_kmh") is not None:
+            zz.append(zeile("Mittleres Tempo (km/h)", ganz(v["mittel_kmh"]), dez(ab.get("mittel_kmh")), dez(gb.get("mittel"))))
+        je_tag = v.get("fahrzeuge_je_tag")
+        if je_tag:
+            teile = " + ".join(f"{ganz(x)} ({e(k)})" if k != "gesamt" else ganz(x) for k, x in je_tag.items())
+            zz.append(zeile("Fahrzeuge je Tag", teile, ganz(ab.get("fahrzeuge_je_tag")), "–"))
+        if not zz:
+            continue
+        z.append(f'<h4>{e(v.get("bezeichnung"))}</h4><div class="tablewrap"><table><caption class="muted">Verwaltung; DSD roh: aus der DSD im Erfassungszeitraum '
+                 'der Mitteilung, alle Geschwindigkeiten, ohne Abzug des Rauschbodens (so rechnet offenbar die Verwaltung); diese Auswertung: ganze Datei, '
+                 'nur Fahrzeuge mit nutzbarer Zeit, Rauschboden und Regenphantome herausgerechnet, wo belegt</caption><thead><tr><th>Kennzahl</th>'
+                 '<th class="num">Verwaltung</th><th class="num">DSD roh</th><th class="num">Diese Auswertung</th></tr></thead><tbody>' + "".join(zz) +
+                 "</tbody></table></div>")
+        zu = v.get("zuordnung") or {}
+        z.append(f'<p class="muted">Zuordnung zu dieser DSD-Datei {e(METHODE_TEXT.get(zu.get("methode"), zu.get("methode")))}.</p>')
+    if (row.get("abschnitte") or {}).get("liste"):
+        z.append('<p class="muted">Diese Messreihe hat Abschnitte (Reiter „Messung“); der Vergleich gilt für die ganze Datei, wie die Verwaltung sie berichtet.</p>')
+    z.append(f'<p class="muted">Herkunft und Zuordnung der Angaben: <a href="{REPO}/blob/main/docs/metadaten.md">Metadaten</a>.</p>')
     return "".join(z)
+
+
+def je_abschnitt(row, baustein, mid, art):
+    """Ein Baustein (Gefährdung, Lärm) für die ganze Messung und je Abschnitt; eine Auswahl (seite.js) zeigt einen davon."""
+    liste = (row.get("abschnitte") or {}).get("liste") or []
+    ganz_ = baustein(row)
+    if not liste or not ganz_:
+        return ganz_
+    opts = [("alle", "Ganze Messung")] + [(str(a["nr"]), f'Abschnitt {a["nr"]} ({iso_de(a["von"])} bis {iso_de(a["bis"])})') for a in liste]
+    z = [f'<div class="controls" data-abschnittwahl hidden><div><label for="{e(mid)}-{art}-abschnitt">Abschnitt</label>'
+         f'<select id="{e(mid)}-{art}-abschnitt">' + "".join(f'<option value="{v}">{e(t)}</option>' for v, t in opts) + "</select></div></div>",
+         f'<div data-abschnitt="alle"><p class="muted abschnitt-titel">Ganze Messung</p>{ganz_}</div>']
+    for a in liste:
+        teil = baustein(dict(a, tempolimit_kmh=row.get("tempolimit_kmh")))
+        z.append(f'<div data-abschnitt="{a["nr"]}"><p class="muted abschnitt-titel">Abschnitt {a["nr"]}: {iso_de(a["von"])} bis {iso_de(a["bis"])}</p>'
+                 f'{teil or "<p>Keine Werte.</p>"}</div>')
+    return "".join(z)
+
+
+def analyse_teil(row, daten, mid):
+    if not row.get("anzahl_fahrzeuge"):
+        return "<p>Die Datei enthält keine Fahrzeugdaten.</p>"
+    z = []
+    auswahl = filter_abschnitt(row, daten, mid)
+    tabelle = kennzahlen_tabelle(row)
+    # Mit der Auswahl (JavaScript) zeigt sie die Kennzahlen je Tageszeit, Tage und Abschnitt; die feste Tabelle steht dann nur ohne JavaScript.
+    z.append("<noscript>" + tabelle + "</noscript>" if auswahl else tabelle)
+    z.append(auswahl)
+    z.append(histogramm_abschnitt(row, mit_filter=bool(auswahl)))
+    z.append(gruppen_abschnitt(row))
+    z.append(abschnitte_einzeln(row))
+    return "".join(z)
+
+
+def gefaehrdung_teil(row):
+    return gefaehrdung_tabelle(row) + nacht_abschnitt(row)
 
 
 QUELLE_TEXT = {"ordnername": "Ordnername", "mitteilung": "Mitteilung der Verwaltung", "ris": "Ratsinformationssystem",
@@ -938,74 +1060,248 @@ def standort_abschnitt(st, verz):
     return "".join(t)
 
 
-def seite(rel, rows, meta_standort, uhr_dateien, zellen=None, verz=None, gleich=None):
-    name = bereinige(rel)
-    meta_nach_datei = {m["datei"]: m for m in (meta_standort or {}).get("messungen", [])}
-    eintraege = [(m["datei"], v) for m in (meta_standort or {}).get("messungen", []) for v in m.get("verwaltung", [])]
-    kopf = f"""<!doctype html>
+REITER = [("allgemein", "Allgemein"), ("verwaltung", "Verwaltung"), ("messung", "Messung"), ("analyse", "Analyse"), ("vergleich", "Vergleich"),
+          ("gefaehrdung", "Gefährdung"), ("laerm", "Lärm")]
+
+
+def messung_id(rel, datei):
+    """Kennung einer Messung (Datei) auf der Standortseite: 'm-<ordner>-<datei>'."""
+    return "m-" + standort_slug(f"{rel}-{os.path.splitext(datei)[0]}")
+
+
+def fahrtrichtungen(meta_messung, rel):
+    fr = []
+    for v in (meta_messung or {}).get("verwaltung", []):
+        if v.get("fahrtrichtung") and v["fahrtrichtung"] not in fr:
+            fr.append(v["fahrtrichtung"])
+    m = re.search(r"\bFR\.?\s+([^/]+)", rel)
+    if m and not fr:
+        fr.append(m.group(1).strip())
+    return fr
+
+
+def messung_label(m):
+    bz = (m["row"].get("bereinigt") or {}).get("messzeitraum") or m["row"].get("messzeitraum") or {}
+    zeit = f'{iso_de((bz.get("start") or "")[:10])} bis {iso_de((bz.get("ende") or "")[:10])}' if bz else "ohne Zeitraum"
+    fr = fahrtrichtungen(m["meta_messung"], m["rel"])
+    return f'{zeit} · {bereinige(m["rel"])} · {m["row"]["datei"]}' + (f' · FR {", ".join(fr)}' if fr else "")
+
+
+def standortgruppen(auswertung, metadaten):
+    """Messungen je Standort: gleiche Straße (geschätzte Lage) und sich überlappende Lagekreise; Ordner ohne Lage bleiben für sich.
+
+    Gibt [(slug, Name, [Ordner])] zurück, nach Name geordnet; die Slugs sind eindeutig."""
+    ordner = list(collections.OrderedDict((r["standort"], None) for r in auswertung["standorte"]))
+    st = {rel: ((metadaten.get("standorte") or {}).get(rel) or {}).get("standort") for rel in ordner}
+    eltern = {rel: rel for rel in ordner}
+
+    def wurzel_(x):
+        while eltern[x] != x:
+            eltern[x] = eltern[eltern[x]]
+            x = eltern[x]
+        return x
+    for i, a in enumerate(ordner):
+        for b in ordner[i + 1:]:
+            sa, sb = st[a], st[b]
+            if not sa or not sb or not sa.get("strasse") or standorte.schluessel(sa["strasse"]) != standorte.schluessel(sb.get("strasse") or ""):
+                continue
+            if math.hypot(sa["utm32_ost"] - sb["utm32_ost"], sa["utm32_nord"] - sb["utm32_nord"]) <= sa["unsicherheit_m"] + sb["unsicherheit_m"]:
+                eltern[wurzel_(a)] = wurzel_(b)
+    gruppen_ = collections.OrderedDict()
+    for rel in ordner:
+        gruppen_.setdefault(wurzel_(rel), []).append(rel)
+    erg, vergeben = [], collections.Counter()
+    for rels in gruppen_.values():
+        s = st[rels[0]]
+        name = s["strasse"] if s and s.get("strasse") else bereinige(rels[0])
+        if len(rels) == 1 and not (s and s.get("strasse")):
+            name = bereinige(rels[0])
+        erg.append([name, rels])
+    erg.sort(key=lambda x: (standorte.schluessel(x[0]), x[1]))
+    out = []
+    for name, rels in erg:
+        slug = standort_slug(name)
+        vergeben[slug] += 1
+        n = vergeben[slug]
+        if n > 1:  # gleiche Straße, aber getrennte Lagen
+            slug, name = f"{slug}-{n}", f"{name} ({n}. Lage)"
+        out.append((slug, name, rels))
+    return out
+
+
+def allgemein_teil(name, messungen, verz):
+    """Reiter Allgemein: nur Fakten über den Standort (Lage, Straße, Tempolimit, Messungen, Quellen)."""
+    z = []
+    rels = list(collections.OrderedDict((m["rel"], None) for m in messungen))
+    limits = collections.OrderedDict()
+    for m in messungen:
+        lim = m["row"].get("tempolimit_kmh")
+        if lim:
+            limits.setdefault(lim, []).append(m)
+    fakten = [("Straße", e(name)), ("Ordner in der Lieferung der Stadt", "<br>".join(f'<a href="{REPO}/tree/main/{quote_pfad(r)}">{e(r)}</a>' for r in rels))]
+    if limits:
+        fakten.append(("Tempolimit", "<br>".join(
+            f'{l}&nbsp;km/h' + (f' ({e(", ".join(messung_label(m).split(" · ")[0] for m in ms))})' if len(limits) > 1 else "") for l, ms in limits.items())))
+    bez = collections.OrderedDict()
+    for m in messungen:
+        for v in (m["meta_messung"] or {}).get("verwaltung", []):
+            bez.setdefault(v.get("bezeichnung"), None)
+    if bez:
+        fakten.append(("Bezeichnung der Verwaltung", "<br>".join(e(b) for b in bez)))
+    fr = []
+    for m in messungen:
+        for f in fahrtrichtungen(m["meta_messung"], m["rel"]):
+            if f not in fr:
+                fr.append(f)
+    if fr:
+        fakten.append(("Fahrtrichtungen", e(", ".join(fr))))
+    z.append('<dl class="facts">' + "".join(f"<dt>{e(k)}</dt><dd>{v}</dd>" for k, v in fakten) + "</dl>")
+    # Lage je Ordner (gleiche Lage nur einmal)
+    gesehen = set()
+    for rel in rels:
+        st = ((messungen[0]["metadaten"] or {}).get("standorte") or {}).get(rel, {}).get("standort")
+        if not st:
+            continue
+        k = (st["utm32_ost"], st["utm32_nord"], st["unsicherheit_m"])
+        if k in gesehen:
+            continue
+        gesehen.add(k)
+        if len(rels) > 1:
+            z.append(f'<p class="muted">Ordner {e(rel)}:</p>')
+        z.append(standort_abschnitt(st, verz))
+    zeilen = []
+    for m in messungen:
+        r = m["row"]
+        a = (r.get("abschnitte") or {}).get("liste") or []
+        fr_m = fahrtrichtungen(m["meta_messung"], m["rel"])
+        zeilen.append(f'<tr><td><a href="#{e(m["id"])}" data-messung-link="{e(m["id"])}">{e(messung_label(m).split(" · ")[0])}</a></td>'
+                      f'<td>{e(m["rel"])}<br><span class="muted">{e(r["datei"])}</span></td><td>{e(", ".join(fr_m)) or "–"}</td>'
+                      f'<td class="num">{ganz(r.get("tempolimit_kmh"))}</td><td class="num">{ganz(r.get("anzahl_fahrzeuge"))}</td>'
+                      f'<td class="num">{len(a) or 1}</td></tr>')
+    z.append('<h3>Messungen an diesem Standort</h3><div class="tablewrap"><table><thead><tr><th>Zeitraum (nutzbare Zeit)</th><th>Ordner und Datei</th>'
+             '<th>Fahrtrichtung</th><th class="num">Limit km/h</th><th class="num">Fahrzeuge</th><th class="num">Abschnitte</th></tr></thead><tbody>' +
+             "".join(zeilen) + "</tbody></table></div>")
+    links = []
+    for rel in rels:
+        links.append(f'<a href="{REPO}/blob/main/{quote_pfad(rel)}/metadaten.yaml">metadaten.yaml ({e(bereinige(rel))})</a>')
+    for m in messungen:
+        basis = os.path.splitext(m["row"]["datei"])[0]
+        links.append(f'<a href="../{quote_pfad(m["rel"])}/{urllib.parse.quote(basis)}.yaml">Auswertung {e(m["row"]["datei"])} (YAML)</a>')
+    z.append('<h3>Daten und Quellen</h3><ul class="links">' + "".join(f"<li>{x}</li>" for x in links) + "</ul>")
+    return "".join(z)
+
+
+def verwaltung_teil(m):
+    verw = (m["meta_messung"] or {}).get("verwaltung", [])
+    if not verw:
+        return ("<p>Zu dieser Messung hat die Verwaltung (soweit auffindbar) keine Einschätzung veröffentlicht. Sie berichtet Ergebnisse je Messstelle "
+                "seit Februar 2024; für frühere Messungen gibt es nur den Namen des Ordners.</p>")
+    z = ['<p class="muted">Auszüge aus den Mitteilungen der Verwaltung an die Bezirksausschüsse. Die Sätze stehen im Wortlaut da (Trennfehler des '
+         'PDF-Textes repariert); maßgeblich ist das verlinkte Dokument. Den Vergleich mit den Daten zeigt der Reiter „Vergleich“.</p>']
+    for v in verw:
+        z.append(verwaltung_karte(v, mit_abgleich=False))
+    return "".join(z)
+
+
+def messung_teil(m, gleich):
+    row = m["row"]
+    daten = m["zellen"]
+    z = [messung_fakten(row, m["meta_messung"])]
+    z.append(uhr_abschnitt(row, m["uhr_abschnitte"], m["rel"]))
+    z.append(ausfaelle(m["uhr_abschnitte"]))
+    z.append(bruch_uebersicht(row, m["meta_messung"], gleich, m["rel"], m["id"]))
+    z.append(messqualitaet(row, mit_filter=bool(daten and daten.get("z") and daten.get("r"))))
+    for dd in (m["meta_messung"] or {}).get("doppelte_daten", []):
+        z.append(f'<p class="notice" role="note">Diese Datei enthält dieselben Fahrzeugdaten wie {e(dd["datei"])} ({dez(dd["anteil_dieser_datei_prozent"], 0)}&nbsp;% '
+                 'dieser Datei sind dort ebenfalls enthalten).</p>')
+    return "".join(z)
+
+
+def reiter_html(reiter_id, titel, teile, messungen):
+    """Ein Reiter. teile: Funktion (Messung) -> HTML oder fester Text (Standort)."""
+    z = [f'<section class="reiter-inhalt" id="r-{reiter_id}" role="tabpanel" aria-labelledby="t-{reiter_id}" data-reiter="{reiter_id}"><h2>{e(titel)}</h2>']
+    if isinstance(teile, str):
+        z.append(teile)
+    else:
+        for m in messungen:
+            z.append(f'<div class="messung-teil" data-messung="{e(m["id"])}">' +
+                     (f'<h3 class="messung-titel">{e(messung_label(m))}</h3>' if len(messungen) > 1 else "") + teile(m) + "</div>")
+    z.append("</section>")
+    return "".join(z)
+
+
+def standortseite(name, messungen, verz=None, gleich=None):
+    """Seite eines Standorts mit allen Messungen. messungen: [dict(id, rel, row, meta_messung, uhr_abschnitte, zellen, metadaten)]."""
+    gleich = gleich or {}
+    teile = [f"""<!doctype html>
 <!-- SPDX-License-Identifier: MIT -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{e(name)} – Neuss Dialogdisplays</title>
-<meta name="description" content="Geschwindigkeitsmessungen der Dialogdisplays: {e(name)} – Kennzahlen, Geräteuhr und Angaben der Verwaltung.">
+<meta name="description" content="Geschwindigkeitsmessungen der Dialogdisplays: {e(name)} – Standort, Angaben der Verwaltung, Messung und Auswertung.">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
 <main class="detail">
 <nav class="muted" aria-label="Navigation"><a href="../index.html">← Übersicht aller Messungen</a></nav>
 <h1>{e(name)}</h1>
-<p class="muted">Ordner in der Lieferung der Stadt: <a href="{REPO}/tree/main/{quote_pfad(rel)}">{e(rel)}</a></p>
 <p class="notice" role="note"><strong>Hinweis:</strong> {e(HINWEIS)}</p>
-"""
-    teile = [kopf]
-    # Standort laut Verwaltung
-    bez = collections.OrderedDict()
-    for _, v in eintraege:
-        schl = v.get("bezeichnung")
-        bez.setdefault(schl, set()).update(f'{(q.get("gremium") or "").strip()}' for q in v.get("quellen", []))
-    teile.append("<section><h2>Standort</h2>")
-    if bez:
-        teile.append("<p>So bezeichnet die Verwaltung die Messstelle:</p><ul>" + "".join(
-            f'<li>{e(b)}<span class="muted"> – berichtet im {e("; ".join(sorted(g for g in gr if g)))}</span></li>' for b, gr in bez.items()) + "</ul>")
-    else:
-        teile.append("<p>Zu dieser Messung liegt keine Beschreibung der Verwaltung vor. Die Verwaltung berichtet Ergebnisse "
-                     "je Messstelle seit Februar 2024; für frühere Messungen gibt es nur den Namen des Ordners.</p>")
-    limits = sorted({r["tempolimit_kmh"] for r in rows if r.get("tempolimit_kmh")})
-    teile.append(f'<p class="muted">Tempolimit laut DSD-Konfiguration: {e(", ".join(str(l) + " km/h" for l in limits)) or "unbekannt"}.</p>')
-    if (meta_standort or {}).get("standort"):
-        teile.append(standort_abschnitt(meta_standort["standort"], verz))
-    teile.append("</section>")
-    # Einschätzung und Maßnahmen
-    teile.append("<section><h2>Einschätzung und Maßnahmen der Verwaltung</h2>")
-    if eintraege:
-        teile.append('<p class="muted">Auszüge aus den Mitteilungen der Verwaltung an die Bezirksausschüsse. Die Sätze stehen im '
-                     "Wortlaut da (Trennfehler des PDF-Textes repariert); maßgeblich ist das verlinkte Dokument.</p>")
-        for datei, v in eintraege:
-            teile.append(verwaltung_karte(v, mit_abgleich=False))
-    else:
-        teile.append("<p>Zu dieser Messung hat die Verwaltung (soweit auffindbar) keine Einschätzung veröffentlicht.</p>")
-    teile.append("</section>")
-    teile.append("<section><h2>Messungen</h2>")
-    for row in sorted(rows, key=lambda r: r["datei"]):
-        teile.append(messung_abschnitt(row, meta_nach_datei.get(row["datei"]),
-                                       (uhr_dateien.get(f'{rel}/{row["datei"]}') or {}).get("abschnitte", []), rel,
-                                       (zellen or {}).get(row["datei"]), gleich, rel))
-    teile.append("</section>")
+"""]
+    if len(messungen) > 1:
+        teile.append('<div class="controls messwahl"><div><label for="messwahl">Messung</label><select id="messwahl" data-messwahl>' +
+                     "".join(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>' for m in messungen) + "</select></div></div>"
+                     f'<p class="muted" data-ohne-skript>An diesem Standort gibt es {len(messungen)} Messungen; ohne JavaScript stehen sie in jedem Reiter untereinander.</p>')
+    teile.append('<nav class="reiter" role="tablist" aria-label="Themen" hidden>' + "".join(
+        f'<button type="button" role="tab" id="t-{rid}" aria-controls="r-{rid}" data-ziel="{rid}">{e(t)}</button>' for rid, t in REITER) + "</nav>")
+    teile.append(reiter_html("allgemein", "Allgemein", allgemein_teil(name, messungen, verz), messungen))
+    teile.append(reiter_html("verwaltung", "Verwaltung", verwaltung_teil, messungen))
+    teile.append(reiter_html("messung", "Messung", lambda m: messung_teil(m, gleich), messungen))
+    teile.append(reiter_html("analyse", "Analyse", lambda m: analyse_teil(m["row"], m["zellen"], m["id"]), messungen))
+    teile.append(reiter_html("vergleich", "Vergleich mit der Verwaltung", lambda m: vergleich_teil(m["row"], m["meta_messung"]), messungen))
+    teile.append(reiter_html("gefaehrdung", "Gefährdung", lambda m: je_abschnitt(m["row"], gefaehrdung_teil, m["id"], "gefaehrdung"), messungen))
+    teile.append(reiter_html("laerm", "Lärm", lambda m: je_abschnitt(m["row"], laerm_tabelle, m["id"], "laerm"), messungen))
+    mit_filter = any((m["zellen"] or {}).get("z") for m in messungen)
     teile.append(f"""<footer class="muted">
-<p>Rohdaten und Skripte: <a href="{REPO}/tree/main/{quote_pfad(rel)}">GitHub</a> ·
-<a href="{REPO}/blob/main/{quote_pfad(rel)}/metadaten.yaml">metadaten.yaml</a> ·
-<a href="{REPO}/blob/main/docs/metadaten.md">Herkunft der Metadaten</a></p>
+<p>Rohdaten und Skripte: <a href="{REPO}">GitHub</a> · <a href="{REPO}/blob/main/docs/metadaten.md">Herkunft der Metadaten</a></p>
 <p>{e(HINWEIS)}</p>
-<p>Lizenz: Daten und Dokumentation <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a>, Skripte MIT.</p>
+<p>Lizenz: Daten und Dokumentation <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a>, Skripte MIT. Wetterdaten: Quelle: Deutscher Wetterdienst (CC BY 4.0).</p>
 <p><a href="../index.html">Übersicht</a><a href="../impressum.html">Impressum</a><a href="../datenschutz.html">Datenschutz</a></p>
 </footer>
 </main>
-{{FILTER_SKRIPT}}</body>
+<script src="../seite.js" defer></script>
+{'<script src="../filter.js" defer></script>' if mit_filter else ''}
+</body>
 </html>
-""".replace("{FILTER_SKRIPT}", '<script src="../filter.js" defer></script>\n' if any((zellen or {}).values()) else ""))
+""")
     return "".join(teile)
+
+
+def messung_eintrag(rel, row, metadaten, uhr_dateien, zellen):
+    meta_standort = (metadaten.get("standorte") or {}).get(rel) or {}
+    meta_messung = next((m for m in meta_standort.get("messungen", []) if m["datei"] == row["datei"]), None)
+    return {"id": messung_id(rel, row["datei"]), "rel": rel, "row": row, "meta_messung": meta_messung, "metadaten": metadaten,
+            "uhr_abschnitte": (uhr_dateien.get(f'{rel}/{row["datei"]}') or {}).get("abschnitte", []), "zellen": (zellen or {}).get(row["datei"])}
+
+
+def _beginn(m):
+    bz = (m["row"].get("bereinigt") or {}).get("messzeitraum") or m["row"].get("messzeitraum") or {}
+    return (bz.get("start") or "9999", m["rel"], m["row"]["datei"])
+
+
+def seite(rel, rows, meta_standort, uhr_dateien, zellen=None, verz=None, gleich=None):
+    """Seite für einen einzelnen Ordner (für Tests und Aufrufe ohne Standortgruppen)."""
+    metadaten = {"standorte": {rel: meta_standort or {}}}
+    messungen = sorted((messung_eintrag(rel, r, metadaten, uhr_dateien, zellen) for r in rows), key=_beginn)
+    st = (meta_standort or {}).get("standort") or {}
+    return standortseite(st.get("strasse") or bereinige(rel), messungen, verz, gleich)
+
+
+def weiterleitung(ziel, titel):
+    return (f'<!doctype html>\n<html lang="de">\n<head>\n<meta charset="utf-8">\n<title>{e(titel)} – Neuss Dialogdisplays</title>\n'
+            f'<meta http-equiv="refresh" content="0; url={e(ziel)}">\n<link rel="canonical" href="{e(ziel)}">\n</head>\n<body>\n'
+            f'<p>Diese Seite ist umgezogen: <a href="{e(ziel)}">{e(titel)}</a>.</p>\n</body>\n</html>\n')
 
 
 def lade_zellen(ordner, rel, rows):
@@ -1020,27 +1316,41 @@ def lade_zellen(ordner, rel, rows):
 
 
 def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None):
+    """Eine Seite je Standort, Weiterleitungen von den alten Seiten je Ordner und uebersicht.json für die Übersichtsseite."""
     verz = standorte.Verzeichnis.laden(adressen) if adressen and os.path.exists(adressen) else None
     # Tage der Brüche je Messreihe, um Brüche am selben Tag an anderen Standorten zu nennen
     gleich = {(r["standort"], r["datei"]): [ab["beginn"]["datum"] for ab in (r.get("abschnitte") or {}).get("liste", []) if ab["beginn"]["art"] == "Bruch"]
               for r in auswertung["standorte"]}
-    je_standort = collections.OrderedDict()
+    je_ordner = collections.OrderedDict()
     for row in auswertung["standorte"]:
-        je_standort.setdefault(row["standort"], []).append(row)
-    slugs = {}
+        je_ordner.setdefault(row["standort"], []).append(row)
     os.makedirs(os.path.join(ziel, "standorte"), exist_ok=True)
-    for rel, rows in je_standort.items():
-        slug = standort_slug(rel)
-        if slug in slugs:
-            raise ValueError(f"Seitenname doppelt: {slug} ({rel} und {slugs[slug]})")
-        slugs[slug] = rel
-        for r in rows:
-            if r.get("seite") != f"standorte/{slug}.html":
-                raise ValueError(f"Seitenlink passt nicht zum Standort: {r.get('seite')} / {rel}")
-        text = seite(rel, rows, metadaten["standorte"].get(rel), uhr["dateien"], lade_zellen(zellen_ordner, rel, rows), verz, gleich)
+    seiten, uebersicht, neue = {}, {}, set()
+    gruppen_ = standortgruppen(auswertung, metadaten)
+    for slug, name, rels in gruppen_:
+        neue.add(slug)
+    for slug, name, rels in gruppen_:
+        messungen = []
+        for rel in rels:
+            rows = je_ordner[rel]
+            zellen = lade_zellen(zellen_ordner, rel, rows)
+            messungen += [messung_eintrag(rel, r, metadaten, uhr["dateien"], zellen) for r in rows]
+        messungen.sort(key=_beginn)
         with open(os.path.join(ziel, "standorte", slug + ".html"), "w", encoding="utf-8", newline="\n") as fh:
-            fh.write(text)
-    return slugs
+            fh.write(standortseite(name, messungen, verz, gleich))
+        seiten[slug] = rels
+        for m in messungen:
+            verw = [v.get("bezeichnung") for v in (m["meta_messung"] or {}).get("verwaltung", []) if v.get("bezeichnung")]
+            uebersicht[f'{m["rel"]}/{m["row"]["datei"]}'] = {"seite": f"standorte/{slug}.html#{m['id']}", "standort": name, "verwaltung": verw}
+        for rel in rels:  # alte Adresse je Ordner -> neue Seite
+            alt = standort_slug(rel)
+            if alt not in neue:
+                erste = next(m for m in messungen if m["rel"] == rel)
+                with open(os.path.join(ziel, "standorte", alt + ".html"), "w", encoding="utf-8", newline="\n") as fh:
+                    fh.write(weiterleitung(f"{slug}.html#{erste['id']}", name))
+    with open(os.path.join(ziel, "uebersicht.json"), "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(uebersicht, fh, ensure_ascii=False, separators=(",", ":"))
+    return seiten
 
 
 def main():

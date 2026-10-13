@@ -44,7 +44,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/verhalten.md` – Forschungsstand: Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter und Ferien), mit Placebo-Prüfung
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `docs/wetter.md` – Wetterdaten des DWD (Quelle, Lizenz, Stationswahl, Zeitangabe) und der Befund, dass Regen das Radar stört
-- `seiten_bauen.py` – baut je Standort eine Detailseite für die GitHub Pages (`standorte/<name>.html`), mit
+- `seiten_bauen.py` – baut je Standort (gleiche Straße, sich überlappende Lage; alle Messungen und Fahrtrichtungen zusammen) eine Detailseite für die GitHub Pages (`standorte/<name>.html`) mit den Reitern Allgemein, Verwaltung, Messung, Analyse, Vergleich, Gefährdung und Lärm, dazu Weiterleitungen von den alten Seiten je Ordner und `uebersicht.json` für die Übersicht;
   Geschwindigkeits-Histogrammen als Inline-SVG
 - `kalender.py` – Schulferien und Feiertage in NRW
 - `tools/verhalten/` – Skripte der Verhaltensanalyse (brauchen numpy, nicht Teil der Auswertung)
@@ -55,7 +55,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `lokal_bauen.py` – baut die GitHub-Pages-Seite lokal nach `_vorschau/` und startet auf Wunsch einen lokalen Server, um sie vor dem Push im Browser anzusehen (`docs/betrieb.md`)
 - `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py`, `test_wetter.py`, `test_standorte.py`, `test_bruch.py` – Tests (`python3 -m unittest -v`)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
-- `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz, dazu `filter.js` (kleines Skript für die Auswahl auf den Detailseiten, liest nur die Daten der eigenen Seite)
+- `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz, dazu `filter.js` (Auswahl nach Tageszeit, Tagen, Abschnitt und Gruppe auf den Detailseiten, liest nur die Daten der eigenen Seite) und `seite.js` (Reiter und Auswahl der Messung; ohne JavaScript steht alles untereinander)
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
 - `LICENSE`, `LICENSE-DATEN` – Lizenzen für Software bzw. Daten und Dokumentation, siehe [Lizenz](#lizenz)
 - `.github/workflows/` – erzeugt die abgeleiteten Daten und veröffentlicht sie

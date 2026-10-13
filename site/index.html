@@ -42,7 +42,7 @@
       <select id="zeitraum"></select>
     </div>
     <div>
-      <label for="filter">Filter (Straße, Gerät, Datei)</label>
+      <label for="filter">Filter (Straße, Messstelle, Gerät, Datei)</label>
       <input id="filter" type="search" autocomplete="off">
     </div>
   </div>
@@ -97,6 +97,7 @@ function parseCSV(text) {
 
 const COLUMNS = [
   { key: "standort", label: "Standort" },
+  { key: "verwaltung", label: "Messstelle laut Verwaltung" },
   { key: "limit", label: "Limit km/h", num: true },
   { key: "quote", label: "Einhaltung", num: true },
   { key: "qual", label: "Qualifiziert", num: true },
@@ -222,7 +223,7 @@ function cell(tr, col, row) {
 
 function render() {
   const q = document.getElementById("filter").value.trim().toLowerCase();
-  const rows = data.filter((r) => !q || (r.standort + " " + r.datei).toLowerCase().includes(q));
+  const rows = data.filter((r) => !q || (r.standort + " " + r.datei + " " + (r.verwaltung || "") + " " + (r.ort || "")).toLowerCase().includes(q));
   rows.sort((a, b) => {
     const x = a[sort.key], y = b[sort.key];
     if (x === y) return 0;
@@ -266,11 +267,21 @@ function kopf() {
 async function start() {
   const status = document.getElementById("status");
   try {
-    const res = await fetch("summary.csv");
+    const [res, ueb] = await Promise.all([fetch("summary.csv"), fetch("uebersicht.json").catch(() => null)]);
     if (!res.ok) throw new Error("HTTP " + res.status);
     const [header, ...rows] = parseCSV(await res.text());
     const idx = Object.fromEntries(header.map((h, i) => [h, i]));
-    data = rows.map((r) => zeile(r, idx));
+    // Standortseiten (seiten_bauen.py): Link auf Standort und Messung, Bezeichnungen der Verwaltung. Eine Zeile je Datei, bei mehreren
+    // Mitteilungen zu einer Datei eine Zeile je Mitteilung.
+    let seiten = {};
+    if (ueb && ueb.ok) { try { seiten = await ueb.json(); } catch (e) { seiten = {}; } }
+    data = [];
+    for (const r of rows) {
+      const z = zeile(r, idx), s = seiten[z.datei];
+      if (s) { z.seite = s.seite; z.ort = s.standort; }
+      const verw = s && s.verwaltung && s.verwaltung.length ? s.verwaltung : [""];
+      for (const v of verw) data.push(Object.assign({}, z, { verwaltung: v }));
+    }
     kopf();
     const auswahl = document.getElementById("zeitraum");
     for (const z of ZEITRAEUME) {

@@ -70,6 +70,18 @@ class Hilfen(unittest.TestCase):
 
 
 class Seite(unittest.TestCase):
+    def test_reiter_und_abschnittsauswahl(self):
+        z = zeile()
+        daten = {"v": 1, "limit": 30, "tage": {"0|7": 1}, "z": {"0|7": "30:5"}, "r": {}, "gruppen": [],
+                 "abschnitte": [{"nr": 1, "von": "2024-07-24", "bis": "2024-09-03", "tage": {}, "z": {}, "r": {}, "gruppen": []},
+                                {"nr": 2, "von": "2024-09-04", "bis": "2024-12-04", "tage": {}, "z": {}, "r": {}, "gruppen": []}]}
+        h = s.seite("07_2024_ Einsteinstraße", [z], {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}, {}, {"_15.dsd": daten})
+        self.assertIn('data-feld="abschnitt"', h)
+        self.assertIn("Abschnitt 2 (04.09.2024 bis 04.12.2024)", h)
+        self.assertLess(h.index('data-feld="abschnitt"'), h.index('class="filter-ergebnis"'))
+        self.assertIn('role="tablist"', h)
+        self.assertNotIn("data-messwahl", h)  # nur eine Messung: keine Auswahl
+
     def html(self, eintraege=None, rows=None):
         meta = {"messungen": [{"datei": "_15.dsd", "geraet": {"konfiguration": "ABC 123", "erfassung_ab_kmh": 9},
                                "verwaltung": eintraege or []}]}
@@ -80,7 +92,7 @@ class Seite(unittest.TestCase):
 
     def test_einschaetzung_und_massnahmen_stehen_im_wortlaut_auf_der_seite(self):
         h = self.html([eintrag()])
-        self.assertIn("Einschätzung und Maßnahmen der Verwaltung", h)
+        self.assertIn('id="r-verwaltung"', h)
         self.assertIn("völlig unkritisch", h)
         self.assertIn("Verkehrslenkende Maßnahmen sind nicht erforderlich.", h)
         self.assertIn("Einsteinstraße, FR Hertzstraße (beidseitige Messung)", h)
@@ -89,12 +101,12 @@ class Seite(unittest.TestCase):
 
     def test_ohne_verwaltung_steht_ein_hinweis_da(self):
         h = self.html([])
-        self.assertIn("keine Beschreibung der Verwaltung", h)
         self.assertIn("keine Einschätzung veröffentlicht", h)
+        self.assertIn("keine Angaben der Verwaltung vor, mit denen sich vergleichen ließe", h)
 
     def test_daten_werden_maskiert(self):
         h = self.html([eintrag(bezeichnung='<script>alert(1)</script>', stellungnahme_verwaltung=["a <b>b</b> & c."])])
-        self.assertNotIn("<script", h)
+        self.assertNotIn("<script>alert", h)
         self.assertNotIn("<b>b</b>", h)
         self.assertNotIn("<i>y</i>", h)
         self.assertNotIn("<b>fett</b>", h)
@@ -110,9 +122,9 @@ class Seite(unittest.TestCase):
 
     def test_abgleich_und_zuordnung(self):
         h = self.html([eintrag()])
-        self.assertIn("Abgleich mit den Angaben der Verwaltung", h)
+        self.assertIn("Vergleich mit der Verwaltung", h)
         self.assertIn("430 (kommend) + 423 (gehend)", h)
-        self.assertIn("-39&nbsp;%", h)
+        self.assertIn("Diese Auswertung", h)
         self.assertIn("nur über Straßenname und Sitzungsdatum", h)
 
     def test_aufprall_laerm_und_naechte(self):
@@ -269,9 +281,9 @@ class Seite(unittest.TestCase):
         meta = {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": [eintrag(zeitraum=["2025-04-15", "2025-06-30"], bezeichnung="Test")]}]}
         gleich = {("andere Strasse", "x.dsd"): ["2025-04-15"], ("07_2024_ Einsteinstraße", "_15.dsd"): ["2025-04-14"]}
         h = s.seite("07_2024_ Einsteinstraße", [row], meta, {}, None, None, gleich)
-        self.assertIn("Gesamtauswertung (alle Daten der Datei)", h)
         self.assertIn("Abschnitte der Messung", h)
         self.assertIn("Abschnitt 2: 14.04.2025 bis 30.05.2025", h)
+        self.assertIn("Bruch vor Abschnitt 2 am 14.04.2025", h)
         self.assertIn("über 99,9&nbsp;%", h)
         self.assertIn("Die Verteilung unterscheidet sich &lt;um&gt; 40 %.", h)
         self.assertIn("Erfassungszeitraum 15.04.2025 bis 30.06.2025", h)
@@ -279,8 +291,9 @@ class Seite(unittest.TestCase):
         self.assertIn("Kurze Ausschläge", h)
         self.assertIn("zu wenig &lt;Fahrzeuge&gt;", h)
         self.assertNotIn("<h4>Gruppen in der Verteilung", h.split("Abschnitt 2:")[1])  # im Abschnitt Ueberschrift eine Ebene tiefer
+        self.assertIn('data-abschnitt="2"', h)  # Gefährdung und Lärm je Abschnitt
         ohne = s.seite("07_2024_ Einsteinstraße", [zeile()], {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}, {})
-        self.assertNotIn("Gesamtauswertung (alle Daten der Datei)", ohne)
+        self.assertNotIn("Abschnitt 2:", ohne)
         kein = dict(zeile(), abschnitte={"geprueft": True, "tage": 60, "anzahl": 1, "brueche": 0, "liste": [], "ausschlaege": []})
         self.assertIn("kein Bruch erkannt", s.seite("07_2024_ Einsteinstraße", [kein], meta, {}))
 
@@ -528,8 +541,8 @@ class FilterSeite(unittest.TestCase):
             os.makedirs(ordner)
             with open(os.path.join(ordner, "_15.zellen.json"), "w", encoding="utf-8") as fh:
                 json.dump(daten, fh)
-            s.bauen({"standorte": [zl]}, {"standorte": {}}, {"dateien": {}}, d, d)
-            with open(os.path.join(d, "standorte", dsd2csv.standort_slug(zl["standort"]) + ".html"), encoding="utf-8") as fh:
+            seiten = s.bauen({"standorte": [zl]}, {"standorte": {}}, {"dateien": {}}, d, d)
+            with open(os.path.join(d, "standorte", list(seiten)[0] + ".html"), encoding="utf-8") as fh:
                 self.assertIn("filter-daten", fh.read())
 
 class Bauen(unittest.TestCase):
@@ -539,17 +552,35 @@ class Bauen(unittest.TestCase):
         uhr = {"dateien": {}}
         with tempfile.TemporaryDirectory() as d:
             slugs = s.bauen(auswertung, meta, uhr, d)
-            self.assertEqual(sorted(slugs), ["07-2024-einsteinstrasse", "stationaer-villestrasse-fr-gv"])
+            self.assertEqual(sorted(slugs), ["einsteinstrasse", "stationaer-villestrasse-fr-gv"])
             for slug in slugs:
                 with open(os.path.join(d, "standorte", slug + ".html"), encoding="utf-8") as fh:
                     self.assertIn("<h1>", fh.read())
+            # alte Adresse je Ordner leitet weiter
+            with open(os.path.join(d, "standorte", "07-2024-einsteinstrasse.html"), encoding="utf-8") as fh:
+                self.assertIn('url=einsteinstrasse.html#m-07-2024-einsteinstrasse-15', fh.read())
+            with open(os.path.join(d, "uebersicht.json"), encoding="utf-8") as fh:
+                ueb = json.load(fh)
+            self.assertEqual(ueb["07_2024_ Einsteinstraße/_15.dsd"]["seite"], "standorte/einsteinstrasse.html#m-07-2024-einsteinstrasse-15")
 
-    def test_falscher_seitenlink_wird_erkannt(self):
-        zl = zeile()
-        zl["seite"] = "standorte/anders.html"
+    def test_messungen_derselben_strasse_auf_einer_seite(self):
+        def st(ost):
+            return {"standort": {"strasse": "Teststraße", "utm32_ost": ost, "utm32_nord": 0, "unsicherheit_m": 100, "breite": 51.2, "laenge": 6.7,
+                                 "methode": "strasse", "sicherheit": "benannt", "beschreibung": "x", "belege": []}, "messungen": []}
+        auswertung = {"standorte": [zeile("01_Teststraße", "a.dsd"), zeile("02_Teststraße", "b.dsd"), zeile("03_Teststraße", "c.dsd")]}
+        meta = {"standorte": {"01_Teststraße": st(0), "02_Teststraße": st(150), "03_Teststraße": st(5000)}}
+        gr = s.standortgruppen(auswertung, meta)
+        self.assertEqual([(g[0], g[2]) for g in gr], [("teststrasse", ["01_Teststraße", "02_Teststraße"]), ("teststrasse-2", ["03_Teststraße"])])
         with tempfile.TemporaryDirectory() as d:
-            with self.assertRaises(ValueError):
-                s.bauen({"standorte": [zl]}, {"standorte": {}}, {"dateien": {}}, d)
+            s.bauen(auswertung, meta, {"dateien": {}}, d)
+            with open(os.path.join(d, "standorte", "teststrasse.html"), encoding="utf-8") as fh:
+                h = fh.read()
+        self.assertIn("data-messwahl", h)
+        self.assertEqual(h.count('<option value="m-'), 2)
+        self.assertIn('data-messung="m-01-teststrasse-a"', h)
+        for rid, _ in s.REITER:
+            self.assertIn(f'id="r-{rid}"', h)
+        self.assertIn('src="../seite.js"', h)
 
 
 if __name__ == "__main__":
