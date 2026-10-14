@@ -1130,7 +1130,8 @@ def stadtgruppen_im_abschnitt(a, stadt):
 def gruppen_teil(m, vg):
     """Reiter Gruppen je Messung: Verhaltensgruppen je Abschnitt mit Namen, Beziehungen (MS, S) und den Stadtgruppen, die fehlen."""
     if not vg:
-        return "<p>Für diese Seite liegen keine Verhaltensgruppen vor.</p>"
+        return ("<p>Für diese Seite liegen keine Verhaltensgruppen vor: Sie werden nur mit numpy gerechnet "
+                f'(<a href="{REPO}/blob/main/docs/verhalten.md">Verfahren</a>).</p>')
     eigene = vg_index(vg).get(f'{m["rel"]}/{m["row"]["datei"]}')
     if not eigene:
         return ("<p>Für diese Messung gibt es kein Verhaltensmodell: ohne Tempolimit, ohne Wetterdaten oder ohne vollständig aufgezeichnete "
@@ -1489,7 +1490,7 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None):
     teile.append(reiter_html("analyse", "Analyse", lambda m: analyse_teil(m["row"], m["zellen"], m["id"], vg_namen(vg, m["rel"], m["row"]["datei"])),
                              messungen))
     teile.append(reiter_html("gruppen", "Verhaltensgruppen", lambda m: gruppen_teil(m, vg), messungen)
-                 .replace("<h2>Verhaltensgruppen</h2>", "<h2>Verhaltensgruppen</h2>" + gruppen_einleitung(), 1)
+                 .replace("<h2>Verhaltensgruppen</h2>", "<h2>Verhaltensgruppen</h2>" + (gruppen_einleitung() if vg else ""), 1)
                  .replace("</section>", standort_gruppen(vg, slug, messungen) + "</section>"))
     teile.append(reiter_html("vergleich", "Vergleich mit der Verwaltung", lambda m: vergleich_teil(m["row"], m["meta_messung"]), messungen))
     teile.append(reiter_html("gefaehrdung", "Gefährdung", lambda m: je_abschnitt(m["row"], gefaehrdung_teil, m["id"], "gefaehrdung"), messungen))
@@ -1554,6 +1555,11 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
     if verhalten and os.path.exists(verhalten):
         with open(verhalten, encoding="utf-8") as fh:
             vg = json.load(fh)
+        if not (vg.get("uebersicht") or {}).get("mit_modell"):  # ohne numpy gibt es kein Modell: keine leeren Gruppenseiten
+            vg = None
+    for alt in ("verhaltensgruppen.html", "verhaltensgruppen-kurz.json"):  # Reste eines frueheren Laufs mit numpy
+        if not vg and os.path.exists(os.path.join(ziel, alt)):
+            os.remove(os.path.join(ziel, alt))
     # Tage der Brüche je Messreihe, um Brüche am selben Tag an anderen Standorten zu nennen
     gleich = {(r["standort"], r["datei"]): [ab["beginn"]["datum"] for ab in (r.get("abschnitte") or {}).get("liste", []) if ab["beginn"]["art"] == "Bruch"]
               for r in auswertung["standorte"]}
