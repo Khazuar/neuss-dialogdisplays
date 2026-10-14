@@ -53,12 +53,12 @@ class Zwischenspeicher:
         os.replace(tmp, pfad)
         self.benutzt.add((ebene, schluessel))
 
-    def aufraeumen(self, benutzt):
-        """Entfernt alle Eintraege, die nicht in 'benutzt' stehen. Gibt die Zahl der entfernten zurueck."""
+    def aufraeumen(self, benutzt, schonen=()):
+        """Entfernt alle Eintraege, die nicht in 'benutzt' stehen, ausser in den Ebenen 'schonen'. Gibt die Zahl der entfernten zurueck."""
         weg = 0
         for ebene in sorted(os.listdir(self.ordner)) if os.path.isdir(self.ordner) else []:
             pfad = os.path.join(self.ordner, ebene)
-            if not os.path.isdir(pfad):
+            if not os.path.isdir(pfad) or ebene in schonen:
                 continue
             for f in os.listdir(pfad):
                 if f.endswith(".json") and (ebene, f[:-5]) not in benutzt:

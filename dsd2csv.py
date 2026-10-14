@@ -863,6 +863,11 @@ def _code_hash(dateien=CODE_DATEIEN):
     return zwischenspeicher.code_hash(*vorhanden) + ("n" if dateien == CODE_DATEIEN and verhalten.verfuegbar() else "")  # mit numpy mehr
 
 
+# Ergebnisse mit und ohne numpy (Verhaltensgruppen) liegen in getrennten Ebenen: Ein Lauf ohne numpy verdraengt die anderen nicht
+DATEI_EBENE = "datei" if verhalten.verfuegbar() else "datei-ohne-numpy"
+NUR_MIT_NUMPY = ("datei", "verhalten", "vorlagen")
+
+
 def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher=None):
     """Alle Kennzahlen einer Datei. Gibt (res, daten) zurueck; daten sind die Zellen fuer die Filter der Detailseite."""
     lim, quelle = tempolimit(meta, limit, kor)
@@ -1016,7 +1021,7 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
     base = os.path.splitext(name)[0]
     kor = (korrekturen or {}).get(f"{standort}/{name}")
     schluessel = zwischenspeicher.inhalts_hash(buf, _code_hash(), standort, name, limit, kor, min_kmh) if speicher else None
-    gespeichert = speicher.holen("datei", schluessel) if speicher else None
+    gespeichert = speicher.holen(DATEI_EBENE, schluessel) if speicher else None
     if gespeichert is None or csv_schreiben or write_status or show_meta:
         meta, veh, status, warn = parse(buf)
         if csv_schreiben:
@@ -1034,8 +1039,12 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
         if show_meta:
             for k, v in meta.items():
                 print(f"  {k} = {v}", file=sys.stderr)
-        for wmsg in warn[:10]:
-            print(f"  WARNUNG {base}: {wmsg}", file=sys.stderr)
+        if warn:  # eine Zeile je Datei; die Zahl steht auch in der YAML (warnungen), Einzelheiten mit --meta
+            print(f"  WARNUNG {base}: {len(warn)} Datensaetze uebersprungen ({warn[0]}" + (", ..." if len(warn) > 1 else "") + ")",
+                  file=sys.stderr)
+            if show_meta:
+                for wmsg in warn[1:10]:
+                    print(f"  WARNUNG {base}: {wmsg}", file=sys.stderr)
     if gespeichert is not None:
         res, daten = gespeichert["res"], gespeichert["daten"]
         if speicher:  # die Ebenen unter dieser Datei bleiben im Zwischenspeicher, auch wenn nur diese Ebene trifft
@@ -1048,7 +1057,7 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
                                              "abhaengig": sorted(speicher.benutzt - vorher) if speicher else []}))
         res, daten = gespeichert["res"], gespeichert["daten"]
         if speicher:
-            speicher.speichern("datei", schluessel, gespeichert)
+            speicher.speichern(DATEI_EBENE, schluessel, gespeichert)
     schreibe_yaml(os.path.join(outdir, base + ".yaml"), ["# " + HINWEIS_AUSWERTUNG] + yaml_zeilen(res))
     if daten:
         with open(os.path.join(outdir, base + ".zellen.json"), "w", encoding="utf-8", newline="\n") as f:
@@ -1125,7 +1134,8 @@ def main():
               f"quote={e.get('einhaltungsquote_prozent')} qual={e.get('qualifizierte_einhaltungsquote_prozent')} "
               f"warnungen={s['warnungen']}", file=sys.stderr)
     if a.cache and os.path.isdir(a.eingabe) and not any(isinstance(s, str) for _, s, _ in ergebnisse):
-        weg = zwischenspeicher.Zwischenspeicher(a.cache).aufraeumen(benutzt)
+        # ohne numpy bleiben die Ergebnisse mit numpy stehen (ein spaeterer Lauf mit numpy braucht sie wieder)
+        weg = zwischenspeicher.Zwischenspeicher(a.cache).aufraeumen(benutzt, () if verhalten.verfuegbar() else NUR_MIT_NUMPY)
         print(f"Zwischenspeicher: {len(benutzt)} Eintraege benutzt, {weg} veraltete entfernt", file=sys.stderr)
     if os.path.isdir(a.eingabe) and rows:
         summe = a.out or a.eingabe

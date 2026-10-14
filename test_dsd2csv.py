@@ -263,7 +263,7 @@ class Zwischenspeicher(unittest.TestCase):
             r1 = d.convert(self.datei, a, "X", None, False, False, 0, {}, sp1, False)
             self.assertFalse([f for f in os.listdir(a) if f.endswith(".csv")])  # --keine-csv
             self.assertTrue([f for f in os.listdir(a) if f.endswith(".zellen.json")])
-            self.assertIn("datei", {e for e, _ in sp1.benutzt})
+            self.assertIn(d.DATEI_EBENE, {e for e, _ in sp1.benutzt})  # mit numpy "datei", sonst "datei-ohne-numpy"
             sp2 = zwischenspeicher.Zwischenspeicher(cache)
             r2 = d.convert(self.datei, b, "X", None, False, False, 0, {}, sp2, False)
             self.assertEqual(r1, r2)
@@ -278,6 +278,18 @@ class Zwischenspeicher(unittest.TestCase):
             r3 = d.convert(self.datei, c, "Y", 50, False, False, 0, {}, sp3, False)
             self.assertEqual(r3["standort"], "Y")
             self.assertEqual(r3["tempolimit_kmh"], 50)
+
+    def test_aufraeumen_schont_ebenen(self):
+        with tempfile.TemporaryDirectory() as t:
+            sp = zwischenspeicher.Zwischenspeicher(t)
+            sp.speichern("datei", "a", {"x": 1})
+            sp.speichern("datei-ohne-numpy", "b", {"x": 2})
+            sp.speichern("gruppen", "c", {"x": 3})
+            self.assertEqual(sp.aufraeumen(set(), ("datei",)), 2)  # "datei" bleibt stehen
+            self.assertIsNotNone(sp.holen("datei", "a"))
+            self.assertIsNone(sp.holen("gruppen", "c"))
+            self.assertEqual(sp.aufraeumen(set()), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
