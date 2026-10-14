@@ -68,13 +68,15 @@ class Gesamt(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        dsds = sorted((os.path.getsize(os.path.join(o, f)), os.path.join(o, f)) for o, _, fs in os.walk(HIER) for f in fs
-                      if f.lower().endswith(".dsd") and os.path.getsize(os.path.join(o, f)) > 250000)
+        # eine kleine Datei, bei der ein Regenanteil abgezogen wird (dort wichen die Zeitraeume frueher ab)
+        datei = os.path.join(HIER, "15_Schluchenhausstraße", "_7.dsd")
+        if not os.path.exists(datei):
+            raise unittest.SkipTest("Testdatei fehlt")
         cls.tmp = tempfile.TemporaryDirectory()
         t = cls.tmp.name
         cls.ausgabe, cls.agg_ordner, cls.ziel = (os.path.join(t, x) for x in ("aus", "agg", "daten"))
         os.makedirs(cls.ausgabe)
-        cls.res = d.convert(dsds[0][1], cls.ausgabe, "01_Teststrasse", None, False, False, 0, {},
+        cls.res = d.convert(datei, cls.ausgabe, "01_Teststrasse", None, False, False, 0, {},
                             zwischenspeicher.Zwischenspeicher(os.path.join(t, "cache")), False, cls.agg_ordner)
         cls.auswertung = {"standorte": [json.loads(json.dumps(cls.res))]}
         cls.n = daten_bauen.bauen(cls.auswertung, {"standorte": {}}, {"dateien": {}}, cls.agg_ordner, cls.ziel)
@@ -114,18 +116,12 @@ class Gesamt(unittest.TestCase):
         """V85 und Einhaltung je Zeitraum, aus den Stundenzeilen neu gerechnet, stimmen mit teilzeitraeume der YAML ueberein."""
         z = self.stunden()
         limit = self.res["tempolimit_kmh"]
-        # Mit Regenanteil-Abzug duennt dsd2csv.py die Zeitraeume getrennt von der ganzen Datei aus (docs/rauschen.md); dann stimmen die
-        # Zeiten nur ungefaehr (siehe DATEN.md, Abschnitt Grenzen). Ohne Regenabzug sind sie gleich.
-        regen = ((self.res.get("rauschen") or {}).get("regen") or {}).get("abgezogen_fahrzeuge") or 0
         for name in ("nacht", "vormittag", "nachmittag", "abend"):
             v = []
             for r in z:
                 if r["zeitraum"] == name:
                     v += [int(r["kmh"])] * int(r["anzahl"])
             yaml = self.res["teilzeitraeume"][name]
-            if regen:
-                self.assertLess(abs(len(v) - yaml["anzahl_fahrzeuge"]), 0.5 * max(1, yaml["anzahl_fahrzeuge"]), name)
-                continue
             self.assertEqual(len(v), yaml["anzahl_fahrzeuge"], name)
             if not v:
                 continue
@@ -136,11 +132,14 @@ class Gesamt(unittest.TestCase):
                 ok = sum(1 for x in v if x <= limit)
                 self.assertEqual(round(100 * ok / len(v), 2), yaml["einhaltung"]["einhaltungsquote_prozent"], name)
         schulweg = sum(int(r["anzahl"]) for r in z if r["stunde"] == "7" and int(r["wochentag"]) <= 5)
-        if not regen:
-            self.assertEqual(schulweg, self.res["teilzeitraeume"]["schulweg"]["anzahl_fahrzeuge"])
+        self.assertEqual(schulweg, self.res["teilzeitraeume"]["schulweg"]["anzahl_fahrzeuge"])
 
-    def test_ohne_regenabzug_sind_alle_zeitraeume_gleich(self):
-        """Eine Messung ohne Regenanteil-Abzug (kuenstlich: aus den Fahrzeugen der Tests), Aggregat und Teilzeitraeume derselben Rechnung."""
+    def test_die_testdatei_hat_einen_regenabzug(self):
+        """Der Vergleich oben ist nur etwas wert, wo ein Regenanteil abgezogen ist (dort wichen die Zeitraeume frueher ab)."""
+        self.assertGreater(((self.res.get("rauschen") or {}).get("regen") or {}).get("abgezogen_fahrzeuge") or 0, 0)
+
+    def test_zeitraeume_einer_kuenstlichen_messung(self):
+        """Aggregat und Zeitraumlisten derselben Fahrzeuge (hier ohne Abzug)."""
         t = dt.datetime
         veh = [(t(2025, 3, 3 + i // 24, i % 24, i % 60), 25 + i % 30) for i in range(400)]
         teil = {k: [f for f in veh if in_zeitraum(f[0])] for k, (_, in_zeitraum) in d.TEILZEITRAEUME.items()}

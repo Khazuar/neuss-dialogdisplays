@@ -887,7 +887,9 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
         bereinigt = rauschen.ohne_rauschen(bereinigt, modell)
         if modell.get("regen"):  # davon der Regenanteil: Unterschied zum Abzug ohne ihn
             regen_abgezogen = len(rauschen.ohne_rauschen(bereinigt_vorher, dict(modell, regen=None))) - len(bereinigt)
-        teil = {k: rauschen.ohne_rauschen(v, modell) for k, v in teil.items()}
+        # Tageszeiten aus der bereinigten Liste ableiten, nicht je Liste neu ausduennen: Der Regenanteil gilt je Klasse und Geschwindigkeit
+        # fuer die ganze Datei und waere in einer Teilliste ein anderer Abzug (docs/rauschen.md, Verteilung des Regenabzugs auf Stunden)
+        teil = {k: [f for f in bereinigt if in_zeitraum(f[0])] for k, (_, in_zeitraum) in TEILZEITRAEUME.items()}
     res = {
         "standort": standort,
         "datei": name,

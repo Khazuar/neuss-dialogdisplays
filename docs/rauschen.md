@@ -156,8 +156,9 @@ des Modells folgen (b(v) mal Verkehr), in Regenstunden so gut wie in trockenen.
 - **B weicht ab:** Er zieht in Regenstunden zu wenig ab (92 % der Rechnung, Rest +1 Datensatz je Regenstunde) und verteilt auf die
   Tageszeiten anders. Folge: Die Fahrzeugzahl der Zeiträume weicht von der Auswahl und vom Aggregat ab (Nacht im Median 2,3 %, bis 68 %;
   V85 in 21 von 65 Dateien, bis 5 km/h).
-- Konsequenz (Vorschlag): Die Zeiträume aus dem Abzug für die ganze Datei ableiten (Stunden nach A zusammenfassen). Dann stimmen
-  Zeitraumtabelle, Auswahl, Tage, Abschnitte und Aggregat überein. Das ändert die Zeitraumzahlen bei Dateien mit Regenanteil.
+- Konsequenz (umgesetzt, Oktober 2026): Die Zeiträume werden aus der bereinigten Liste für die ganze Datei abgeleitet (`dsd2csv.py`,
+  `rechnen`). Seitdem stimmen Zeitraumtabelle, Auswahl, Tage, Abschnitte und Aggregat überein (alle 424 Zeiträume der 109 Messungen exakt,
+  `test_aggregat.py`). Die Zeitraumzahlen bei Dateien mit Regenanteil haben sich dadurch geändert: Die Tabelle oben und die Zahlen zu B gelten für den Stand davor.
 
 ## Reproduktion
 

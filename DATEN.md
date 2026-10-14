@@ -153,16 +153,12 @@ Für ganze Messungen, Abschnitte und die üblichen Zeiträume ist `kennzahlen.cs
 - **Keine Einzelfahrzeuge.** Zeitlücken zwischen Fahrzeugen, Pulks, minutengenaue Spitzen und die Nächte mit Fahrten ab doppeltem Tempolimit
   (`nacht_ereignisse` in der YAML) sind aus diesen Dateien nicht zu beantworten. Dafür gibt es die rohen CSV-Dateien im Release (mit den
   Einschränkungen oben) und die YAML.
-- **Rauschabzug und Zeiträume.** Wo ein Regenanteil abgezogen ist (`regenanteil_abgezogen` > 0, 65 von 109 Messungen), dünnt `dsd2csv.py` die
-  Zeiträume `nacht` bis `abend` in `kennzahlen.csv` und in den YAML-Dateien getrennt von der ganzen Datei aus. Die Summe der Stundenzeilen eines
-  Zeitraums weicht dann leicht von `kennzahlen.csv` ab (im Median 0,5 % der Fahrzeuge, in Einzelfällen mehr, bei kleinen Nachtzahlen bis 40 %; das V85 in
-  31 von 260 solcher Zeiträume um bis zu 5 km/h). Ganze Messungen, Abschnitte und Tage stimmen mit den Stundenzeilen überein. Ohne Regenanteil stimmen
-  alle Zeiträume exakt. Die Stundenzeilen folgen dem Abzug für die ganze Datei; er trifft die langsamen Fahrten je Stunde besser als der für die
-  Zeiträume ([rauschen.md](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/rauschen.md), Abschnitt „Verteilung des Regenabzugs auf
-  Stunden“). Wer Zeiträume braucht, die zu den Stundenzeilen passen, summiert die Stundenzeilen. Stand: Oktober 2026; eine Vereinheitlichung
-  der Zeitraumtabelle ist vorgeschlagen.
-- **Statistischer Abzug.** Rauschboden und Regenanteil sind Schätzungen. In einzelnen Stunden kann der Abzug zu viel oder zu wenig entfernen;
-  über viele Stunden gleicht es sich aus.
+- **Statistischer Abzug.** Rauschboden und Regenanteil sind Schätzungen. Der Regenanteil gilt je Regenklasse und Geschwindigkeit für die ganze
+  Datei und wird nach den beobachteten Fahrten auf die Stunden verteilt
+  ([rauschen.md](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/rauschen.md), Abschnitt „Verteilung des Regenabzugs auf Stunden“).
+  Einzelne Regenstunden sind deshalb weniger verlässlich als Tage, Zeiträume oder ganze Messungen: Der Abzug kann in einer Stunde zu viel oder
+  zu wenig entfernen, über viele Stunden gleicht es sich aus. Alle Dateien (Stunden, Tage, Zeiträume, Abschnitte, ganze Messung) beruhen auf
+  demselben Abzug und stimmen exakt überein (seit Oktober 2026; vorher wichen die Zeiträume bei Messungen mit Regenanteil ab).
 - **Abschnitte** sind erkannte Brüche mit Wahrscheinlichkeit, keine bestätigten Ereignisse.
 - **Messdauer.** Eine Messung dauert im Median 11 Wochen (die kürzesten 10 % unter 2, die längsten 10 % über 19 Wochen). Aussagen zum
   Jahresverlauf oder zu Zeiten außerhalb des Messzeitraums sind nicht möglich. Messzeiträume über viele Monate oder Jahre entstehen nur bei
