@@ -27,6 +27,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: numpy fuer die Verhaltensgruppen (verhalten.py)
+        run: python -m pip install numpy
       - name: Tests (Zeitumrechnung, Uhr-Auswertung)
         run: python -m unittest -v
       - name: Zwischenspeicher der Ergebnisse je Datei laden
@@ -37,6 +39,8 @@ jobs:
           restore-keys: ergebnisse-
       - name: YAML und Zellen aus den DSD-Dateien erzeugen (ohne CSV je Datei)
         run: python -I dsd2csv.py . -o _site --keine-csv --cache .zwischenspeicher --jobs 4
+      - name: Verhaltensgruppen auf Standort- und Stadtebene
+        run: python -I stadtgruppen.py --auswertung _site/auswertung.json
       - name: Detailseiten der Standorte bauen
         run: python -I seiten_bauen.py --auswertung _site/auswertung.json --ziel _site
       - name: Seiten hinzufuegen

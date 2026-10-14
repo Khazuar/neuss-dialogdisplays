@@ -4,10 +4,12 @@
 """Baut die GitHub-Pages-Seite lokal, damit man sie vor dem Push im Browser ansehen kann.
 
 Dieselben Schritte wie .github/workflows/pages.yml (ohne Tests):
-  1. dsd2csv.py   Auswertungen, Zellen und Zusammenfassungen aus den DSD-Dateien (mit Zwischenspeicher, mehrere Prozesse)
-  2. seiten_bauen.py   Detailseiten der Standorte
-  3. site/*       Uebersichtsseite, Datenschutz, Stylesheet, filter.js und seite.js
-  4. Impressum aus den Umgebungsvariablen IMPRESSUM_STRASSE, IMPRESSUM_ORT, IMPRESSUM_TELEFON (ohne sie bleiben die Felder leer)
+  1. dsd2csv.py   Auswertungen, Zellen und Zusammenfassungen aus den DSD-Dateien (mit Zwischenspeicher, mehrere Prozesse;
+                  die Verhaltensgruppen je Abschnitt nur mit numpy, siehe verhalten.py)
+  2. stadtgruppen.py   Verhaltensgruppen auf Standort- und Stadtebene (verhaltensgruppen.json)
+  3. seiten_bauen.py   Detailseiten der Standorte und Uebersicht der Verhaltensgruppen
+  4. site/*       Uebersichtsseite, Datenschutz, Stylesheet, filter.js und seite.js
+  5. Impressum aus den Umgebungsvariablen IMPRESSUM_STRASSE, IMPRESSUM_ORT, IMPRESSUM_TELEFON (ohne sie bleiben die Felder leer)
 
 Aufruf:
   python3 -I lokal_bauen.py                  baut nach _vorschau/ und nennt die Adresse der Startseite
@@ -36,7 +38,9 @@ def befehle(eingabe, ziel, cache, jobs):
     auswerten = py + [os.path.join(HIER, "dsd2csv.py"), eingabe, "-o", ziel, "--keine-csv", "--jobs", str(jobs)]
     if cache:
         auswerten += ["--cache", cache]
-    return [auswerten, py + [os.path.join(HIER, "seiten_bauen.py"), "--auswertung", os.path.join(ziel, "auswertung.json"), "--ziel", ziel]]
+    auswertung = os.path.join(ziel, "auswertung.json")
+    return [auswerten, py + [os.path.join(HIER, "stadtgruppen.py"), "--auswertung", auswertung],
+            py + [os.path.join(HIER, "seiten_bauen.py"), "--auswertung", auswertung, "--ziel", ziel]]
 
 
 def bauen(eingabe, ziel, cache, jobs, ausgabe=sys.stderr):

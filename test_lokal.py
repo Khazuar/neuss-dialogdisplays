@@ -17,14 +17,16 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 class Befehle(unittest.TestCase):
     def test_befehle(self):
         b = lb.befehle("eingabe", "ziel", "cache", 3)
-        self.assertEqual(len(b), 2)
+        self.assertEqual(len(b), 3)
         self.assertIn("-I", b[0])
         self.assertIn("--keine-csv", b[0])
         self.assertEqual(b[0][b[0].index("--jobs") + 1], "3")
         self.assertEqual(b[0][b[0].index("--cache") + 1], "cache")
         self.assertNotIn("--cache", lb.befehle("e", "z", None, 1)[0])
-        self.assertTrue(b[1][-3].endswith("seiten_bauen.py") or any(x.endswith("seiten_bauen.py") for x in b[1]))
-        self.assertIn(os.path.join("ziel", "auswertung.json"), b[1])
+        self.assertTrue(any(x.endswith("stadtgruppen.py") for x in b[1]))  # nach der Auswertung, vor den Seiten
+        self.assertTrue(any(x.endswith("seiten_bauen.py") for x in b[2]))
+        for x in b[1:]:
+            self.assertIn(os.path.join("ziel", "auswertung.json"), x)
 
 
 class Bauen(unittest.TestCase):

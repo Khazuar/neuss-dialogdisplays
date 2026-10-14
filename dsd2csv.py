@@ -69,6 +69,7 @@ import bruch  # noqa: E402
 import kalender  # noqa: E402
 import gruppen  # noqa: E402
 import rauschen  # noqa: E402
+import verhalten  # noqa: E402  (numpy nur dort, optional)
 import zwischenspeicher  # noqa: E402
 
 MAGIC = b"004DSD"
@@ -249,6 +250,8 @@ def yaml_zeilen(obj, einzug=0):
             zeilen.append(f"{pad}{k}: []")
         elif isinstance(x, list) and all(isinstance(i, int) and not isinstance(i, bool) for i in x):
             zeilen.append(f"{pad}{k}: [{', '.join(str(i) for i in x)}]")  # Zahlenlisten (Histogramm) in einer Zeile
+        elif isinstance(x, list) and k in ("profil", "tagesgang", "cv_gewinn") and all(i is None or isinstance(i, (int, float)) for i in x):
+            zeilen.append(f"{pad}{k}: [{', '.join(yaml_skalar(i) for i in x)}]")  # Verhaltensgruppen: Profile und Tagesgang
         elif isinstance(x, list):
             zeilen.append(f"{pad}{k}:")
             for item in x:
@@ -850,12 +853,14 @@ def rauschen_block(rb, abgezogen, roh=0, regen_abgezogen=0):
     return b
 
 
-CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", "bruch.py", "kalender.py", os.path.join("belege", "wetter.json"), os.path.join("belege", "standorte.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
+CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", "bruch.py", "kalender.py", "verhalten.py", os.path.join("belege", "wetter.json"),
+                os.path.join("belege", "standorte.json"), os.path.join("belege", "verhaltensgruppen-register.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
 
 
 def _code_hash(dateien=CODE_DATEIEN):
     hier = os.path.dirname(os.path.abspath(__file__))
-    return zwischenspeicher.code_hash(*[os.path.join(hier, f) for f in dateien])
+    vorhanden = [os.path.join(hier, f) for f in dateien if os.path.exists(os.path.join(hier, f))]
+    return zwischenspeicher.code_hash(*vorhanden) + ("n" if dateien == CODE_DATEIEN and verhalten.verfuegbar() else "")  # mit numpy mehr
 
 
 def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher=None):
@@ -915,7 +920,27 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
                                                                belegt, rb, speicher)
     if daten and daten_abschnitte:  # Zellen je Abschnitt fuer die Auswahl auf der Detailseite
         daten["abschnitte"] = daten_abschnitte
+    # Verhaltensgruppen je Abschnitt (docs/verhalten.md): alle Fahrzeuge mit nutzbarer Zeit, der Rauschboden ist dort eine eigene Gruppe
+    grenzen = [dt.date.fromisoformat(b["datum"]) for b in br["brueche"]] if br.get("geprueft") else []
+    res["verhalten"], vz = verhalten_auswerten(bereinigt_vorher, spannen, grenzen, lim, ort, speicher)
+    if daten:
+        for d in daten.get("abschnitte") or [daten]:
+            if vz.get(d.get("nr", 1)):
+                d["verhalten"] = vz[d.get("nr", 1)]
     return res, daten
+
+
+ORT_NEUSS = (51.2042, 6.6879)  # Stadtmitte; fuer Messstellen ohne geschaetzten Standort
+
+
+def verhalten_auswerten(fahrzeuge, spannen, grenzen, lim, ort, speicher):
+    """(YAML-Block 'verhalten', Zellendaten je Abschnitt) aus verhalten.py; ohne numpy oder Wetterdaten nur der Grund."""
+    if not verhalten.verfuegbar():
+        return {"geprueft": False, "grund": "numpy nicht installiert"}, {}
+    regen = regenfunktion(ort=ort or ORT_NEUSS)
+    if regen is None:
+        return {"geprueft": False, "grund": "keine Wetterdaten (belege/wetter.json)"}, {}
+    return verhalten.auswerten(fahrzeuge, spannen, grenzen, lim, ort or ORT_NEUSS, regen, _wetter(WETTER)["tage"], utc_versatz_h, speicher)
 
 
 def kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz):

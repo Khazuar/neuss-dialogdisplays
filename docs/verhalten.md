@@ -1,7 +1,8 @@
 # Verhaltensgruppen (Forschungsstand)
 
-> Exploration, nicht Teil der Auswertung auf den Seiten. Eigene Berechnung, ohne Gewähr. Alle Zahlen stammen aus den Skripten in
-> `tools/verhalten/` (numpy nötig) und lassen sich damit nachrechnen.
+> Eigene Berechnung, ohne Gewähr. Die Gruppen stehen auf den Seiten, fließen aber in keine Kennzahl ein. Die Abschnitte
+> „Frage“ bis „Was daraus folgt“ beschreiben die Forschungsauswertung mit den Skripten in `tools/verhalten/`; die Auswertung auf
+> den Seiten (`verhalten.py`, `stadtgruppen.py`) beschreibt der Abschnitt [In der Auswertung](#in-der-auswertung). Beide brauchen numpy.
 
 ## Frage
 
@@ -111,23 +112,104 @@ zusätzlichen Datensätze je Regenstunde 0,78), die Höhe unterscheidet sich abe
 grob: Die Grundrate der Gruppe enthält Regenstunden, und ihr Profil reicht über die Obergrenze des Abzugs hinaus. Bevor die Gruppe den Abzug
 ergänzt oder ersetzt, muss dieser Unterschied geklärt sein.
 
-## Auf den Seiten
+## In der Auswertung
 
-Der Reiter **Gruppen** jeder Standortseite zeigt die Verhaltensgruppen je Abschnitt aus dem Modell mit Verkehrsdichte
-(`belege/verhaltensgruppen.json`, erzeugt von `belege.py`; die Seiten brauchen kein numpy): Profil, Anteil, Stabilität, die deutlichsten
-Unterschiede zur Hauptgruppe am Ort, die ähnlichste Gruppe gleicher Art in den Nachbarabschnitten und in den anderen Messungen am Standort
-(Profil als Kosinus, Verhalten als Korrelation der Effekte), die Zahl der Standorte mit dieser Gruppenart und eine Deutung. Darunter steht die
-stadtweite Übersicht: je Art die Effekte, die über alle Abschnitte deutlich von 1 verschieden **und** deutlich stärker als im Placebo-Durchgang
-(ebenfalls mit Verkehrsdichte) sind. Mit Verkehrsdichte sind das:
+Seit Oktober 2026 rechnet die Auswertung selbst die Verhaltensgruppen (`verhalten.py` in `dsd2csv.py`, `stadtgruppen.py` danach); die
+Seiten zeigen sie statt der Formgruppen ([gruppen.md](gruppen.md)). Die Zahlen hier stammen aus `verhaltensgruppen.json` dieses Laufs
+und ändern sich mit neuen Daten.
 
-| Art | Standorte | Gesichert |
-|---|---|---|
-| sehr langsam (unter 12 km/h) | 40 | Regen 0,1–0,5 mm ×5,6, 0,5–2 mm ×17, ab 2 mm ×43, nach Regen ×1,9; bei 2,7-mal so viel Verkehr ×0,26 |
-| langsam (12–28 km/h) | 7 | Schulferien ×0,67 |
-| etwas langsamer als die Hauptgruppe | 11 | bei 2,7-mal so viel Verkehr ×0,54 |
-| schneller als die Hauptgruppe | 45 | Dämmerung ×0,91, Schnee ×0,73 |
+**Unterschiede zur Forschungsauswertung.** Das Modell ist dasselbe (mit Verkehrsmenge), aber
 
-Die Verkehrsdichte ist im Placebo nicht verschoben; für sie gilt nur der 95-%-Bereich. Die Gruppen fließen in keine Kennzahl ein.
+- die Abschnitte kommen aus der Bruchsuche der Auswertung ([abschnitte.md](abschnitte.md), nach Abzug des Rauschbodens gesucht; die
+  Forschungsskripte suchten vor dem Abzug),
+- die Zahl der Gruppen wächst schrittweise: eine weitere Gruppe nur, wenn sie die Vorhersage ungesehener Wochen um mindestens
+  0,002 nats je Fahrt verbessert (vorher: alle Zahlen bis 5 gerechnet, die kleinste nahe der besten gewählt),
+- die Anpassung endet, sobald sich die Likelihood kaum noch ändert (relativ unter 10⁻⁵), statt nach fester Schrittzahl,
+- die Merkmale (nicht Stunde × Tagtyp) sind schwach zu null geschrumpft (Ridge 1, etwa ein Vorwissen „Faktor zwischen e⁻² und e²“).
+  Ohne diese Schrumpfung überschätzen kleine Gruppen mit wenigen Regenstunden ihren Regeneffekt so stark, dass die Vorhersage
+  ungesehener Wochen zusammenbricht. Ein Vergleichslauf mit der alten, sehr schwachen Schrumpfung (0,01) ergab dasselbe Bild (81 von
+  119 Abschnitten mit mehreren Gruppen, dieselben gesicherten Effekte) bei dreifacher Rechenzeit.
+
+Die Faktoren der sehr langsamen Gruppe fallen dadurch kleiner aus als in der Forschungsauswertung (Regen ab 2 mm ×19 statt ×43), die
+Richtungen bleiben. Zwei Befunde der Forschungsauswertung bestätigt die Auswertung je Abschnitt bisher nicht: den Ferieneffekt der
+langsamen Gruppe und den Schneeeffekt der schnellen Gruppe (×0,78, 95-%-Bereich 0,70–0,88, aber nicht deutlich genug gegen das Placebo).
+
+**Rechenzeit und Zwischenspeicher.** Jeder Abschnitt wird einzeln gerechnet und im Zwischenspeicher abgelegt: Ebene „verhalten“ (Modell
+und Placebo; Schlüssel: Inhalt der Stundentabelle des Abschnitts, Tempolimit, `verhalten.py`) und Ebene „vorlagen“ (zusätzlich die
+Vorlagen aus dem Register). Ändert sich die Bruchsuche an anderer Stelle der Messreihe oder kommen neue Dateien hinzu, rechnet nur, was
+sich geändert hat. Lokal (8 Prozesse) dauert ein Lauf ohne Zwischenspeicher knapp 5 Minuten, mit vollem Zwischenspeicher 7 Sekunden.
+Ändert sich `verhalten.py`, rechnet alles neu.
+
+### Drei Ebenen und ihre Namen
+
+- **A-Gruppen** (Abschnitt): das Ergebnis des Modells, benannt `A2·3` (Abschnitt 2, Gruppe 3 nach Tempo geordnet), seitenübergreifend
+  mit der Messung davor (`m-…/A2·3`). Diese Namen sind nicht stabil: Neue Daten können Abschnitte und Gruppen verschieben.
+- **MS-Gruppen** (Messstelle, eine Standortseite mit allen Messungen und Fahrtrichtungen): A-Gruppen derselben Seite aus verschiedenen
+  Abschnitten oder Messungen, die sich entsprechen: gleiche Art, Profil-Kosinus mindestens 0,9 und Korrelation des Verhaltens
+  (z-Werte der Unterschiede zur Hauptgruppe) mindestens 0,5. Name `MS-<Seite>-<Buchstabe der Stadtgruppe><Nummer>`, `x` statt des
+  Buchstabens, wenn die Stadtgruppe nicht gefunden ist. Mit diesen strengen Schwellen gibt es 6 MS-Gruppen an 5 Standorten (5 sehr
+  langsam, 1 schnell).
+- **S-Gruppen** (Stadt): je Art alle belastbaren A-Gruppen (Anteil ab 2 %, Profil zwischen geraden und ungeraden Wochen stabil). Ihr
+  Verhalten ist die Metaanalyse der Unterschiede zur Hauptgruppe am selben Ort, verglichen mit dem Placebo. **Gefunden** heißt: an
+  mindestens 3 Standorten und mindestens ein gesicherter Effekt, der im Placebo geprüft ist (die Verkehrsmenge zählt dafür nicht, sie ist im
+  Placebo nicht verschoben).
+
+Die IDs der Stadtgruppen stehen im **Register** `belege/verhaltensgruppen-register.json` und werden nie wiederverwendet: Buchstabe der
+Tempolage bei der Aufnahme (R sehr langsam, L langsam, M nahe der Hauptgruppe, F schneller) und eine laufende Nummer. Eine Art ohne
+Eintrag bekommt mit `stadtgruppen.py --register-schreiben` eine neue ID; eine stillgelegte ID bleibt im Register und wird nicht neu
+vergeben. Das Register enthält außerdem die von Hand gepflegte **Deutung** mit Stufe (Hypothese, gestützt, tragfähig), Kriterien und
+Belegen. Ab „tragfähig“ ersetzt die Deutung den Namen in der Anzeige („Regenphantome (S-R1)“), sonst steht sie daneben
+(„S-F1 (Hypothese: Freie Fahrt)“).
+
+**Beziehungen** stehen neben dem Namen, nicht in ihm: „A2·1 – assoziiert mit MS-…-R1, korreliert mit S-R1 (77 %)“. Assoziiert heißt:
+Mitglied der MS-Gruppe; korreliert nennt die Korrelation des Verhaltens mit dem der Stadtgruppe. Im Median korrelieren die sehr
+langsamen Gruppen mit S-R1 zu 0,77, die schnellen mit S-F1 nur zu 0,18: S-F1 hat kaum ausgeprägtes Verhalten, die Korrelation ist dort
+wenig aussagekräftig.
+
+### Ergebnis
+
+143 Abschnitte, 119 mit Modell (mindestens 14 Tage und 5.000 Fahrten in Stunden mit Wetterdaten), davon 81 mit mehr als einer Gruppe;
+im Placebo 53.
+
+| Stadtgruppe | Gruppen (Standorte) | Placebo | Modus, Anteil (Median) | Gesichert |
+| --- | --- | --- | --- | --- |
+| Regenphantome (S-R1), tragfähig | 60 (43) | 26 | 9 km/h, 10 % | Regen 0,1–0,5 mm ×3,3, 0,5–2 mm ×8,2, ab 2 mm ×19; Dunkelheit ×0,82; 10 Grad wärmer ×0,79; bei 2,7-mal so viel Verkehr ×0,29 (ohne Placebo-Vergleich) |
+| S-F1 (Hypothese: Freie Fahrt) | 57 (39) | 36 | 39 km/h, 25 % | Dämmerung ×0,91; Verkehrsmenge ohne Einfluss (×1,02, 0,92–1,12) |
+| S-M1 (ohne Deutung), nicht gefunden | 12 (12) | 12 | 42 km/h, 32 % | nur Verkehrsmenge ×0,60 (ohne Placebo-Vergleich) |
+| S-L1 (Hypothese: Radfahrende), nicht gefunden | 8 (8) | 3 | 23 km/h, 31 % | nichts |
+
+### Stadt-Vorlagen für Abschnitte ohne eigene Gruppe
+
+Abschnitte, die eine Stadtgruppe nicht selbst als Gruppe haben, werden mit ihrem Profil geprüft (*partielles Poolen*): Die Form kommt
+aus dem Register (sehr langsam in absoluten km/h, sonst relativ zum häufigsten Tempo des Abschnitts ab 12 km/h), Menge und Verhalten
+schätzt der Abschnitt selbst. Die Vorlage gilt als **lokal nachgewiesen**, wenn sie die Vorhersage ungesehener Wochen um mindestens
+0,002 nats je Fahrt verbessert und mindestens 2 % ausmacht. Mehrere Vorlagen werden nacheinander aufgenommen (die mit dem größten
+Gewinn zuerst, die übrigen gegen das erweiterte Modell geprüft); sonst „gewinnt“ jede Vorlage, nur weil sie aufnimmt, was eine andere,
+fehlende Gruppe erklären würde. Das geht auch in kürzeren Abschnitten (ab 7 Tagen und 1.000 Fahrten). Noch kürzere Abschnitte bekommen nur die
+**Erwartung** nach der Stadtebene (Anteil im Median und Spanne der mittleren Hälfte), ausdrücklich keine Messung.
+
+| Vorlage | geprüft | lokal nachgewiesen | nur erwartet |
+| --- | --- | --- | --- |
+| Regenphantome (S-R1) | 71 | 3 | 14 |
+| S-F1 | 74 | 27 | 14 |
+| S-M1 (nicht gefunden, nur zum Vergleich) | 117 | 9 | – |
+| S-L1 (nicht gefunden, nur zum Vergleich) | 121 | 12 | – |
+
+Von den 24 Abschnitten ohne eigenes Modell hat die Prüfung in 8 eine Stadtgruppe lokal nachgewiesen. Die Vorlagen nicht gefundener
+Stadtgruppen zeigen, wie oft eine Vorlage ohne eigenes Verhalten „trägt“ (8–10 %); bei S-F1 sind es 36 %. Einen Placebo-Durchgang für die
+Vorlagen gibt es noch nicht; „lokal nachgewiesen“ ist deshalb schwächer als eine eigene Gruppe.
+
+### Auf den Seiten
+
+- **Reiter „Analyse“:** Die Auswahl „Gruppe“ zeigt die Verhaltensgruppen des gewählten Abschnitts (bei mehreren Abschnitten erst nach
+  Wahl eines Abschnitts). Für eine Auswahl aus Tageszeit und Tagen ist eine Gruppe die Summe der erwarteten Fahrten des Modells in den
+  gewählten Stunden mal ihr Profil; grau stehen alle aufgezeichneten Fahrten (das Modell enthält auch den Rauschboden). Stunden ohne
+  Wetterdaten fehlen im Modell.
+- **Reiter „Gruppen“:** je Abschnitt die A-Gruppen mit Art oder Deutung, Profil, Anteil, Stabilität, den deutlichsten Unterschieden zur
+  Hauptgruppe und den Beziehungen; darunter die Stadtgruppen, die der Abschnitt nicht selbst hat (lokal nachgewiesen, nicht nachweisbar
+  oder nur erwartet), und einmal je Seite die MS-Gruppen des Standorts.
+- **Übersicht** `verhaltensgruppen.html`: alle Stadtgruppen mit Deutung, Stufe, Kriterien, Belegen, Verhalten mit Placebo und
+  Fundstellen; die Startseite nennt die gefundenen.
 
 ## Was daraus folgt
 
@@ -161,7 +243,15 @@ NUMPY_PFAD=... VERHALTEN_DICHTE=1 python3 -I tools/verhalten/modell.py --jobs 8 
 NUMPY_PFAD=... python3 -I tools/verhalten/stadtweit.py modell_dichte.json
 NUMPY_PFAD=... python3 -I tools/verhalten/rauschboden.py                           # Vergleich mit rauschen.py
 NUMPY_PFAD=... VERHALTEN_DICHTE=1 VERHALTEN_PLACEBO=1 python3 -I tools/verhalten/modell.py --jobs 8
-NUMPY_PFAD=... python3 -I tools/verhalten/belege.py                               # -> belege/verhaltensgruppen.json (für die Seiten)
 ```
 
 Zwischenergebnisse liegen in `_verhalten/` (nicht im Repository).
+
+Die Auswertung auf den Seiten (Abschnitt [In der Auswertung](#in-der-auswertung)):
+
+```sh
+NUMPY_PFAD=... python3 -I lokal_bauen.py --jobs 8                     # dsd2csv.py (mit verhalten.py), stadtgruppen.py, seiten_bauen.py
+python3 -I stadtgruppen.py --auswertung _vorschau/auswertung.json --register-schreiben   # Vorlagen und Verhalten ins Register
+```
+
+Tests: `test_verhalten.py` (Modell an künstlichen Daten, Vorlagen, Zwischenspeicher, Namen und Register), `test_filter.py`, `test_seiten.py`.

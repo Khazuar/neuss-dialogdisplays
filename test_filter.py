@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT
-"""Tests fuer site/filter.js (Auswahl nach Zeit, Tagen und Gruppe) mit Node.  Ohne Node werden sie uebersprungen."""
+"""Tests fuer site/filter.js (Auswahl nach Zeit, Tagen und Verhaltensgruppe) mit Node.  Ohne Node werden sie uebersprungen."""
+import copy
 import json
-import math
-import re
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -33,8 +33,8 @@ const auswahlen = JSON.parse(process.argv[4]);
 const aus = auswahlen.map(a => {
   const r = f.waehle(daten, a.zeit, a.tage, a.gruppe === "rausch");
   const kz = f.kennzahlen(r.hist, daten.limit);
-  const modell = /^g\d+$/.test(a.gruppe) || a.gruppe === "rest" ? f.zerlege(daten, r.hist, a.fest === true, a.optionen) : null;
-  return { hist: r.hist, stunden: r.stunden, kz: kz, html: f.ergebnisHtml(daten, a), modell: modell };
+  const vg = /^v\d+$/.test(a.gruppe) ? f.verhaltensgruppe(daten, a.zeit, a.tage, parseInt(a.gruppe.slice(1), 10)) : null;
+  return { hist: r.hist, stunden: r.stunden, kz: kz, html: f.ergebnisHtml(daten, a), vg: vg };
 });
 console.log(JSON.stringify(aus));
 """
@@ -65,15 +65,20 @@ def zelle_hist(daten, quelle, tage, stunden):
     return h, std
 
 
-def kurvenform(x, w0):
-    """Anteil je km/h einer Gruppe ab w0 (Summe 1), wie site/filter.js: die Kurven der Gruppe, je auf 1 normiert, mal ihr Gewicht."""
-    summe = {v: 0.0 for v in range(w0, gruppen.VMAX_GRUPPEN + 1)}
-    for k in x["kurven"]:
-        p = {v: math.exp(-0.5 * ((math.log(v) - k["mu"]) / k["s"]) ** 2) / (k["s"] * v) for v in summe}
-        s = sum(p.values())
-        for v, q in p.items():
-            summe[v] += k["c"] * q / s
-    return summe
+def mit_verhalten(daten):
+    """Zwei Verhaltensgruppen wie aus verhalten.py: Profile in 2-km/h-Klassen und erwartete Fahrzeuge je Zelle (Gruppe 1 nachts mehr)."""
+    d = copy.deepcopy(daten)
+    langsam, schnell = [0.0] * 46, [0.0] * 46
+    langsam[3], langsam[4] = 0.5, 0.5  # 6-10 km/h
+    schnell[14], schnell[15], schnell[45] = 0.6, 0.3, 0.1  # 28-32 km/h, ein Rest ab 90
+    raten = {}
+    for key, zelle in d["z"].items():
+        n = sum(zelle[1::2])
+        h = int(key.split("|")[1])
+        raten[key] = [round(0.3 * n if h < 6 else 0.05 * n, 2), round(0.9 * n, 2)]
+    d["verhalten"] = {"profile": [langsam, schnell], "klassen": ["rauschen", "haupt"], "raten": raten,
+                      "namen": ["A1·1 – Regenphantome (S-R1)", "A1·2 – Hauptgruppe"]}
+    return d
 
 
 @unittest.skipUnless(NODE, "Node ist nicht installiert")
@@ -106,59 +111,44 @@ class FilterJs(unittest.TestCase):
             self.assertEqual({int(k): v for k, v in r["hist"].items()}, h)
             self.assertEqual(r["stunden"], std)
 
-    def test_gruppen_sind_kurven_und_rest_ist_der_unterschied(self):
-        (g1, g2, rest) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1", "fest": True},
-                                            {"zeit": "alle", "tage": "alle", "gruppe": "g2", "fest": True},
-                                            {"zeit": "alle", "tage": "alle", "gruppe": "rest", "fest": True}])
-        m = g1["modell"]
-        n = sum(g1["hist"].values())
-        self.assertAlmostEqual(sum(m["pi"]), 1.0, places=6)
-        self.assertAlmostEqual(m["nfit"], n, delta=0.5)  # nichts liegt unter der Anpassungsgrenze
-        w0 = self.daten["w0"]
-        for j, x in enumerate(self.daten["gruppen"]):  # die Kurve einer Gruppe: Zahl der Fahrzeuge mal Anteil mal Form
-            p = kurvenform(x, w0)
-            for v in (20, 30, 45):
-                self.assertAlmostEqual(m["gruppen"][j][str(v)], m["nfit"] * m["pi"][j] * p[v], delta=1e-6 * n)
-            self.assertAlmostEqual(m["pi"][j], x["pi"], delta=0.01)  # ganztaegig stimmt die Schaetzung mit der Anpassung ueberein
-        ges = {int(v): c for v, c in g1["hist"].items()}
-        mod = m["gruppen"]
-        for v, c in ges.items():  # Kurven plus Rest decken die Daten ab; der Rest ist nie negativ
-            r = m["rest"].get(str(v), 0.0)
-            self.assertGreaterEqual(r, 0.0)
-            self.assertGreaterEqual(sum(h.get(str(v), 0.0) for h in mod) + r + 1e-6, c)
-        self.assertLess(sum(m["rest"].values()) / n, 0.08)
-        self.assertEqual(rest["modell"]["rest"], m["rest"])
-        mittel = [sum(int(v) * c for v, c in h.items()) / sum(h.values()) for h in mod]  # die Kurven der beiden Gruppen
-        self.assertGreater(mittel[0], 35)  # Gruppe 1 ist die groesste (hier die schnelle) Gruppe
-        self.assertLess(mittel[1], 22)
-        self.assertGreater(m["pi"][0], m["pi"][1])
-        self.assertAlmostEqual(sum(sum(h.values()) for h in mod), n, delta=0.5)
-        self.assertEqual(g1["modell"]["pi"], g2["modell"]["pi"])  # beide Gruppen derselben Auswahl: dieselbe Zerlegung
+    def test_verhaltensgruppe_ist_summe_der_raten_mal_profil(self):
+        daten = mit_verhalten(self.daten)
+        (nacht, tag) = laufe(daten, [{"zeit": "nacht", "tage": "werktag", "gruppe": "v1"}, {"zeit": "nachmittag", "tage": "alle", "gruppe": "v1"}])
+        for r, tage, stunden in ((nacht, range(5), [22, 23, 0, 1, 2, 3, 4, 5]), (tag, range(8), range(12, 19))):
+            n = sum(daten["verhalten"]["raten"].get(f"{t}|{h}", [0, 0])[0] for t in tage for h in stunden)
+            self.assertAlmostEqual(r["vg"]["n"], n, places=6)
+            hist = {int(k): v for k, v in r["vg"]["hist"].items()}
+            self.assertEqual(sorted(hist), [6, 7, 8, 9])  # 2-km/h-Klassen je zur Haelfte auf ihre beiden Werte
+            self.assertAlmostEqual(hist[6], n * 0.25, places=6)
+            self.assertAlmostEqual(sum(hist.values()), n, places=6)
+        (h,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "v2"}])
+        self.assertIn(91, {int(k) for k in h["vg"]["hist"]})  # die letzte Klasse (ab 90) liegt bei 91
 
-    def test_kurve_wird_links_vom_rand_gestrichelt_fortgesetzt(self):
-        """Links vom Rand der Anpassung (v < w0) setzt sich die Kurve gestrichelt fort, mit derselben Normierung wie im erfassten Bereich."""
-        (g2,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2", "fest": True}])
-        w0 = self.daten["w0"]
-        self.assertGreater(w0, 1)
-        self.assertIn("hist-modell-links", g2["html"])
-        self.assertIn("Gestrichelt: Fortsetzung der Kurve links von", g2["html"])
-        m = g2["modell"]
-        self.assertEqual(m["w0"], w0)
-        gr = self.daten["gruppen"][1]
-        # Python-Rechnung: Anteil je km/h, normiert auf die Summe ueber den erfassten Bereich (v >= w0)
-        for v in range(1, w0):
-            erwartet = 0.0
-            for k in gr["kurven"]:
-                dichte = lambda x: math.exp(-0.5 * ((math.log(x) - k["mu"]) / k["s"]) ** 2) / (k["s"] * x)
-                z = sum(dichte(x) for x in range(w0, gruppen.VMAX_GRUPPEN + 1))
-                erwartet += k["c"] * dichte(v) / z
-            self.assertAlmostEqual(m["links"][1][str(v)], m["nfit"] * m["pi"][1] * erwartet, delta=1e-6 * m["nfit"])
-        (alle,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
-        self.assertNotIn("hist-modell-links", alle["html"])  # ohne Gruppe keine Kurve
+    def test_ausgabe_html(self):
+        daten = mit_verhalten(self.daten)
+        (alle,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
+        self.assertIn("<table>", alle["html"])
+        self.assertIn('<svg class="hist"', alle["html"])
+        self.assertIn("hist-limit", alle["html"])
+        self.assertIn("Klassenbreite", alle["html"])
+        self.assertNotIn("hist-grau", alle["html"])  # ohne Gruppe keine ausgegrauten Saeulen
+        self.assertNotIn("hist-modell", alle["html"])
+        (v2,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "v2"}])
+        self.assertIn("hist-grau", v2["html"])  # alle Fahrten bleiben grau sichtbar
+        self.assertIn("hist-ok", v2["html"])  # der Teil der Gruppe ist farbig
+        self.assertIn("hist-modell", v2["html"])  # und die Gruppe liegt als Linie darueber
+        self.assertIn("Anteil an allen", v2["html"])
+        self.assertIn("A1·2 – Hauptgruppe", v2["html"])
+        self.assertIn("Schätzung", v2["html"])
+        self.assertIn("V85", v2["html"])
+        (klein,) = laufe(daten, [{"zeit": "schulweg", "tage": "samstag", "gruppe": "v2"}])
+        self.assertIn("<table>", klein["html"])
+        self.assertIn("Wenige Fahrzeuge", klein["html"])  # Anteile bei kleinen Auswahlen sind unsicher
+        (ohne,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "v1"}])
+        self.assertIn("keine Verhaltensgruppen", ohne["html"])
 
-    def test_rauschboden_wie_eine_gruppe(self):
+    def test_rauschboden(self):
         """Der Rauschboden zeigt alle aufgezeichneten Fahrten grau und nur den herausgerechneten Rauschboden farbig."""
-        import copy
         daten = copy.deepcopy(self.daten)
         daten["r"] = {"0|8": [3, 400, 4, 300, 5, 200, 6, 100], "1|9": [3, 150, 4, 100]}
         (r,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "rausch"}])
@@ -176,134 +166,10 @@ class FilterJs(unittest.TestCase):
         (leer,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "rausch"}])  # ohne abgezogenen Rauschboden
         self.assertIn("kein Rauschboden", leer["html"])
 
-    def test_gruppe_aus_mehreren_kurven(self):
-        """Besteht eine Gruppe aus zwei Kurven, ist ihre Form die gewichtete Summe der beiden (auf je 1 normiert)."""
-        import copy
-        daten = copy.deepcopy(self.daten)
-        k = daten["gruppen"][1]["kurven"][0]
-        daten["gruppen"][1]["kurven"] = [{"mu": k["mu"] - 0.08, "s": k["s"] * 0.8, "c": 0.4}, {"mu": k["mu"] + 0.05, "s": k["s"], "c": 0.6}]
-        (g2,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2", "fest": True}])
-        m = g2["modell"]
-        w0, n = daten["w0"], sum(g2["hist"].values())
-        p = kurvenform(daten["gruppen"][1], w0)
-        self.assertAlmostEqual(sum(p.values()), 1.0, places=9)
-        for v in (20, 30, 40, 50):
-            self.assertAlmostEqual(m["gruppen"][1][str(v)], m["nfit"] * m["pi"][1] * p[v], delta=1e-6 * n)
-        self.assertAlmostEqual(sum(m["pi"]), 1.0, places=6)
-
-    def nacht_schneller(self):
-        """Testdaten, in denen das Tempo nachts (22 bis 6 Uhr) um 12 % hoeher ist."""
-        import copy
-        daten = copy.deepcopy(self.daten)
-        for key, zelle in daten["z"].items():
-            if int(key.split("|")[1]) in (22, 23, 0, 1, 2, 3, 4, 5):
-                neu = {}
-                for i in range(0, len(zelle), 2):
-                    v = int(round(zelle[i] * 1.12))
-                    neu[v] = neu.get(v, 0) + zelle[i + 1]
-                daten["z"][key] = [x for v in sorted(neu) for x in (v, neu[v])]
-        return daten
-
-    def test_nachpassen_folgt_den_daten_der_auswahl(self):
-        """Ist das Tempo einer Auswahl (hier nachts) um 12 % hoeher, wandern die Kurven mit; feste Kurven bleiben, wo sie sind."""
-        daten = self.nacht_schneller()
-        ausw = {"zeit": "nacht", "tage": "alle", "gruppe": "g1"}
-        (fest,) = laufe(daten, [dict(ausw, fest=True)])
-        (frei,) = laufe(daten, [ausw])
-        mittel = lambda gruppe: sum(int(v) * c for v, c in gruppe.items()) / sum(gruppe.values())  # noqa: E731
-        i_haupt = max(range(len(daten["gruppen"])), key=lambda i: daten["gruppen"][i]["pi"])
-        m_fest = mittel(fest["modell"]["gruppen"][i_haupt])
-        m_frei = mittel(frei["modell"]["gruppen"][i_haupt])
-        self.assertTrue(frei["modell"]["nachgepasst"])
-        self.assertFalse(fest["modell"]["nachgepasst"])
-        self.assertGreater(m_frei, m_fest * 1.05)  # die nachgepasste Kurve laeuft mit dem hoeheren Tempo der Nacht
-        self.assertLess(m_frei, m_fest * 1.2)
-        self.assertIn("für diese Auswahl nachgepasst", frei["html"])
-        # ganztaegig haben die Daten nur zu einem Teil das hoehere Tempo: die Kennwerte liegen dazwischen
-        (alle,) = laufe(daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1"}])
-        self.assertLess(mittel(alle["modell"]["gruppen"][i_haupt]), m_frei)
-
-    def test_rueckbindung_haelt_die_kurven_bei_der_globalen_anpassung(self):
-        """kappa sehr gross: Lage und Breite der Kurven bleiben die globalen; kappa 0: sie folgen den Daten (hier 12 % = 0,113 in ln v)."""
-        daten = self.nacht_schneller()
-        ausw = {"zeit": "nacht", "tage": "alle", "gruppe": "g1"}
-        (stark,) = laufe(daten, [dict(ausw, optionen={"kappa": 1e12})])
-        (frei,) = laufe(daten, [dict(ausw, optionen={"kappa": 0})])
-        (mittel,) = laufe(daten, [dict(ausw, optionen={"kappa": 500})])
-        i_haupt = max(range(len(daten["gruppen"])), key=lambda i: daten["gruppen"][i]["pi"])
-        glob = daten["gruppen"][i_haupt]["kurven"]
-        for r, name in ((stark, "stark"), (frei, "frei"), (mittel, "mittel")):
-            self.assertEqual([len(x["kurven"]) for x in r["modell"]["kurven"]], [len(x["kurven"]) for x in daten["gruppen"]], name)
-        for k, g_ in zip(stark["modell"]["kurven"][i_haupt]["kurven"], glob):
-            self.assertAlmostEqual(k["mu"], g_["mu"], places=6)
-            self.assertAlmostEqual(k["s"], g_["s"], places=6)
-
-        def verschiebung(r):
-            return sum(k["c"] * (k["mu"] - g_["mu"]) for k, g_ in zip(r["modell"]["kurven"][i_haupt]["kurven"], glob))
-        self.assertAlmostEqual(verschiebung(frei), math.log(1.12), delta=0.04)
-        self.assertGreater(verschiebung(frei), verschiebung(mittel))  # weniger Rueckbindung folgt den Daten weiter
-        self.assertGreater(verschiebung(mittel), verschiebung(stark))
-        for r in (mittel, frei):  # die Breite bleibt in den Grenzen
-            for k in r["modell"]["kurven"][i_haupt]["kurven"]:
-                self.assertTrue(gruppen.S_MIN - 1e-9 <= k["s"] <= gruppen.S_MAX + 1e-9)
-
-    def test_zu_kleine_auswahl_bleibt_bei_den_festen_kurven(self):
-        (klein,) = laufe(self.daten, [{"zeit": "schulweg", "tage": "sonn", "gruppe": "g1"}])
-        # Die Auswahl hat weniger Fahrzeuge als MIN_FAHRZEUGE (300): fest, nicht nachgepasst
-        n = sum(klein["hist"].values())
-        if n < 300:
-            self.assertFalse(klein["modell"]["nachgepasst"])
-
-    def test_fehlerfunktion_stimmt(self):
-        import subprocess
-        skript = ("const f=require(process.argv[1]); const o={}; for (const a of [-3,-1,0,0.5,2,4]) { o[a]=f.ueberleben(a); } console.log(JSON.stringify(o));")
-        out = subprocess.run([NODE, "-e", skript, os.path.join(HIER, "site", "filter.js")], stdout=subprocess.PIPE, check=True, timeout=60)
-        for a, w in json.loads(out.stdout.decode("utf-8")).items():
-            self.assertAlmostEqual(w, 0.5 * math.erfc(float(a) / math.sqrt(2)), delta=1e-7)
-
-    def test_anteile_der_gruppen_je_auswahl(self):
-        """Nachts andere Anteile als tagsueber: Die Anteile werden je Auswahl neu geschaetzt, die Kurven bleiben."""
-        nacht, tag = laufe(self.daten, [{"zeit": "nacht", "tage": "alle", "gruppe": "g1"}, {"zeit": "nachmittag", "tage": "alle", "gruppe": "g1"}])
-        for r in (nacht, tag):
-            self.assertAlmostEqual(sum(r["modell"]["pi"]), 1.0, places=6)
-        # die Testdaten haben ueber den Tag gleiche Anteile: beide nahe der Anpassung
-        for r in (nacht, tag):
-            for pi, x in zip(r["modell"]["pi"], self.daten["gruppen"]):
-                self.assertAlmostEqual(pi, x["pi"], delta=0.05)
-
-    def test_ausgabe_html(self):
-        (alle,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
-        self.assertIn("<table>", alle["html"])
-        self.assertIn('<svg class="hist"', alle["html"])
-        self.assertIn("hist-limit", alle["html"])
-        self.assertIn("Klassenbreite", alle["html"])
-        self.assertNotIn("hist-grau", alle["html"])  # ohne Gruppe keine ausgegrauten Saeulen
-        self.assertNotIn("hist-modell", alle["html"])
-        (g1,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g1"}])
-        self.assertIn("hist-grau", g1["html"])  # alle Fahrzeuge bleiben grau sichtbar
-        self.assertIn("hist-ok", g1["html"])  # der Teil der Gruppe ist farbig
-        self.assertIn("hist-modell", g1["html"])  # und die Kurve der Gruppe liegt als Linie darueber
-        self.assertIn("Anteil an allen", g1["html"])
-        self.assertIn("Gruppe 1", g1["html"])
-        self.assertIn("nicht zu 100", g1["html"])
-        (rest,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "rest"}])
-        self.assertIn("Rest", rest["html"])
-        self.assertIn("hist-grau", rest["html"])
-        self.assertNotIn("hist-modell", rest["html"])
-        for kennwert in ("V85", "V95", "V99", "Einhaltung", "Qualifiziert", "km/h</th>"):
-            self.assertNotIn(kennwert, rest["html"], kennwert)  # der Rest hat keine Kennwerte, auch keine V85-Marke im Bild
-        self.assertIn("Anteil an allen", rest["html"])
-        self.assertIn("je Stunde", rest["html"])
-        self.assertIn("V85", g1["html"])  # die Gruppe schon
-        (klein,) = laufe(self.daten, [{"zeit": "schulweg", "tage": "samstag", "gruppe": "g1"}])
-        self.assertIn("<table>", klein["html"])
-        self.assertIn("Wenige Fahrzeuge", klein["html"])  # Anteile bei kleinen Auswahlen sind unsicher
-
     def test_farbige_saeule_ist_nie_hoeher_als_die_graue(self):
-        (g1,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "g2"}])
-        import re
-        grau = [float(m.group(1)) for m in re.finditer(r'class="hist-grau" x="[\d.]+" y="[\d.]+" width="[\d.]+" height="([\d.]+)"', g1["html"])]
-        farbig = [float(m.group(1)) for m in re.finditer(r'class="hist-(?:ok|ueber)" x="[\d.]+" y="[\d.]+" width="[\d.]+" height="([\d.]+)"', g1["html"])]
+        (g,) = laufe(mit_verhalten(self.daten), [{"zeit": "alle", "tage": "alle", "gruppe": "v2"}])
+        grau = [float(m.group(1)) for m in re.finditer(r'class="hist-grau" x="[\d.]+" y="[\d.]+" width="[\d.]+" height="([\d.]+)"', g["html"])]
+        farbig = [float(m.group(1)) for m in re.finditer(r'class="hist-(?:ok|ueber)" x="[\d.]+" y="[\d.]+" width="[\d.]+" height="([\d.]+)"', g["html"])]
         self.assertTrue(grau)
         self.assertTrue(farbig)
         self.assertLessEqual(max(farbig), max(grau) + 0.11)  # gerundet auf eine Nachkommastelle

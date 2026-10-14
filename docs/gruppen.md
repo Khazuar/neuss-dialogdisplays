@@ -3,6 +3,12 @@
 > Eigene Einschätzung nach festen Regeln, nicht amtlich. Fehler im Verfahren und in der Auswertung können nicht
 > ausgeschlossen werden (ohne Gewähr).
 
+**Seit Oktober 2026 nicht mehr auf den Seiten.** Diese „Formgruppen“ beschreiben nur die Form der Verteilung; dass sie etwas
+Eigenes sind, lässt sich so nicht begründen (die Begründung ist zirkulär). Die Seiten zeigen stattdessen die
+**Verhaltensgruppen** ([verhalten.md](verhalten.md)), die an der Vorhersage ungesehener Wochen und einem Placebo-Durchgang geprüft
+sind. Die Formgruppen stehen weiter in der YAML (Block `gruppen`) und in den Zellen; Schritt 4 und die frühere Auswahl unten
+beschreiben die frühere Darstellung.
+
 Viele Verteilungen sind nicht eine einzelne Glocke, sondern mischen mehrere Gruppen (je nach Ort vielleicht Radfahrer,
 abbiegende oder anfahrende Fahrzeuge, Fahrer, die sich am Tempolimit oder am Gefühl orientieren). `gruppen.py` beschreibt
 die Verteilung jeder Datei als Mischung solcher Gruppen, **soweit die Daten das belegen**, und die Detailseiten erlauben,
@@ -141,37 +147,21 @@ Histogramm (Anzahl Fahrzeuge je km/h) für einen Tagschlüssel (0 bis 6 Montag b
 kleine Skript `site/filter.js` liest nur diese Tabelle der eigenen Seite und rechnet daraus Kennzahlen (Fahrzeuge, je Stunde,
 Mittel, V85/V95/V99, Einhaltung, qualifizierte Einhaltung) und das Histogramm. Es lädt nichts nach und speichert nichts. Ohne
 JavaScript bleibt der Abschnitt verborgen, und die Seite zeigt die Tabelle der Kennzahlen je Zeitraum und das Histogramm aller
-Fahrzeuge, bei vorhandenem Rauschboden auch dessen Bild (alles entfällt mit JavaScript, weil die Auswahl es ersetzt: „alle Daten“, die
-Tageszeit, etwa Nacht gegen Ganztägig, und die Gruppe „Rauschboden“). Einen eigenen Vergleich Tag gegen Nacht gibt es nicht mehr.
+Fahrzeuge, bei vorhandenem Rauschboden auch dessen Bild (alles entfällt mit JavaScript, weil die Auswahl es ersetzt).
 
-Gruppen in der Auswahl: „Alle Daten“, „Gruppe 1“ bis „Gruppe n“ (nach Anteil geordnet: Gruppe 1 ist die größte, vermutlich die Hauptgruppe; bei gleichem Anteil die langsamere), „Rest (nicht
-erklärt)“ und, wo ein Rauschboden abgezogen wurde, „Rauschboden (herausgerechnet)“. Ohne Zerlegung (K = 1) gibt es das Feld
-„Gruppe“ nicht.
+Gruppen in der Auswahl sind die **Verhaltensgruppen** des gewählten Abschnitts ([verhalten.md](verhalten.md), „Auf den Seiten“) und,
+wo ein Rauschboden abgezogen wurde, „Rauschboden (herausgerechnet)“: Alle aufgezeichneten Fahrten der Auswahl bleiben grau
+sichtbar, farbig ist der herausgerechnete Rauschboden.
 
-**Gruppen sind ihre Kurven, Fahrzeuge werden nicht zugeordnet.** Eine Gruppe ist die angepasste Kurve, bei mehreren Kurven in
-einer Gruppe deren gewichtete Summe (jede Kurve auf Fläche 1 normiert, mal ihr Gewicht in der Gruppe). Für eine Auswahl
-(Tageszeit, Tage) passt `filter.js` die Kurven nach (Schritt 4: Anteil, Lage und Breite, gebunden an die globale Anpassung). Die
-Fahrzeuge einer Gruppe sind dann die Zahl der angepassten Fahrzeuge mal Anteil der Gruppe mal Form
-ihrer Kurve. Die Kennzahlen einer Gruppe (Mittel, V85, V95, V99, Einhaltung) sind die der für die Auswahl nachgepassten Kurve. Weil das Modell die Daten nie
-ganz trifft, bleibt ein **Rest**: Daten minus die Kurven aller Gruppen, an keiner Geschwindigkeit negativ, dazu alle Fahrzeuge
-unterhalb der Anpassungsgrenze. Die Anteile der Gruppen und des Rests müssen sich nicht zu 100 % addieren: Wo die Kurven über
-den Daten liegen, zählt der Überschuss nicht als negativer Rest. Der Rest hat keine Kennwerte (Mittel, V85, Einhaltung): Er ist meist
-nicht zusammenhängend und hat keine Form; die Seite zeigt nur seine Zahl, seinen Anteil und die Fahrzeuge je Stunde. Frühere Fassungen haben jedes Fahrzeug den Gruppen mit dem
-Anteil zugeordnet, der an seiner Geschwindigkeit am besten passt. Das schob alles, was das Modell nicht erklärt, in die
-Gruppe, deren Kurve dort am höchsten ist, und gab zum Beispiel einer langsamen Gruppe ein V99 von 56 km/h bei einem häufigsten
-Tempo von 20 km/h.
-
-**Darstellung.** Bei einer Gruppe oder dem Rest bleiben alle Fahrzeuge der Auswahl im Histogramm grau sichtbar. Farbig (blau bis zum
-Tempolimit, orange darüber) ist der Teil, den die Gruppe erklärt, höchstens so hoch wie die graue Säule. Bei einer Gruppe liegt
-ihre Kurve zusätzlich als Linie darüber, damit sichtbar bleibt, wo sie die Säulen überragt. Links vom Rand der Anpassung ist die Kurve
-nicht an Daten angepasst; sie setzt sich dort gestrichelt fort (gleiche Normierung wie im angepassten Bereich) und zeigt nur, was sie
-erwarten lässt, etwa bei einer Gruppe, deren häufigstes Tempo unter dem Rand der Erfassung liegt. Beim Rauschboden (nur wo einer
-abgezogen ist) bleiben alle aufgezeichneten Fahrten der Auswahl, Fahrzeuge und Rauschboden, grau sichtbar; farbig ist nur der
-herausgerechnete Rauschboden. So lässt er sich im Gesamtbild nachvollziehen.
+**Frühere Auswahl der Formgruppen** (bis Oktober 2026): „Gruppe 1“ bis „Gruppe n“ (nach Anteil geordnet) und „Rest (nicht erklärt)“.
+Eine Gruppe war ihre angepasste Kurve, für die Auswahl nachgepasst (Schritt 4); Fahrzeuge wurden nicht zugeordnet, was die Kurven nicht
+erklärten, stand im Rest (Daten minus Kurven, nie negativ, ohne Kennwerte). Noch frühere Fassungen hatten jedes Fahrzeug der Gruppe
+zugeordnet, deren Kurve an seiner Geschwindigkeit am höchsten ist; das gab zum Beispiel einer langsamen Gruppe ein V99 von 56 km/h
+bei einem häufigsten Tempo von 20 km/h.
 
 **Passung des Modells.** `modellabweichung_prozent` ist der Anteil der Fahrzeuge, die die angepasste Mischung an einer anderen
 Geschwindigkeit sieht als die Daten (halbe Summe der Beträge der Unterschiede je km/h, ab der Anpassungsgrenze). Im Median über die 98
-zerlegten Dateien sind es 1,9 % (Quartile 1,5 und 2,7), bei einer Datei mehr als 5 % (Pomona 5,5 %), bei keiner mehr als 10 %. Ab 10 % warnen die
+zerlegten Dateien sind es 1,9 % (Quartile 1,5 und 2,7), bei einer Datei mehr als 5 % (Pomona 5,5 %), bei keiner mehr als 10 %. Ab 10 % warnten die
 Seiten, dass das Modell schlecht passt. Bei 6 Gruppen liegt das häufigste Tempo nicht über dem Rand der Anpassung: Die Glocke ist
 dort am Rand abgeschnitten und wird aus ihrer sichtbaren Flanke angepasst (Schritt 2), das ist gewollt. Der **Rest** (Daten minus
 die Kurven, nie negativ) beträgt im Median 4,3 % der Fahrzeuge (Quartile 2,5 und 11,4 %). Er enthält auch die Fahrzeuge unter der
@@ -233,9 +223,10 @@ ihre Kurven verteilt ist, wird nicht ausgewiesen, weil sie zwischen den Hälften
 ## Zwischenspeicher
 
 `dsd2csv.py --cache ORDNER` speichert Ergebnisse je Datei (`zwischenspeicher.py`). Die Ebene „datei“ gilt für eine DSD-Datei
-samt Standort und Parametern und hängt vom Inhalt der Datei und vom Hash von `dsd2csv.py`, `rauschen.py` und `gruppen.py` ab.
-Die Ebene „gruppen“ (die aufwendige Zerlegung) hängt nur von den Zählwerten und `gruppen.py` ab; ändert sich nur die
-Darstellung oder ein anderes Skript, wird sie wiederverwendet. Nach einem vollständigen Lauf werden nicht benutzte Einträge
+samt Standort und Parametern und hängt vom Inhalt der Datei und vom Hash der Skripte und Belege ab, aus denen sie entsteht
+(`CODE_DATEIEN` in `dsd2csv.py`). Die Ebene „gruppen“ (die aufwendige Zerlegung) hängt nur von den Zählwerten und `gruppen.py` ab; ändert sich nur die
+Darstellung oder ein anderes Skript, wird sie wiederverwendet. Die Ebenen „verhalten“ und „vorlagen“ der Verhaltensgruppen beschreibt
+[verhalten.md](verhalten.md). Nach einem vollständigen Lauf werden nicht benutzte Einträge
 gelöscht. In GitHub Actions bleibt der Ordner zwischen den Läufen erhalten (`actions/cache`).
 
 ## Reproduktion

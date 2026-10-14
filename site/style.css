@@ -139,3 +139,5 @@ svg.hist .vg-4 { stroke: var(--vg-4); } svg.hist .vg-5 { stroke: var(--vg-5); }
 .vg-marke { display: inline-block; width: 14px; height: 4px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
 .vg-marke.vg-1 { background: var(--vg-1); } .vg-marke.vg-2 { background: var(--vg-2); } .vg-marke.vg-3 { background: var(--vg-3); }
 .vg-marke.vg-4 { background: var(--vg-4); } .vg-marke.vg-5 { background: var(--vg-5); }
+.vg-gesichert th, .vg-gesichert td { font-weight: 600; }
+.vg-stadtgruppe { margin-top: 2rem; }

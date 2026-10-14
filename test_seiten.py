@@ -69,37 +69,79 @@ class Hilfen(unittest.TestCase):
         self.assertTrue(all(re.fullmatch(r"[a-z0-9-]+", x) for x in slugs))
 
 
-class Verhaltensgruppen(unittest.TestCase):
-    def vg(self):
-        def gruppe(klasse, modus, anteil, effekte=None):
-            prof = [0.0] * 46
-            prof[modus // 2] = 1.0
-            return {"klasse": klasse, "anteil": anteil, "fahrzeuge": 1000, "modus_kmh": modus, "mittel_kmh": modus, "streuung_kmh": 3,
-                    "profil": prof, "stabil": 0.99, "belastbar": True, "tagesgang": [1.0] * 24,
-                    "effekte_gegen_haupt": effekte}
-        eff = {"regen_2": {"faktor": 40.0, "z": 9.0}, "nacht": {"faktor": 1.1, "z": 0.5}, "ferien": {"faktor": 0.9, "z": -1.0},
-               "schnee": {"faktor": 1.0, "z": 0.1}, "dichte_log": {"faktor": 0.3, "z": -6.0}}
-        return {"klassen_namen": {"haupt": "Hauptgruppe", "rauschen": "sehr langsam <x>"}, "merkmale": {"regen_2": "Regen ab 2 mm"},
-                "uebersicht": {"abschnitte": 10, "mit_mehreren_gruppen": 6, "placebo_mit_mehreren_gruppen": 3},
-                "klassen": {"rauschen": {"name": "sehr langsam", "standorte": 5, "gruppen": 6, "modus_median_kmh": 7, "anteil_median": 0.1,
-                                         "placebo_gruppen": 2, "effekte": {"regen_2": {"faktor": 40.0, "von": 20.0, "bis": 80.0, "placebo": 0.8, "gesichert": True}}}},
-                "abschnitte": [{"standort": "07_2024_ Einsteinstraße", "datei": "_15.dsd", "abschnitt": 1, "tage": 50, "gruppen_zahl": 2,
-                                "vorhersagegewinn": [0.0, 0.02], "gruppen": [gruppe("rauschen", 8, 0.05, eff), gruppe("haupt", 30, 0.95)]},
-                               {"standort": "07_2024_ Einsteinstraße", "datei": "_15.dsd", "abschnitt": 2, "tage": 40, "gruppen_zahl": 2,
-                                "vorhersagegewinn": [0.0, 0.01], "gruppen": [gruppe("rauschen", 8, 0.04, eff), gruppe("haupt", 32, 0.96)]}]}
+def vg_beispiel():
+    """verhaltensgruppen.json (stadtgruppen.py) mit zwei Abschnitten der Einsteinstraße, einer Stadtgruppe und einer MS-Gruppe."""
+    def gruppe(name, klasse, modus, anteil, effekte=None, ms=None, korr=None):
+        prof = [0.0] * 46
+        prof[modus // 2] = 1.0
+        return {"name": name, "kennung": "m-x/" + name, "klasse": klasse, "anteil": anteil, "fahrzeuge": 1000, "modus_kmh": modus, "mittel_kmh": modus,
+                "streuung_kmh": 3, "profil": prof, "stabil": 0.99, "belastbar": True, "tagesgang": [1.0] * 24, "effekte_gegen_haupt": effekte,
+                **({"stadt": "S-R1", "ms": ms, "korrelation_stadt": korr} if klasse != "haupt" else {})}
+    eff = {"regen_2": {"faktor": 40.0, "z": 9.0}, "nacht": {"faktor": 1.1, "z": 0.5}, "dichte_log": {"faktor": 0.3, "z": -6.0}}
+    s_r1 = {"id": "S-R1", "klasse": "rauschen", "art": "sehr langsam", "anzeige": "Regen<phantome> (S-R1)", "deutung": "Regen<phantome>",
+            "stufe": "tragfähig", "kriterien": "k", "belege": ["b <1>"], "gefunden": True, "gruppen": 6, "abschnitte": 6, "placebo_gruppen": 2,
+            "standorte": [{"seite": "einsteinstrasse", "name": "Einsteinstraße"}], "modus_median_kmh": 7, "anteil_median": 0.1, "anteil_spanne": [0.05, 0.2],
+            "vorlagen_geprueft": 3, "vorlagen_nachgewiesen": 1,
+            "effekte": {"regen_2": {"faktor": 40.0, "von": 20.0, "bis": 80.0, "placebo": 0.8, "gesichert": True}}}
+    s_f1 = {"id": "S-F1", "klasse": "schnell", "art": "schneller", "anzeige": "S-F1 (Hypothese: Freie Fahrt)", "gefunden": True, "gruppen": 5,
+            "abschnitte": 5, "standorte": [], "effekte": {}, "anteil_median": 0.12, "anteil_spanne": [0.08, 0.2]}
+    return {"klassen_namen": {"haupt": "Hauptgruppe", "rauschen": "sehr langsam <x>", "schnell": "schneller"}, "merkmale": {"regen_2": "Regen ab 2 mm"},
+            "uebersicht": {"abschnitte": 12, "mit_modell": 10, "mit_mehreren_gruppen": 6, "placebo_mit_mehreren_gruppen": 3},
+            "stadt": [s_r1, s_f1],
+            "standorte": {"07-2024-einsteinstrasse": [{"id": "MS-07-2024-einsteinstrasse-R1", "klasse": "rauschen", "stadt": "S-R1",
+                                                       "mitglieder": ["m-x/A1·1", "m-x/A2·1"], "messungen": 1, "abschnitte": 2, "modus_kmh": 9,
+                                                       "anteil_median": 0.045, "korrelation_stadt": 0.81}]},
+            "abschnitte": {"07_2024_ Einsteinstraße/_15.dsd": [
+                {"nr": 1, "geprueft": True, "tage": 50, "fahrzeuge": 20000, "K": 2, "cv_gewinn": [0.0, 0.02],
+                 "gruppen": [gruppe("A1·1", "rauschen", 8, 0.05, eff, "MS-07-2024-einsteinstrasse-R1", 0.62), gruppe("A1·2", "haupt", 30, 0.95)],
+                 "stadtgruppen": [{"stadt": "S-F1", "klasse": "schnell", "stand": "nicht_nachweisbar", "gewinn": 0.0, "erwartet_anteil": 0.12,
+                                   "erwartet_spanne": [0.08, 0.2]}]},
+                {"nr": 2, "geprueft": True, "tage": 40, "fahrzeuge": 15000, "K": 2, "cv_gewinn": [0.0, 0.01],
+                 "gruppen": [gruppe("A2·1", "rauschen", 8, 0.04, eff, "MS-07-2024-einsteinstrasse-R1", 0.7), gruppe("A2·2", "haupt", 32, 0.96)],
+                 "stadtgruppen": [{"stadt": "S-F1", "klasse": "schnell", "stand": "nachgewiesen", "gewinn": 0.004, "anteil": 0.03,
+                                   "erwartet_anteil": 0.12, "erwartet_spanne": [0.08, 0.2]}]},
+                {"nr": 3, "geprueft": False, "grund": "zu <kurz>", "tage": 9, "fahrzeuge": 2000,
+                 "stadtgruppen": [{"stadt": "S-R1", "klasse": "rauschen", "stand": "erwartet", "erwartet_anteil": 0.1, "erwartet_spanne": [0.05, 0.2]}]}]}}
 
+
+class Verhaltensgruppen(unittest.TestCase):
     def test_reiter_gruppen(self):
-        h = s.seite("07_2024_ Einsteinstraße", [zeile()], {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}, {}, vg=self.vg())
+        h = s.seite("07_2024_ Einsteinstraße", [zeile()], {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}, {}, vg=vg_beispiel())
         self.assertIn('id="r-gruppen"', h)
-        self.assertIn("Abschnitt 2 (40 Tage)", h)
-        self.assertIn("sehr langsam &lt;x&gt;", h)  # maskiert
+        self.assertIn("Abschnitt 2 (40 Tage mit Wetterdaten", h)
+        self.assertIn("Regen&lt;phantome&gt; (S-R1)", h)  # tragfähige Deutung statt Name, maskiert
         self.assertIn("Regen ab 2 mm ×40,00", h)
-        self.assertIn("Nachbarabschnitt: Abschnitt 2 (Profil 1,00, Verhalten r = 1,00)", h)
-        self.assertIn("In 6 von 10 Abschnitten", h)
-        self.assertIn("Placebo 0,80", h)
+        self.assertIn('assoziiert mit <a href="#MS-07-2024-einsteinstrasse-R1">', h)
+        self.assertIn('korreliert mit <a href="../verhaltensgruppen.html#S-R1">S-R1</a> (62&nbsp;%)', h)
+        self.assertIn('<tr id="MS-07-2024-einsteinstrasse-R1">', h)  # MS-Gruppen einmal je Seite
+        self.assertIn("A1·1, A2·1", h)
+        self.assertIn("lokal nachgewiesen</strong>: Anteil 3,0&nbsp;%", h)
+        self.assertIn("hier nicht nachweisbar", h)
+        self.assertIn("das ist keine Messung", h)  # nur erwartet
+        self.assertIn("zu &lt;kurz&gt;", h)
         self.assertEqual(h.count("Verhaltensgruppen sind Teile des Verkehrs"), 1)
-        ohne = s.seite("01_Anders", [zeile("01_Anders", "x.dsd")], {"messungen": []}, {}, vg=self.vg())
+        self.assertNotIn("Stadtweit</h3>", h)  # die Stadtgruppen stehen auf der Übersichtsseite
+        ohne = s.seite("01_Anders", [zeile("01_Anders", "x.dsd")], {"messungen": []}, {}, vg=vg_beispiel())
         self.assertIn("kein Verhaltensmodell", ohne)
+        self.assertIn("Keine Gruppe kehrt an diesem Standort", ohne)
+
+    def test_namen_in_der_auswahl(self):
+        namen = s.vg_namen(vg_beispiel(), "07_2024_ Einsteinstraße", "_15.dsd")
+        self.assertEqual(sorted(namen), [1, 2])
+        self.assertEqual(namen[1][0], "A1·1 · Regen<phantome> (S-R1) · Modus 8 km/h · 5 %")
+        self.assertEqual(namen[1][1], "A1·2 · Hauptgruppe · Modus 30 km/h · 95 %")
+
+    def test_uebersichtsseite(self):
+        h = s.verhaltensgruppen_seite(vg_beispiel())
+        self.assertIn('id="S-R1"', h)
+        self.assertIn("Regen&lt;phantome&gt; (S-R1)", h)
+        self.assertIn("b &lt;1&gt;", h)
+        self.assertIn("in 6 von 10 Abschnitten", h.replace("\n", " "))
+        self.assertIn('<a href="standorte/einsteinstrasse.html">Einsteinstraße</a>', h)
+        self.assertIn("lokal nachgewiesen in 1", h)
+        self.assertIn("×0,80", h)  # Placebo
+        kurz = s.verhaltensgruppen_kurz(vg_beispiel())
+        self.assertEqual(kurz[0], {"id": "S-R1", "anzeige": "Regen<phantome> (S-R1)", "stufe": "tragfähig", "standorte": 1, "gefunden": True})
 
 
 class Seite(unittest.TestCase):
@@ -322,8 +364,7 @@ class Seite(unittest.TestCase):
         self.assertIn("Erfassungszeitraum 15.04.2025 bis 30.06.2025", h)
         self.assertIn("von 1 anderen Standorten", h)  # nur der andere Standort zaehlt
         self.assertIn("Kurze Ausschläge", h)
-        self.assertIn("zu wenig &lt;Fahrzeuge&gt;", h)
-        self.assertNotIn("<h4>Gruppen in der Verteilung", h.split("Abschnitt 2:")[1])  # im Abschnitt Ueberschrift eine Ebene tiefer
+        self.assertNotIn("Gruppen in der Verteilung", h)  # die Formgruppen stehen nur noch in der YAML
         self.assertIn('data-abschnitt="2"', h)  # Gefährdung und Lärm je Abschnitt
         ohne = s.seite("07_2024_ Einsteinstraße", [zeile()], {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}, {})
         self.assertNotIn("Abschnitt 2:", ohne)
@@ -465,25 +506,41 @@ class FilterSeite(unittest.TestCase):
 
     def test_abschnitt_daten_und_skript(self):
         block, daten = self.daten()
+        daten["verhalten"] = {"profile": [[0.5, 0.5] + [0.0] * 44, [0.0] * 15 + [1.0] + [0.0] * 30], "klassen": ["rauschen", "haupt"],
+                              "raten": {"0|7": [1.0, 20.0]}}
         h = self.html(daten, block)
-        self.assertIn("Auswertung nach Zeit, Tagen und Gruppe", h)
+        self.assertIn("Auswertung nach Zeit, Tagen, Abschnitt und Gruppe", h)
         self.assertIn("<noscript>", h)
         self.assertIn('<section class="filter" data-filter hidden>', h)  # ohne JavaScript bleibt der Abschnitt verborgen
         self.assertIn('<script src="../filter.js" defer></script>', h)
-        for name in ("Alle Daten", "Gruppe 1 (Modus", "Gruppe 2 (Modus", "Rest (nicht erklärt)", "Ganztägig", "Nacht (22–6 Uhr)", "Schulweg (7–8 Uhr)",
-                     "Werktage (Mo–Fr)", "Sonn- und Feiertage", "Feiertage an Werktagen und Samstagen", ">Montag<"):
+        for name in ("Alle Daten", 'value="v1">Gruppe 1<', 'value="v2">Gruppe 2<', "Ganztägig", "Nacht (22–6 Uhr)", "Schulweg (7–8 Uhr)",
+                     "Werktage (Mo–Fr)", "Sonn- und Feiertage", "Feiertage an Werktagen und Samstagen", ">Montag<", "Verhaltensgruppen des Abschnitts"):
             self.assertIn(name, h, name)
-        for nicht in ("Hauptmenge", "(langsam)", "Rauschboden (herausgerechnet)", "Unter "):
-            self.assertNotIn(nicht, h, nicht)  # keine Auszeichnung "langsam" oder "Haupt-"; ohne abgezogenen Rauschboden keine solche Gruppe
+        for nicht in ("Rest (nicht erklärt)", "Rauschboden (herausgerechnet)", "nachgepasst"):
+            self.assertNotIn(nicht, h, nicht)  # keine Formgruppen; ohne abgezogenen Rauschboden keine solche Auswahl
         m = re.search(r'<script type="application/json" class="filter-daten">(.*?)</script>', h, re.S)
-        self.assertEqual(json.loads(m.group(1)), daten)  # die Tabelle im Seitentext ist genau die Datentabelle
+        eingebettet = json.loads(m.group(1))
+        self.assertEqual(eingebettet, s.filter_daten(daten))  # die Tabelle im Seitentext ist die Datentabelle ohne Formgruppen
+        self.assertNotIn("gruppen", eingebettet)
+        self.assertEqual(eingebettet["verhalten"], daten["verhalten"])
         d2 = dict(daten, r={"0|8": [10, 5]})
         self.assertIn("Rauschboden (herausgerechnet)", self.html(d2, block))
-        d1 = dict(daten, gruppen=[])  # keine Zerlegung: kein Feld "Gruppe"
+        d1 = {k: v for k, v in daten.items() if k != "verhalten"}  # keine Verhaltensgruppen, kein Rauschboden: kein Feld "Gruppe"
         h1 = self.html(d1)
         self.assertNotIn('data-feld="gruppe"', h1)
         self.assertIn('data-feld="zeit"', h1)
         self.assertIn('data-feld="tage"', h1)
+
+    def test_namen_kommen_in_die_datentabelle(self):
+        _, daten = self.daten()
+        daten["abschnitte"] = [{"nr": 1, "von": "2024-07-24", "bis": "2024-09-03", "tage": {}, "z": {}, "r": {}, "gruppen": [], "w0": 3,
+                                "verhalten": {"profile": [[1.0] + [0.0] * 45], "klassen": ["haupt"], "raten": {}}},
+                               {"nr": 2, "von": "2024-09-04", "bis": "2024-12-04", "tage": {}, "z": {}, "r": {}, "gruppen": []}]
+        d = s.filter_daten(daten, {1: ["A1·1 · Hauptgruppe"]})
+        self.assertEqual(d["abschnitte"][0]["verhalten"]["namen"], ["A1·1 · Hauptgruppe"])
+        self.assertNotIn("w0", d["abschnitte"][0])
+        self.assertNotIn("verhalten", d["abschnitte"][1])
+        self.assertNotIn("namen", daten["abschnitte"][0]["verhalten"])  # die Eingabe bleibt unveraendert
 
     def test_feste_kennzahlentabelle_steht_mit_auswahl_nur_im_noscript(self):
         block, daten = self.daten()
@@ -518,49 +575,6 @@ class FilterSeite(unittest.TestCase):
         self.assertNotIn("filter.js", h)
         self.assertNotIn("<noscript>", h)
 
-    def test_gruppen_tabelle(self):
-        block, _ = self.daten()
-        h = s.gruppen_abschnitt({"gruppen": block})
-        self.assertIn("Gruppen in der Verteilung", h)
-        self.assertIn("Gruppe 1", h)  # je nach Anpassung mit dem Zusatz "(aus N Kurven)"
-        self.assertIn("Rest (nicht erklärt)", h)
-        for nicht in ("(langsam)", "Hauptmenge", "nächst schnelleren"):
-            self.assertNotIn(nicht, h, nicht)
-        self.assertIn("keine Fahrzeugarten", h)
-        self.assertIn("Fahrzeuge werden den Gruppen nicht zugeordnet", h)
-        self.assertIn("müssen sich nicht zu 100", h)
-        self.assertIn("2 Gruppen zusammen", h)
-        self.assertIn("weichen von den Daten bei etwa", h)  # Passung des Modells
-        self.assertIn("Nicht zerlegt", s.gruppen_abschnitt({"gruppen": {"geprueft": False, "grund": "zu klein"}}))
-        self.assertIn("nicht stabil", s.gruppen_abschnitt({"gruppen": {"geprueft": True, "anzahl": 1}}))
-        self.assertEqual(s.gruppen_abschnitt({}), "")
-        self.assertEqual(sorted(block["rest"]), ["anteil_prozent", "fahrzeuge"])  # der Rest hat keine Kennwerte
-        zeile_rest = re.search(r"<tr><th scope=\"row\">Rest \(nicht erklärt\)</th>(.*?)</tr>", h, re.S).group(1)
-        self.assertEqual(zeile_rest.count("<td"), 7)
-        self.assertEqual(zeile_rest.count("–"), 6)  # nur der Anteil, sonst Striche
-        einfach = dict(block, kurven=block["anzahl"], gruppen=[dict(x, kurven=1) for x in block["gruppen"]])
-        h1 = s.gruppen_abschnitt({"gruppen": einfach})
-        self.assertNotIn("Kurven angepasst", h1)  # eine Kurve je Gruppe: nichts zu erklaeren
-        self.assertNotIn("(aus", h1)
-
-    def test_gruppe_aus_mehreren_kurven(self):
-        block, _ = self.daten()
-        mehr = dict(block, kurven=3, gruppen=[dict(block["gruppen"][0]), dict(block["gruppen"][1], kurven=2)])
-        h = s.gruppen_abschnitt({"gruppen": mehr})
-        self.assertIn("Gruppe 2 <span", h)
-        self.assertIn("(aus 2 Kurven)", h)
-        self.assertNotIn("(aus 1 Kurven)", h)
-        self.assertIn("aus 3 Kurven angepasst", h)
-        self.assertIn("nicht belegt", h)  # die Aufteilung innerhalb einer Gruppe wird nicht ausgewiesen
-
-    def test_warnung_bei_schlechter_passung(self):
-        block, daten = self.daten()
-        schlecht = dict(block, modellabweichung_prozent=15.5)
-        self.assertIn("Das Modell passt hier schlecht", s.gruppen_abschnitt({"gruppen": schlecht}))
-        self.assertIn("Das Modell passt hier schlecht", self.html(daten, schlecht))  # auch im Abschnitt mit der Auswahl
-        gut = dict(block, modellabweichung_prozent=3.0)
-        self.assertNotIn("Das Modell passt hier schlecht", s.gruppen_abschnitt({"gruppen": gut}))
-        self.assertEqual(s.modell_warnung({}), "")
     def test_keine_externen_adressen_im_filter(self):
         h = self.html(*reversed(self.daten()))
         for url in re.findall(r'(?:href|src)="(https?://[^"]+)"', h):

@@ -32,7 +32,8 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
   Korrekturen des Tempolimits, wo die Mitteilung ein anderes Limit nennt als die DSD (`korrekturen.json`), und die
   Wetterdaten des Deutschen Wetterdienstes je Tag (`wetter.json`, **CC BY 4.0**, siehe [Lizenz](#lizenz)), die Hauskoordinaten der
   Stadt Neuss (`neuss-adressen.csv`, Geobasis NRW, dl-de/zero-2-0), die Ortshinweise zu den Messstellen (`standort-hinweise.json`)
-  die geschätzte Lage der Standortordner (`standorte.json`, bestimmt auch die Wetterstation je Messstelle) und die Verhaltensgruppen je Abschnitt (`verhaltensgruppen.json`, aus `tools/verhalten/`, Forschungsstand)
+  die geschätzte Lage der Standortordner (`standorte.json`, bestimmt auch die Wetterstation je Messstelle) und das Register der
+  Verhaltensgruppen der Stadt (`verhaltensgruppen-register.json`: feste Namen, Deutung mit Stufe, Vorlagen; Forschungsstand)
 - `tools/` – holt die Mitteilungen der Verwaltung aus dem Ratsinformationssystem und zerlegt sie
   (`ris_sammeln.py`, `ris_auswerten.py`, `ris_messstellen.py`) und die Hauskoordinaten von Geobasis NRW (`adressen_laden.py`)
 - `docs/uhr-bewertung.md` – wie über die Zuverlässigkeit der Uhren entschieden wird, mit Grenzen
@@ -41,19 +42,22 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/rauschen.md` – Modell, Regeln und Grenzen des Rauschbodenabzugs
 - `docs/gruppen.md` – Zerlegung der Verteilung in Gruppen, Zeitscheiben und die Auswahl auf den Detailseiten
 - `docs/abschnitte.md` – Brüche in einer Messreihe (Geräte umgehängt?) und die getrennte Auswertung der Abschnitte
-- `docs/verhalten.md` – Forschungsstand: Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter und Ferien), mit Placebo-Prüfung
+- `docs/verhalten.md` – Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter, Ferien und Verkehrsmenge) mit Placebo-Prüfung,
+  drei Ebenen (Abschnitt, Standort, Stadt), Namen, Deutungen und Stadt-Vorlagen; Forschungsstand
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `docs/wetter.md` – Wetterdaten des DWD (Quelle, Lizenz, Stationswahl, Zeitangabe) und der Befund, dass Regen das Radar stört
-- `seiten_bauen.py` – baut je Standort (gleiche Straße, sich überlappende Lage; alle Messungen und Fahrtrichtungen zusammen) eine Detailseite für die GitHub Pages (`standorte/<name>.html`) mit den Reitern Allgemein, Verwaltung, Messung, Analyse, Gruppen, Vergleich, Gefährdung und Lärm, dazu Weiterleitungen von den alten Seiten je Ordner und `uebersicht.json` für die Übersicht;
+- `seiten_bauen.py` – baut je Standort (gleiche Straße, sich überlappende Lage; alle Messungen und Fahrtrichtungen zusammen) eine Detailseite für die GitHub Pages (`standorte/<name>.html`) mit den Reitern Allgemein, Verwaltung, Messung, Analyse, Gruppen, Vergleich, Gefährdung und Lärm, dazu Weiterleitungen von den alten Seiten je Ordner, `uebersicht.json` für die Übersicht und die Übersicht der Verhaltensgruppen (`verhaltensgruppen.html`);
   Geschwindigkeits-Histogrammen als Inline-SVG
 - `kalender.py` – Schulferien und Feiertage in NRW
-- `tools/verhalten/` – Skripte der Verhaltensanalyse (brauchen numpy, nicht Teil der Auswertung)
+- `verhalten.py` – Verhaltensgruppen je Abschnitt (Modell, Placebo, Stadt-Vorlagen; braucht numpy, rechnet jeden Abschnitt einzeln mit Zwischenspeicher);
+  `stadtgruppen.py` – fasst sie zu Gruppen je Standort (MS) und der Stadt (S) zusammen, vergibt Namen aus dem Register und schreibt `verhaltensgruppen.json`
+- `tools/verhalten/` – Forschungsskripte der Verhaltensanalyse (brauchen numpy, nicht Teil der Auswertung)
 - `bruch.py` – erkennt Brüche in der Messreihe einer Datei (Verhalten des Verkehrs ändert sich dauerhaft) und zerlegt sie in Abschnitte mit Begründung und Wahrscheinlichkeit; `dsd2csv.py` wertet jeden Abschnitt einzeln aus (YAML-Block `abschnitte`)
 - `gruppen.py` – zerlegt die Verteilung je Datei in Gruppen (Lognormal-Mischung, Zahl der Kurven und Gruppen aus den Daten) und baut die Zellen für die Auswahl nach Tageszeit, Tagen und Gruppe
 - `wetter.py` – erzeugt `belege/wetter.json` aus den Daten des Deutschen Wetterdienstes (Niederschlag je Stunde und Tag, Tageswerte von Temperatur, Wind und Schnee); `tageslicht.py` – Sonnenaufgang, Sonnenuntergang und Dämmerung für Neuss, rein rechnerisch
 - `zwischenspeicher.py` – Zwischenspeicher für Ergebnisse je Datei (nur geänderte Dateien oder Skripte werden neu gerechnet)
 - `lokal_bauen.py` – baut die GitHub-Pages-Seite lokal nach `_vorschau/` und startet auf Wunsch einen lokalen Server, um sie vor dem Push im Browser anzusehen (`docs/betrieb.md`)
-- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py`, `test_wetter.py`, `test_standorte.py`, `test_bruch.py` – Tests (`python3 -m unittest -v`)
+- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py`, `test_wetter.py`, `test_standorte.py`, `test_bruch.py`, `test_verhalten.py` – Tests (`python3 -m unittest -v`; die Modelltests brauchen numpy)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
 - `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz, dazu `filter.js` (Auswahl nach Tageszeit, Tagen, Abschnitt und Gruppe auf den Detailseiten, liest nur die Daten der eigenen Seite) und `seite.js` (Reiter und Auswahl der Messung; ohne JavaScript steht alles untereinander)
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
@@ -77,7 +81,8 @@ Wer die Daten selbst erzeugen will, nutzt dazu das Skript (siehe unten).
 
 ## Benutzung
 
-Python 3.7 oder neuer, nur Standardbibliothek.
+Python 3.7 oder neuer, nur Standardbibliothek. Nur die Verhaltensgruppen (`verhalten.py`) brauchen zusätzlich numpy; ohne numpy
+fehlen sie in der Auswertung, alles andere bleibt gleich.
 
 ```sh
 python3 -I dsd2csv.py .                     # alle DSDs rekursiv: .csv + .yaml neben jeder DSD,
@@ -108,7 +113,9 @@ sinnvoll.
   - `gruppen` – Beschreibung der Verteilung als Mischung angepasster Kurven (Zahl der Kurven und Gruppen aus den Daten, auch keine
     Zerlegung; eine Gruppe besteht aus einer oder mehreren Kurven): Anteil, Modus, Kennzahlen je Gruppe, dazu der Rest, den die Kurven
     nicht erklären, und die Abweichung des Modells
-    (`docs/gruppen.md`),
+    (`docs/gruppen.md`; steht nur noch in der YAML, die Seiten zeigen die Verhaltensgruppen),
+  - `verhalten` – Verhaltensgruppen je Abschnitt: Zahl der Gruppen, Vorhersagegewinn, je Gruppe Art, Anteil, Profil, Stabilität, Verhalten
+    (Effekte mit Standardfehler) und Tagesgang, dazu der Placebo-Durchgang und die geprüften Stadt-Vorlagen (`docs/verhalten.md`),
   - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: relativer Risikoindex nach Nilsson, Aufprallgeschwindigkeit
     und Anteil der Fahrzeuge, die mit mehr als 30 bzw. 50 km/h aufträfen, Lärm gegenüber dem Tempolimit
     (`docs/gefaehrdung.md`),
@@ -118,8 +125,9 @@ sinnvoll.
     wenigen Fahrzeugen breitere Klassen nach Freedman-Diaconis (2 · Quartilsabstand · n^(−1/3), höchstens 5 km/h),
     und die Höhe ist der Anteil der Fahrzeuge je km/h. Die Skala endet beim 99,99-%-Perzentil; schnellere Fahrzeuge
     (meist Messfehler) werden unter dem Bild gezählt
-- `<name>.zellen.json` – Histogramme je Wochentag und Stunde und Gewichte der Gruppen; daraus rechnet die Detailseite die Auswahl nach
-  Tageszeit, Tagen und Gruppe
+- `<name>.zellen.json` – Histogramme je Wochentag und Stunde, je Abschnitt, und die Verhaltensgruppen (Profile und erwartete Fahrzeuge je
+  Wochentag und Stunde); daraus rechnet die Detailseite die Auswahl nach Tageszeit, Tagen, Abschnitt und Gruppe
+- `verhaltensgruppen.json` – Verhaltensgruppen auf allen drei Ebenen mit Namen und Beziehungen (`stadtgruppen.py`)
 - `auswertung.yaml`, `summary.csv` – alle Messungen zusammengefasst
 
 Die Geräte stellen ihre Uhr nicht auf Sommerzeit um und sind teils zurückgesetzt oder verstellt. Die
@@ -150,7 +158,7 @@ In diesem Repository gelten drei Lizenzen:
 
 | Was | Lizenz |
 |-----|--------|
-| Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, `standorte.py`, `bruch.py`, `kalender.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
+| Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, `standorte.py`, `bruch.py`, `kalender.py`, `verhalten.py`, `stadtgruppen.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
 | Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `metadaten.yaml`, `uhr-analyse.md`, `belege/` (außer `belege/wetter.json`), `README.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
 | Wetterdaten: `belege/wetter.json` (Daten des Deutschen Wetterdienstes, ausgewählt, auf Ortszeit-Tage umgerechnet und zusammengefasst) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de), **Quelle: Deutscher Wetterdienst** |
 

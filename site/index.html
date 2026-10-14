@@ -23,6 +23,15 @@
     <li><a href="auswertung.yaml">Alle Auswertungen als YAML</a></li>
     <li><a href="summary.csv">Übersichtstabelle als CSV</a></li>
   </ul>
+  <section id="verhaltensgruppen" hidden>
+    <h2>Verhaltensgruppen der Stadt</h2>
+    <p class="muted">
+      Teile des Verkehrs mit eigenem Tempo und eigenem Verhalten (Tageszeit, Licht, Wetter, Ferien, Verkehrsmenge), über alle Standorte
+      zusammengefasst. Forschungsstand: Die Gruppen fließen in keine Kennzahl ein.
+    </p>
+    <ul class="links" id="vg-liste"></ul>
+    <p><a href="verhaltensgruppen.html">Alle Stadtgruppen mit Deutung, Belegen und Verhalten</a></p>
+  </section>
   <p class="muted">
     Die Auswertungen sind eigene Berechnungen von Fabian Grewing aus den Rohdaten der Stadt Neuss.
     Sie sind nicht amtlich und nicht geprüft, und Fehler in der Auswertung (Skripte, Annahmen, Zuordnung der Angaben) können nicht ausgeschlossen werden; alle Angaben ohne Gewähr. Die Geräteuhren werden nie auf Sommerzeit umgestellt und
@@ -302,6 +311,25 @@ async function start() {
   }
 }
 start();
+
+// Stadtgruppen (seiten_bauen.py: verhaltensgruppen-kurz.json); ohne die Datei bleibt der Abschnitt verborgen
+async function verhaltensgruppen() {
+  try {
+    const res = await fetch("verhaltensgruppen-kurz.json");
+    if (!res.ok) return;
+    const liste = document.getElementById("vg-liste");
+    for (const s of await res.json()) {
+      if (!s.gefunden) continue;
+      const li = document.createElement("li"), a = document.createElement("a");
+      a.href = "verhaltensgruppen.html#" + encodeURIComponent(s.id);
+      a.textContent = s.anzeige;
+      li.append(a, " – an " + s.standorte + " Standorten");
+      liste.append(li);
+    }
+    document.getElementById("verhaltensgruppen").hidden = false;
+  } catch (e) { /* ohne Verhaltensgruppen bleibt der Abschnitt verborgen */ }
+}
+verhaltensgruppen();
 </script>
 </body>
 </html>
