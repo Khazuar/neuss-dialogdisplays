@@ -25,8 +25,13 @@ if os.environ.get("NUMPY_PFAD"):
     sys.path.insert(0, os.environ["NUMPY_PFAD"])
 try:
     import numpy as np
-except ImportError:  # pragma: no cover - ohne numpy keine Verhaltensgruppen
-    np = None
+except ImportError:
+    try:  # python -I (die Skripte laufen isoliert) ignoriert den Benutzerordner von "pip install --user"
+        import site
+        sys.path.append(site.getusersitepackages())
+        import numpy as np
+    except ImportError:  # ohne numpy keine Verhaltensgruppen
+        np = None
 
 import json  # noqa: E402
 
