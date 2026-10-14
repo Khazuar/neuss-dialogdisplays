@@ -6,10 +6,11 @@
 Dieselben Schritte wie .github/workflows/pages.yml (ohne Tests):
   1. dsd2csv.py   Auswertungen, Zellen und Zusammenfassungen aus den DSD-Dateien (mit Zwischenspeicher, mehrere Prozesse;
                   die Verhaltensgruppen je Abschnitt nur mit numpy, siehe verhalten.py)
-  2. stadtgruppen.py   Verhaltensgruppen auf Standort- und Stadtebene (verhaltensgruppen.json)
-  3. seiten_bauen.py   Detailseiten der Standorte und Uebersicht der Verhaltensgruppen
-  4. site/*       Uebersichtsseite, Datenschutz, Stylesheet, filter.js und seite.js
-  5. Impressum aus den Umgebungsvariablen IMPRESSUM_STRASSE, IMPRESSUM_ORT, IMPRESSUM_TELEFON (ohne sie bleiben die Felder leer)
+  2. daten_bauen.py   bereinigte Daten als CSV (daten/, siehe DATEN.md)
+  3. stadtgruppen.py   Verhaltensgruppen auf Standort- und Stadtebene (verhaltensgruppen.json)
+  4. seiten_bauen.py   Detailseiten der Standorte und Uebersicht der Verhaltensgruppen
+  5. site/*       Uebersichtsseite, Datenschutz, Stylesheet, Skripte, llms.txt (dazu DATEN.md)
+  6. Impressum aus den Umgebungsvariablen IMPRESSUM_STRASSE, IMPRESSUM_ORT, IMPRESSUM_TELEFON (ohne sie bleiben die Felder leer)
 
 Aufruf:
   python3 -I lokal_bauen.py                  baut nach _vorschau/ und nennt die Adresse der Startseite
@@ -29,7 +30,7 @@ import sys
 import webbrowser
 
 HIER = os.path.dirname(os.path.abspath(__file__))
-SEITEN = ("index.html", "datenschutz.html", "style.css", "filter.js", "seite.js", "labor.js")
+SEITEN = ("index.html", "datenschutz.html", "style.css", "filter.js", "seite.js", "labor.js", "llms.txt")
 
 
 def befehle(eingabe, ziel, cache, jobs):
@@ -39,7 +40,11 @@ def befehle(eingabe, ziel, cache, jobs):
     if cache:
         auswerten += ["--cache", cache]
     auswertung = os.path.join(ziel, "auswertung.json")
-    return [auswerten, py + [os.path.join(HIER, "stadtgruppen.py"), "--auswertung", auswertung],
+    zwischen = os.path.join(os.path.dirname(os.path.abspath(ziel)), os.path.basename(ziel) + "-aggregat")  # neben dem Ziel, nicht darin
+    auswerten += ["--aggregat", zwischen]
+    return [auswerten,
+            py + [os.path.join(HIER, "daten_bauen.py"), "--auswertung", auswertung, "--aggregat", zwischen, "--ziel", os.path.join(ziel, "daten")],
+            py + [os.path.join(HIER, "stadtgruppen.py"), "--auswertung", auswertung],
             py + [os.path.join(HIER, "seiten_bauen.py"), "--auswertung", auswertung, "--ziel", ziel]]
 
 
@@ -50,6 +55,7 @@ def bauen(eingabe, ziel, cache, jobs, ausgabe=sys.stderr):
         subprocess.run(befehl, check=True)
     for name in SEITEN:
         shutil.copyfile(os.path.join(HIER, "site", name), os.path.join(ziel, name))
+    shutil.copyfile(os.path.join(HIER, "DATEN.md"), os.path.join(ziel, "DATEN.md"))  # Datenwoerterbuch neben den Daten
     subprocess.run([sys.executable, os.path.join(HIER, "site", "impressum_bauen.py"), os.path.join(HIER, "site", "impressum.html"),
                     os.path.join(ziel, "impressum.html")], check=True)
     return os.path.join(ziel, "index.html")

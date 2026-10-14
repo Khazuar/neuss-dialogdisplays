@@ -5,6 +5,7 @@
 !*/
 !.gitignore
 !README.md
+!DATEN.md
 !LICENSE
 !LICENSE-DATEN
 !*.py

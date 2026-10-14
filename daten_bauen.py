@@ -1,0 +1,178 @@
+# SPDX-License-Identifier: MIT
+"""Schreibt die bereinigten Daten als CSV-Dateien (DATEN.md): Kennzahlen je Messung, Abschnitt, Zeitraum und Tag sowie die
+Fahrzeuge je Tag, Stunde und km/h.
+
+Aufruf (nach dsd2csv.py mit --aggregat):
+  python3 -I daten_bauen.py --auswertung _site/auswertung.json --aggregat _aggregat --ziel _site/daten
+
+Eingaben: auswertung.json (dsd2csv.py), die Zwischenstaende <Ordner>/<Standort>/<Datei>.aggregat.json (dsd2csv.py --aggregat),
+belege/metadaten.json und belege/uhr-bewertung.json. Ausgabe in <ziel>:
+  messungen.csv, abschnitte.csv, kennzahlen.csv, tage.csv, luecken.csv (Klartext) sowie stunden/<standort>.csv.gz je Standortseite und
+  stunden.csv.gz (alle Standorte); die Stundendateien sind gzip-komprimiert (Klartext waere rund 280 MB)
+Die Dateien enthalten nur, was dsd2csv.py ohnehin berechnet: Ortszeit, nur nutzbare Zeit, Rauschboden und Regenanteil abgezogen,
+Abschnitte nach den Bruechen. Reihenfolge und Format sind deterministisch (gleiche Eingabe, gleiche Bytes).
+"""
+import argparse
+import csv
+import datetime as dt
+import gzip
+import io
+import json
+import os
+import sys
+
+HIER = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HIER)  # python -I nimmt das Skriptverzeichnis nicht auf
+import aggregat  # noqa: E402
+import gruppen  # noqa: E402
+import kalender  # noqa: E402
+import seiten_bauen  # noqa: E402
+from uhr_belege import gesamturteil  # noqa: E402
+
+ZEITRAEUME = ["alle", "nacht", "vormittag", "nachmittag", "abend", "schulweg"]
+KENNZAHLEN = ["fahrzeuge", "mittel_kmh", "v85_kmh", "v95_kmh", "v99_kmh", "einhaltung_prozent", "qualifiziert_prozent"]
+
+
+def kennzahlen(d):
+    """[Fahrzeuge, Mittel, V85, V95, V99, Einhaltung, qualifizierte Einhaltung] aus einem Auswertungsblock der YAML (leer ohne Fahrzeuge)."""
+    n = (d or {}).get("anzahl_fahrzeuge") or 0
+    if not n:
+        return [0, "", "", "", "", "", ""]
+    g, h = d.get("geschwindigkeit_kmh") or {}, d.get("einhaltung") or {}
+    return [n, g.get("mittel"), g.get("v85"), g.get("v95"), g.get("v99"), h.get("einhaltungsquote_prozent"),
+            h.get("qualifizierte_einhaltungsquote_prozent")]
+
+
+def _schreiber(ziel, kopf):
+    """CSV-Schreiber mit festem Zeilenende (LF) und UTF-8; None wird zur leeren Zelle."""
+    fh = open(ziel, "w", encoding="utf-8", newline="")
+    w = csv.writer(fh, lineterminator="\n")
+    w.writerow(kopf)
+    return fh, w
+
+
+def _schreiber_gz(ziel, kopf):
+    """Wie _schreiber, aber gzip-komprimiert und ohne Zeitstempel im Kopf (gleiche Eingabe, gleiche Bytes)."""
+    fh = io.TextIOWrapper(gzip.GzipFile(ziel, "wb", mtime=0), encoding="utf-8", newline="")
+    w = csv.writer(fh, lineterminator="\n")
+    w.writerow(kopf)
+    return fh, w
+
+
+def _zelle(x):
+    return "" if x is None else x
+
+
+def tage_flags(datum, cache={}):
+    """(Wochentag 1-7, Schulferien 0/1, Feiertag 0/1) eines Datums (ISO)."""
+    if datum not in cache:
+        d = dt.date.fromisoformat(datum)
+        cache[datum] = (d.isoweekday(), 1 if kalender.schulferien(d) else 0, 1 if kalender.feiertag(d) else 0)
+    return cache[datum]
+
+
+def stunden_zeilen(mid, agg, stunde_zeitraum):
+    """Zeilen der Stundendatei einer Messung (aggregat.SPALTEN_STUNDEN)."""
+    for datum, stunde, abschnitt, voll, flach in agg["stunden"]:
+        wt, fe, ft = tage_flags(datum)
+        zr = stunde_zeitraum[stunde]
+        for i in range(0, len(flach), 2):
+            yield [mid, abschnitt, datum, wt, stunde, zr, fe, ft, voll, flach[i], flach[i + 1]]
+
+
+def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
+    """Schreibt alle Dateien nach <ziel>. Gibt eine Kurzfassung {Datei: Zeilen} zurueck."""
+    os.makedirs(os.path.join(ziel, "stunden"), exist_ok=True)
+    stunde_zeitraum = aggregat.zeitraum_je_stunde(gruppen.ZEITSCHEIBEN)
+    zaehler = {}
+
+    fh_m, w_m = _schreiber(os.path.join(ziel, "messungen.csv"), [
+        "messung_id", "standort_seite", "ordner", "datei", "geraet", "tempolimit_kmh", "tempolimit_quelle", "messzeitraum_von", "messzeitraum_bis",
+        "fahrzeuge_in_datei", "fahrzeuge_ohne_nutzbare_zeit", "rauschen_abgezogen", "regenanteil_abgezogen", "fahrzeuge_im_aggregat",
+        "uhr_nutzbarkeit", "uhr_bewertung", "abschnitte", "bezeichnung_verwaltung"])
+    fh_a, w_a = _schreiber(os.path.join(ziel, "abschnitte.csv"), [
+        "messung_id", "abschnitt_nr", "von", "bis", "tage", "fahrzeuge", "bruch_wahrscheinlichkeit", "anmerkung"])
+    fh_k, w_k = _schreiber(os.path.join(ziel, "kennzahlen.csv"), ["messung_id", "bereich", "abschnitt_nr", "zeitraum"] + KENNZAHLEN)
+    fh_t, w_t = _schreiber(os.path.join(ziel, "tage.csv"), ["messung_id", "abschnitt_nr", "datum", "wochentag", "ferien", "feiertag"] + KENNZAHLEN)
+    fh_l, w_l = _schreiber(os.path.join(ziel, "luecken.csv"), ["messung_id", "von", "bis", "stunden"])
+    gesamt, w_g = _schreiber_gz(os.path.join(ziel, "stunden.csv.gz"), aggregat.SPALTEN_STUNDEN)
+    n = {k: 0 for k in ("messungen", "abschnitte", "kennzahlen", "tage", "luecken", "stunden")}
+    for slug, name, rels in seiten_bauen.standortgruppen(auswertung, metadaten):
+        fh_s, w_s = _schreiber_gz(os.path.join(ziel, "stunden", slug + ".csv.gz"), aggregat.SPALTEN_STUNDEN)
+        for rel in rels:
+            for r in [z for z in auswertung["standorte"] if z["standort"] == rel]:
+                mid = seiten_bauen.messung_id(rel, r["datei"])
+                pfad = os.path.join(aggregat_ordner, rel.replace("/", os.sep), os.path.splitext(r["datei"])[0] + ".aggregat.json")
+                agg = None
+                if os.path.exists(pfad):
+                    with open(pfad, encoding="utf-8") as fh:
+                        agg = json.load(fh)
+                bz = (r.get("bereinigt") or {}).get("messzeitraum") or r.get("messzeitraum") or {}
+                liste = (r.get("abschnitte") or {}).get("liste") or []
+                meta_messung = next((m for m in ((metadaten.get("standorte") or {}).get(rel) or {}).get("messungen", []) if m["datei"] == r["datei"]), {})
+                verw = " | ".join(v["bezeichnung"] for v in meta_messung.get("verwaltung", []) if v.get("bezeichnung"))
+                urteil = gesamturteil(((uhr.get("dateien") or {}).get(f'{rel}/{r["datei"]}') or {}).get("abschnitte", []))
+                rb = r.get("rauschen") or {}
+                w_m.writerow([mid, slug, rel, r["datei"], (r.get("geraet") or "").strip(), _zelle(r.get("tempolimit_kmh")), _zelle(r.get("tempolimit_quelle")),
+                              (bz.get("start") or "")[:10], (bz.get("ende") or "")[:10], r.get("fahrzeuge_in_datei"),
+                              (r.get("uhr") or {}).get("fahrzeuge_ohne_nutzbare_zeit"), rb.get("abgezogen_fahrzeuge") or 0,
+                              (rb.get("regen") or {}).get("abgezogen_fahrzeuge") or 0, (r.get("bereinigt") or {}).get("anzahl_fahrzeuge") or 0, (r.get("uhr") or {}).get("nutzbarkeit"),
+                              urteil[0] if urteil else "", len(liste) or 1, verw])
+                n["messungen"] += 1
+                # Kennzahlen: ganze Messung (nutzbare Zeit, nach Abzug) und je Abschnitt, je Zeitraum
+                quellen = [("messung", "", r.get("bereinigt") or {}, r.get("teilzeitraeume") or {})]
+                if liste:
+                    quellen += [("abschnitt", a["nr"], a, a.get("teilzeitraeume") or {}) for a in liste]
+                else:
+                    quellen.append(("abschnitt", 1, r.get("bereinigt") or {}, r.get("teilzeitraeume") or {}))
+                    von, bis = (bz.get("start") or "")[:10], (bz.get("ende") or "")[:10]
+                    tage = (dt.date.fromisoformat(bis) - dt.date.fromisoformat(von)).days + 1 if von and bis else ""
+                    w_a.writerow([mid, 1, von, bis, tage, (r.get("bereinigt") or {}).get("anzahl_fahrzeuge") or 0, "",
+                                  "nicht prüfbar" if (r.get("abschnitte") or {}).get("geprueft") is False else "kein Bruch erkannt"])
+                    n["abschnitte"] += 1
+                for a in liste:
+                    b = a.get("beginn") or {}
+                    w_a.writerow([mid, a["nr"], a["von"], a["bis"], a["tage"], a.get("anzahl_fahrzeuge") or 0, _zelle(b.get("wahrscheinlichkeit")),
+                                  "Beginn der Messung" if b.get("art") != "Bruch" else "Bruch davor"])
+                    n["abschnitte"] += 1
+                for bereich, nr, block, teil in quellen:
+                    for zr in ZEITRAEUME:
+                        w_k.writerow([mid, bereich, nr, zr] + kennzahlen(block if zr == "alle" else teil.get(zr)))
+                        n["kennzahlen"] += 1
+                if agg:
+                    for t in agg["tage"]:
+                        wt, fe, ft = tage_flags(t[1])
+                        w_t.writerow([mid, t[0], t[1], wt, fe, ft] + t[2:])
+                        n["tage"] += 1
+                    for lk in agg["luecken"]:
+                        w_l.writerow([mid] + lk)
+                        n["luecken"] += 1
+                    for z in stunden_zeilen(mid, agg, stunde_zeitraum):
+                        w_s.writerow(z)
+                        w_g.writerow(z)
+                        n["stunden"] += 1
+        fh_s.close()
+    for fh in (fh_m, fh_a, fh_k, fh_t, fh_l):
+        fh.close()
+    gesamt.close()
+    return n
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--auswertung", required=True, help="auswertung.json von dsd2csv.py")
+    ap.add_argument("--aggregat", required=True, help="Ordner mit den Zwischenstaenden (dsd2csv.py --aggregat)")
+    ap.add_argument("--metadaten", default=os.path.join(HIER, "belege", "metadaten.json"))
+    ap.add_argument("--uhr", default=os.path.join(HIER, "belege", "uhr-bewertung.json"))
+    ap.add_argument("--ziel", required=True, help="Ausgabeordner (zum Beispiel _site/daten)")
+    a = ap.parse_args()
+    daten = []
+    for pfad in (a.auswertung, a.metadaten, a.uhr):
+        with open(pfad, encoding="utf-8") as fh:
+            daten.append(json.load(fh))
+    n = bauen(daten[0], daten[1], daten[2], a.aggregat, a.ziel)
+    print("Daten in %s: %s" % (a.ziel, ", ".join("%s %d" % (k, v) for k, v in n.items())), file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

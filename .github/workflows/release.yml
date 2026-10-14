@@ -19,9 +19,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: CSV und YAML aus den DSD-Dateien erzeugen
-        run: python -I dsd2csv.py . -o daten --jobs 4
-      - name: Datenlizenz beilegen
-        run: cp LICENSE-DATEN daten/LICENSE-DATEN
+        run: python -I dsd2csv.py . -o daten --jobs 4 --aggregat _aggregat
+      - name: Bereinigte Daten (Kennzahlen, Tage, Stunden) als CSV
+        run: python -I daten_bauen.py --auswertung daten/auswertung.json --aggregat _aggregat --ziel daten/bereinigt
+      - name: Datenlizenz und Datenwoerterbuch beilegen
+        run: cp LICENSE-DATEN DATEN.md daten/
       - name: Hinweis beilegen
         run: |
           printf '%s\n' 'Eigene Berechnungen aus den Rohdaten der Stadt Neuss, nicht amtlich.' \

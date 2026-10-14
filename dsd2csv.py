@@ -65,6 +65,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
+import aggregat  # noqa: E402
 import bruch  # noqa: E402
 import kalender  # noqa: E402
 import gruppen  # noqa: E402
@@ -853,7 +854,7 @@ def rauschen_block(rb, abgezogen, roh=0, regen_abgezogen=0):
     return b
 
 
-CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", "bruch.py", "kalender.py", "verhalten.py", os.path.join("belege", "wetter.json"),
+CODE_DATEIEN = ("dsd2csv.py", "rauschen.py", "gruppen.py", "bruch.py", "kalender.py", "verhalten.py", "aggregat.py", os.path.join("belege", "wetter.json"),
                 os.path.join("belege", "standorte.json"), os.path.join("belege", "verhaltensgruppen-register.json"))  # davon haengt das Ergebnis je Datei ab (Zwischenspeicher)
 
 
@@ -868,8 +869,10 @@ DATEI_EBENE = "datei" if verhalten.verfuegbar() else "datei-ohne-numpy"
 NUR_MIT_NUMPY = ("datei", "verhalten", "vorlagen")
 
 
-def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher=None):
-    """Alle Kennzahlen einer Datei. Gibt (res, daten) zurueck; daten sind die Zellen fuer die Filter der Detailseite."""
+def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher=None, agg_aus=None):
+    """Alle Kennzahlen einer Datei. Gibt (res, daten) zurueck; daten sind die Zellen fuer die Filter der Detailseite.
+
+    agg_aus: ein dict, in das das bereinigte Aggregat der Datei kommt (aggregat.bauen); es gehoert nicht in res oder daten."""
     lim, quelle = tempolimit(meta, limit, kor)
     uhr, bereinigt, teil, spannen = analysiere_uhr(veh, status, mit_spannen=True)
     ort = koordinaten(standort)
@@ -927,6 +930,8 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
         daten["abschnitte"] = daten_abschnitte
     # Verhaltensgruppen je Abschnitt (docs/verhalten.md): alle Fahrzeuge mit nutzbarer Zeit, der Rauschboden ist dort eine eigene Gruppe
     grenzen = [dt.date.fromisoformat(b["datum"]) for b in br["brueche"]] if br.get("geprueft") else []
+    if agg_aus is not None:  # Fahrzeuge je Tag, Stunde und km/h (DATEN.md)
+        agg_aus.update(aggregat.bauen(bereinigt, spannen, grenzen, lim, stats, min_kmh))
     res["verhalten"], vz = verhalten_auswerten(bereinigt_vorher, spannen, grenzen, lim, ort, speicher)
     if daten:
         for d in daten.get("abschnitte") or [daten]:
@@ -1014,7 +1019,8 @@ def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusat
     return blk, daten_liste
 
 
-def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None, speicher=None, csv_schreiben=True):
+def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None, speicher=None, csv_schreiben=True,
+            aggregat_ordner=None):
     with open(path, "rb") as fh:
         buf = fh.read()
     name = os.path.basename(path)
@@ -1051,13 +1057,20 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
             speicher.benutzt.update(tuple(x) for x in gespeichert.get("abhaengig", []))
     else:
         vorher = set(speicher.benutzt) if speicher else set()
-        res, daten = rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher)
+        agg = {}
+        res, daten = rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher, agg)
         # wie nach dem Zwischenspeicher: nur JSON-Typen (Treffer und neu gerechnet liefern dasselbe)
-        gespeichert = json.loads(json.dumps({"res": res, "daten": daten,
+        gespeichert = json.loads(json.dumps({"res": res, "daten": daten, "aggregat": agg,
                                              "abhaengig": sorted(speicher.benutzt - vorher) if speicher else []}))
         res, daten = gespeichert["res"], gespeichert["daten"]
         if speicher:
             speicher.speichern(DATEI_EBENE, schluessel, gespeichert)
+    if aggregat_ordner and gespeichert.get("aggregat"):  # Zwischenstand fuer daten_bauen.py (nicht in die Seiten)
+        ziel = os.path.join(aggregat_ordner, standort.replace("/", os.sep))
+        os.makedirs(ziel, exist_ok=True)
+        with open(os.path.join(ziel, base + ".aggregat.json"), "w", encoding="utf-8", newline="\n") as f:
+            json.dump({"standort": standort, "datei": name, "tempolimit_kmh": res.get("tempolimit_kmh"), **gespeichert["aggregat"]}, f,
+                      ensure_ascii=False, separators=(",", ":"))
     schreibe_yaml(os.path.join(outdir, base + ".yaml"), ["# " + HINWEIS_AUSWERTUNG] + yaml_zeilen(res))
     if daten:
         with open(os.path.join(outdir, base + ".zellen.json"), "w", encoding="utf-8", newline="\n") as f:
@@ -1068,10 +1081,10 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
 
 def _aufgabe(a):
     """Eine Datei auswerten (auch in einem eigenen Prozess). Gibt (Index, res oder Fehlertext, benutzte Zwischenspeicher-Eintraege)."""
-    i, f, outdir, standort, limit, meta, status, min_kmh, korrekturen, cache, csv_schreiben = a
+    i, f, outdir, standort, limit, meta, status, min_kmh, korrekturen, cache, csv_schreiben, aggregat_ordner = a
     speicher = zwischenspeicher.Zwischenspeicher(cache) if cache else None
     try:
-        res = convert(f, outdir, standort, limit, meta, status, min_kmh, korrekturen, speicher, csv_schreiben)
+        res = convert(f, outdir, standort, limit, meta, status, min_kmh, korrekturen, speicher, csv_schreiben, aggregat_ordner)
     except Exception as e:  # eine fehlerhafte Datei soll den Lauf nicht beenden
         return i, f"{type(e).__name__}: {e}", set(speicher.benutzt) if speicher else set()
     return i, res, set(speicher.benutzt) if speicher else set()
@@ -1092,6 +1105,7 @@ def main():
     ap.add_argument("--keine-csv", action="store_true", help="keine CSV je Datei schreiben")
     ap.add_argument("--cache", help="Ordner fuer den Zwischenspeicher (Ergebnisse je Datei, siehe zwischenspeicher.py)")
     ap.add_argument("--jobs", type=int, default=1, help="so viele Dateien gleichzeitig auswerten (Standard 1)")
+    ap.add_argument("--aggregat", metavar="ORDNER", help="Zwischenstand des bereinigten Aggregats je Datei hierhin schreiben (daten_bauen.py macht daraus die CSV-Dateien)")
     a = ap.parse_args()
 
     if os.path.isdir(a.eingabe):
@@ -1113,7 +1127,8 @@ def main():
         standort = os.path.basename(dsd_ordner) if rel == "." else rel  # relativer Ordnerpfad
         outdir = os.path.join(a.out, rel) if a.out else dsd_ordner
         os.makedirs(outdir, exist_ok=True)
-        aufgaben.append((i, f, outdir, standort, a.limit, a.meta, a.status, a.min_kmh, korrekturen, a.cache, not a.keine_csv))
+        aufgaben.append((i, f, outdir, standort, a.limit, a.meta, a.status, a.min_kmh, korrekturen, a.cache, not a.keine_csv,
+                         os.path.abspath(a.aggregat) if a.aggregat else None))
     if a.jobs > 1 and len(aufgaben) > 1:
         with multiprocessing.Pool(a.jobs) as pool:
             ergebnisse = list(pool.imap_unordered(_aufgabe, aufgaben))

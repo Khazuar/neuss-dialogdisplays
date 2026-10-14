@@ -48,6 +48,8 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/wetter.md` – Wetterdaten des DWD (Quelle, Lizenz, Stationswahl, Zeitangabe) und der Befund, dass Regen das Radar stört
 - `seiten_bauen.py` – baut je Standort (gleiche Straße, sich überlappende Lage; alle Messungen und Fahrtrichtungen zusammen) eine Detailseite für die GitHub Pages (`standorte/<name>.html`) mit den Reitern Allgemein, Verwaltung, Messung, Analyse, Gruppen, Vergleich, Gefährdung und Lärm, dazu Weiterleitungen von den alten Seiten je Ordner, `uebersicht.json` für die Übersicht und die Übersicht der Verhaltensgruppen (`verhaltensgruppen.html`);
   Geschwindigkeits-Histogrammen als Inline-SVG
+- `DATEN.md` – Datenwörterbuch der bereinigten Daten (welche Datei für welche Frage, Spalten, Bereinigung, Berechnung von V85 und Einhaltung, Grenzen); `site/llms.txt` verweist darauf
+- `aggregat.py` – fasst die Fahrzeuge einer Datei je Tag, Stunde und km/h zusammen (Ortszeit, nutzbare Zeit, Rauschboden abgezogen, Abschnitte); `daten_bauen.py` schreibt daraus und aus der Auswertung die CSV-Dateien unter `daten/` (`messungen.csv`, `abschnitte.csv`, `kennzahlen.csv`, `tage.csv`, `luecken.csv`, `stunden/<standort>.csv.gz`, `stunden.csv.gz`)
 - `kalender.py` – Schulferien und Feiertage in NRW
 - `verhalten.py` – Verhaltensgruppen je Abschnitt (Modell, Placebo, Stadt-Vorlagen; braucht numpy, rechnet jeden Abschnitt einzeln mit Zwischenspeicher);
   `stadtgruppen.py` – fasst sie zu Gruppen je Standort (MS) und der Stadt (S) zusammen, vergibt Namen aus dem Register und schreibt `verhaltensgruppen.json`
@@ -57,7 +59,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `wetter.py` – erzeugt `belege/wetter.json` aus den Daten des Deutschen Wetterdienstes (Niederschlag je Stunde und Tag, Tageswerte von Temperatur, Wind und Schnee); `tageslicht.py` – Sonnenaufgang, Sonnenuntergang und Dämmerung für Neuss, rein rechnerisch
 - `zwischenspeicher.py` – Zwischenspeicher für Ergebnisse je Datei (nur geänderte Dateien oder Skripte werden neu gerechnet)
 - `lokal_bauen.py` – baut die GitHub-Pages-Seite lokal nach `_vorschau/` und startet auf Wunsch einen lokalen Server, um sie vor dem Push im Browser anzusehen (`docs/betrieb.md`)
-- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py`, `test_wetter.py`, `test_standorte.py`, `test_bruch.py`, `test_verhalten.py` – Tests (`python3 -m unittest -v`; die Modelltests brauchen numpy)
+- `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py`, `test_wetter.py`, `test_standorte.py`, `test_bruch.py`, `test_verhalten.py`, `test_aggregat.py` – Tests (`python3 -m unittest -v`; die Modelltests brauchen numpy)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
 - `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz, dazu `filter.js` (Auswahl nach Tageszeit, Tagen, Abschnitt und Gruppe auf den Detailseiten, liest nur die Daten der eigenen Seite) und `seite.js` (Reiter und Auswahl der Messung; ohne JavaScript steht alles untereinander), `labor.js` (Labor-Modus mit `?labor`: blendet den Forschungsstand, derzeit die Verhaltensgruppen, für alle anderen aus). Die Übersicht zeigt wahlweise Messungen (wie bei der Verwaltung) oder Abschnitte (`abschnitte.json`)
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
@@ -73,6 +75,9 @@ erzeugt:
   und den YAML-Auswertungen zum Herunterladen, außerdem `summary.csv` und `auswertung.yaml` mit allen
   Messungen. Die Seite wird bei jedem Push auf `main` neu gebaut. Die einzelnen CSV-Dateien (ein Fahrzeug
   pro Zeile, zusammen rund 270 MB) stehen dort bewusst nicht.
+- **Bereinigte Daten:** unter `daten/` auf der Seite (und im Release unter `bereinigt/`), erklärt im [Datenwörterbuch](DATEN.md):
+  Kennzahlen je Messung, Abschnitt, Zeitraum und Tag als CSV sowie die Fahrzeuge je Tag, Stunde und km/h (gzip, rund 12 MB). Im
+  Unterschied zu den rohen CSV-Dateien in Ortszeit, nur mit nutzbarer Uhr, ohne Rauschboden und nach Abschnitten geteilt.
 - **ZIP-Archiv:** unter [Releases](https://github.com/Khazuar/neuss-dialogdisplays/releases) gibt es zu
   jedem Tag `v*` ein ZIP mit allen Ergebnissen inklusive der CSV-Dateien, zum Archivieren und Zitieren
   eines festen Stands.
@@ -158,8 +163,8 @@ In diesem Repository gelten drei Lizenzen:
 
 | Was | Lizenz |
 |-----|--------|
-| Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, `standorte.py`, `bruch.py`, `kalender.py`, `verhalten.py`, `stadtgruppen.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
-| Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `metadaten.yaml`, `uhr-analyse.md`, `belege/` (außer `belege/wetter.json`), `README.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
+| Software: `dsd2csv.py`, `rauschen.py`, `gruppen.py`, `zwischenspeicher.py`, `uhr_belege.py`, `metadaten.py`, `standorte.py`, `bruch.py`, `kalender.py`, `verhalten.py`, `stadtgruppen.py`, `aggregat.py`, `daten_bauen.py`, Tests, `tools/`, `site/`, `.github/` | [MIT](LICENSE) |
+| Daten und Dokumentation: `.dsd`-Dateien, abgeleitete CSV- und YAML-Dateien, `metadaten.yaml`, `uhr-analyse.md`, `belege/` (außer `belege/wetter.json`), `README.md`, `DATEN.md`, `docs/` | [CC0 1.0](LICENSE-DATEN) (Public Domain Dedication) |
 | Wetterdaten: `belege/wetter.json` (Daten des Deutschen Wetterdienstes, ausgewählt, auf Ortszeit-Tage umgerechnet und zusammengefasst) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.de), **Quelle: Deutscher Wetterdienst** |
 
 Die Wetterdaten sind **nicht** CC0: Der Deutsche Wetterdienst gibt seine frei zugänglichen Wetter- und Klimadaten unter CC BY 4.0 mit

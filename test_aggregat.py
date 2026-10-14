@@ -1,0 +1,198 @@
+# SPDX-License-Identifier: MIT
+"""Tests fuer aggregat.py und daten_bauen.py (bereinigte Daten, DATEN.md).  Aufruf: python3 -m unittest -v"""
+import collections
+import csv
+import datetime as dt
+import gzip
+import json
+import os
+import tempfile
+import unittest
+
+import aggregat
+import daten_bauen
+import dsd2csv as d
+import gruppen
+import zwischenspeicher
+
+HIER = os.path.dirname(os.path.abspath(__file__))
+
+
+def fahrzeuge():
+    """Zwei Tage in Ortszeit: Tag 1 mit Fahrzeugen um 7 und 8 Uhr (8 Uhr nur teilweise aufgezeichnet), Tag 2 um 23 Uhr."""
+    t = dt.datetime
+    return [(t(2025, 3, 3, 7, 5), 30), (t(2025, 3, 3, 7, 6), 30), (t(2025, 3, 3, 7, 40), 45), (t(2025, 3, 3, 8, 2), 32),
+            (t(2025, 3, 4, 23, 10), 51), (t(2025, 3, 4, 23, 11), 28)]
+
+
+SPANNEN = [(dt.datetime(2025, 3, 3, 6, 30), dt.datetime(2025, 3, 3, 8, 10)), (dt.datetime(2025, 3, 4, 22, 0), dt.datetime(2025, 3, 5, 0, 0))]
+
+
+class Bauen(unittest.TestCase):
+    def setUp(self):
+        self.agg = aggregat.bauen(fahrzeuge(), SPANNEN, [dt.date(2025, 3, 4)], 30, d.stats)
+
+    def test_stunden_je_tag_und_kmh(self):
+        s = self.agg["stunden"]
+        self.assertEqual(s, [["2025-03-03", 7, 1, 1, [30, 2, 45, 1]], ["2025-03-03", 8, 1, 0, [32, 1]], ["2025-03-04", 23, 2, 1, [28, 1, 51, 1]]])
+        self.assertEqual(sum(sum(z[1::2]) for _, _, _, _, z in s), len(fahrzeuge()))  # nichts geht verloren
+
+    def test_abschnitt_nach_den_grenzen(self):
+        self.assertEqual([z[2] for z in self.agg["stunden"]], [1, 1, 2])  # der Tag der Grenze gehoert schon zum neuen Abschnitt
+
+    def test_tageskennzahlen_wie_stats(self):
+        tag = [f for f in fahrzeuge() if f[0].date() == dt.date(2025, 3, 3)]
+        s = d.stats(tag, 30)
+        erwartet = [1, "2025-03-03", s["anzahl_fahrzeuge"], s["geschwindigkeit_kmh"]["mittel"], s["geschwindigkeit_kmh"]["v85"],
+                    s["geschwindigkeit_kmh"]["v95"], s["geschwindigkeit_kmh"]["v99"], s["einhaltung"]["einhaltungsquote_prozent"],
+                    s["einhaltung"]["qualifizierte_einhaltungsquote_prozent"]]
+        self.assertEqual(self.agg["tage"][0], erwartet)
+        self.assertEqual([t[:2] for t in self.agg["tage"]], [[1, "2025-03-03"], [2, "2025-03-04"]])
+
+    def test_luecken_sind_die_nicht_vollstaendigen_stunden(self):
+        # 7 Uhr ist voll (6:30 bis 8:10: 7:00 bis 8:00), 8 Uhr nur teilweise; Tag 2: 22 und 23 Uhr voll
+        self.assertEqual(self.agg["luecken"], [["2025-03-03 08:00", "2025-03-04 21:00", 38]])
+
+    def test_ohne_fahrzeuge(self):
+        self.assertEqual(aggregat.bauen([], [], [], 30, d.stats), {"stunden": [], "tage": [], "luecken": []})
+
+    def test_zeitraeume_decken_alle_stunden_ab(self):
+        z = aggregat.zeitraum_je_stunde(gruppen.ZEITSCHEIBEN)
+        self.assertEqual(sorted(z), list(range(24)))
+        self.assertEqual({h: z[h] for h in (22, 5, 6, 11, 12, 18, 19, 21)},
+                         {22: "nacht", 5: "nacht", 6: "vormittag", 11: "vormittag", 12: "nachmittag", 18: "nachmittag", 19: "abend", 21: "abend"})
+
+
+class Gesamt(unittest.TestCase):
+    """convert() und daten_bauen an einer echten DSD-Datei: dieselben Zahlen wie die YAML und die Zellen der Detailseite."""
+
+    @classmethod
+    def setUpClass(cls):
+        dsds = sorted((os.path.getsize(os.path.join(o, f)), os.path.join(o, f)) for o, _, fs in os.walk(HIER) for f in fs
+                      if f.lower().endswith(".dsd") and os.path.getsize(os.path.join(o, f)) > 250000)
+        cls.tmp = tempfile.TemporaryDirectory()
+        t = cls.tmp.name
+        cls.ausgabe, cls.agg_ordner, cls.ziel = (os.path.join(t, x) for x in ("aus", "agg", "daten"))
+        os.makedirs(cls.ausgabe)
+        cls.res = d.convert(dsds[0][1], cls.ausgabe, "01_Teststrasse", None, False, False, 0, {},
+                            zwischenspeicher.Zwischenspeicher(os.path.join(t, "cache")), False, cls.agg_ordner)
+        cls.auswertung = {"standorte": [json.loads(json.dumps(cls.res))]}
+        cls.n = daten_bauen.bauen(cls.auswertung, {"standorte": {}}, {"dateien": {}}, cls.agg_ordner, cls.ziel)
+        with open(os.path.join(cls.ausgabe, os.path.splitext(cls.res["datei"])[0] + ".zellen.json"), encoding="utf-8") as fh:
+            cls.zellen = json.load(fh)
+        cls.slug = d.standort_slug(cls.res["standort"].split("_", 1)[-1])
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def stunden(self):
+        pfade = os.listdir(os.path.join(self.ziel, "stunden"))
+        self.assertEqual(len(pfade), 1)
+        self.assertTrue(pfade[0].endswith(".csv.gz"))
+        with gzip.open(os.path.join(self.ziel, "stunden", pfade[0]), "rt", encoding="utf-8", newline="") as fh:
+            return list(csv.DictReader(fh))
+
+    def test_dateien_und_spalten(self):
+        for name in ("messungen.csv", "abschnitte.csv", "kennzahlen.csv", "tage.csv", "luecken.csv", "stunden.csv.gz"):
+            self.assertTrue(os.path.exists(os.path.join(self.ziel, name)), name)
+        z = self.stunden()
+        self.assertEqual(list(z[0]), aggregat.SPALTEN_STUNDEN)
+        with gzip.open(os.path.join(self.ziel, "stunden.csv.gz"), "rt", encoding="utf-8", newline="") as fh:
+            gesamt = list(csv.DictReader(fh))
+        self.assertEqual(gesamt, z)  # eine Standortdatei, also ist die Gesamtdatei dieselbe
+
+    def test_summe_ist_die_zahl_der_fahrzeuge_mit_nutzbarer_zeit(self):
+        z = self.stunden()
+        self.assertEqual(sum(int(r["anzahl"]) for r in z), self.res["bereinigt"]["anzahl_fahrzeuge"])
+        with open(os.path.join(self.ziel, "messungen.csv"), encoding="utf-8", newline="") as fh:
+            m = list(csv.DictReader(fh))[0]
+        self.assertEqual(int(m["fahrzeuge_im_aggregat"]), sum(int(r["anzahl"]) for r in z))
+        self.assertEqual(int(m["fahrzeuge_in_datei"]), self.res["fahrzeuge_in_datei"])
+
+    def test_kennzahlen_je_zeitraum_aus_dem_aggregat_wie_in_der_yaml(self):
+        """V85 und Einhaltung je Zeitraum, aus den Stundenzeilen neu gerechnet, stimmen mit teilzeitraeume der YAML ueberein."""
+        z = self.stunden()
+        limit = self.res["tempolimit_kmh"]
+        # Mit Regenanteil-Abzug duennt dsd2csv.py die Zeitraeume getrennt von der ganzen Datei aus (docs/rauschen.md); dann stimmen die
+        # Zeiten nur ungefaehr (siehe DATEN.md, Abschnitt Grenzen). Ohne Regenabzug sind sie gleich.
+        regen = ((self.res.get("rauschen") or {}).get("regen") or {}).get("abgezogen_fahrzeuge") or 0
+        for name in ("nacht", "vormittag", "nachmittag", "abend"):
+            v = []
+            for r in z:
+                if r["zeitraum"] == name:
+                    v += [int(r["kmh"])] * int(r["anzahl"])
+            yaml = self.res["teilzeitraeume"][name]
+            if regen:
+                self.assertLess(abs(len(v) - yaml["anzahl_fahrzeuge"]), 0.5 * max(1, yaml["anzahl_fahrzeuge"]), name)
+                continue
+            self.assertEqual(len(v), yaml["anzahl_fahrzeuge"], name)
+            if not v:
+                continue
+            v.sort()
+            self.assertEqual(d.pct(v, 85), yaml["geschwindigkeit_kmh"]["v85"], name)
+            self.assertEqual(round(sum(v) / len(v), 2), yaml["geschwindigkeit_kmh"]["mittel"], name)
+            if limit:
+                ok = sum(1 for x in v if x <= limit)
+                self.assertEqual(round(100 * ok / len(v), 2), yaml["einhaltung"]["einhaltungsquote_prozent"], name)
+        schulweg = sum(int(r["anzahl"]) for r in z if r["stunde"] == "7" and int(r["wochentag"]) <= 5)
+        if not regen:
+            self.assertEqual(schulweg, self.res["teilzeitraeume"]["schulweg"]["anzahl_fahrzeuge"])
+
+    def test_ohne_regenabzug_sind_alle_zeitraeume_gleich(self):
+        """Eine Messung ohne Regenanteil-Abzug (kuenstlich: aus den Fahrzeugen der Tests), Aggregat und Teilzeitraeume derselben Rechnung."""
+        t = dt.datetime
+        veh = [(t(2025, 3, 3 + i // 24, i % 24, i % 60), 25 + i % 30) for i in range(400)]
+        teil = {k: [f for f in veh if in_zeitraum(f[0])] for k, (_, in_zeitraum) in d.TEILZEITRAEUME.items()}
+        agg = aggregat.bauen(veh, [(veh[0][0], veh[-1][0])], [], 30, d.stats)
+        zeitraum = aggregat.zeitraum_je_stunde(gruppen.ZEITSCHEIBEN)
+        for name in ("nacht", "vormittag", "nachmittag", "abend"):
+            n = sum(sum(z[1::2]) for _, h, _, _, z in agg["stunden"] if zeitraum[h] == name)
+            self.assertEqual(n, len(teil[name]), name)
+
+    def test_vollstaendige_stunden_sind_die_zellen_der_detailseite(self):
+        """Die Zellen (Tagschluessel x Stunde) der Detailseite zaehlen nur vollstaendig aufgezeichnete Stunden; hier dasselbe aus den Zeilen."""
+        je_zelle = collections.defaultdict(collections.Counter)
+        for r in self.stunden():
+            if r["voll"] == "1":
+                dd = dt.datetime.strptime(r["datum"], "%Y-%m-%d")
+                je_zelle["%d|%d" % (gruppen.tagschluessel(dd), int(r["stunde"]))][int(r["kmh"])] += int(r["anzahl"])
+        z = self.zellen["z"]
+        self.assertEqual(set(je_zelle), set(z))
+        for k, zaehler in je_zelle.items():
+            erwartet = {z[k][i]: z[k][i + 1] for i in range(0, len(z[k]), 2)}
+            self.assertEqual(dict(zaehler), erwartet, k)
+
+    def test_tage_und_abschnitte(self):
+        with open(os.path.join(self.ziel, "tage.csv"), encoding="utf-8", newline="") as fh:
+            tage = list(csv.DictReader(fh))
+        self.assertEqual(sum(int(t["fahrzeuge"]) for t in tage), self.res["bereinigt"]["anzahl_fahrzeuge"])
+        with open(os.path.join(self.ziel, "abschnitte.csv"), encoding="utf-8", newline="") as fh:
+            ab = list(csv.DictReader(fh))
+        self.assertEqual(len(ab), len(self.res["abschnitte"].get("liste") or []) or 1)
+        for a in ab:  # die Tage eines Abschnitts summieren sich zu seinen Fahrzeugen
+            self.assertEqual(sum(int(t["fahrzeuge"]) for t in tage if t["abschnitt_nr"] == a["abschnitt_nr"]), int(a["fahrzeuge"]), a)
+        with open(os.path.join(self.ziel, "kennzahlen.csv"), encoding="utf-8", newline="") as fh:
+            k = list(csv.DictReader(fh))
+        alle = [r for r in k if r["bereich"] == "messung" and r["zeitraum"] == "alle"][0]
+        self.assertEqual(int(alle["fahrzeuge"]), self.res["bereinigt"]["anzahl_fahrzeuge"])
+        self.assertEqual(float(alle["v85_kmh"]), self.res["bereinigt"]["geschwindigkeit_kmh"]["v85"])
+
+    def test_gleiche_eingabe_gleiche_bytes(self):
+        ziel2 = os.path.join(self.tmp.name, "daten2")
+        daten_bauen.bauen(self.auswertung, {"standorte": {}}, {"dateien": {}}, self.agg_ordner, ziel2)
+        for pfad in ("messungen.csv", "kennzahlen.csv", "tage.csv", "stunden.csv.gz", os.path.join("stunden", os.listdir(os.path.join(self.ziel, "stunden"))[0])):
+            with open(os.path.join(self.ziel, pfad), "rb") as a, open(os.path.join(ziel2, pfad), "rb") as b:
+                self.assertEqual(a.read(), b.read(), pfad)
+
+    def test_ohne_zwischenstand_nur_kennzahlen(self):
+        """Fehlt der Zwischenstand einer Datei, entstehen Kennzahlen, aber keine Stundenzeilen."""
+        leer = os.path.join(self.tmp.name, "leer")
+        os.makedirs(leer)
+        ziel3 = os.path.join(self.tmp.name, "daten3")
+        n = daten_bauen.bauen(self.auswertung, {"standorte": {}}, {"dateien": {}}, leer, ziel3)
+        self.assertEqual((n["messungen"], n["stunden"], n["tage"]), (1, 0, 0))
+
+
+if __name__ == "__main__":
+    unittest.main()
