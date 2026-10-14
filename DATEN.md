@@ -53,7 +53,7 @@ je Stunde folgt daraus nach der Regel in `rauschen.regenklassen`.
 
 ## Dateien und Spalten
 
-Alle Dateien: UTF-8, Komma als Trenner, Punkt als Dezimaltrenner, Zeilenende LF, leere Zelle = kein Wert, Zeiten in Ortszeit,
+Alle Dateien: UTF-8, Komma als Trenner, Punkt als Dezimaltrenner, Zeilenende LF, leere Zelle = kein Wert, Zeiten in Ortszeit (Europe/Berlin; in den Stundendateien mit `utc_versatz_h`, in `luecken.csv` in UTC),
 Reihenfolge deterministisch. `messung_id` ist die Kennung einer DSD-Datei (`m-<ordner>-<datei>`), `standort_seite` der Name der Standortseite
 (`standorte/<standort_seite>.html`; mehrere Ordner und Messungen am selben Ort liegen unter einer Seite).
 
@@ -100,6 +100,7 @@ rund 280 MB entpackt), die Dateien je Standortseite jeweils nur deren Messungen.
 | `datum` | Kalendertag in Ortszeit (ISO 8601) |
 | `wochentag` | 1 Montag bis 7 Sonntag |
 | `stunde` | 0–23, Ortszeit |
+| `utc_versatz_h` | Versatz der Ortszeit zu UTC in dieser Stunde: 1 (Winterzeit) oder 2 (Sommerzeit). UTC-Stunde = `datum` + `stunde` − `utc_versatz_h`. Die doppelte Stunde im Herbst („2A“ und „2B“) sind zwei Zeilen mit Versatz 2 und 1; im Frühjahr fehlt die Stunde 2. Schlüssel einer Stunde ist (`messung_id`, `datum`, `stunde`, `utc_versatz_h`). |
 | `zeitraum` | `nacht`, `vormittag`, `nachmittag` oder `abend` (ergibt sich aus der Stunde); Schulweg: `stunde` = 7 und `wochentag` ≤ 5 |
 | `ferien` | 1 = Schulferien NRW (nur 2022 bis 2026 bekannt, sonst 0) |
 | `feiertag` | 1 = gesetzlicher Feiertag NRW (ein Feiertag in den Ferien zählt in beiden Spalten) |
@@ -109,11 +110,12 @@ rund 280 MB entpackt), die Dateien je Standortseite jeweils nur deren Messungen.
 
 ### `luecken.csv`
 
-`messung_id`, `von`, `bis` (erste und letzte Stunde, `JJJJ-MM-TT HH:00`), `stunden`: Stunden zwischen dem ersten und letzten Fahrzeug einer Messung, die
-**nicht vollständig** aufgezeichnet sind (Anfang und Ende, Lücken, Uhrsprünge). Daraus folgt:
+`messung_id`, `von_utc`, `bis_utc` (erste und letzte Stunde in **UTC**, `JJJJ-MM-TTTHH:00Z`), `stunden`: Stunden zwischen dem ersten und letzten Fahrzeug einer
+Messung, die **nicht vollständig** aufgezeichnet sind (Anfang und Ende, Lücken, Uhrsprünge). Daraus folgt:
 
 - Eine Stunde mit Zeilen in den Stundendateien und `voll` = 1 hat die Fahrzeuge der Zeilen.
-- Eine Stunde im Messzeitraum, die weder in den Stundendateien noch in `luecken.csv` steht, war vollständig aufgezeichnet und hatte **0 Fahrzeuge**.
+- Eine Stunde im Messzeitraum, die weder in den Stundendateien noch in `luecken.csv` steht, war vollständig aufgezeichnet und hatte **0 Fahrzeuge**
+  (die UTC-Stunde einer Zeile ist `datum` + `stunde` − `utc_versatz_h`).
 - Eine Stunde in `luecken.csv` ist **unbekannt**, nicht null: Dort fehlen Daten (angebrochene Stunden haben trotzdem Zeilen, mit `voll` = 0).
 
 ## Kennzahlen aus den Stundenzeilen berechnen
@@ -147,6 +149,9 @@ def kennzahlen(g):
 # Beispiel: Werktage, 7 bis 8 Uhr, ohne Ferien, je Messung und Abschnitt
 w = stunden[(stunden.wochentag <= 5) & (stunden.stunde == 7) & (stunden.ferien == 0) & (stunden.feiertag == 0)]
 print(w.groupby(["messung_id", "abschnitt_nr"]).apply(kennzahlen))
+
+# Zeitreihen und Verknüpfung mit UTC-Daten (zum Beispiel Wetter): UTC-Stunde aus Datum, Stunde und Versatz
+stunden["utc"] = pd.to_datetime(stunden.datum) + pd.to_timedelta(stunden.stunde - stunden.utc_versatz_h, unit="h")
 ```
 
 Für ganze Messungen, Abschnitte und die üblichen Zeiträume ist `kennzahlen.csv` schon fertig gerechnet.
@@ -164,9 +169,10 @@ Für ganze Messungen, Abschnitte und die üblichen Zeiträume ist `kennzahlen.cs
   demselben Abzug und stimmen exakt überein (seit Oktober 2026; vorher wichen die Zeiträume bei Messungen mit Regenanteil ab).
 - **Lage.** Die Koordinaten sind eine Schätzung aus Straßenname, Hausnummer und Ortsangaben, kein Messprotokoll; `lage_unsicherheit_m` nennt die
   Spanne (im Median einige hundert Meter, bei ganzen Straßen bis über 1 km; [standorte.md](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/standorte.md)).
-- **Zeitumstellung.** Die Zeiten sind Ortszeit ohne Angabe der Zeitzone, daher am Tag der Umstellung nicht eindeutig: Im Frühjahr (letzter
-  Sonntag im März) gibt es die Stunde 2 nicht, im Herbst (letzter Sonntag im Oktober) enthält Stunde 2 die Fahrzeuge von zwei Stunden. „Je Stunde“
-  ist an diesen beiden Tagen nicht vergleichbar (`test_aggregat.py`, Klasse `Zeitumstellung`).
+- **Zeitumstellung.** Datum und Stunde sind Ortszeit; `utc_versatz_h` macht sie eindeutig. Im Frühjahr (letzter Sonntag im März) gibt es die
+  Stunde 2 nicht, im Herbst (letzter Sonntag im Oktober) kommt sie zweimal vor (Versatz 2 und 1). Wer nach `(datum, stunde)` allein sortiert oder
+  gruppiert, wirft die beiden zusammen. Die UTC-Zeit je Fahrzeug ist eindeutig, weil die Geräteuhr UTC plus ein fester Versatz ist
+  (`test_aggregat.py`, Klasse `Zeitumstellung`). `tage.csv` zählt Ortszeit-Tage (der Herbsttag hat 25, der Frühjahrstag 23 Stunden).
 - **Abschnitte** sind erkannte Brüche mit Wahrscheinlichkeit, keine bestätigten Ereignisse.
 - **Messdauer.** Eine Messung dauert im Median 11 Wochen (die kürzesten 10 % unter 2, die längsten 10 % über 19 Wochen). Aussagen zum
   Jahresverlauf oder zu Zeiten außerhalb des Messzeitraums sind nicht möglich. Messzeiträume über viele Monate oder Jahre entstehen nur bei

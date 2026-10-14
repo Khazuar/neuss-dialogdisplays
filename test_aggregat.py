@@ -26,19 +26,26 @@ def fahrzeuge():
 
 
 SPANNEN = [(dt.datetime(2025, 3, 3, 6, 30), dt.datetime(2025, 3, 3, 8, 10)), (dt.datetime(2025, 3, 4, 22, 0), dt.datetime(2025, 3, 5, 0, 0))]
+WINTER = dt.timedelta(hours=1)  # Winterzeit im Maerz vor der Umstellung: Ortszeit = UTC + 1
+
+
+def bauen(veh, spannen, grenzen=(), limit=30):
+    """aggregat.bauen fuer Fahrzeuge und Spannen in (Winter-)Ortszeit; die UTC-Zeit ist dann Ortszeit minus 1 Stunde."""
+    utc = {id(f): f[0] - WINTER for f in veh}
+    return aggregat.bauen(veh, utc, [(a - WINTER, b - WINTER) for a, b in spannen], lambda u: 1, list(grenzen), limit, d.stats)
 
 
 class Bauen(unittest.TestCase):
     def setUp(self):
-        self.agg = aggregat.bauen(fahrzeuge(), SPANNEN, [dt.date(2025, 3, 4)], 30, d.stats)
+        self.agg = bauen(fahrzeuge(), SPANNEN, [dt.date(2025, 3, 4)])
 
     def test_stunden_je_tag_und_kmh(self):
         s = self.agg["stunden"]
-        self.assertEqual(s, [["2025-03-03", 7, 1, 1, [30, 2, 45, 1]], ["2025-03-03", 8, 1, 0, [32, 1]], ["2025-03-04", 23, 2, 1, [28, 1, 51, 1]]])
-        self.assertEqual(sum(sum(z[1::2]) for _, _, _, _, z in s), len(fahrzeuge()))  # nichts geht verloren
+        self.assertEqual(s, [["2025-03-03", 7, 1, 1, 1, [30, 2, 45, 1]], ["2025-03-03", 8, 1, 1, 0, [32, 1]], ["2025-03-04", 23, 1, 2, 1, [28, 1, 51, 1]]])
+        self.assertEqual(sum(sum(z[5][1::2]) for z in s), len(fahrzeuge()))  # nichts geht verloren
 
     def test_abschnitt_nach_den_grenzen(self):
-        self.assertEqual([z[2] for z in self.agg["stunden"]], [1, 1, 2])  # der Tag der Grenze gehoert schon zum neuen Abschnitt
+        self.assertEqual([z[3] for z in self.agg["stunden"]], [1, 1, 2])  # der Tag der Grenze gehoert schon zum neuen Abschnitt
 
     def test_tageskennzahlen_wie_stats(self):
         tag = [f for f in fahrzeuge() if f[0].date() == dt.date(2025, 3, 3)]
@@ -50,11 +57,11 @@ class Bauen(unittest.TestCase):
         self.assertEqual([t[:2] for t in self.agg["tage"]], [[1, "2025-03-03"], [2, "2025-03-04"]])
 
     def test_luecken_sind_die_nicht_vollstaendigen_stunden(self):
-        # 7 Uhr ist voll (6:30 bis 8:10: 7:00 bis 8:00), 8 Uhr nur teilweise; Tag 2: 22 und 23 Uhr voll
-        self.assertEqual(self.agg["luecken"], [["2025-03-03 08:00", "2025-03-04 21:00", 38]])
+        # 7 Uhr ist voll (6:30 bis 8:10: 7:00 bis 8:00), 8 Uhr nur teilweise; Tag 2: 22 und 23 Uhr voll. Die Luecke ist in UTC angegeben (Ortszeit - 1)
+        self.assertEqual(self.agg["luecken"], [["2025-03-03T07:00Z", "2025-03-04T20:00Z", 38]])
 
     def test_ohne_fahrzeuge(self):
-        self.assertEqual(aggregat.bauen([], [], [], 30, d.stats), {"stunden": [], "tage": [], "luecken": []})
+        self.assertEqual(bauen([], []), {"stunden": [], "tage": [], "luecken": []})
 
     def test_zeitraeume_decken_alle_stunden_ab(self):
         z = aggregat.zeitraum_je_stunde(gruppen.ZEITSCHEIBEN)
@@ -64,26 +71,36 @@ class Bauen(unittest.TestCase):
 
 
 class Zeitumstellung(unittest.TestCase):
-    """Gerätezeit über die Sommerzeitumstellung: Die Fahrzeuge landen in der richtigen Ortszeit-Stunde des Aggregats (die Geräte stellen nie um)."""
+    """Gerätezeit über die Sommerzeitumstellung (die Geräte stellen nie um): Jede Stunde hat Datum, Ortszeit-Stunde und UTC-Versatz, auch die
+    doppelte Stunde im Herbst ist in zwei Zeilen getrennt."""
 
     def aggregat(self, start, minuten):
         veh = [(start + dt.timedelta(minutes=i), 30) for i in range(minuten)]  # ein Fahrzeug je Minute
-        uhr, bereinigt, teil, spannen = d.analysiere_uhr(veh, [], mit_spannen=True)
+        uhr, bereinigt, teil, spannen, utc, spannen_utc = d.analysiere_uhr(veh, [], mit_utc=True)
         self.assertEqual(len(bereinigt), minuten)  # alle haben nutzbare Zeit
-        agg = aggregat.bauen(bereinigt, spannen, [], 30, d.stats)
-        return {(z[0], z[1]): sum(z[4][1::2]) for z in agg["stunden"]}
+        agg = aggregat.bauen(bereinigt, utc, spannen_utc, d.utc_versatz_h, [], 30, d.stats)
+        return [(z[0], z[1], z[2], sum(z[5][1::2]), z[4]) for z in agg["stunden"]]
 
     def test_fruehjahr_stunde_2_faellt_aus(self):
         # Geraet im Winter gestellt (MEZ), laeuft im Sommer eine Stunde nach: Geraet 02:00 ist 03:00 MESZ am 30.03.2025
         stunden = self.aggregat(dt.datetime(2025, 3, 30, 0, 0), 5 * 60)  # Geraet 00:00 bis 04:59
-        self.assertEqual(stunden, {("2025-03-30", 0): 60, ("2025-03-30", 1): 60, ("2025-03-30", 3): 60, ("2025-03-30", 4): 60, ("2025-03-30", 5): 60})
-        self.assertNotIn(("2025-03-30", 2), stunden)  # diese Ortszeit-Stunde gibt es an dem Tag nicht
+        self.assertEqual([(s[0], s[1], s[2], s[3]) for s in stunden],
+                         [("2025-03-30", 0, 1, 60), ("2025-03-30", 1, 1, 60), ("2025-03-30", 3, 2, 60), ("2025-03-30", 4, 2, 60), ("2025-03-30", 5, 2, 60)])
+        self.assertNotIn(("2025-03-30", 2), [(s[0], s[1]) for s in stunden])  # diese Ortszeit-Stunde gibt es an dem Tag nicht
 
-    def test_herbst_stunde_2_enthaelt_zwei_stunden(self):
-        # Geraet im Sommer gestellt (MESZ), nie umgestellt: Geraet 02:xx und 03:xx sind beide Ortszeit 02:xx am 27.10.2024
+    def test_herbst_die_doppelte_stunde_ist_in_zwei_zeilen_getrennt(self):
+        # Geraet im Sommer gestellt (MESZ), nie umgestellt: Geraet 02:xx und 03:xx sind beide Ortszeit 02:xx am 27.10.2024 (2A und 2B)
         stunden = self.aggregat(dt.datetime(2024, 10, 26, 22, 0), 7 * 60)  # Geraet 22:00 bis 04:59
-        self.assertEqual(stunden, {("2024-10-26", 22): 60, ("2024-10-26", 23): 60, ("2024-10-27", 0): 60, ("2024-10-27", 1): 60,
-                                   ("2024-10-27", 2): 120, ("2024-10-27", 3): 60})
+        self.assertEqual([(s[0], s[1], s[2], s[3]) for s in stunden],
+                         [("2024-10-26", 22, 2, 60), ("2024-10-26", 23, 2, 60), ("2024-10-27", 0, 2, 60), ("2024-10-27", 1, 2, 60),
+                          ("2024-10-27", 2, 2, 60), ("2024-10-27", 2, 1, 60), ("2024-10-27", 3, 1, 60)])  # 2A (Versatz 2) vor 2B (Versatz 1)
+        self.assertEqual([s[4] for s in stunden], [1, 1, 1, 1, 1, 1, 0])  # die letzte Stunde endet schon um 04:59: angebrochen
+
+    def test_utc_aus_datum_stunde_und_versatz(self):
+        """datum, stunde und utc_versatz_h bestimmen die UTC-Stunde eindeutig und aufsteigend, auch ueber die Umstellung."""
+        stunden = self.aggregat(dt.datetime(2024, 10, 26, 22, 0), 7 * 60)
+        utc = [dt.datetime.strptime(s[0], "%Y-%m-%d") + dt.timedelta(hours=s[1] - s[2]) for s in stunden]
+        self.assertEqual(utc, [dt.datetime(2024, 10, 26, 20) + dt.timedelta(hours=i) for i in range(7)])
 
 
 class Gesamt(unittest.TestCase):
@@ -166,10 +183,10 @@ class Gesamt(unittest.TestCase):
         t = dt.datetime
         veh = [(t(2025, 3, 3 + i // 24, i % 24, i % 60), 25 + i % 30) for i in range(400)]
         teil = {k: [f for f in veh if in_zeitraum(f[0])] for k, (_, in_zeitraum) in d.TEILZEITRAEUME.items()}
-        agg = aggregat.bauen(veh, [(veh[0][0], veh[-1][0])], [], 30, d.stats)
+        agg = bauen(veh, [(veh[0][0], veh[-1][0])])
         zeitraum = aggregat.zeitraum_je_stunde(gruppen.ZEITSCHEIBEN)
         for name in ("nacht", "vormittag", "nachmittag", "abend"):
-            n = sum(sum(z[1::2]) for _, h, _, _, z in agg["stunden"] if zeitraum[h] == name)
+            n = sum(sum(z[5][1::2]) for z in agg["stunden"] if zeitraum[z[1]] == name)
             self.assertEqual(n, len(teil[name]), name)
 
     def test_vollstaendige_stunden_sind_die_zellen_der_detailseite(self):

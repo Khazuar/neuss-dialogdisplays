@@ -73,11 +73,11 @@ def tage_flags(datum, cache={}):
 
 def stunden_zeilen(mid, agg, stunde_zeitraum):
     """Zeilen der Stundendatei einer Messung (aggregat.SPALTEN_STUNDEN)."""
-    for datum, stunde, abschnitt, voll, flach in agg["stunden"]:
+    for datum, stunde, versatz, abschnitt, voll, flach in agg["stunden"]:
         wt, fe, ft = tage_flags(datum)
         zr = stunde_zeitraum[stunde]
         for i in range(0, len(flach), 2):
-            yield [mid, abschnitt, datum, wt, stunde, zr, fe, ft, voll, flach[i], flach[i + 1]]
+            yield [mid, abschnitt, datum, wt, stunde, versatz, zr, fe, ft, voll, flach[i], flach[i + 1]]
 
 
 def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
@@ -95,7 +95,7 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
         "messung_id", "abschnitt_nr", "von", "bis", "tage", "fahrzeuge", "bruch_wahrscheinlichkeit", "anmerkung"])
     fh_k, w_k = _schreiber(os.path.join(ziel, "kennzahlen.csv"), ["messung_id", "bereich", "abschnitt_nr", "zeitraum"] + KENNZAHLEN)
     fh_t, w_t = _schreiber(os.path.join(ziel, "tage.csv"), ["messung_id", "abschnitt_nr", "datum", "wochentag", "ferien", "feiertag"] + KENNZAHLEN)
-    fh_l, w_l = _schreiber(os.path.join(ziel, "luecken.csv"), ["messung_id", "von", "bis", "stunden"])
+    fh_l, w_l = _schreiber(os.path.join(ziel, "luecken.csv"), ["messung_id", "von_utc", "bis_utc", "stunden"])
     gesamt, w_g = _schreiber_gz(os.path.join(ziel, "stunden.csv.gz"), aggregat.SPALTEN_STUNDEN)
     n = {k: 0 for k in ("messungen", "abschnitte", "kennzahlen", "tage", "luecken", "stunden")}
     for slug, name, rels in seiten_bauen.standortgruppen(auswertung, metadaten):

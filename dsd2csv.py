@@ -519,8 +519,12 @@ def bewerte_segmente(segs, veh):
                 s["umstellung_auffaellig"] = [u for u in s["zeitumstellung"] if abs(u["abweichung_min"]) >= UMSTELLUNG_MAX_MIN]
 
 
-def analysiere_uhr(veh, status, mit_spannen=False):
-    """Gibt (uhr, bereinigt, teilzeitraeume) zurueck, mit mit_spannen=True zusaetzlich die Spannen.
+def analysiere_uhr(veh, status, mit_spannen=False, mit_utc=False):
+    """Gibt (uhr, bereinigt, teilzeitraeume) zurueck, mit mit_spannen=True zusaetzlich die Spannen, mit mit_utc=True Spannen, die UTC-Zeit
+    je Fahrzeug und die UTC-Spannen: (uhr, bereinigt, teilzeitraeume, spannen, utc, spannen_utc).
+
+    utc: {id(Fahrzeug in bereinigt): UTC-Zeit (ohne Zeitzone)}, spannen_utc: [(erste, letzte UTC-Zeit)] je Abschnitt. Die Geraeteuhr
+    ist UTC plus ein fester Versatz (sie wird nie umgestellt); die UTC-Zeit ist deshalb eindeutig, auch in der Stunde der Zeitumstellung.
 
     uhr: Nutzbarkeit der Zeitstempel (Dict fuer die YAML; keine Aussage, ob die Uhrzeit stimmt), bereinigt: [(Ortszeit, v)]
     aller Fahrzeuge in Segmenten mit nutzbarer Zeit, teilzeitraeume: dasselbe getrennt nach TEILZEITRAEUME,
@@ -531,13 +535,20 @@ def analysiere_uhr(veh, status, mit_spannen=False):
     teil = {k: [] for k in TEILZEITRAEUME}
     bereinigt = []
     spannen = []
+    utc, spannen_utc = {}, []
     for s in segs:
         if s["bewertung"] != "gueltig":
             continue
         spannen.append((min(s["ortszeit"]), max(s["ortszeit"])))
-        for c, i in zip(s["ortszeit"], s["idx"]):
+        if mit_utc:
+            versatz = dt.timedelta(hours=s["utc_versatz_h"])
+            zeiten_utc = [veh[i][0] - versatz for i in s["idx"]]
+            spannen_utc.append((min(zeiten_utc), max(zeiten_utc)))
+        for k, (c, i) in enumerate(zip(s["ortszeit"], s["idx"])):
             v = veh[i][1]
             bereinigt.append((c, v))
+            if mit_utc:
+                utc[id(bereinigt[-1])] = zeiten_utc[k]
             for name, (_, in_zeitraum) in TEILZEITRAEUME.items():
                 if in_zeitraum(c):
                     teil[name].append((c, v))
@@ -597,6 +608,8 @@ def analysiere_uhr(veh, status, mit_spannen=False):
         "segmente_mit_fahrzeugen": len(mit),
         "segmente": [segment_yaml(s) for s in segs if id(s) in groesste],
     }
+    if mit_utc:
+        return uhr, bereinigt, teil, spannen, utc, spannen_utc
     return (uhr, bereinigt, teil, spannen) if mit_spannen else (uhr, bereinigt, teil)
 
 
@@ -874,7 +887,7 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
 
     agg_aus: ein dict, in das das bereinigte Aggregat der Datei kommt (aggregat.bauen); es gehoert nicht in res oder daten."""
     lim, quelle = tempolimit(meta, limit, kor)
-    uhr, bereinigt, teil, spannen = analysiere_uhr(veh, status, mit_spannen=True)
+    uhr, bereinigt, teil, spannen, utc, spannen_utc = analysiere_uhr(veh, status, mit_utc=True)
     ort = koordinaten(standort)
     rb = rauschen.pruefen(bereinigt, spannen, lim, regen=regenfunktion(ort=ort))
     anzahl_roh = len(veh)
@@ -933,7 +946,7 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     # Verhaltensgruppen je Abschnitt (docs/verhalten.md): alle Fahrzeuge mit nutzbarer Zeit, der Rauschboden ist dort eine eigene Gruppe
     grenzen = [dt.date.fromisoformat(b["datum"]) for b in br["brueche"]] if br.get("geprueft") else []
     if agg_aus is not None:  # Fahrzeuge je Tag, Stunde und km/h (DATEN.md)
-        agg_aus.update(aggregat.bauen(bereinigt, spannen, grenzen, lim, stats, min_kmh))
+        agg_aus.update(aggregat.bauen(bereinigt, utc, spannen_utc, utc_versatz_h, grenzen, lim, stats, min_kmh))
     res["verhalten"], vz = verhalten_auswerten(bereinigt_vorher, spannen, grenzen, lim, ort, speicher)
     if daten:
         for d in daten.get("abschnitte") or [daten]:
