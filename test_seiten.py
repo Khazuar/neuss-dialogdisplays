@@ -125,6 +125,20 @@ class Verhaltensgruppen(unittest.TestCase):
         self.assertIn("kein Verhaltensmodell", ohne)
         self.assertIn("Keine Gruppe kehrt an diesem Standort", ohne)
 
+    def test_forschungsstand_ist_im_labor_modus_versteckt(self):
+        h = s.seite("07_2024_ Einsteinstraße", [zeile()], {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}, {}, vg=vg_beispiel())
+        self.assertIn('<script src="../labor.js"></script>', h)
+        self.assertIn('data-ziel="gruppen" class="labor"', h)  # der Reiter
+        self.assertIn('class="reiter-inhalt labor" id="r-gruppen"', h)  # und sein Inhalt
+        for rid in ("allgemein", "messung", "analyse", "vergleich"):
+            self.assertNotIn(f'data-ziel="{rid}" class="labor"', h)
+        self.assertNotIn('id="r-analyse" role="tabpanel" aria-labelledby="t-analyse" data-reiter="analyse"><h2>Analyse</h2><p class="muted labor', h)
+        sv = s.verhaltensgruppen_seite(vg_beispiel())
+        self.assertIn('<script src="labor.js"></script>', sv)
+        self.assertIn('<div class="labor">', sv)
+        self.assertIn('class="kein-labor"', sv)
+        self.assertIn('name="robots" content="noindex"', sv)
+
     def test_namen_in_der_auswahl(self):
         namen = s.vg_namen(vg_beispiel(), "07_2024_ Einsteinstraße", "_15.dsd")
         self.assertEqual(sorted(namen), [1, 2])
@@ -142,6 +156,32 @@ class Verhaltensgruppen(unittest.TestCase):
         self.assertIn("×0,80", h)  # Placebo
         kurz = s.verhaltensgruppen_kurz(vg_beispiel())
         self.assertEqual(kurz[0], {"id": "S-R1", "anzeige": "Regen<phantome> (S-R1)", "stufe": "tragfähig", "standorte": 1, "gefunden": True})
+
+
+class AbschnitteUebersicht(unittest.TestCase):
+    def test_eine_zeile_je_abschnitt_und_je_messung_ohne_bruch(self):
+        z = zeile()
+        k = {"mittel": 18.0, "maximal": 70, "v85": 25, "v95": 30, "v99": 38}
+        h = {"einhaltungsquote_prozent": 91.0, "qualifizierte_einhaltungsquote_prozent": 50.0}
+
+        def abschnitt(nr, von, bis, beginn):
+            return {"nr": nr, "von": von, "bis": bis, "tage": 40, "anzahl_fahrzeuge": 3000, "beginn": beginn, "geschwindigkeit_kmh": k,
+                    "einhaltung": h, "teilzeitraeume": {"nacht": {"anzahl_fahrzeuge": 10, "geschwindigkeit_kmh": k, "einhaltung": h}}}
+        mit = dict(z, abschnitte={"geprueft": True, "liste": [abschnitt(1, "2024-07-24", "2024-09-01", {"art": "Beginn der Messung"}),
+                                                              abschnitt(2, "2024-09-02", "2024-12-04", {"art": "Bruch", "wahrscheinlichkeit": 0.97})]})
+        ohne = dict(zeile("01_Anders", "x.dsd"), abschnitte={"geprueft": True, "liste": []})
+        nicht = dict(zeile("02_Kurz", "y.dsd"), abschnitte={"geprueft": False, "grund": "zu kurz"})
+        ueb = {"07_2024_ Einsteinstraße/_15.dsd": {"seite": "standorte/einstein.html#m-x", "standort": "Einsteinstraße", "verwaltung": ["V <1>"]}}
+        a = s.abschnitte_uebersicht({"standorte": [mit, ohne, nicht]}, ueb)
+        self.assertEqual([(x["datei"], x["nr"], x["anzahl"]) for x in a], [("_15.dsd", 1, 2), ("_15.dsd", 2, 2), ("x.dsd", 1, 1), ("y.dsd", 1, 1)])
+        self.assertEqual(a[1]["bruch"], 0.97)
+        self.assertEqual(a[1]["seite"], "standorte/einstein.html#m-x/messung")
+        self.assertEqual(a[1]["metriken"]["roh"]["quote"], 91.0)
+        self.assertEqual(a[1]["metriken"]["nacht"]["n"], 10)
+        self.assertEqual(a[2]["hinweis"], "kein Bruch erkannt")
+        self.assertEqual(a[3]["hinweis"], "")  # nicht prüfbar: kein Hinweis auf „kein Bruch“
+        self.assertEqual(a[2]["metriken"]["roh"]["n"], 1000)  # ohne Bruch: roh wie die Datei
+        self.assertEqual(a[2]["tage"], 134)  # 24.07. bis 04.12.2024
 
 
 class Seite(unittest.TestCase):

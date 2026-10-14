@@ -141,3 +141,6 @@ svg.hist .vg-4 { stroke: var(--vg-4); } svg.hist .vg-5 { stroke: var(--vg-5); }
 .vg-marke.vg-4 { background: var(--vg-4); } .vg-marke.vg-5 { background: var(--vg-5); }
 .vg-gesichert th, .vg-gesichert td { font-weight: 600; }
 .vg-stadtgruppe { margin-top: 2rem; }
+/* Labor-Modus (site/labor.js): Forschungsstand nur mit ?labor sichtbar */
+html:not(.labor) .labor { display: none !important; }
+html.labor .kein-labor { display: none; }

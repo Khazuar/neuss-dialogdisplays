@@ -44,7 +44,7 @@ jobs:
       - name: Detailseiten der Standorte bauen
         run: python -I seiten_bauen.py --auswertung _site/auswertung.json --ziel _site
       - name: Seiten hinzufuegen
-        run: cp site/index.html site/datenschutz.html site/style.css site/filter.js site/seite.js _site/
+        run: cp site/index.html site/datenschutz.html site/style.css site/filter.js site/seite.js site/labor.js _site/
       - name: Impressum aus den Repository-Variablen erzeugen
         env:
           IMPRESSUM_STRASSE: ${{ vars.IMPRESSUM_STRASSE }}

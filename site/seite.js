@@ -6,7 +6,8 @@
   var d = document;
   var nav = d.querySelector(".reiter");
   if (!nav) { return; }
-  var knoepfe = nav.querySelectorAll('[role="tab"]');
+  var labor = d.documentElement.classList.contains("labor");  // site/labor.js: Reiter mit der Klasse "labor" nur im Labor-Modus
+  var knoepfe = Array.prototype.filter.call(nav.querySelectorAll('[role="tab"]'), function (k) { return labor || !k.classList.contains("labor"); });
   var flaechen = d.querySelectorAll('[role="tabpanel"]');
   var messwahl = d.querySelector("select[data-messwahl]");
   var reiter = knoepfe.length ? knoepfe[0].getAttribute("data-ziel") : null;
@@ -52,7 +53,7 @@
   for (i = 0; i < knoepfe.length; i++) {
     knoepfe[i].addEventListener("click", function () { reiter = this.getAttribute("data-ziel"); zeige(); });
     knoepfe[i].addEventListener("keydown", function (ev) {  // Pfeiltasten zwischen den Reitern
-      var liste = Array.prototype.slice.call(knoepfe), k = liste.indexOf(this);
+      var liste = knoepfe, k = liste.indexOf(this);
       if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
         k = (k + (ev.key === "ArrowRight" ? 1 : liste.length - 1)) % liste.length;
         reiter = liste[k].getAttribute("data-ziel");

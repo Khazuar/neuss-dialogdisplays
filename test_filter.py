@@ -175,5 +175,53 @@ class FilterJs(unittest.TestCase):
         self.assertLessEqual(max(farbig), max(grau) + 0.11)  # gerundet auf eine Nachkommastelle
 
 
+LABOR = r"""
+const pfad = process.argv[2], such = process.argv[3], gespeichert = process.argv[4] === "1", kaputt = process.argv[5] === "1";
+const klassen = new Set();
+const speicher = {};
+if (gespeichert) speicher.labor = "1";
+global.window = { location: { search: such }, localStorage: kaputt ? { getItem() { throw new Error("x"); }, setItem() { throw new Error("x"); },
+  removeItem() { throw new Error("x"); } } : { getItem: k => (k in speicher ? speicher[k] : null), setItem: (k, v) => { speicher[k] = v; }, removeItem: k => { delete speicher[k]; } } };
+global.document = { documentElement: { classList: { add: k => klassen.add(k) } } };
+require(pfad);
+console.log(JSON.stringify({ an: klassen.has("labor"), speicher }));
+"""
+
+
+@unittest.skipUnless(NODE, "Node ist nicht installiert")
+class LaborJs(unittest.TestCase):
+    def lauf(self, suche, gespeichert=False, kaputt=False):
+        with tempfile.TemporaryDirectory() as d:
+            skript = os.path.join(d, "t.js")
+            with open(skript, "w", encoding="utf-8") as fh:
+                fh.write(LABOR)
+            out = subprocess.run([NODE, skript, os.path.join(HIER, "site", "labor.js"), suche, "1" if gespeichert else "0", "1" if kaputt else "0"],
+                                 stdout=subprocess.PIPE, check=True, timeout=60)
+        return json.loads(out.stdout.decode("utf-8"))
+
+    def test_ohne_schalter_aus(self):
+        self.assertFalse(self.lauf("")["an"])
+        self.assertFalse(self.lauf("?x=1")["an"])
+        self.assertFalse(self.lauf("?laboratorium")["an"])  # nur der Schalter "labor" zaehlt, nicht ein Wort, das so anfaengt
+
+    def test_schalter_wird_gemerkt(self):
+        r = self.lauf("?labor")
+        self.assertTrue(r["an"])
+        self.assertEqual(r["speicher"]["labor"], "1")
+        self.assertTrue(self.lauf("?a=1&labor=1")["an"])
+        self.assertTrue(self.lauf("", gespeichert=True)["an"])  # spaeter ohne Schalter weiter an
+
+    def test_ausschalten(self):
+        for such in ("?labor=0", "?labor=aus"):
+            r = self.lauf(such, gespeichert=True)
+            self.assertFalse(r["an"], such)
+            self.assertNotIn("labor", r["speicher"])
+
+    def test_ohne_speicher_gilt_der_schalter_nur_fuer_die_adresse(self):
+        self.assertTrue(self.lauf("?labor", kaputt=True)["an"])
+        self.assertFalse(self.lauf("", kaputt=True)["an"])
+        self.assertFalse(self.lauf("?labor=0", kaputt=True)["an"])
+
+
 if __name__ == "__main__":
     unittest.main()

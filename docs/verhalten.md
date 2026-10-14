@@ -201,6 +201,12 @@ Vorlagen gibt es noch nicht; „lokal nachgewiesen“ ist deshalb schwächer als
 
 ### Auf den Seiten
 
+**Nur im Labor-Modus sichtbar.** Die Verhaltensgruppen sind Forschungsstand und für Besucher ausgeblendet: der Reiter „Gruppen“, die
+Gruppen in der Auswahl der Analyse, die Übersichtsseite und der Abschnitt auf der Startseite. Sichtbar werden sie, wenn man `?labor`
+an eine Adresse der Seite hängt (etwa `…/index.html?labor`); der Browser merkt sich das (`localStorage`), mit `?labor=0` ist es wieder aus.
+Das ist ein Ausblenden, kein Schutz: Die Daten und Seiten sind öffentlich, und ohne JavaScript bleibt der Labor-Modus aus
+(`site/labor.js`). Die Übersichtsseite ist außerdem auf `noindex` gesetzt.
+
 - **Reiter „Analyse“:** Die Auswahl „Gruppe“ zeigt die Verhaltensgruppen des gewählten Abschnitts (bei mehreren Abschnitten erst nach
   Wahl eines Abschnitts). Für eine Auswahl aus Tageszeit und Tagen ist eine Gruppe die Summe der erwarteten Fahrten des Modells in den
   gewählten Stunden mal ihr Profil; grau stehen alle aufgezeichneten Fahrten (das Modell enthält auch den Rauschboden). Stunden ohne

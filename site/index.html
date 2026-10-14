@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Neuss Dialogdisplays – Messdaten</title>
 <link rel="stylesheet" href="style.css">
+<script src="labor.js"></script>
 </head>
 <body>
 <main>
@@ -23,7 +24,7 @@
     <li><a href="auswertung.yaml">Alle Auswertungen als YAML</a></li>
     <li><a href="summary.csv">Übersichtstabelle als CSV</a></li>
   </ul>
-  <section id="verhaltensgruppen" hidden>
+  <section id="verhaltensgruppen" class="labor" hidden>
     <h2>Verhaltensgruppen der Stadt</h2>
     <p class="muted">
       Teile des Verkehrs mit eigenem Tempo und eigenem Verhalten (Tageszeit, Licht, Wetter, Ferien, Verkehrsmenge), über alle Standorte
@@ -47,6 +48,13 @@
 
   <div class="controls">
     <div>
+      <label for="ansicht">Ansicht</label>
+      <select id="ansicht">
+        <option value="messungen">Messungen (wie bei der Verwaltung)</option>
+        <option value="abschnitte">Abschnitte (Messungen an Brüchen geteilt)</option>
+      </select>
+    </div>
+    <div>
       <label for="zeitraum">Zeitraum</label>
       <select id="zeitraum"></select>
     </div>
@@ -56,6 +64,7 @@
     </div>
   </div>
   <p id="zeitraum-info" class="muted"></p>
+  <p id="ansicht-info" class="muted"></p>
 
   <p id="status" role="status">Lade Daten …</p>
   <div class="tablewrap" hidden>
@@ -104,7 +113,7 @@ function parseCSV(text) {
 }
 // </parseCSV>
 
-const COLUMNS = [
+const COLUMNS_MESSUNGEN = [
   { key: "standort", label: "Standort" },
   { key: "verwaltung", label: "Messstelle laut Verwaltung" },
   { key: "limit", label: "Limit km/h", num: true },
@@ -121,6 +130,31 @@ const COLUMNS = [
   { key: "links", label: "Auswertung", nosort: true },
   { key: "datei", label: "Datei" },
 ];
+// Ansicht „Abschnitte“: dieselben Kennzahlen je Abschnitt einer Messung (abschnitte.json, seiten_bauen.py)
+const COLUMNS_ABSCHNITTE = [
+  { key: "standort", label: "Standort" },
+  { key: "verwaltung", label: "Messstelle laut Verwaltung" },
+  { key: "nr", label: "Abschnitt", num: true },
+  { key: "limit", label: "Limit km/h", num: true },
+  { key: "quote", label: "Einhaltung", num: true },
+  { key: "qual", label: "Qualifiziert", num: true },
+  { key: "n", label: "Fahrzeuge", num: true },
+  { key: "start", label: "Beginn" },
+  { key: "ende", label: "Ende" },
+  { key: "tage", label: "Tage", num: true },
+  { key: "bruch", label: "Bruch davor", num: true },
+  { key: "mittel", label: "Ø km/h", num: true },
+  { key: "v85", label: "V85", num: true },
+  { key: "v95", label: "V95", num: true },
+  { key: "v99", label: "V99", num: true },
+  { key: "hinweis", label: "Hinweis" },
+  { key: "links", label: "Seite", nosort: true },
+  { key: "datei", label: "Datei" },
+];
+let ansicht = "messungen";
+let dataA = [];
+const spalten = () => (ansicht === "abschnitte" ? COLUMNS_ABSCHNITTE : COLUMNS_MESSUNGEN);
+const zeilen = () => (ansicht === "abschnitte" ? dataA : data);
 
 // Zeitraeume der Auswertung: Praefix der Spalten in summary.csv
 const ZEITRAEUME = [
@@ -197,7 +231,7 @@ function zeile(r, idx) {
 
 function waehleZeitraum(z) {
   zeitraum = z;
-  for (const r of data) Object.assign(r, r.metriken[z.id]);
+  for (const r of data.concat(dataA)) Object.assign(r, r.metriken[z.id]);
   document.getElementById("zeitraum-info").textContent = z.info;
 }
 
@@ -214,8 +248,12 @@ function cell(tr, col, row) {
     td.append(a);
   } else if (col.key === "links") {
     const a = document.createElement("a");
-    a.href = row.yaml; a.textContent = "YAML";
+    a.href = ansicht === "abschnitte" ? row.seite : row.yaml; a.textContent = ansicht === "abschnitte" ? "Detailseite" : "YAML";
     td.append(a);
+  } else if (col.key === "nr") {
+    td.textContent = row.nr + " von " + row.anzahl;
+  } else if (col.key === "bruch") {
+    td.textContent = row.nr === 1 ? "–" : row.bruch === null ? "?" : fmt.format(Math.floor(row.bruch * 1000) / 10) + " %";
   } else if (col.key === "hinweis") {
     if (row.hinweis) {
       const s = document.createElement("span");
@@ -232,7 +270,8 @@ function cell(tr, col, row) {
 
 function render() {
   const q = document.getElementById("filter").value.trim().toLowerCase();
-  const rows = data.filter((r) => !q || (r.standort + " " + r.datei + " " + (r.verwaltung || "") + " " + (r.ort || "")).toLowerCase().includes(q));
+  const alle = zeilen();
+  const rows = alle.filter((r) => !q || (r.standort + " " + r.datei + " " + (r.verwaltung || "") + " " + (r.ort || "")).toLowerCase().includes(q));
   rows.sort((a, b) => {
     const x = a[sort.key], y = b[sort.key];
     if (x === y) return 0;
@@ -244,10 +283,10 @@ function render() {
   body.replaceChildren();
   for (const r of rows) {
     const tr = document.createElement("tr");
-    for (const col of COLUMNS) cell(tr, col, r);
+    for (const col of spalten()) cell(tr, col, r);
     body.append(tr);
   }
-  document.getElementById("status").textContent = rows.length + " von " + data.length + " Messungen";
+  document.getElementById("status").textContent = rows.length + " von " + alle.length + (ansicht === "abschnitte" ? " Abschnitten" : " Messungen");
   for (const th of document.querySelectorAll("#head th")) {
     th.setAttribute("aria-sort", th.dataset.key === sort.key ? (sort.dir > 0 ? "ascending" : "descending") : "none");
   }
@@ -255,7 +294,8 @@ function render() {
 
 function kopf() {
   const head = document.getElementById("head");
-  for (const col of COLUMNS) {
+  head.replaceChildren();
+  for (const col of spalten()) {
     const th = document.createElement("th");
     th.dataset.key = col.key;
     if (col.num) th.className = "num";
@@ -276,7 +316,7 @@ function kopf() {
 async function start() {
   const status = document.getElementById("status");
   try {
-    const [res, ueb] = await Promise.all([fetch("summary.csv"), fetch("uebersicht.json").catch(() => null)]);
+    const [res, ueb, abs] = await Promise.all([fetch("summary.csv"), fetch("uebersicht.json").catch(() => null), fetch("abschnitte.json").catch(() => null)]);
     if (!res.ok) throw new Error("HTTP " + res.status);
     const [header, ...rows] = parseCSV(await res.text());
     const idx = Object.fromEntries(header.map((h, i) => [h, i]));
@@ -291,6 +331,27 @@ async function start() {
       const verw = s && s.verwaltung && s.verwaltung.length ? s.verwaltung : [""];
       for (const v of verw) data.push(Object.assign({}, z, { verwaltung: v }));
     }
+    // Ansicht „Abschnitte“: eine Zeile je Abschnitt (Brüche in der Messreihe, docs/abschnitte.md); ohne die Datei gibt es nur die Messungen
+    let abschnitte = [];
+    if (abs && abs.ok) { try { abschnitte = await abs.json(); } catch (e) { abschnitte = []; } }
+    dataA = abschnitte.map((a) => ({
+      standort: bereinige(a.standort), ort: a.ort, seite: a.seite, datei: a.standort + "/" + a.datei, verwaltung: a.verwaltung.join(" / "),
+      nr: a.nr, anzahl: a.anzahl, limit: a.limit, start: a.von, ende: a.bis, tage: a.tage, bruch: a.bruch, hinweis: a.hinweis,
+      metriken: a.metriken, ...a.metriken[zeitraum.id],
+    }));
+    const ansichtWahl = document.getElementById("ansicht");
+    const ansichtInfo = document.getElementById("ansicht-info");
+    if (!dataA.length) ansichtWahl.closest("div").hidden = true;
+    ansichtWahl.addEventListener("change", () => {
+      ansicht = ansichtWahl.value;
+      ansichtInfo.textContent = ansicht === "abschnitte"
+        ? "Abschnitte: Eine Messreihe ist an erkannten Brüchen geteilt (Gerät umgehängt, Baustelle, andere Verkehrslage), jeder Abschnitt einzeln ausgewertet. " +
+          "Messungen ohne erkannten Bruch stehen als ein Abschnitt da. „Bruch davor“ ist die Wahrscheinlichkeit des Bruchs vor dem Abschnitt. " +
+          "Mit der Verwaltung vergleichbar bleibt die Ansicht „Messungen“."
+        : "";
+      kopf();
+      render();
+    });
     kopf();
     const auswahl = document.getElementById("zeitraum");
     for (const z of ZEITRAEUME) {

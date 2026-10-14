@@ -612,8 +612,8 @@ def filter_abschnitt(row, daten, sid, namen=None):
             '<p class="muted">Wählen Sie Tageszeit, Tage' + (', Abschnitt' if abschnitt_opt else '') + (' und Gruppe' if gruppen_opt else '') +
             '; Kennzahlen und Verteilung gelten dann für diese Auswahl. '
             'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt. '
-            + ('Gruppen sind die Verhaltensgruppen des Abschnitts (Reiter „Gruppen“): Bei einer Gruppe bleiben alle aufgezeichneten Fahrten grau '
-               'sichtbar, farbig ist, was die Gruppe nach dem Modell davon erklärt.' if mit_vg else '') +
+            + ('<span class="labor">Gruppen sind die Verhaltensgruppen des Abschnitts (Reiter „Gruppen“): Bei einer Gruppe bleiben alle aufgezeichneten '
+               'Fahrten grau sichtbar, farbig ist, was die Gruppe nach dem Modell davon erklärt.</span>' if mit_vg else '') +
             '</p><div class="controls">' + felder + '</div>' +
             ('<p class="muted filter-abschnitt-info"></p>' if abschnitt_opt else '') +
             '<div class="filter-ergebnis" aria-live="polite"></div>'
@@ -775,7 +775,7 @@ def abschnitte_einzeln(row):
     if not a.get("liste"):
         return ""
     z = ['<h4>Abschnitte einzeln</h4><p class="muted">Dieselbe Auswertung je Abschnitt der Messung (Rauschboden wie für die ganze Datei '
-         'herausgerechnet). Mit JavaScript lässt sich ein Abschnitt oben in der Auswahl wählen; die Verhaltensgruppen je Abschnitt stehen im Reiter „Gruppen“.</p>']
+         'herausgerechnet). Mit JavaScript lässt sich ein Abschnitt oben in der Auswahl wählen.</p>']
     for ab in a["liste"]:
         zz = [f'<details class="abschnitt"><summary>Abschnitt {ab["nr"]}: {iso_de(ab["von"])} bis {iso_de(ab["bis"])} '
               f'({ganz(ab["tage"])} Tage, {ganz(ab.get("anzahl_fahrzeuge"))} Fahrzeuge)</summary>']
@@ -1225,11 +1225,15 @@ def verhaltensgruppen_seite(vg):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Verhaltensgruppen – Neuss Dialogdisplays</title>
 <meta name="description" content="Verhaltensgruppen im Verkehr an den Dialogdisplays in Neuss: Gruppen der Stadt, ihre Deutung und ihr Verhalten.">
+<meta name="robots" content="noindex">
 <link rel="stylesheet" href="style.css">
+<script src="labor.js"></script>
 </head>
 <body>
 <main class="detail">
 <nav class="muted" aria-label="Navigation"><a href="index.html">← Übersicht aller Messungen</a></nav>
+<p class="kein-labor">Diese Seite ist Forschungsstand und gehört nicht zur Auswertung. <a href="index.html">Zurück zur Übersicht</a>.</p>
+<div class="labor">
 <h1>Verhaltensgruppen der Stadt</h1>
 <p class="notice" role="note"><strong>Hinweis:</strong> {e(HINWEIS)} Forschungsstand: Die Gruppen fließen in keine Kennzahl ein.</p>
 <p>Eine Verhaltensgruppe ist ein Teil des Verkehrs mit festem Geschwindigkeitsprofil, dessen Menge sich auf eigene Weise mit Tageszeit, Licht, Wetter,
@@ -1267,7 +1271,8 @@ eine Stufe (Hypothese, gestützt, tragfähig); ab „tragfähig“ ersetzt sie d
         if s["standorte"]:
             z.append("<p>Standorte: " + ", ".join(f'<a href="standorte/{e(x["seite"])}.html">{e(x["name"])}</a>' for x in s["standorte"]) + ".</p>")
         z.append("</section>")
-    z.append(f"""<footer class="muted">
+    z.append(f"""</div>
+<footer class="muted">
 <p>Rohdaten und Skripte: <a href="{REPO}">GitHub</a> · <a href="{REPO}/blob/main/docs/verhalten.md">Verhaltensgruppen</a></p>
 <p>{e(HINWEIS)}</p>
 <p>Lizenz: Daten und Dokumentation <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a>, Skripte MIT. Wetterdaten: Quelle: Deutscher Wetterdienst (CC BY 4.0).</p>
@@ -1443,9 +1448,13 @@ def messung_teil(m, gleich):
     return "".join(z)
 
 
+LABOR_REITER = {"gruppen"}  # Forschungsstand: nur im Labor-Modus sichtbar (site/labor.js)
+
+
 def reiter_html(reiter_id, titel, teile, messungen):
     """Ein Reiter. teile: Funktion (Messung) -> HTML oder fester Text (Standort)."""
-    z = [f'<section class="reiter-inhalt" id="r-{reiter_id}" role="tabpanel" aria-labelledby="t-{reiter_id}" data-reiter="{reiter_id}"><h2>{e(titel)}</h2>']
+    labor = " labor" if reiter_id in LABOR_REITER else ""
+    z = [f'<section class="reiter-inhalt{labor}" id="r-{reiter_id}" role="tabpanel" aria-labelledby="t-{reiter_id}" data-reiter="{reiter_id}"><h2>{e(titel)}</h2>']
     if isinstance(teile, str):
         z.append(teile)
     else:
@@ -1471,6 +1480,7 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None):
 <title>{e(name)} – Neuss Dialogdisplays</title>
 <meta name="description" content="Geschwindigkeitsmessungen der Dialogdisplays: {e(name)} – Standort, Angaben der Verwaltung, Messung und Auswertung.">
 <link rel="stylesheet" href="../style.css">
+<script src="../labor.js"></script>
 </head>
 <body>
 <main class="detail">
@@ -1483,7 +1493,8 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None):
                      "".join(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>' for m in messungen) + "</select></div></div>"
                      f'<p class="muted" data-ohne-skript>An diesem Standort gibt es {len(messungen)} Messungen; ohne JavaScript stehen sie in jedem Reiter untereinander.</p>')
     teile.append('<nav class="reiter" role="tablist" aria-label="Themen" hidden>' + "".join(
-        f'<button type="button" role="tab" id="t-{rid}" aria-controls="r-{rid}" data-ziel="{rid}">{e(t)}</button>' for rid, t in REITER) + "</nav>")
+        f'<button type="button" role="tab" id="t-{rid}" aria-controls="r-{rid}" data-ziel="{rid}"'
+        + (' class="labor"' if rid in LABOR_REITER else "") + f'>{e(t)}</button>' for rid, t in REITER) + "</nav>")
     teile.append(reiter_html("allgemein", "Allgemein", allgemein_teil(name, messungen, verz), messungen))
     teile.append(reiter_html("verwaltung", "Verwaltung", verwaltung_teil, messungen))
     teile.append(reiter_html("messung", "Messung", lambda m: messung_teil(m, gleich), messungen))
@@ -1548,6 +1559,47 @@ def lade_zellen(ordner, rel, rows):
     return erg
 
 
+def _metrik(d):
+    """Kennzahlen einer Auswahl (Datei, Abschnitt oder Tageszeit) für die Übersicht, wie die Spalten von summary.csv."""
+    g, h = d.get("geschwindigkeit_kmh") or {}, d.get("einhaltung") or {}
+    return {"n": d.get("anzahl_fahrzeuge"), "mittel": g.get("mittel"), "v85": g.get("v85"), "v95": g.get("v95"), "v99": g.get("v99"),
+            "quote": h.get("einhaltungsquote_prozent"), "qual": h.get("qualifizierte_einhaltungsquote_prozent")}
+
+
+def _metriken(d, teil, roh=None):
+    """Kennzahlen je Zeitraum der Übersicht (index.html): alle Fahrzeuge (nach Abzug des Rauschbodens, roh: der Datei) und die Tageszeiten.
+
+    Ein Abschnitt zählt nur Fahrzeuge mit nutzbarer Zeit; „roh“ und „bereinigt“ sind dort gleich."""
+    m = {"roh": _metrik(roh or d), "bereinigt": _metrik(d)}
+    for k, t in (teil or {}).items():
+        m[k] = _metrik(t)
+    return m
+
+
+def abschnitte_uebersicht(auswertung, uebersicht):
+    """Eine Zeile je Abschnitt aller Messungen für die Ansicht „Abschnitte“ der Übersicht (abschnitte.json).
+
+    Messungen ohne erkannten Bruch (oder ohne mögliche Suche) stehen als ein Abschnitt da, damit nichts fehlt."""
+    out = []
+    for r in auswertung["standorte"]:
+        u = uebersicht.get(f'{r["standort"]}/{r["datei"]}') or {}
+        liste = (r.get("abschnitte") or {}).get("liste") or []
+        bz = (r.get("bereinigt") or {}).get("messzeitraum") or r.get("messzeitraum") or {}
+        basis = {"standort": r["standort"], "ort": u.get("standort"), "seite": f'{u["seite"]}/messung' if u.get("seite") else None,
+                 "verwaltung": u.get("verwaltung") or [], "datei": r["datei"], "limit": r.get("tempolimit_kmh"), "anzahl": len(liste) or 1}
+        if not liste:
+            von, bis = (bz.get("start") or "")[:10], (bz.get("ende") or "")[:10]
+            tage = (datetime.date.fromisoformat(bis) - datetime.date.fromisoformat(von)).days + 1 if von and bis else None
+            pruef = (r.get("abschnitte") or {}).get("geprueft")
+            out.append(dict(basis, nr=1, von=von, bis=bis, tage=tage, bruch=None,
+                            hinweis="" if pruef is False else "kein Bruch erkannt", metriken=_metriken(r.get("bereinigt") or r, r.get("teilzeitraeume"), r)))
+            continue
+        for a in liste:
+            out.append(dict(basis, nr=a["nr"], von=a["von"], bis=a["bis"], tage=a["tage"], bruch=(a.get("beginn") or {}).get("wahrscheinlichkeit"),
+                            hinweis="", metriken=_metriken(a, a.get("teilzeitraeume"))))
+    return out
+
+
 def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, verhalten=None):
     """Eine Seite je Standort, Weiterleitungen von den alten Seiten je Ordner und uebersicht.json für die Übersichtsseite."""
     verz = standorte.Verzeichnis.laden(adressen) if adressen and os.path.exists(adressen) else None
@@ -1592,6 +1644,8 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
                     fh.write(weiterleitung(f"{slug}.html#{erste['id']}", name))
     with open(os.path.join(ziel, "uebersicht.json"), "w", encoding="utf-8", newline="\n") as fh:
         json.dump(uebersicht, fh, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(ziel, "abschnitte.json"), "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(abschnitte_uebersicht(auswertung, uebersicht), fh, ensure_ascii=False, separators=(",", ":"))
     if vg:  # Übersicht der Stadtgruppen und ihre Kurzfassung für index.html
         with open(os.path.join(ziel, "verhaltensgruppen.html"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(verhaltensgruppen_seite(vg))

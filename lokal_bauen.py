@@ -29,7 +29,7 @@ import sys
 import webbrowser
 
 HIER = os.path.dirname(os.path.abspath(__file__))
-SEITEN = ("index.html", "datenschutz.html", "style.css", "filter.js", "seite.js")
+SEITEN = ("index.html", "datenschutz.html", "style.css", "filter.js", "seite.js", "labor.js")
 
 
 def befehle(eingabe, ziel, cache, jobs):

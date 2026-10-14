@@ -272,7 +272,8 @@
     function gruppenOptionen(d) {  // die Verhaltensgruppen gehoeren zum Abschnitt (bei einem Abschnitt auch zur ganzen Messung)
       if (!grWahl) { return; }
       var alt = grWahl.value, opts = [["alle", "Alle Daten"]], i, vg = d.verhalten;
-      if (vg && vg.profile) {
+      var labor = wurzel.document.documentElement.classList.contains("labor");  // site/labor.js: Verhaltensgruppen sind noch Forschungsstand
+      if (labor && vg && vg.profile) {
         for (i = 0; i < vg.profile.length; i++) { opts.push(["v" + (i + 1), (vg.namen && vg.namen[i]) || ("Gruppe " + (i + 1))]); }
       }
       var r = d.r, hatRausch = false;
@@ -288,6 +289,7 @@
         grWahl.appendChild(o);
       }
       if (!gefunden) { grWahl.value = "alle"; }
+      if (grWahl.parentNode) { grWahl.parentNode.hidden = opts.length < 2; }  // nur "Alle Daten": die Auswahl entfaellt
     }
     function zeichnen() {
       var d = aktiveDaten();
@@ -296,7 +298,8 @@
         aktivNr = nr;
         gruppenOptionen(d);
         if (abInfo) {
-          abInfo.textContent = (d === daten || !d.von) ? "Ganze Messung. Verhaltensgruppen gibt es je Abschnitt: Wählen Sie einen Abschnitt, um sie zu sehen." :
+          abInfo.textContent = (d === daten || !d.von) ? "Ganze Messung." +
+            (wurzel.document.documentElement.classList.contains("labor") ? " Verhaltensgruppen gibt es je Abschnitt: Wählen Sie einen Abschnitt, um sie zu sehen." : "") :
             "Abschnitt " + d.nr + ": " + d.von.split("-").reverse().join(".") + " bis " + d.bis.split("-").reverse().join(".") + ".";
         }
       }
