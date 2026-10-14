@@ -131,11 +131,40 @@ Dateien ohne belegten Regenanteil (35 von 99) bleibt die Verzerrung: im Median k
 - Wie das Rauschen von echten langsamen Fahrern (Radfahrer, Abbieger, langsame Autos) und von der Hauptmenge zu trennen ist,
   ist ein eigener Schritt (Gruppenerkennung) und noch nicht Teil der Kennzahlen.
 
+## Verteilung des Regenabzugs auf Stunden
+
+Der Regenanteil c_k(v) sind Datensätze je Regenstunde der Klasse k und Geschwindigkeit v. Wie sie auf einzelne Stunden verteilt werden, ist
+nicht festgelegt, und `dsd2csv.py` rechnet bisher zwei Wege: Die Kennzahlen der ganzen Datei, die Abschnitte, die Tage, die Auswahl auf den
+Seiten und das Aggregat ([DATEN.md](../DATEN.md)) kommen aus dem Abzug für die **ganze Datei** (A). Die feste Zeitraumtabelle (Nacht,
+Vormittag, Nachmittag, Abend) in YAML und noscript-Block dünnt jede Tageszeit-Liste **einzeln** aus (B). Ein dritter Weg (C) zieht
+die c_k(v) je Regenstunde ab, weil das nahe am Modell liegt, wurde aber nicht übernommen. `tools/regen_abzug_vergleich.py` vergleicht
+die drei an den 65 Dateien mit belegtem Regenanteil. Prüfmaß: Nach dem Abzug sollen die langsamen Fahrten je Stunde dem Erwartungswert
+des Modells folgen (b(v) mal Verkehr), in Regenstunden so gut wie in trockenen.
+
+| | Abgezogen gegen Modell | Mittlere Abweichung je Regenstunde | Streuung Regen zu trocken |
+| --- | --- | --- | --- |
+| A ganze Datei | 1,00 | +0,01 | 1,23 |
+| B je Zeitraum | 0,92 | +0,99 | 1,77 |
+| C je Regenstunde | 0,56 | +4,77 | 3,39 |
+
+(Mediane über 65 Dateien; A hat in 64 von 65 Dateien die kleinere Streuung als B, in allen 65 als C.)
+
+- **C scheitert**, weil die Störungen in Schüben kommen: Einzelne Regenstunden haben viel mehr Datensätze, als der Durchschnitt c erwarten lässt.
+  Ein fester Abzug je Stunde lässt dort viel stehen und kann in ruhigen Stunden nicht alles abziehen (56 % der Rechnung).
+- **A trifft die Stunden am besten**, weil er die Fahrten nach ihrer Häufigkeit in der Gruppe (Klasse, Geschwindigkeit) entfernt, also
+  dort, wo die Störungen sind.
+- **B weicht ab:** Er zieht in Regenstunden zu wenig ab (92 % der Rechnung, Rest +1 Datensatz je Regenstunde) und verteilt auf die
+  Tageszeiten anders. Folge: Die Fahrzeugzahl der Zeiträume weicht von der Auswahl und vom Aggregat ab (Nacht im Median 2,3 %, bis 68 %;
+  V85 in 21 von 65 Dateien, bis 5 km/h).
+- Konsequenz (Vorschlag): Die Zeiträume aus dem Abzug für die ganze Datei ableiten (Stunden nach A zusammenfassen). Dann stimmen
+  Zeitraumtabelle, Auswahl, Tage, Abschnitte und Aggregat überein. Das ändert die Zeitraumzahlen bei Dateien mit Regenanteil.
+
 ## Reproduktion
 
 ```sh
 python3 -I dsd2csv.py .          # rauschen.py wird eingebunden; Ergebnis steht unter "rauschen" in jeder YAML
 python3 -m unittest -v test_rauschen
+python3 -I tools/regen_abzug_vergleich.py   # Verteilung des Regenabzugs auf Stunden (braucht _vorschau/auswertung.json von lokal_bauen.py)
 ```
 
 Alle Schwellen stehen oben in `rauschen.py` (`SIGMA`, `MIN_TAGE`, `MIN_FAHRZEUGE`, `OBERGRENZE_KMH`, `INSTABIL_PP`, `INSTABIL_REL`, für den

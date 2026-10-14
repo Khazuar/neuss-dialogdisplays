@@ -46,8 +46,10 @@ Geräten zurückgesetzt oder verstellt), keine Prüfung der Uhr und enthalten Ra
    [abschnitte.md](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/abschnitte.md)). `abschnitt_nr` ordnet jede Zeile zu; ohne
    erkannten Bruch ist alles Abschnitt 1. **Brüche sind nicht von der Verwaltung bestätigt.** Ferien und Feiertage sind bei der Suche ausgenommen.
 
-Nicht enthalten: Wetterdaten (CC BY 4.0, Quelle Deutscher Wetterdienst; Verknüpfung über Datum und Stunde mit `belege/wetter.json` im
-Repository) und die Verhaltensgruppen (Forschungsstand).
+Nicht enthalten: Wetterdaten und die Verhaltensgruppen (Forschungsstand). Der Niederschlag je Stunde und Station liegt in
+[`belege/wetter.json`](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/belege/wetter.json) im Repository (CC BY 4.0, Quelle: Deutscher
+Wetterdienst); welche Station zu einer Messung gehört, steht in `messungen.csv` (`wetterstation`, `wetterstation_abstand_km`). Die Regenklasse
+je Stunde folgt daraus nach der Regel in `rauschen.regenklassen`.
 
 ## Dateien und Spalten
 
@@ -60,7 +62,8 @@ Reihenfolge deterministisch. `messung_id` ist die Kennung einer DSD-Datei (`m-<o
 `messung_id`, `standort_seite`, `ordner` (Ordner in der Lieferung der Stadt), `datei`, `geraet` (Konfigurationsnummer), `tempolimit_kmh` und
 `tempolimit_quelle` (`dsd_konfiguration`, `mitteilung_verwaltung` aus `belege/korrekturen.json`, `parameter`), `messzeitraum_von`/`_bis`
 (erstes und letztes Fahrzeug mit nutzbarer Zeit), `fahrzeuge_in_datei`, `fahrzeuge_ohne_nutzbare_zeit`, `rauschen_abgezogen`,
-`regenanteil_abgezogen` (Anzahl; der Regenanteil ist in `rauschen_abgezogen` nicht enthalten), `fahrzeuge_im_aggregat` (Summe aller
+`regenanteil_abgezogen` (Anzahl; der Regenanteil ist in `rauschen_abgezogen` nicht enthalten), `wetterstation` und `wetterstation_abstand_km`
+(Station, deren Niederschlag für den Regenanteil gilt; leer ohne Regenanteil), `fahrzeuge_im_aggregat` (Summe aller
 Stundenzeilen der Messung), `uhr_nutzbarkeit` (formale Prüfung: `nutzbar`, `teilweise_nutzbar`, `nicht_nutzbar`), `uhr_bewertung`,
 `abschnitte` (Zahl), `bezeichnung_verwaltung` (Name der Messstelle in den Mitteilungen der Verwaltung, mehrere mit ` | ` getrennt).
 
@@ -154,7 +157,10 @@ Für ganze Messungen, Abschnitte und die üblichen Zeiträume ist `kennzahlen.cs
   Zeiträume `nacht` bis `abend` in `kennzahlen.csv` und in den YAML-Dateien getrennt von der ganzen Datei aus. Die Summe der Stundenzeilen eines
   Zeitraums weicht dann leicht von `kennzahlen.csv` ab (im Median 0,5 % der Fahrzeuge, in Einzelfällen mehr, bei kleinen Nachtzahlen bis 40 %; das V85 in
   31 von 260 solcher Zeiträume um bis zu 5 km/h). Ganze Messungen, Abschnitte und Tage stimmen mit den Stundenzeilen überein. Ohne Regenanteil stimmen
-  alle Zeiträume exakt. Stand: Oktober 2026; eine Vereinheitlichung ist geplant.
+  alle Zeiträume exakt. Die Stundenzeilen folgen dem Abzug für die ganze Datei; er trifft die langsamen Fahrten je Stunde besser als der für die
+  Zeiträume ([rauschen.md](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/rauschen.md), Abschnitt „Verteilung des Regenabzugs auf
+  Stunden“). Wer Zeiträume braucht, die zu den Stundenzeilen passen, summiert die Stundenzeilen. Stand: Oktober 2026; eine Vereinheitlichung
+  der Zeitraumtabelle ist vorgeschlagen.
 - **Statistischer Abzug.** Rauschboden und Regenanteil sind Schätzungen. In einzelnen Stunden kann der Abzug zu viel oder zu wenig entfernen;
   über viele Stunden gleicht es sich aus.
 - **Abschnitte** sind erkannte Brüche mit Wahrscheinlichkeit, keine bestätigten Ereignisse.

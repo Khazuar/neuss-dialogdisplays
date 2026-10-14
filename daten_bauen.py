@@ -88,7 +88,7 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
 
     fh_m, w_m = _schreiber(os.path.join(ziel, "messungen.csv"), [
         "messung_id", "standort_seite", "ordner", "datei", "geraet", "tempolimit_kmh", "tempolimit_quelle", "messzeitraum_von", "messzeitraum_bis",
-        "fahrzeuge_in_datei", "fahrzeuge_ohne_nutzbare_zeit", "rauschen_abgezogen", "regenanteil_abgezogen", "fahrzeuge_im_aggregat",
+        "fahrzeuge_in_datei", "fahrzeuge_ohne_nutzbare_zeit", "rauschen_abgezogen", "regenanteil_abgezogen", "wetterstation", "wetterstation_abstand_km", "fahrzeuge_im_aggregat",
         "uhr_nutzbarkeit", "uhr_bewertung", "abschnitte", "bezeichnung_verwaltung"])
     fh_a, w_a = _schreiber(os.path.join(ziel, "abschnitte.csv"), [
         "messung_id", "abschnitt_nr", "von", "bis", "tage", "fahrzeuge", "bruch_wahrscheinlichkeit", "anmerkung"])
@@ -116,7 +116,10 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
                 w_m.writerow([mid, slug, rel, r["datei"], (r.get("geraet") or "").strip(), _zelle(r.get("tempolimit_kmh")), _zelle(r.get("tempolimit_quelle")),
                               (bz.get("start") or "")[:10], (bz.get("ende") or "")[:10], r.get("fahrzeuge_in_datei"),
                               (r.get("uhr") or {}).get("fahrzeuge_ohne_nutzbare_zeit"), rb.get("abgezogen_fahrzeuge") or 0,
-                              (rb.get("regen") or {}).get("abgezogen_fahrzeuge") or 0, (r.get("bereinigt") or {}).get("anzahl_fahrzeuge") or 0, (r.get("uhr") or {}).get("nutzbarkeit"),
+                              (rb.get("regen") or {}).get("abgezogen_fahrzeuge") or 0,
+                              ((rb.get("regen") or {}).get("wetterstation") or {}).get("name", ""),
+                              _zelle(((rb.get("regen") or {}).get("wetterstation") or {}).get("abstand_km")),
+                              (r.get("bereinigt") or {}).get("anzahl_fahrzeuge") or 0, (r.get("uhr") or {}).get("nutzbarkeit"),
                               urteil[0] if urteil else "", len(liste) or 1, verw])
                 n["messungen"] += 1
                 # Kennzahlen: ganze Messung (nutzbare Zeit, nach Abzug) und je Abschnitt, je Zeitraum
