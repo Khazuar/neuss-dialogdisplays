@@ -87,7 +87,8 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
     zaehler = {}
 
     fh_m, w_m = _schreiber(os.path.join(ziel, "messungen.csv"), [
-        "messung_id", "standort_seite", "ordner", "datei", "geraet", "tempolimit_kmh", "tempolimit_quelle", "messzeitraum_von", "messzeitraum_bis",
+        "messung_id", "standort_seite", "standort_name", "ordner", "datei", "geraet", "tempolimit_kmh", "tempolimit_quelle", "strasse", "lage_breite",
+        "lage_laenge", "lage_unsicherheit_m", "lage_sicherheit", "fahrtrichtung", "beidseitige_messung", "messzeitraum_von", "messzeitraum_bis",
         "fahrzeuge_in_datei", "fahrzeuge_ohne_nutzbare_zeit", "rauschen_abgezogen", "regenanteil_abgezogen", "wetterstation", "wetterstation_abstand_km", "fahrzeuge_im_aggregat",
         "uhr_nutzbarkeit", "uhr_bewertung", "abschnitte", "bezeichnung_verwaltung"])
     fh_a, w_a = _schreiber(os.path.join(ziel, "abschnitte.csv"), [
@@ -113,8 +114,12 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
                 verw = " | ".join(v["bezeichnung"] for v in meta_messung.get("verwaltung", []) if v.get("bezeichnung"))
                 urteil = gesamturteil(((uhr.get("dateien") or {}).get(f'{rel}/{r["datei"]}') or {}).get("abschnitte", []))
                 rb = r.get("rauschen") or {}
-                w_m.writerow([mid, slug, rel, r["datei"], (r.get("geraet") or "").strip(), _zelle(r.get("tempolimit_kmh")), _zelle(r.get("tempolimit_quelle")),
-                              (bz.get("start") or "")[:10], (bz.get("ende") or "")[:10], r.get("fahrzeuge_in_datei"),
+                lage = ((metadaten.get("standorte") or {}).get(rel) or {}).get("standort") or {}  # geschaetzt, docs/standorte.md
+                beidseitig = lage.get("beidseitige_messung")
+                w_m.writerow([mid, slug, name, rel, r["datei"], (r.get("geraet") or "").strip(), _zelle(r.get("tempolimit_kmh")), _zelle(r.get("tempolimit_quelle")),
+                              _zelle(lage.get("strasse")), _zelle(lage.get("breite")), _zelle(lage.get("laenge")), _zelle(lage.get("unsicherheit_m")),
+                              _zelle(lage.get("sicherheit")), ", ".join(seiten_bauen.fahrtrichtungen(meta_messung, rel)),
+                              "" if beidseitig is None else int(bool(beidseitig)), (bz.get("start") or "")[:10], (bz.get("ende") or "")[:10], r.get("fahrzeuge_in_datei"),
                               (r.get("uhr") or {}).get("fahrzeuge_ohne_nutzbare_zeit"), rb.get("abgezogen_fahrzeuge") or 0,
                               (rb.get("regen") or {}).get("abgezogen_fahrzeuge") or 0,
                               ((rb.get("regen") or {}).get("wetterstation") or {}).get("name", ""),

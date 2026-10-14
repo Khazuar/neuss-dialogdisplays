@@ -63,6 +63,29 @@ class Bauen(unittest.TestCase):
                          {22: "nacht", 5: "nacht", 6: "vormittag", 11: "vormittag", 12: "nachmittag", 18: "nachmittag", 19: "abend", 21: "abend"})
 
 
+class Zeitumstellung(unittest.TestCase):
+    """Gerätezeit über die Sommerzeitumstellung: Die Fahrzeuge landen in der richtigen Ortszeit-Stunde des Aggregats (die Geräte stellen nie um)."""
+
+    def aggregat(self, start, minuten):
+        veh = [(start + dt.timedelta(minutes=i), 30) for i in range(minuten)]  # ein Fahrzeug je Minute
+        uhr, bereinigt, teil, spannen = d.analysiere_uhr(veh, [], mit_spannen=True)
+        self.assertEqual(len(bereinigt), minuten)  # alle haben nutzbare Zeit
+        agg = aggregat.bauen(bereinigt, spannen, [], 30, d.stats)
+        return {(z[0], z[1]): sum(z[4][1::2]) for z in agg["stunden"]}
+
+    def test_fruehjahr_stunde_2_faellt_aus(self):
+        # Geraet im Winter gestellt (MEZ), laeuft im Sommer eine Stunde nach: Geraet 02:00 ist 03:00 MESZ am 30.03.2025
+        stunden = self.aggregat(dt.datetime(2025, 3, 30, 0, 0), 5 * 60)  # Geraet 00:00 bis 04:59
+        self.assertEqual(stunden, {("2025-03-30", 0): 60, ("2025-03-30", 1): 60, ("2025-03-30", 3): 60, ("2025-03-30", 4): 60, ("2025-03-30", 5): 60})
+        self.assertNotIn(("2025-03-30", 2), stunden)  # diese Ortszeit-Stunde gibt es an dem Tag nicht
+
+    def test_herbst_stunde_2_enthaelt_zwei_stunden(self):
+        # Geraet im Sommer gestellt (MESZ), nie umgestellt: Geraet 02:xx und 03:xx sind beide Ortszeit 02:xx am 27.10.2024
+        stunden = self.aggregat(dt.datetime(2024, 10, 26, 22, 0), 7 * 60)  # Geraet 22:00 bis 04:59
+        self.assertEqual(stunden, {("2024-10-26", 22): 60, ("2024-10-26", 23): 60, ("2024-10-27", 0): 60, ("2024-10-27", 1): 60,
+                                   ("2024-10-27", 2): 120, ("2024-10-27", 3): 60})
+
+
 class Gesamt(unittest.TestCase):
     """convert() und daten_bauen an einer echten DSD-Datei: dieselben Zahlen wie die YAML und die Zellen der Detailseite."""
 
@@ -183,6 +206,23 @@ class Gesamt(unittest.TestCase):
         for pfad in ("messungen.csv", "kennzahlen.csv", "tage.csv", "stunden.csv.gz", os.path.join("stunden", os.listdir(os.path.join(self.ziel, "stunden"))[0])):
             with open(os.path.join(self.ziel, pfad), "rb") as a, open(os.path.join(ziel2, pfad), "rb") as b:
                 self.assertEqual(a.read(), b.read(), pfad)
+
+    def test_lage_und_fahrtrichtung_in_messungen(self):
+        metadaten = {"standorte": {self.res["standort"]: {"standort": {
+            "breite": 51.2, "laenge": 6.7, "unsicherheit_m": 250, "sicherheit": "benannt", "strasse": "Schluchenhausstraße", "beidseitige_messung": True},
+            "messungen": [{"datei": self.res["datei"], "verwaltung": [{"bezeichnung": "Test, FR Hertzstraße", "fahrtrichtung": "Hertzstraße"}]}]}}}
+        ziel = os.path.join(self.tmp.name, "daten_lage")
+        daten_bauen.bauen(self.auswertung, metadaten, {"dateien": {}}, self.agg_ordner, ziel)
+        with open(os.path.join(ziel, "messungen.csv"), encoding="utf-8", newline="") as fh:
+            m = list(csv.DictReader(fh))[0]
+        self.assertEqual((m["strasse"], m["lage_breite"], m["lage_laenge"], m["lage_unsicherheit_m"], m["lage_sicherheit"]),
+                         ("Schluchenhausstraße", "51.2", "6.7", "250", "benannt"))
+        self.assertEqual((m["fahrtrichtung"], m["beidseitige_messung"], m["bezeichnung_verwaltung"]), ("Hertzstraße", "1", "Test, FR Hertzstraße"))
+        self.assertTrue(m["standort_name"])
+        with open(os.path.join(self.ziel, "messungen.csv"), encoding="utf-8", newline="") as fh:
+            leer = list(csv.DictReader(fh))[0]  # ohne Metadaten bleiben die Spalten leer, die Datei hat dieselben Spalten
+        self.assertEqual(list(leer), list(m))
+        self.assertEqual((leer["strasse"], leer["lage_breite"], leer["beidseitige_messung"]), ("", "", ""))
 
     def test_ohne_zwischenstand_nur_kennzahlen(self):
         """Fehlt der Zwischenstand einer Datei, entstehen Kennzahlen, aber keine Stundenzeilen."""

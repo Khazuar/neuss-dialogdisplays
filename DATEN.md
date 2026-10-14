@@ -59,8 +59,11 @@ Reihenfolge deterministisch. `messung_id` ist die Kennung einer DSD-Datei (`m-<o
 
 ### `messungen.csv` (eine Zeile je DSD-Datei)
 
-`messung_id`, `standort_seite`, `ordner` (Ordner in der Lieferung der Stadt), `datei`, `geraet` (Konfigurationsnummer), `tempolimit_kmh` und
-`tempolimit_quelle` (`dsd_konfiguration`, `mitteilung_verwaltung` aus `belege/korrekturen.json`, `parameter`), `messzeitraum_von`/`_bis`
+`messung_id`, `standort_seite`, `standort_name` (Name der Standortseite, meist die Straße), `ordner` (Ordner in der Lieferung der Stadt), `datei`,
+`geraet` (Konfigurationsnummer), `tempolimit_kmh` und `tempolimit_quelle` (`dsd_konfiguration`, `mitteilung_verwaltung` aus `belege/korrekturen.json`,
+`parameter`), `strasse`, `lage_breite`, `lage_laenge` (WGS 84), `lage_unsicherheit_m` und `lage_sicherheit` (`benannt`, `vermutet`, `widersprüchlich`,
+`manuell korrigiert`), `fahrtrichtung` (aus Ordnername und Mitteilung der Verwaltung), `beidseitige_messung` (1 = laut Mitteilung in beide
+Richtungen, leer = unbekannt), `messzeitraum_von`/`_bis`
 (erstes und letztes Fahrzeug mit nutzbarer Zeit), `fahrzeuge_in_datei`, `fahrzeuge_ohne_nutzbare_zeit`, `rauschen_abgezogen`,
 `regenanteil_abgezogen` (Anzahl; der Regenanteil ist in `rauschen_abgezogen` nicht enthalten), `wetterstation` und `wetterstation_abstand_km`
 (Station, deren Niederschlag für den Regenanteil gilt; leer ohne Regenanteil), `fahrzeuge_im_aggregat` (Summe aller
@@ -159,6 +162,11 @@ Für ganze Messungen, Abschnitte und die üblichen Zeiträume ist `kennzahlen.cs
   Einzelne Regenstunden sind deshalb weniger verlässlich als Tage, Zeiträume oder ganze Messungen: Der Abzug kann in einer Stunde zu viel oder
   zu wenig entfernen, über viele Stunden gleicht es sich aus. Alle Dateien (Stunden, Tage, Zeiträume, Abschnitte, ganze Messung) beruhen auf
   demselben Abzug und stimmen exakt überein (seit Oktober 2026; vorher wichen die Zeiträume bei Messungen mit Regenanteil ab).
+- **Lage.** Die Koordinaten sind eine Schätzung aus Straßenname, Hausnummer und Ortsangaben, kein Messprotokoll; `lage_unsicherheit_m` nennt die
+  Spanne (im Median einige hundert Meter, bei ganzen Straßen bis über 1 km; [standorte.md](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/standorte.md)).
+- **Zeitumstellung.** Die Zeiten sind Ortszeit ohne Angabe der Zeitzone, daher am Tag der Umstellung nicht eindeutig: Im Frühjahr (letzter
+  Sonntag im März) gibt es die Stunde 2 nicht, im Herbst (letzter Sonntag im Oktober) enthält Stunde 2 die Fahrzeuge von zwei Stunden. „Je Stunde“
+  ist an diesen beiden Tagen nicht vergleichbar (`test_aggregat.py`, Klasse `Zeitumstellung`).
 - **Abschnitte** sind erkannte Brüche mit Wahrscheinlichkeit, keine bestätigten Ereignisse.
 - **Messdauer.** Eine Messung dauert im Median 11 Wochen (die kürzesten 10 % unter 2, die längsten 10 % über 19 Wochen). Aussagen zum
   Jahresverlauf oder zu Zeiten außerhalb des Messzeitraums sind nicht möglich. Messzeiträume über viele Monate oder Jahre entstehen nur bei
