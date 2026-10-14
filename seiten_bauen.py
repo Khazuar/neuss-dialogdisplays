@@ -97,6 +97,19 @@ def klasse_quote(x):
     return "" if not isinstance(x, (int, float)) else (" bad" if x < 50 else " mid" if x < 75 else "")
 
 
+V85_TEXT = ("V85 gefärbt nach den Stufen der Verwaltung (V85 über dem Tempolimit): bis +4 km/h unauffällig (ungefärbt), +5 bis +8 unkritisch (gelb), "
+            "+9 bis +10 noch akzeptabel (orange), ab +11 km/h rot (darüber stuft die Verwaltung als überdurchschnittlich hoch bis überhöht ein)")
+
+
+def klasse_v85(v85, limit):
+    """Färbung eines V85-Werts nach der Überschreitung des Tempolimits (Stufen der Verwaltung, siehe V85_TEXT); site/filter.js und
+    site/index.html wenden dieselben Schwellen an."""
+    if not isinstance(v85, (int, float)) or not limit:
+        return ""
+    d = v85 - limit
+    return " v85-rot" if d >= 11 else " v85-orange" if d >= 9 else " v85-gelb" if d >= 5 else ""
+
+
 def badge(text, art):
     return f'<span class="badge {art}">{e(text)}</span>'
 
@@ -121,10 +134,11 @@ def kennzahlen_tabelle(row, abschnitt=False):
         qu, qq = h.get("einhaltungsquote_prozent"), h.get("qualifizierte_einhaltungsquote_prozent")
         zeilen.append(
             f'<tr><th scope="row">{e(label)}</th><td class="num">{ganz(n)}</td><td class="num">{dez(g.get("mittel"))}</td>'
-            f'<td class="num">{ganz(g.get("v85"))}</td><td class="num">{ganz(g.get("v95"))}</td><td class="num">{ganz(g.get("v99"))}</td>'
+            f'<td class="num{klasse_v85(g.get("v85"), row.get("tempolimit_kmh"))}">{ganz(g.get("v85"))}</td>'
+            f'<td class="num">{ganz(g.get("v95"))}</td><td class="num">{ganz(g.get("v99"))}</td>'
             f'<td class="num{klasse_quote(qu)}">{dez(qu, 2)}&nbsp;%</td><td class="num{klasse_quote(qq)}">{dez(qq, 2)}&nbsp;%</td></tr>')
     return ('<div class="tablewrap"><table><caption class="muted">Kennzahlen dieser Messung nach Zeitraum, '
-            'Tageszeiten in Ortszeit</caption><thead><tr><th>Zeitraum</th><th class="num">Fahrzeuge</th><th class="num">Ø km/h</th>'
+            f'Tageszeiten in Ortszeit. {V85_TEXT}.</caption><thead><tr><th>Zeitraum</th><th class="num">Fahrzeuge</th><th class="num">Ø km/h</th>'
             '<th class="num">V85</th><th class="num">V95</th><th class="num">V99</th><th class="num">Einhaltung</th>'
             '<th class="num">Qualifiziert</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
 
@@ -775,7 +789,7 @@ def abschnitte_einzeln(row):
     if not a.get("liste"):
         return ""
     z = ['<h4>Abschnitte einzeln</h4><p class="muted">Dieselbe Auswertung je Abschnitt der Messung (Rauschboden wie für die ganze Datei '
-         'herausgerechnet). Mit JavaScript lässt sich ein Abschnitt oben in der Auswahl wählen.</p>']
+         'herausgerechnet).</p>']
     for ab in a["liste"]:
         zz = [f'<details class="abschnitt"><summary>Abschnitt {ab["nr"]}: {iso_de(ab["von"])} bis {iso_de(ab["bis"])} '
               f'({ganz(ab["tage"])} Tage, {ganz(ab.get("anzahl_fahrzeuge"))} Fahrzeuge)</summary>']
@@ -925,7 +939,9 @@ def analyse_teil(row, daten, mid, namen=None):
     z.append("<noscript>" + tabelle + "</noscript>" if auswahl else tabelle)
     z.append(auswahl)
     z.append(histogramm_abschnitt(row, mit_filter=bool(auswahl)))
-    z.append(abschnitte_einzeln(row))
+    einzeln = abschnitte_einzeln(row)
+    # Mit der Auswahl (JavaScript) wählt man den Abschnitt oben; die Blöcke je Abschnitt stehen dann nur ohne JavaScript da
+    z.append("<noscript>" + einzeln + "</noscript>" if einzeln and 'data-feld="abschnitt"' in auswahl else einzeln)
     return "".join(z)
 
 

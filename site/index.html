@@ -43,7 +43,8 @@
     Kennzahlen herausgerechnet, wo sich das belegen lässt; die Detailseiten nennen Anteil und Grund. Zeilen mit
     <span class="warn" aria-hidden="true">⚠</span> haben nur teilweise nutzbare Zeitstempel oder übersprungene
     Datensätze, der Tooltip nennt den Grund. Das Verfahren steht im README. Einhaltungsquoten unter
-    50&nbsp;% sind rot, unter 75&nbsp;% gelb hinterlegt.
+    50&nbsp;% sind rot, unter 75&nbsp;% gelb hinterlegt. Der V85 ist nach den Stufen der Verwaltung gefärbt (V85 über dem Tempolimit): ab +5&nbsp;km/h
+    gelb (unkritisch), ab +9 orange (noch akzeptabel), ab +11 rot; bis +4 gilt als unauffällig.
   </p>
 
   <div class="controls">
@@ -241,6 +242,12 @@ function cell(tr, col, row) {
   if ((col.key === "quote" || col.key === "qual") && row[col.key] !== null) {
     if (row[col.key] < 50) td.className += " bad";
     else if (row[col.key] < 75) td.className += " mid";
+  }
+  if (col.key === "v85" && row.v85 !== null && row.limit) {  // Stufen der Verwaltung: ab +5 km/h gelb, ab +9 orange, ab +11 rot
+    const d = row.v85 - row.limit;
+    if (d >= 11) td.className += " v85-rot";
+    else if (d >= 9) td.className += " v85-orange";
+    else if (d >= 5) td.className += " v85-gelb";
   }
   if (col.key === "standort" && row.seite) {
     const a = document.createElement("a");

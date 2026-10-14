@@ -193,6 +193,13 @@
 
   function klasseQuote(x) { return x === null ? "" : (x < 50 ? " bad" : x < 75 ? " mid" : ""); }
 
+  // V85 nach den Stufen der Verwaltung (V85 ueber dem Tempolimit): ab +5 gelb, ab +9 orange, ab +11 rot (seiten_bauen.py: klasse_v85)
+  function klasseV85(v85, limit) {
+    if (typeof v85 !== "number" || !limit) { return ""; }
+    var d = v85 - limit;
+    return d >= 11 ? " v85-rot" : d >= 9 ? " v85-orange" : d >= 5 ? " v85-gelb" : "";
+  }
+
   function ergebnisHtml(daten, auswahl) {
     var limit = daten.limit, gruppe = auswahl.gruppe || "alle", rausch = gruppe === "rausch", vg = /^v\d+$/.test(gruppe);
     var basis = waehle(daten, auswahl.zeit, auswahl.tage, false), rauschHist = null, nBasis;
@@ -223,11 +230,16 @@
       '<th class="num">Ø km/h</th><th class="num">V85</th><th class="num">V95</th><th class="num">V99</th>' + (limit ? '<th class="num">Einhaltung</th><th class="num">Qualifiziert</th>' : "") +
       '</tr></thead><tbody><tr><td class="num">' + de(Math.round(kz.n), 0) + '</td>' + (anteil ? '<td class="num">' + de(100 * kz.n / nBasis, 1) + ' %</td>' : "") +
       '<td class="num">' + je + '</td>';
-    html += '<td class="num">' + de(kz.mittel, 1) + '</td><td class="num">' + kz.v85 + '</td><td class="num">' + kz.v95 + '</td><td class="num">' + kz.v99 + '</td>';
+    html += '<td class="num">' + de(kz.mittel, 1) + '</td><td class="num' + klasseV85(kz.v85, limit) + '">' + kz.v85 + '</td><td class="num">' + kz.v95 +
+      '</td><td class="num">' + kz.v99 + '</td>';
     if (limit) {
       html += '<td class="num' + klasseQuote(kz.einhaltung) + '">' + de(kz.einhaltung, 2) + ' %</td><td class="num' + klasseQuote(kz.qualifiziert) + '">' + de(kz.qualifiziert, 2) + ' %</td>';
     }
     html += '</tr></tbody></table></div>';
+    if (limit && kz.v85 - limit >= 5) {
+      html += '<p class="muted">V85 gefärbt nach den Stufen der Verwaltung (V85 über dem Tempolimit): +5 bis +8 km/h gelb (unkritisch), +9 bis +10 orange ' +
+        '(noch akzeptabel), ab +11 rot; bis +4 gilt als unauffällig.</p>';
+    }
     if (vg) {
       html += '<p class="muted">Die Gruppe ist eine Schätzung: Ihre Form ist fest (2-km/h-Klassen, die V-Werte sind deshalb nur auf etwa 2 km/h genau), ' +
         'ihre Menge folgt aus dem Modell für die Stunden der Auswahl (Tageszeit, Licht, Wetter, Ferien, Verkehrsmenge). Fahrzeuge werden ' +
@@ -312,7 +324,7 @@
     zeichnen();
   }
 
-  var api = { waehle: waehle, verhaltensgruppe: verhaltensgruppe, kennzahlen: kennzahlen, klassenbreite: klassenbreite,
+  var api = { waehle: waehle, verhaltensgruppe: verhaltensgruppe, kennzahlen: kennzahlen, klasseV85: klasseV85, klassenbreite: klassenbreite,
               histogrammSvg: histogrammSvg, ergebnisHtml: ergebnisHtml };
   if (typeof module !== "undefined" && module.exports) { module.exports = api; }
   if (wurzel.document) {

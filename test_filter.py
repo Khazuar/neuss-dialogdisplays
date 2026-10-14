@@ -102,6 +102,18 @@ class FilterJs(unittest.TestCase):
         self.assertAlmostEqual(kz["qualifiziert"], erwartet["qualifizierte_einhaltungsquote_prozent"], places=1)
         self.assertEqual(round(kz["n"]), self.block["fahrzeuge"])
 
+    def test_v85_wird_nach_den_stufen_der_verwaltung_gefaerbt(self):
+        skript = ("const f=require(process.argv[1]); const o={}; for (const v of [34,35,38,39,40,41]) { o[v]=f.klasseV85(v, 30); }"
+                  " o.ohne=f.klasseV85(50, 0); console.log(JSON.stringify(o));")
+        out = subprocess.run([NODE, "-e", skript, os.path.join(HIER, "site", "filter.js")], stdout=subprocess.PIPE, check=True, timeout=60)
+        self.assertEqual(json.loads(out.stdout.decode("utf-8")), {"34": "", "35": " v85-gelb", "38": " v85-gelb", "39": " v85-orange", "40": " v85-orange",
+                                                                  "41": " v85-rot", "ohne": ""})
+        (alle,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
+        kz = alle["kz"]
+        erwartet = {"": kz["v85"] - 30 < 5, " v85-gelb": 5 <= kz["v85"] - 30 < 9, " v85-orange": 9 <= kz["v85"] - 30 < 11, " v85-rot": kz["v85"] - 30 >= 11}
+        klasse = [k for k, ok in erwartet.items() if ok][0]
+        self.assertIn('<td class="num%s">%d</td>' % (klasse, kz["v85"]), alle["html"])
+
     def test_zeit_und_tage(self):
         auswahl = [{"zeit": "nacht", "tage": "werktag", "gruppe": "alle"}, {"zeit": "vormittag", "tage": "samstag", "gruppe": "alle"},
                    {"zeit": "schulweg", "tage": "sonn", "gruppe": "alle"}, {"zeit": "abend", "tage": "3", "gruppe": "alle"}]

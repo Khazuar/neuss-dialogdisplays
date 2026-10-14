@@ -144,3 +144,11 @@ svg.hist .vg-4 { stroke: var(--vg-4); } svg.hist .vg-5 { stroke: var(--vg-5); }
 /* Labor-Modus (site/labor.js): Forschungsstand nur mit ?labor sichtbar */
 html:not(.labor) .labor { display: none !important; }
 html.labor .kein-labor { display: none; }
+/* V85 nach den Stufen der Verwaltung (seiten_bauen.py: klasse_v85) */
+:root { --v85-gelb: #fdf0a6; --v85-orange: #f7c27d; --v85-rot: #f1a3a3; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --v85-gelb: #5a4a12; --v85-orange: #6f4515; --v85-rot: #7d2c30; }
+}
+td.v85-gelb { background: var(--v85-gelb); }
+td.v85-orange { background: var(--v85-orange); }
+td.v85-rot { background: var(--v85-rot); font-weight: 600; }

@@ -158,6 +158,37 @@ class Verhaltensgruppen(unittest.TestCase):
         self.assertEqual(kurz[0], {"id": "S-R1", "anzeige": "Regen<phantome> (S-R1)", "stufe": "tragfähig", "standorte": 1, "gefunden": True})
 
 
+class V85Farben(unittest.TestCase):
+    def test_stufen_der_verwaltung(self):
+        # Tempolimit 30: bis +4 unauffällig, +5..+8 unkritisch (gelb), +9..+10 noch akzeptabel (orange), ab +11 rot
+        erwartet = {20: "", 30: "", 34: "", 35: " v85-gelb", 38: " v85-gelb", 39: " v85-orange", 40: " v85-orange", 41: " v85-rot", 60: " v85-rot"}
+        for v, k in erwartet.items():
+            self.assertEqual(s.klasse_v85(v, 30), k, v)
+        self.assertEqual(s.klasse_v85(None, 30), "")
+        self.assertEqual(s.klasse_v85(50, None), "")  # ohne Tempolimit keine Färbung
+
+    def test_kennwerttabelle_faerbt_den_v85(self):
+        z = zeile()
+        z["geschwindigkeit_kmh"] = dict(z["geschwindigkeit_kmh"], v85=41)
+        z["teilzeitraeume"]["vormittag"]["geschwindigkeit_kmh"] = dict(z["teilzeitraeume"]["vormittag"]["geschwindigkeit_kmh"], v85=36)
+        t = s.kennzahlen_tabelle(z)
+        self.assertIn('<td class="num v85-rot">41</td>', t)
+        self.assertIn('<td class="num v85-gelb">36</td>', t)
+        self.assertIn("ab +11 km/h rot", t)  # Legende
+
+    def test_abschnitte_einzeln_stehen_mit_auswahl_im_noscript(self):
+        a = {"nr": 1, "von": "2024-07-24", "bis": "2024-09-03", "tage": 30, "anzahl_fahrzeuge": 0}
+        row = dict(zeile(), abschnitte={"geprueft": True, "liste": [a, dict(a, nr=2, von="2024-09-04", bis="2024-12-04")]})
+        mit = s.analyse_teil(row, {"v": 1, "limit": 30, "tage": {"0|7": 1}, "z": {"0|7": [30, 5]}, "r": {}, "abschnitte": [
+            {"nr": 1, "von": "2024-07-24", "bis": "2024-09-03"}, {"nr": 2, "von": "2024-09-04", "bis": "2024-12-04"}]}, "m-x")
+        m = re.search(r"<noscript>((?:(?!</noscript>).)*Abschnitte einzeln.*?)</noscript>", mit, re.S)
+        self.assertIsNotNone(m)
+        self.assertNotIn("Mit JavaScript", mit)
+        ohne = s.analyse_teil(row, None, "m-x")  # ohne Zellen keine Auswahl: die Blöcke stehen offen
+        self.assertIn("Abschnitte einzeln", ohne)
+        self.assertNotIn("<noscript>", ohne)
+
+
 class AbschnitteUebersicht(unittest.TestCase):
     def test_eine_zeile_je_abschnitt_und_je_messung_ohne_bruch(self):
         z = zeile()
