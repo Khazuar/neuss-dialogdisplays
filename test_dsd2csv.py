@@ -129,6 +129,10 @@ class Histogramm(unittest.TestCase):
         self.assertEqual(d.flach({"rauschen": {"belegt": True, "spektrum": {"ab_kmh": 3, "rausch": [5]}}}), {"rauschen.belegt": True})
 
 
+def raten_von(fahrzeuge, limit, abgedeckt):
+    return d.raten(fahrzeuge, limit, abgedeckt)
+
+
 class Gefaehrdung(unittest.TestCase):
     def test_aufprall(self):
         self.assertAlmostEqual(d.aufprall_kmh(30, 30), 0.0, places=6)  # Fahrzeug mit dem Limit haelt gerade noch
@@ -140,9 +144,8 @@ class Gefaehrdung(unittest.TestCase):
 
     def test_alle_fahren_das_limit(self):
         g = d.gefaehrdung([(None, 30)] * 100, 30)
-        self.assertEqual(g["risikoindex_nilsson"], 1.0)
-        self.assertEqual((g["aufprall_ueber_30_kmh_prozent"], g["aufprall_ueber_50_kmh_prozent"]), (0.0, 0.0))
-        self.assertEqual((g["aufprall_anteil_prozent"], g["aufprall_mittel_kmh"], g["aufprall_p99_kmh"]), (0.0, 0.0, 0.0))
+        self.assertEqual(g["aufprall_p99_kmh"], 0.0)
+        self.assertNotIn("aufprall_fahrzeuge_je_tag", g)  # ohne vollstaendig aufgezeichnete Stunden keine Raten
         self.assertNotIn("aufprall_mittel_der_aufprallenden_kmh", g)  # niemand trifft auf
 
     def test_anhaltestrecke(self):
@@ -154,9 +157,7 @@ class Gefaehrdung(unittest.TestCase):
         g = d.gefaehrdung([(None, 30)] * 90 + [(None, 40)] * 10, 30)
         auf40 = d.aufprall_kmh(40, 30)
         self.assertAlmostEqual(auf40, 34.7, delta=0.1)
-        self.assertEqual(g["aufprall_anteil_prozent"], 10.0)
         self.assertAlmostEqual(g["aufprall_mittel_der_aufprallenden_kmh"], auf40, delta=0.1)
-        self.assertAlmostEqual(g["aufprall_mittel_kmh"], 0.1 * auf40, delta=0.1)
         self.assertEqual(g["aufprall_p95_kmh"], round(auf40, 1))  # das schnellste Zehntel liegt ueber dem P95
         self.assertEqual(g["aufprall_p99_kmh"], round(auf40, 1))
 
@@ -166,13 +167,51 @@ class Gefaehrdung(unittest.TestCase):
     def test_aufprall_perzentile_sind_geordnet(self):
         v = [(None, x) for x in range(20, 90) for _ in range(5)]
         g = d.gefaehrdung(v, 50)
-        self.assertLessEqual(g["aufprall_mittel_kmh"], g["aufprall_p95_kmh"])
+        self.assertLessEqual(g["aufprall_mittel_der_aufprallenden_kmh"], g["aufprall_p99_kmh"])
         self.assertLessEqual(g["aufprall_p95_kmh"], g["aufprall_p99_kmh"])
         self.assertLessEqual(g["aufprall_p99_kmh"], d.aufprall_kmh(89, 50) + 0.1)
-    def test_risikoindex_waechst_mit_der_vierten_potenz(self):
-        self.assertEqual(d.gefaehrdung([(None, 60)], 30)["risikoindex_nilsson"], 16.0)
-        # die Haelfte mit Limit, die Haelfte mit dem doppelten Tempo: (1 + 16) / 2
-        self.assertEqual(d.gefaehrdung([(None, 30), (None, 60)], 30)["risikoindex_nilsson"], 8.5)
+
+    def test_raten_zaehlen_absolut_nicht_anteilig(self):
+        """Zehn Raser unter 100 Fahrzeugen und zehn unter 1000 haben dieselbe Rate (docs/raten.md); die langsamen gleichen nichts aus."""
+        t0 = dt.datetime(2025, 3, 3, 10, 5)
+        abged = {(t0.date(), 10), (t0.date(), 11)}  # zwei Stunden, ein Tag mit Fenster 2 Stunden
+        raser = [(t0, 40)] * 10
+        wenig = raten_von(raser + [(t0, 30)] * 90, 30, abged)
+        viel = raten_von(raser + [(t0, 30)] * 990 + [(t0, 20)] * 500, 30, abged)
+        self.assertEqual(wenig["ueber_limit_je_tag"], viel["ueber_limit_je_tag"])
+        self.assertEqual(wenig["zusatzrisiko_je_stunde"], viel["zusatzrisiko_je_stunde"])
+        self.assertEqual(wenig["ueber_limit_je_tag"], 10 * 2 / 2)  # 10 Fahrzeuge in 2 Stunden, je Tag = je 2 Tagesstunden
+        self.assertEqual((wenig["stunden"], wenig["tagesstunden"]), (2, 2))
+        self.assertEqual(wenig["fahrzeuge_je_tag"], 100.0)
+
+    def test_zusatzrisiko_waechst_mit_der_vierten_potenz(self):
+        t0 = dt.datetime(2025, 3, 3, 10, 5)
+        abged = {(t0.date(), 10)}
+        # ein Fahrzeug mit dem doppelten Tempolimit zaehlt 2^4 - 1 = 15, eines mit dem Limit 0
+        self.assertEqual(raten_von([(t0, 60)], 30, abged)["zusatzrisiko_je_stunde"], 15.0)
+        self.assertEqual(raten_von([(t0, 30), (t0, 60)], 30, abged)["zusatzrisiko_je_stunde"], 15.0)
+        self.assertEqual(raten_von([(t0, 30)], 30, abged)["zusatzrisiko_je_stunde"], 0.0)
+
+    def test_raten_nur_aus_vollstaendigen_stunden_und_mit_toleranz(self):
+        t0 = dt.datetime(2025, 3, 3, 10, 5)
+        abged = {(t0.date(), 10)}
+        fz = [(t0, 33), (t0, 34), (t0 + dt.timedelta(hours=3), 80)]  # 33 ist ueber dem Limit, aber nicht ueber Limit + 3 km/h Toleranz
+        r = raten_von(fz, 30, abged)  # die Fahrt von 13 Uhr liegt in keiner aufgezeichneten Stunde
+        self.assertEqual((r["ueber_limit_je_tag"], r["ueber_limit_plus_toleranz_je_tag"], r["fahrzeuge_je_tag"]), (2.0, 1.0, 2.0))
+        self.assertIsNone(raten_von(fz, None, abged))
+        self.assertIsNone(raten_von(fz, 30, set()))
+
+    def test_gefaehrdung_und_laerm_mit_raten_je_tag(self):
+        t0 = dt.datetime(2025, 3, 3, 10, 5)
+        abged = {(t0.date(), 10), (t0.date(), 11)}
+        fz = [(t0, 30)] * 90 + [(t0, 40)] * 10
+        g = d.gefaehrdung(fz, 30, abged)
+        self.assertEqual(g["aufprall_fahrzeuge_je_tag"], 10.0)  # 10 Fahrzeuge in 2 Stunden, Fenster 2 Stunden
+        self.assertEqual(g["aufprall_ueber_30_kmh_je_tag"], 10.0)
+        self.assertEqual(g["aufprall_ueber_50_kmh_je_tag"], 0.0)
+        l = d.laerm([(t0, 50)] * 90 + [(t0, 100)] * 10, 50, abged)
+        self.assertEqual((l["mind_3_db_lauter_je_tag"], l["mind_6_db_lauter_je_tag"]), (10.0, 10.0))
+        self.assertNotIn("mittelungspegel_gegenueber_limit_db", l)
 
     def test_ohne_limit_oder_fahrzeuge(self):
         self.assertIsNone(d.gefaehrdung([(None, 30)], None))
@@ -187,14 +226,11 @@ class Laerm(unittest.TestCase):
 
     def test_alle_fahren_das_limit(self):
         l = d.laerm([(None, 50)] * 10, 50)
-        self.assertEqual((l["mittelungspegel_gegenueber_limit_db"], l["spitzenpegel_p99_gegenueber_limit_db"]), (0.0, 0.0))
-        self.assertEqual(l["anteil_mind_6_db_lauter_prozent"], 0.0)
+        self.assertEqual(l["spitzenpegel_p99_gegenueber_limit_db"], 0.0)
 
     def test_schnelle_fahrzeuge_sind_lauter(self):
         l = d.laerm([(None, 50)] * 90 + [(None, 100)] * 10, 50)
-        self.assertGreater(l["mittelungspegel_gegenueber_limit_db"], 0)
         self.assertGreater(l["spitzenpegel_p99_gegenueber_limit_db"], 6)
-        self.assertEqual(l["anteil_mind_6_db_lauter_prozent"], 10.0)
 
 
 class NachtEreignisse(unittest.TestCase):

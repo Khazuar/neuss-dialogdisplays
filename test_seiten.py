@@ -16,15 +16,15 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 def zeile(rel="07_2024_ Einsteinstraße", datei="_15.dsd", n=1000):
     k = {"mittel": 21.4, "maximal": 90, "v85": 28, "v95": 32, "v99": 40}
     h = {"einhaltungsquote_prozent": 88.5, "qualifizierte_einhaltungsquote_prozent": 40.0}
-    g = {"risikoindex_nilsson": 1.07, "aufprall_anteil_prozent": 39.01, "aufprall_mittel_kmh": 13.1,
-         "aufprall_mittel_der_aufprallenden_kmh": 33.6, "aufprall_p95_kmh": 51.6, "aufprall_p99_kmh": 69.2,
-         "aufprall_ueber_30_kmh_prozent": 21.64, "aufprall_ueber_50_kmh_prozent": 5.18, "anhaltestrecke_bei_limit_m": 27.7}
-    l = {"mittelungspegel_gegenueber_limit_db": -0.1, "spitzenpegel_p99_gegenueber_limit_db": 3.7,
-         "anteil_mind_3_db_lauter_prozent": 1.86, "anteil_mind_6_db_lauter_prozent": 0.13}
-    teil = {"anzahl_fahrzeuge": n, "geschwindigkeit_kmh": k, "einhaltung": h, "gefaehrdung": g, "laerm": l}
+    g = {"aufprall_fahrzeuge_je_tag": 390.1, "aufprall_mittel_der_aufprallenden_kmh": 33.6, "aufprall_p95_kmh": 51.6,
+         "aufprall_p99_kmh": 69.2, "aufprall_ueber_30_kmh_je_tag": 216.4, "aufprall_ueber_50_kmh_je_tag": 51.8, "anhaltestrecke_bei_limit_m": 27.7}
+    l = {"spitzenpegel_p99_gegenueber_limit_db": 3.7, "mind_3_db_lauter_je_tag": 18.6, "mind_6_db_lauter_je_tag": 1.3}
+    r = {"stunden": 2400, "tagesstunden": 24, "fahrzeuge_je_tag": 1000.0, "ueber_limit_je_tag": 115.0,
+         "ueber_limit_plus_toleranz_je_tag": 60.0, "zusatzrisiko_je_stunde": 1.07}
+    teil = {"anzahl_fahrzeuge": n, "geschwindigkeit_kmh": k, "einhaltung": h, "raten": r, "gefaehrdung": g, "laerm": l}
     return {"standort": rel, "datei": datei, "seite": f"standorte/{dsd2csv.standort_slug(rel)}.html", "tempolimit_kmh": 30,
             "anzahl_fahrzeuge": n, "messzeitraum": {"start": "2024-07-24 09:48:27", "ende": "2024-12-04 10:38:55"},
-            "geschwindigkeit_kmh": k, "einhaltung": h, "gefaehrdung": g, "laerm": l,
+            "geschwindigkeit_kmh": k, "einhaltung": h, "raten": r, "gefaehrdung": g, "laerm": l,
             "nacht_ereignisse": {"definition": "22:00 bis 06:00 Uhr Ortszeit, nur vollständig aufgezeichnete Nächte", "naechte": 154,
                                  "schwellen": [{"ab_kmh": 100, "doppeltes_tempolimit": False, "naechte_mit_fahrt": 71,
                                                 "anteil_naechte_prozent": 46.1, "fahrten_gesamt": 130, "fahrten_je_nacht": 0.84}]},
@@ -275,12 +275,14 @@ class Seite(unittest.TestCase):
 
     def test_aufprall_laerm_und_naechte(self):
         h = self.html([])
-        self.assertIn("Mit wie viel km/h träfen die gemessenen Fahrzeuge auf ein Hindernis?", h)
+        self.assertIn("nicht mit ihrem Anteil am Verkehr", h)
         self.assertIn("Anhaltestrecke 27,7 m", h)
         self.assertIn('<td class="num">33,6</td>', h)  # Ø Aufprall der Fahrzeuge, die auftreffen
         self.assertIn('<td class="num">69,2</td>', h)  # Aufprall am schnellsten Prozent
-        self.assertIn("39,0&nbsp;%", h)  # Anteil, der auftrifft
-        self.assertNotIn("Anteil &gt; 30 km/h", h)  # keine Schwellenspalte mehr
+        self.assertIn('<td class="num">60</td><td class="num">1,07</td><td class="num">390</td>', h)  # zu schnell je Tag, Zusatzrisiko, Aufprall je Tag
+        self.assertNotIn("Risikoindex", h)  # Anteile und Mittelwerte ueber alle Fahrzeuge gibt es nicht mehr
+        self.assertNotIn("Mittelungspegel</th>", h)
+        self.assertIn("19</td><td class=\"num\">1</td>", h)  # lautere Vorbeifahrten je Tag
         self.assertIn("So rechnet das Modell", h)
         self.assertIn("Bei Tempolimit 30&nbsp;km/h", h)  # Umrechnungstabelle fuer das Limit der Datei
         self.assertIn("Lärm (grobe Schätzung)", h)

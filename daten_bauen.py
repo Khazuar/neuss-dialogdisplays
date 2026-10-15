@@ -30,17 +30,19 @@ import seiten_bauen  # noqa: E402
 from uhr_belege import gesamturteil  # noqa: E402
 
 ZEITRAEUME = ["alle", "nacht", "vormittag", "nachmittag", "abend", "schulweg"]
-KENNZAHLEN = ["fahrzeuge", "mittel_kmh", "v85_kmh", "v95_kmh", "v99_kmh", "einhaltung_prozent", "qualifiziert_prozent"]
+KENNZAHLEN = ["fahrzeuge", "mittel_kmh", "v85_kmh", "v95_kmh", "v99_kmh", "einhaltung_prozent", "qualifiziert_prozent",
+              "fahrzeuge_je_tag", "ueber_limit_plus_toleranz_je_tag", "zusatzrisiko_je_stunde"]
 
 
 def kennzahlen(d):
-    """[Fahrzeuge, Mittel, V85, V95, V99, Einhaltung, qualifizierte Einhaltung] aus einem Auswertungsblock der YAML (leer ohne Fahrzeuge)."""
+    """KENNZAHLEN aus einem Auswertungsblock der YAML (leer ohne Fahrzeuge); die Raten stehen nur mit vollstaendig aufgezeichneten Stunden da."""
     n = (d or {}).get("anzahl_fahrzeuge") or 0
     if not n:
-        return [0, "", "", "", "", "", ""]
-    g, h = d.get("geschwindigkeit_kmh") or {}, d.get("einhaltung") or {}
+        return [0] + [""] * (len(KENNZAHLEN) - 1)
+    g, h, r = d.get("geschwindigkeit_kmh") or {}, d.get("einhaltung") or {}, d.get("raten") or {}
     return [n, g.get("mittel"), g.get("v85"), g.get("v95"), g.get("v99"), h.get("einhaltungsquote_prozent"),
-            h.get("qualifizierte_einhaltungsquote_prozent")]
+            h.get("qualifizierte_einhaltungsquote_prozent"), r.get("fahrzeuge_je_tag"), r.get("ueber_limit_plus_toleranz_je_tag"),
+            r.get("zusatzrisiko_je_stunde")]
 
 
 def _schreiber(ziel, kopf):

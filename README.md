@@ -44,6 +44,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/abschnitte.md` – Brüche in einer Messreihe (Geräte umgehängt?) und die getrennte Auswertung der Abschnitte
 - `docs/verhalten.md` – Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter, Ferien und Verkehrsmenge) mit Placebo-Prüfung,
   drei Ebenen (Abschnitt, Standort, Stadt), Namen, Deutungen und Stadt-Vorlagen; Forschungsstand
+- `docs/raten.md` – Raten statt Anteile: warum zu schnelle Fahrzeuge je Tag gezählt werden und was daraus folgt
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `docs/wetter.md` – Wetterdaten des DWD (Quelle, Lizenz, Stationswahl, Zeitangabe) und der Befund, dass Regen das Radar stört
 - `seiten_bauen.py` – baut je Standort (gleiche Straße, sich überlappende Lage; alle Messungen und Fahrtrichtungen zusammen) eine Detailseite für die GitHub Pages (`standorte/<name>.html`) mit den Reitern Allgemein, Verwaltung, Messung, Analyse, Gruppen, Vergleich, Gefährdung und Lärm, dazu Weiterleitungen von den alten Seiten je Ordner, `uebersicht.json` für die Übersicht und die Übersicht der Verhaltensgruppen (`verhaltensgruppen.html`);
@@ -117,9 +118,10 @@ sinnvoll.
     und `schulweg` (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
   - `verhalten` – Verhaltensgruppen je Abschnitt: Zahl der Gruppen, Vorhersagegewinn, je Gruppe Art, Anteil, Profil, Stabilität, Verhalten
     (Effekte mit Standardfehler) und Tagesgang, dazu der Placebo-Durchgang und die geprüften Stadt-Vorlagen (`docs/verhalten.md`),
-  - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: relativer Risikoindex nach Nilsson, Aufprallgeschwindigkeit
-    und Anteil der Fahrzeuge, die mit mehr als 30 bzw. 50 km/h aufträfen, Lärm gegenüber dem Tempolimit
-    (`docs/gefaehrdung.md`),
+  - `raten` – absolute Kennzahlen je Zeit statt Anteile: Fahrzeuge, Überschreitungen je Tag und Zusatzrisiko je Stunde
+    (`docs/raten.md`; gelten für vollständig aufgezeichnete Stunden, Zeitfenster der Zeile),
+  - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: Aufprallgeschwindigkeit und Fahrzeuge je Tag, die mit mehr als 30 bzw.
+    50 km/h aufträfen, lautere Vorbeifahrten je Tag gegenüber dem Tempolimit (`docs/gefaehrdung.md`),
   - `nacht_ereignisse` – Nächte (22–6 Uhr) mit Fahrten ab doppeltem Tempolimit, 100 und 120 km/h,
   - `histogramm` – Anzahl Fahrzeuge je ganzem km/h (`ab_kmh`, `anzahl`), auch je Zeitraum; steht nur in der YAML, nicht
     in `summary.csv`. Die Detailseiten zeichnen daraus die Verteilung: eine Klasse je km/h (Auflösung der Geräte), bei
