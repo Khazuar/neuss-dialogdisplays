@@ -131,10 +131,10 @@ class Ferien(unittest.TestCase):
 class Auswertung(unittest.TestCase):
     def test_abschnitte_werden_einzeln_ausgewertet(self):
         import dsd2csv
-        fz, sp = reihe(45, lambda i: 45 if i < 25 else 30, n_je_tag=100)  # unter 5000 Fahrzeuge: keine Gruppenanpassung (dauert sonst lange)
+        fz, sp = reihe(45, lambda i: 45 if i < 25 else 30, n_je_tag=100)
         br = b.erkenne(fz, sp, 15, 50)
         teil = {k: [] for k in dsd2csv.TEILZEITRAEUME}
-        blk, _ = dsd2csv.abschnitte_auswerten(br, fz, fz, teil, sp, 50, 0, lambda v: {}, False, None, None)
+        blk, _ = dsd2csv.abschnitte_auswerten(br, fz, fz, teil, sp, 50, 0, lambda v: {})
         self.assertEqual((blk["anzahl"], blk["brueche"]), (2, 1))
         a1, a2 = blk["liste"]
         self.assertEqual(a1["beginn"]["art"], "Beginn der Messung")
@@ -143,13 +143,12 @@ class Auswertung(unittest.TestCase):
         self.assertEqual(a1["anzahl_fahrzeuge"] + a2["anzahl_fahrzeuge"], len(fz))
         self.assertGreater(a1["geschwindigkeit_kmh"]["mittel"] - a2["geschwindigkeit_kmh"]["mittel"], 10)
         self.assertEqual(a1["von"], START.isoformat())
-        self.assertFalse(a1["gruppen"]["geprueft"])  # weniger als MIN_FAHRZEUGE
         self.assertIn("teilzeitraeume", a2)
         # ohne Bruch: kein Abschnitt in der Liste
         fz2, sp2 = reihe(40, lambda i: 40)
-        blk2, _ = dsd2csv.abschnitte_auswerten(b.erkenne(fz2, sp2, 15, 50), fz2, fz2, teil, sp2, 50, 0, lambda v: {}, False, None, None)
+        blk2, _ = dsd2csv.abschnitte_auswerten(b.erkenne(fz2, sp2, 15, 50), fz2, fz2, teil, sp2, 50, 0, lambda v: {})
         self.assertEqual((blk2["liste"], blk2["brueche"]), ([], 0))
-        blk3, _ = dsd2csv.abschnitte_auswerten(b.erkenne(fz2[:50], sp2, 15, 50), fz2[:50], fz2[:50], teil, sp2, 50, 0, lambda v: {}, False, None, None)
+        blk3, _ = dsd2csv.abschnitte_auswerten(b.erkenne(fz2[:50], sp2, 15, 50), fz2[:50], fz2[:50], teil, sp2, 50, 0, lambda v: {})
         self.assertFalse(blk3["geprueft"])
 
 

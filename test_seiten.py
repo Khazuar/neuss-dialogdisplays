@@ -218,9 +218,9 @@ class AbschnitteUebersicht(unittest.TestCase):
 class Seite(unittest.TestCase):
     def test_reiter_und_abschnittsauswahl(self):
         z = zeile()
-        daten = {"v": 1, "limit": 30, "tage": {"0|7": 1}, "z": {"0|7": "30:5"}, "r": {}, "gruppen": [],
-                 "abschnitte": [{"nr": 1, "von": "2024-07-24", "bis": "2024-09-03", "tage": {}, "z": {}, "r": {}, "gruppen": []},
-                                {"nr": 2, "von": "2024-09-04", "bis": "2024-12-04", "tage": {}, "z": {}, "r": {}, "gruppen": []}]}
+        daten = {"v": 1, "limit": 30, "tage": {"0|7": 1}, "z": {"0|7": "30:5"}, "r": {},
+                 "abschnitte": [{"nr": 1, "von": "2024-07-24", "bis": "2024-09-03", "tage": {}, "z": {}, "r": {}},
+                                {"nr": 2, "von": "2024-09-04", "bis": "2024-12-04", "tage": {}, "z": {}, "r": {}}]}
         h = s.seite("07_2024_ Einsteinstraße", [z], {"messungen": [{"datei": "_15.dsd", "geraet": {}, "verwaltung": []}]}, {}, {"_15.dsd": daten})
         self.assertIn('data-feld="abschnitt"', h)
         self.assertIn("Abschnitt 2 (04.09.2024 bis 04.12.2024)", h)
@@ -418,7 +418,7 @@ class Seite(unittest.TestCase):
             z = zeile()
             return {"nr": nr, "von": von, "bis": bis, "tage": 30, "anzahl_fahrzeuge": 5000, "beginn": beginn,
                     "geschwindigkeit_kmh": z["geschwindigkeit_kmh"], "einhaltung": z["einhaltung"], "teilzeitraeume": z["teilzeitraeume"],
-                    "tempolimit_kmh": 30, "gruppen": {"geprueft": False, "grund": "zu wenig <Fahrzeuge>"}}
+                    "tempolimit_kmh": 30}
         bruch = {"art": "Bruch", "datum": "2025-04-14", "vorher_bis": "2025-04-13", "wahrscheinlichkeit": 0.9995, "luecke_tage": 0,
                  "unterschied_der_verteilungen": 0.4, "begruendung": ["Die Verteilung unterscheidet sich <um> 40 %."]}
         row = dict(zeile(), abschnitte={"geprueft": True, "tage": 60, "anzahl": 2, "brueche": 1, "ausschlaege": [{"von": "2025-03-01", "bis": "2025-03-05"}],
@@ -557,29 +557,23 @@ class FilterSeite(unittest.TestCase):
     _zerlegung = None
 
     def daten(self):
-        """Zerlegung der Testdaten (einmal gerechnet; die Tests veraendern die Rueckgabe nicht, sondern kopieren sie)."""
+        """Datentabelle der Testdaten (einmal gerechnet; die Tests veraendern die Rueckgabe nicht, sondern kopieren sie)."""
         import copy
         if FilterSeite._zerlegung is None:
             import test_gruppen as tg
-            k_max = gruppen.K_MAX
-            gruppen.K_MAX = 5  # die Suche geht immer bis K_MAX; fuer schnelle Tests genuegt 5
-            try:
-                fahrten, spannen = tg.fahrten_und_spannen(tage=28)
-                FilterSeite._zerlegung = gruppen.analysiere(gruppen.zellen_bauen(fahrten, fahrten, spannen), 30, True)
-            finally:
-                gruppen.K_MAX = k_max
+            fahrten, spannen = tg.fahrten_und_spannen(tage=28)
+            FilterSeite._zerlegung = gruppen.datentabelle(gruppen.zellen_bauen(fahrten, fahrten, spannen), 30)
         return copy.deepcopy(FilterSeite._zerlegung)
 
-    def html(self, daten, block=None):
+    def html(self, daten):
         row = zeile()
-        row["gruppen"] = block or {"geprueft": False, "grund": "x"}
         return s.seite("07_2024_ Einsteinstraße", [row], {"messungen": []}, {}, {row["datei"]: daten})
 
     def test_abschnitt_daten_und_skript(self):
-        block, daten = self.daten()
+        daten = self.daten()
         daten["verhalten"] = {"profile": [[0.5, 0.5] + [0.0] * 44, [0.0] * 15 + [1.0] + [0.0] * 30], "klassen": ["rauschen", "haupt"],
                               "raten": {"0|7": [1.0, 20.0]}}
-        h = self.html(daten, block)
+        h = self.html(daten)
         self.assertIn("Auswertung nach Zeit, Tagen, Abschnitt und Gruppe", h)
         self.assertIn("<noscript>", h)
         self.assertIn('<section class="filter" data-filter hidden>', h)  # ohne JavaScript bleibt der Abschnitt verborgen
@@ -591,11 +585,10 @@ class FilterSeite(unittest.TestCase):
             self.assertNotIn(nicht, h, nicht)  # keine Formgruppen; ohne abgezogenen Rauschboden keine solche Auswahl
         m = re.search(r'<script type="application/json" class="filter-daten">(.*?)</script>', h, re.S)
         eingebettet = json.loads(m.group(1))
-        self.assertEqual(eingebettet, s.filter_daten(daten))  # die Tabelle im Seitentext ist die Datentabelle ohne Formgruppen
-        self.assertNotIn("gruppen", eingebettet)
+        self.assertEqual(eingebettet, s.filter_daten(daten))  # die Tabelle im Seitentext ist die Datentabelle
         self.assertEqual(eingebettet["verhalten"], daten["verhalten"])
         d2 = dict(daten, r={"0|8": [10, 5]})
-        self.assertIn("Rauschboden (herausgerechnet)", self.html(d2, block))
+        self.assertIn("Rauschboden (herausgerechnet)", self.html(d2))
         d1 = {k: v for k, v in daten.items() if k != "verhalten"}  # keine Verhaltensgruppen, kein Rauschboden: kein Feld "Gruppe"
         h1 = self.html(d1)
         self.assertNotIn('data-feld="gruppe"', h1)
@@ -603,7 +596,7 @@ class FilterSeite(unittest.TestCase):
         self.assertIn('data-feld="tage"', h1)
 
     def test_auswahl_nur_trockene_stunden(self):
-        _, daten = self.daten()
+        daten = self.daten()
         self.assertNotIn('data-feld="wetter"', self.html(daten))  # ohne Zellen fuer trockene Stunden keine Auswahl
         daten["trocken"] = {"tage": {"0|7": 1}, "z": {"0|7": [30, 1]}, "r": {}}
         h = self.html(daten)
@@ -614,19 +607,18 @@ class FilterSeite(unittest.TestCase):
         self.assertEqual(json.loads(m.group(1))["trocken"], daten["trocken"])  # die Zellen kommen mit in die Datentabelle
 
     def test_namen_kommen_in_die_datentabelle(self):
-        _, daten = self.daten()
-        daten["abschnitte"] = [{"nr": 1, "von": "2024-07-24", "bis": "2024-09-03", "tage": {}, "z": {}, "r": {}, "gruppen": [], "w0": 3,
+        daten = self.daten()
+        daten["abschnitte"] = [{"nr": 1, "von": "2024-07-24", "bis": "2024-09-03", "tage": {}, "z": {}, "r": {},
                                 "verhalten": {"profile": [[1.0] + [0.0] * 45], "klassen": ["haupt"], "raten": {}}},
-                               {"nr": 2, "von": "2024-09-04", "bis": "2024-12-04", "tage": {}, "z": {}, "r": {}, "gruppen": []}]
+                               {"nr": 2, "von": "2024-09-04", "bis": "2024-12-04", "tage": {}, "z": {}, "r": {}}]
         d = s.filter_daten(daten, {1: ["A1·1 · Hauptgruppe"]})
         self.assertEqual(d["abschnitte"][0]["verhalten"]["namen"], ["A1·1 · Hauptgruppe"])
-        self.assertNotIn("w0", d["abschnitte"][0])
         self.assertNotIn("verhalten", d["abschnitte"][1])
         self.assertNotIn("namen", daten["abschnitte"][0]["verhalten"])  # die Eingabe bleibt unveraendert
 
     def test_feste_kennzahlentabelle_steht_mit_auswahl_nur_im_noscript(self):
-        block, daten = self.daten()
-        h = self.html(daten, block)
+        daten = self.daten()
+        h = self.html(daten)
         self.assertEqual(h.count("Kennzahlen dieser Messung nach Zeitraum"), 1)
         m = re.search(r"<noscript>((?:(?!</noscript>).)*Kennzahlen dieser Messung nach Zeitraum.*?)</noscript>", h, re.S)
         self.assertIsNotNone(m)  # die Tabelle steht im noscript-Block
@@ -636,9 +628,8 @@ class FilterSeite(unittest.TestCase):
         self.assertNotIn("<noscript>", ohne)
 
     def test_seite_zeigt_das_histogramm_nur_einmal_mit_javascript(self):
-        block, daten = self.daten()
+        daten = self.daten()
         row = zeile()
-        row["gruppen"] = block
         row["histogramm"] = hist(5000)
         h = s.seite("07_2024_ Einsteinstraße", [row], {"messungen": []}, {}, {row["datei"]: daten})
         self.assertEqual(h.count("Verteilung der Geschwindigkeiten"), 1)
@@ -658,12 +649,12 @@ class FilterSeite(unittest.TestCase):
         self.assertNotIn("<noscript>", h)
 
     def test_keine_externen_adressen_im_filter(self):
-        h = self.html(*reversed(self.daten()))
+        h = self.html(self.daten())
         for url in re.findall(r'(?:href|src)="(https?://[^"]+)"', h):
             self.assertRegex(url, r"^https://(github\.com/Khazuar|ris-neuss\.itk-rheinland\.de|creativecommons\.org)")
 
     def test_bauen_liest_die_zellen(self):
-        _, daten = self.daten()
+        daten = self.daten()
         zl = zeile()
         with tempfile.TemporaryDirectory() as d:
             ordner = os.path.join(d, zl["standort"])

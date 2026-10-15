@@ -6,7 +6,7 @@
 
 ## Frage
 
-Die bisherigen Gruppen (`gruppen.py`) sind angepasste Kurven: Sie beschreiben die Form der Geschwindigkeitsverteilung. Ob dahinter etwas steckt,
+Die früheren Formgruppen (bis Oktober 2026, [gruppen.md](gruppen.md)) waren angepasste Kurven: Sie beschreiben die Form der Geschwindigkeitsverteilung. Ob dahinter etwas steckt,
 das sich wie eine eigene Gruppe *verhält*, sagt die Form nicht; die Begründung ist zirkulär, denn die Geschwindigkeit ist zugleich das, worüber die
 Auswertung etwas aussagen will. Eine **Verhaltensgruppe** ist hier dagegen ein Teil des Verkehrs mit
 

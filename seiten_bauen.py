@@ -580,11 +580,11 @@ def json_in_html(obj):
 
 
 def filter_daten(daten, namen=None):
-    """Datentabelle für filter.js: Zellen und Verhaltensgruppen (mit Namen für die Auswahl), ohne die Formgruppen (nur noch in der YAML).
+    """Datentabelle für filter.js: Zellen und Verhaltensgruppen (mit Namen für die Auswahl).
 
     namen: {Abschnittsnummer: [Bezeichnung je Gruppe]} aus verhaltensgruppen.json (stadtgruppen.py)."""
     def teil(d, nr):
-        x = {k: v for k, v in d.items() if k not in ("gruppen", "w0", "abschnitte")}
+        x = {k: v for k, v in d.items() if k != "abschnitte"}
         if x.get("verhalten") and (namen or {}).get(nr):
             x["verhalten"] = dict(x["verhalten"], namen=namen[nr])
         return x

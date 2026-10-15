@@ -267,7 +267,7 @@ class Zwischenspeicher(unittest.TestCase):
             sp2 = zwischenspeicher.Zwischenspeicher(cache)
             r2 = d.convert(self.datei, b, "X", None, False, False, 0, {}, sp2, False)
             self.assertEqual(r1, r2)
-            self.assertEqual(sp1.benutzt, sp2.benutzt)  # auch die Ebene "gruppen" gilt als benutzt
+            self.assertEqual(sp1.benutzt, sp2.benutzt)  # auch die Ebenen unter der Datei (Verhaltensgruppen) gelten als benutzt
             for f in os.listdir(a):
                 with open(os.path.join(a, f), "rb") as x, open(os.path.join(b, f), "rb") as y:
                     self.assertEqual(x.read(), y.read(), f)
@@ -284,10 +284,10 @@ class Zwischenspeicher(unittest.TestCase):
             sp = zwischenspeicher.Zwischenspeicher(t)
             sp.speichern("datei", "a", {"x": 1})
             sp.speichern("datei-ohne-numpy", "b", {"x": 2})
-            sp.speichern("gruppen", "c", {"x": 3})
+            sp.speichern("verhalten", "c", {"x": 3})
             self.assertEqual(sp.aufraeumen(set(), ("datei",)), 2)  # "datei" bleibt stehen
             self.assertIsNotNone(sp.holen("datei", "a"))
-            self.assertIsNone(sp.holen("gruppen", "c"))
+            self.assertIsNone(sp.holen("verhalten", "c"))
             self.assertEqual(sp.aufraeumen(set()), 1)
 
 

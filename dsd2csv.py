@@ -932,9 +932,7 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     if nah and "regen" in res["rauschen"]:  # Station, deren Niederschlag fuer diese Messstelle gilt (Rueckfall: naechste weitere)
         res["rauschen"]["regen"]["wetterstation"] = {"name": nah[0][2], "abstand_km": nah[0][0],
                                                      "weitere": [f"{n} ({k} km)" for k, _, n in nah[1:3]]}
-    zd = gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen)
-    res["gruppen"], daten = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
-                                                 rb["obergrenze_abzug_kmh"] if belegt else None)
+    daten = gruppen.datentabelle(gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen), lim)  # Zellen fuer die Auswahl der Detailseite
     # Regenklasse je Ortszeit-Stunde (wie im Rauschboden-Modell): fuer die Auswahl "nur trockene Stunden" und das Aggregat (docs/totzeit.md:
     # Regenphantome verdecken Fahrzeuge, die Verkehrsmenge in Regenstunden ist zu niedrig)
     regen_f = regenfunktion(ort=ort)
@@ -948,7 +946,7 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     # Brueche in der Messreihe und getrennte Auswertung der Abschnitte (docs/abschnitte.md)
     br = bruch.erkenne(bereinigt, spannen, max(10, int(round(0.5 * lim))) if lim else 15, lim, kalender.besonderer_tag)
     res["abschnitte"], daten_abschnitte = abschnitte_auswerten(br, bereinigt_vorher, bereinigt, teil, spannen, lim, min_kmh, zusatz,
-                                                               belegt, rb, speicher, trocken)
+                                                               trocken)
     if daten and daten_abschnitte:  # Zellen je Abschnitt fuer die Auswahl auf der Detailseite
         daten["abschnitte"] = daten_abschnitte
     # Verhaltensgruppen je Abschnitt (docs/verhalten.md): alle Fahrzeuge mit nutzbarer Zeit, der Rauschboden ist dort eine eigene Gruppe
@@ -989,9 +987,9 @@ def kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz):
     return bereinigt_block, teilzeitraeume
 
 
-def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusatz, belegt, rb, speicher, trocken=None):
+def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusatz, trocken=None):
     """(Block 'abschnitte', Zellen je Abschnitt): die Messreihe an den erkannten Bruechen zerlegt, jeder Abschnitt einzeln ausgewertet
-    (wie die ganze Datei). Gleiche Rauschbodenabzuege wie fuer die ganze Datei; die Gruppen werden je Abschnitt neu angepasst.
+    (wie die ganze Datei). Gleiche Rauschbodenabzuege wie fuer die ganze Datei.
     Die Zellen (Liste, eine je Abschnitt, wie die Zellen der Datei) braucht die Auswahl auf der Detailseite."""
     if not br.get("geprueft"):
         return {"geprueft": False, "grund": br["grund"]}, []
@@ -1033,9 +1031,7 @@ def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusat
         if e["anzahl_fahrzeuge"]:
             e.update(zusatz(teile_n[i]))
             e["teilzeitraeume"] = kennzahlen_je_zeitraum(teile_n[i], teile_t[i], lim, min_kmh, zusatz)[1]  # 'bereinigt' waere dasselbe wie oben
-            zd = gruppen.zellen_bauen(teile_v[i], teile_n[i], sp)
-            e["gruppen"], zellen = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
-                                                      rb["obergrenze_abzug_kmh"] if belegt else None)
+            zellen = gruppen.datentabelle(gruppen.zellen_bauen(teile_v[i], teile_n[i], sp), lim)
             if zellen:
                 if trocken:  # dieselben Zellen nur aus trockenen Stunden (Auswahl auf der Detailseite)
                     zellen["trocken"] = gruppen.zellen_json(gruppen.zellen_bauen(teile_v[i], teile_n[i], sp, trocken))

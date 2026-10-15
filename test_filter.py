@@ -11,20 +11,13 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import datetime as dt  # noqa: E402
+import dsd2csv  # noqa: E402
 import gruppen  # noqa: E402
 import test_gruppen as tg  # noqa: E402
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 NODE = shutil.which("node")
-_K_MAX = gruppen.K_MAX
-
-
-def setUpModule():
-    gruppen.K_MAX = 5  # die Suche geht immer bis K_MAX (8); fuer schnelle Tests genuegt 5
-
-
-def tearDownModule():
-    gruppen.K_MAX = _K_MAX
 
 SKRIPT = r"""
 const f = require(process.argv[2]);
@@ -86,21 +79,24 @@ class FilterJs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         fahrten, spannen = tg.fahrten_und_spannen(tage=28)
-        cls.block, cls.daten = gruppen.analysiere(gruppen.zellen_bauen(fahrten, fahrten, spannen), 30, True)
+        cls.daten = gruppen.datentabelle(gruppen.zellen_bauen(fahrten, fahrten, spannen), 30)
+        cls.fahrzeuge = sum(1 for t, _ in fahrten if (t.date(), t.hour) in __import__("rauschen").abgedeckte_stunden(spannen))
 
     def test_alles_stimmt_mit_der_python_rechnung(self):
         (r,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "alle"}])
         h, std = zelle_hist(self.daten, "z", range(8), range(24))
         self.assertEqual({int(k): v for k, v in r["hist"].items()}, h)
         self.assertEqual(r["stunden"], std)
-        erwartet = gruppen.kennzahlen(h, 30)
+        t0 = dt.datetime(2024, 1, 1)
+        erwartet = dsd2csv.stats([(t0, v) for v, c in h.items() for _ in range(c)], 30)  # dieselben Kennzahlen wie in der YAML
+        g, e = erwartet["geschwindigkeit_kmh"], erwartet["einhaltung"]
         kz = r["kz"]
-        self.assertEqual(round(kz["n"]), erwartet["fahrzeuge"])
-        self.assertAlmostEqual(kz["mittel"], erwartet["mittel_kmh"], places=2)
-        self.assertEqual((kz["v85"], kz["v95"], kz["v99"]), (erwartet["v85_kmh"], erwartet["v95_kmh"], erwartet["v99_kmh"]))
-        self.assertAlmostEqual(kz["einhaltung"], erwartet["einhaltungsquote_prozent"], places=1)
-        self.assertAlmostEqual(kz["qualifiziert"], erwartet["qualifizierte_einhaltungsquote_prozent"], places=1)
-        self.assertEqual(round(kz["n"]), self.block["fahrzeuge"])
+        self.assertEqual(round(kz["n"]), erwartet["anzahl_fahrzeuge"])
+        self.assertAlmostEqual(kz["mittel"], g["mittel"], places=2)
+        self.assertEqual((kz["v85"], kz["v95"], kz["v99"]), (g["v85"], g["v95"], g["v99"]))
+        self.assertAlmostEqual(kz["einhaltung"], e["einhaltungsquote_prozent"], places=1)
+        self.assertAlmostEqual(kz["qualifiziert"], e["qualifizierte_einhaltungsquote_prozent"], places=1)
+        self.assertEqual(round(kz["n"]), self.fahrzeuge)
 
     def test_v85_wird_nach_den_stufen_der_verwaltung_gefaerbt(self):
         skript = ("const f=require(process.argv[1]); const o={}; for (const v of [34,35,38,39,40,41]) { o[v]=f.klasseV85(v, 30); }"

@@ -34,8 +34,8 @@ ausgewertet, mit Begründung und Wahrscheinlichkeit.
    (totale Variation, halbe Summe der Anteilsunterschiede; 0 = gleich, 1 = nichts gemeinsam). Die Schwelle ist von Hand gewählt und nicht an
    bekannten Umhängeterminen geeicht. Wer sie ändert (`MIN_UNTERSCHIED`), ändert die Zahl der Abschnitte.
 
-Jeder Abschnitt wird wie die ganze Datei ausgewertet (Kennzahlen je Tageszeit, Histogramm, Gefährdung, Lärm, Gruppen); der Rauschboden und der
-Regenanteil sind aus der Anpassung über die ganze Datei herausgerechnet, die Gruppen je Abschnitt neu angepasst. Die YAML enthält unter
+Jeder Abschnitt wird wie die ganze Datei ausgewertet (Kennzahlen je Tageszeit, Histogramm, Gefährdung, Lärm, Verhaltensgruppen); der Rauschboden und der
+Regenanteil sind aus der Anpassung über die ganze Datei herausgerechnet. Die YAML enthält unter
 `abschnitte` die Liste `liste` mit `beginn` (Bruch, Wahrscheinlichkeit, Merkmale vorher und nachher, Verschiebung in Streuungen, Lücke in Tagen,
 Begründung) und den Kennzahlen; `summary.csv` enthält die Zahl der Abschnitte und Brüche je Datei.
 
@@ -79,11 +79,12 @@ Mitteilungen betreffen vor allem andere Zeiträume). Ein Beispiel für den Wert 
   Tageswerte nach der Aufblähung voraus; sie ist keine Häufigkeit.
 - **Rauschboden und Regenanteil** sind für die ganze Datei geschätzt und gelten damit auch für Abschnitte, in denen ein anderer Ort anderes Rauschen
   haben kann.
-- **Gruppen je Abschnitt** haben weniger Fahrzeuge; unter 5.000 Fahrzeugen werden sie nicht zerlegt ([gruppen.md](gruppen.md)).
+- **Verhaltensgruppen je Abschnitt** brauchen mindestens 14 Tage und 5.000 Fahrzeuge ([verhalten.md](verhalten.md)); kürzere Abschnitte
+  werden nur mit den Vorlagen der Stadtebene geprüft.
 
 ## Ausblick
 
-Gruppen sind bisher nur durch die Form der Geschwindigkeitsverteilung definiert, und das ist zirkulär: Eine Kurve, die zur Verteilung passt, ist noch
+Die früheren Formgruppen ([gruppen.md](gruppen.md)) waren nur durch die Form der Geschwindigkeitsverteilung definiert, und das ist zirkulär: Eine Kurve, die zur Verteilung passt, ist noch
 kein Phänomen. Die Abschnitte erlauben einen unabhängigen Test: Taucht eine Gruppe in getrennten Abschnitten desselben Standorts oder in Abschnitten
 verschiedener Standorte mit ähnlichen Eigenschaften wieder auf (ähnliche Lage, ähnlicher Tagesgang, gleiche Reaktion auf Licht und Wetter), ist sie
 mehr als eine Anpassung. Der Stand dazu steht in [verhalten.md](verhalten.md). Erste Vorarbeiten (an sieben Messreihen, vor der Trennung nach Abschnitten): Die Verteilung lässt sich besser als Mischung fester

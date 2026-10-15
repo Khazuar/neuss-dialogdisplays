@@ -40,7 +40,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/metadaten.md` – Herkunft, Zuordnung und Abdeckung der Metadaten
 - `docs/standorte.md` – Standort der Messstellen: Quellen, Verfahren, Annahmen für die Unsicherheit, Ergebnis und Grenzen
 - `docs/rauschen.md` – Modell, Regeln und Grenzen des Rauschbodenabzugs
-- `docs/gruppen.md` – Zerlegung der Verteilung in Gruppen, Zeitscheiben und die Auswahl auf den Detailseiten
+- `docs/gruppen.md` – Zeitscheiben, Zellen und die Auswahl auf den Detailseiten (dazu die früheren Formgruppen)
 - `docs/abschnitte.md` – Brüche in einer Messreihe (Geräte umgehängt?) und die getrennte Auswertung der Abschnitte
 - `docs/verhalten.md` – Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter, Ferien und Verkehrsmenge) mit Placebo-Prüfung,
   drei Ebenen (Abschnitt, Standort, Stadt), Namen, Deutungen und Stadt-Vorlagen; Forschungsstand
@@ -55,7 +55,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
   `stadtgruppen.py` – fasst sie zu Gruppen je Standort (MS) und der Stadt (S) zusammen, vergibt Namen aus dem Register und schreibt `verhaltensgruppen.json`
 - `tools/verhalten/` – Forschungsskripte der Verhaltensanalyse (brauchen numpy, nicht Teil der Auswertung)
 - `bruch.py` – erkennt Brüche in der Messreihe einer Datei (Verhalten des Verkehrs ändert sich dauerhaft) und zerlegt sie in Abschnitte mit Begründung und Wahrscheinlichkeit; `dsd2csv.py` wertet jeden Abschnitt einzeln aus (YAML-Block `abschnitte`)
-- `gruppen.py` – zerlegt die Verteilung je Datei in Gruppen (Lognormal-Mischung, Zahl der Kurven und Gruppen aus den Daten) und baut die Zellen für die Auswahl nach Tageszeit, Tagen und Gruppe
+- `gruppen.py` – Zeitscheiben und die Zellen für die Auswahl nach Tageszeit und Tagen auf den Detailseiten
 - `wetter.py` – erzeugt `belege/wetter.json` aus den Daten des Deutschen Wetterdienstes (Niederschlag je Stunde und Tag, Tageswerte von Temperatur, Wind und Schnee); `tageslicht.py` – Sonnenaufgang, Sonnenuntergang und Dämmerung für Neuss, rein rechnerisch
 - `zwischenspeicher.py` – Zwischenspeicher für Ergebnisse je Datei (nur geänderte Dateien oder Skripte werden neu gerechnet)
 - `lokal_bauen.py` – baut die GitHub-Pages-Seite lokal nach `_vorschau/` und startet auf Wunsch einen lokalen Server, um sie vor dem Push im Browser anzusehen (`docs/betrieb.md`)
@@ -115,10 +115,6 @@ sinnvoll.
   - `bereinigt` – dieselben Kennzahlen nur für Fahrzeuge mit nutzbarer Zeit,
   - `teilzeitraeume` – dieselben Kennzahlen für `nacht` (22–6 Uhr), `vormittag` (6–12), `nachmittag` (12–19), `abend` (19–22)
     und `schulweg` (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
-  - `gruppen` – Beschreibung der Verteilung als Mischung angepasster Kurven (Zahl der Kurven und Gruppen aus den Daten, auch keine
-    Zerlegung; eine Gruppe besteht aus einer oder mehreren Kurven): Anteil, Modus, Kennzahlen je Gruppe, dazu der Rest, den die Kurven
-    nicht erklären, und die Abweichung des Modells
-    (`docs/gruppen.md`; steht nur noch in der YAML, die Seiten zeigen die Verhaltensgruppen),
   - `verhalten` – Verhaltensgruppen je Abschnitt: Zahl der Gruppen, Vorhersagegewinn, je Gruppe Art, Anteil, Profil, Stabilität, Verhalten
     (Effekte mit Standardfehler) und Tagesgang, dazu der Placebo-Durchgang und die geprüften Stadt-Vorlagen (`docs/verhalten.md`),
   - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: relativer Risikoindex nach Nilsson, Aufprallgeschwindigkeit

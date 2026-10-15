@@ -2,8 +2,8 @@
 """Zwischenspeicher fuer Ergebnisse je Datei (wie Ebenen beim Bau von Containern).
 
 Jede Ebene hat Schluessel aus dem Inhalt ihrer Eingaben und dem Hash des Skripts, das sie berechnet. Aendert sich nichts davon,
-wird das gespeicherte Ergebnis wiederverwendet. Ebenen: "datei" (alles zu einer DSD-Datei) und "gruppen" (die aufwendige
-Zerlegung, abhaengig nur von den Zaehlwerten und gruppen.py). Der Ordner liegt nicht im Repository (GitHub Actions haelt ihn
+wird das gespeicherte Ergebnis wiederverwendet. Ebenen: "datei" bzw. "datei-ohne-numpy" (alles zu einer DSD-Datei),
+"verhalten" und "vorlagen" (Verhaltensgruppen je Abschnitt, verhalten.py). Der Ordner liegt nicht im Repository (GitHub Actions haelt ihn
 zwischen den Laeufen vor). Nach einem vollstaendigen Lauf raeumt aufraeumen() alles weg, was nicht benutzt wurde.
 """
 import hashlib
