@@ -73,11 +73,12 @@ def tage_flags(datum, cache={}):
 
 def stunden_zeilen(mid, agg, stunde_zeitraum):
     """Zeilen der Stundendatei einer Messung (aggregat.SPALTEN_STUNDEN)."""
-    for datum, stunde, versatz, abschnitt, voll, flach in agg["stunden"]:
+    for datum, stunde, versatz, abschnitt, voll, klasse, flach in agg["stunden"]:
         wt, fe, ft = tage_flags(datum)
         zr = stunde_zeitraum[stunde]
+        klasse = "" if klasse is None else klasse
         for i in range(0, len(flach), 2):
-            yield [mid, abschnitt, datum, wt, stunde, versatz, zr, fe, ft, voll, flach[i], flach[i + 1]]
+            yield [mid, abschnitt, datum, wt, stunde, versatz, zr, fe, ft, voll, klasse, flach[i], flach[i + 1]]
 
 
 def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):

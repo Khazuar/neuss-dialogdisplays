@@ -571,6 +571,9 @@ TAGE_OPTIONEN = [("alle", "Alle Tage"), ("werktag", "Werktage (Mo–Fr)"), ("sam
     [(str(i), t if i < 7 else "Feiertage an Werktagen und Samstagen") for i, t in enumerate(gruppen.TAGE)]
 
 
+WETTER_OPTIONEN = [("alle", "Alle Stunden"), ("trocken", "Nur trockene Stunden")]
+
+
 def json_in_html(obj):
     """JSON fuer ein script-Element: kein vorzeitiges Ende durch '</' und keine Kommentarsequenzen."""
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/").replace("<!--", "<\\!--")
@@ -617,7 +620,9 @@ def filter_abschnitt(row, daten, sid, namen=None):
         return (f'<div><label for="{sid}-{name}">{e(label)}</label><select id="{sid}-{name}" data-feld="{name}">' +
                 "".join(f'<option value="{e(v)}">{e(t)}</option>' for v, t in opts) + "</select></div>")
 
+    mit_trocken = bool(daten.get("trocken") or any(a.get("trocken") for a in abschnitte_))
     felder = (auswahl("zeit", "Tageszeit", ZEIT_OPTIONEN) + auswahl("tage", "Tage", TAGE_OPTIONEN) +
+              (auswahl("wetter", "Wetter", WETTER_OPTIONEN) if mit_trocken else "") +
               (auswahl("abschnitt", "Abschnitt", abschnitt_opt) if abschnitt_opt else "") +
               (auswahl("gruppe", "Gruppe", gruppen_opt) if gruppen_opt else ""))
     return ('<noscript><p class="muted">Die Auswahl nach Tageszeit, Wochentag, Abschnitt und Gruppe benötigt JavaScript. Ohne JavaScript zeigt diese Seite '
@@ -628,6 +633,9 @@ def filter_abschnitt(row, daten, sid, namen=None):
             'Es zählen vollständig aufgezeichnete Stunden mit nutzbarer Uhrzeit (Ortszeit); der Rauschboden ist herausgerechnet, wo belegt. '
             + ('<span class="labor">Gruppen sind die Verhaltensgruppen des Abschnitts (Reiter „Gruppen“): Bei einer Gruppe bleiben alle aufgezeichneten '
                'Fahrten grau sichtbar, farbig ist, was die Gruppe nach dem Modell davon erklärt.</span>' if mit_vg else '') +
+            (' Mit „nur trockene Stunden“ fallen Stunden mit Regen weg, dazu die drei Stunden davor und die Stunde danach: Bei Regen erzeugt '
+               'das Gerät Störungen, und jede sperrt es für einige Sekunden, sodass in Regenstunden Fahrzeuge fehlen '
+               f'(<a href="{REPO}/blob/main/docs/totzeit.md">Gerätesperre</a>). Der Vergleich zeigt, wie stark das die Zahlen bewegt.' if mit_trocken else '') +
             '</p><div class="controls">' + felder + '</div>' +
             ('<p class="muted filter-abschnitt-info"></p>' if abschnitt_opt else '') +
             '<div class="filter-ergebnis" aria-live="polite"></div>'

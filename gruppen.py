@@ -63,7 +63,7 @@ def tagschluessel(zeit):
     return 7 if zeit.date() in _FEIERTAGE[zeit.year] else zeit.weekday()
 
 
-def zellen_bauen(vorher, nachher, spannen):
+def zellen_bauen(vorher, nachher, spannen, stunden_filter=None):
     """Zellen (Tagschluessel, Stunde) mit Histogrammen der Fahrzeuge in vollstaendig aufgezeichneten Stunden.
 
     vorher: [(Ortszeit, v)] mit nutzbarer Zeit vor dem Abzug des Rauschbodens, nachher: dieselbe Liste danach (gleiche Objekte,
@@ -71,6 +71,8 @@ def zellen_bauen(vorher, nachher, spannen):
     Rauschboden) und haelften (zwei Counter ueber gerade bzw. ungerade Messtage) zurueck.
     """
     abgedeckt = rauschen.abgedeckte_stunden(spannen)
+    if stunden_filter is not None:  # etwa nur trockene Stunden (Auswahl auf der Detailseite)
+        abgedeckt = {x for x in abgedeckt if stunden_filter(x)}
     behalten = {id(f) for f in nachher}
     D = collections.Counter()
     for datum, h in abgedeckt:
@@ -99,6 +101,13 @@ def zelle_kodiert(c):
     for v in sorted(c):
         out += [v, c[v]]
     return out
+
+
+def zellen_json(zd):
+    """Die Zellen von zellen_bauen fuer die Datentabelle der Detailseite: {tage, z, r} mit Schluesseln 'Tag|Stunde'."""
+    return {"tage": {f"{d}|{h}": c for (d, h), c in sorted(zd["D"].items()) if c},
+            "z": {f"{d}|{h}": zelle_kodiert(c) for (d, h), c in sorted(zd["z"].items())},
+            "r": {f"{d}|{h}": zelle_kodiert(c) for (d, h), c in sorted(zd["r"].items()) if c}}
 
 
 # ------------------------------------------------------------------ Mischung von Lognormal-Verteilungen
@@ -521,10 +530,7 @@ def analysiere(zd, limit, rauschen_belegt, speicher=None, code_hash="", rausch_o
     n = sum(gesamt.values())
     if not n:
         return {"geprueft": False, "grund": "keine Fahrzeuge in vollständig aufgezeichneten Stunden mit nutzbarer Zeit"}, None
-    daten = {"v": 1, "limit": limit,
-             "tage": {f"{d}|{h}": c for (d, h), c in sorted(zd["D"].items()) if c},
-             "z": {f"{d}|{h}": zelle_kodiert(c) for (d, h), c in sorted(zd["z"].items())},
-             "r": {f"{d}|{h}": zelle_kodiert(c) for (d, h), c in sorted(zd["r"].items()) if c}, "gruppen": []}
+    daten = {"v": 1, "limit": limit, **zellen_json(zd), "gruppen": []}
     if not limit or n < MIN_FAHRZEUGE:
         return {"geprueft": False, "grund": f"weniger als {MIN_FAHRZEUGE} Fahrzeuge oder kein Tempolimit"}, daten
     # Rand der Anpassung: das kleinste gemessene Tempo (Erfassungsgrenze der Geraete; links davon ist die Verteilung nicht erfasst).

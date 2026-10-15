@@ -159,6 +159,28 @@ class FilterJs(unittest.TestCase):
         (ohne,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "v1"}])
         self.assertIn("keine Verhaltensgruppen", ohne["html"])
 
+    def test_nur_trockene_stunden(self):
+        """Die Auswahl 'nur trockene Stunden' nimmt die Zellen 'trocken' (ganze Messung und Abschnitt) und laesst die Verhaltensgruppen weg."""
+        daten = mit_verhalten(self.daten)
+        trocken = {"tage": {"0|7": 2}, "z": {"0|7": [30, 4, 31, 1]}, "r": {}}
+        daten["trocken"] = trocken
+        daten["abschnitte"] = [{"nr": 2, "von": "2024-01-01", "bis": "2024-01-31", "tage": {"1|8": 3}, "z": {"1|8": [40, 2]}, "r": {},
+                                "trocken": {"tage": {"1|8": 1}, "z": {"1|8": [40, 1]}, "r": {}}}]
+        skript = ("const f=require(process.argv[1]); const d=JSON.parse(require('fs').readFileSync(process.argv[2],'utf8'));"
+                  "const a=f.datenFuer(d,'alle','trocken'), b=f.datenFuer(d,'2','trocken'), c=f.datenFuer(d,'alle','alle');"
+                  "console.log(JSON.stringify({a:[a.z,a.tage,a.verhalten,!!a.tageAlle,a.limit], b:[b.z,b.limit,b.von], c:[c.z===undefined, !!c.verhalten, !!c.tageAlle],"
+                  " html: f.ergebnisHtml(a,{zeit:'alle',tage:'alle',gruppe:'alle'})}));")
+        with tempfile.TemporaryDirectory() as t:
+            p = os.path.join(t, "d.json")
+            with open(p, "w", encoding="utf-8") as fh:
+                json.dump(daten, fh)
+            out = json.loads(subprocess.run([NODE, "-e", skript, os.path.join(HIER, "site", "filter.js"), p], stdout=subprocess.PIPE, check=True,
+                                            timeout=60).stdout.decode("utf-8"))
+        self.assertEqual(out["a"], [trocken["z"], trocken["tage"], None, True, daten["limit"]])
+        self.assertEqual(out["b"], [{"1|8": [40, 1]}, daten["limit"], "2024-01-01"])
+        self.assertEqual(out["c"], [False, True, False])  # ohne Wetterauswahl alles wie bisher
+        self.assertIn("Nur trockene Stunden: 2 von", out["html"])
+
     def test_rauschboden(self):
         """Der Rauschboden zeigt alle aufgezeichneten Fahrten grau und nur den herausgerechneten Rauschboden farbig."""
         daten = copy.deepcopy(self.daten)

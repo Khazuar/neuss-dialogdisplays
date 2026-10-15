@@ -236,6 +236,11 @@
       html += '<td class="num' + klasseQuote(kz.einhaltung) + '">' + de(kz.einhaltung, 2) + ' %</td><td class="num' + klasseQuote(kz.qualifiziert) + '">' + de(kz.qualifiziert, 2) + ' %</td>';
     }
     html += '</tr></tbody></table></div>';
+    if (daten.tageAlle) {  // nur trockene Stunden: wie viel von der Auswahl bleibt
+      var alleStunden = waehle({ tage: daten.tageAlle, z: {} }, auswahl.zeit, auswahl.tage, false).stunden;
+      html += '<p class="muted">Nur trockene Stunden: ' + de(basis.stunden, 0) + ' von ' + de(alleStunden, 0) + ' vollständig aufgezeichneten Stunden der Auswahl' +
+        (alleStunden ? ' (' + de(100 * basis.stunden / alleStunden, 0) + ' %)' : '') + '.</p>';
+    }
     if (limit && kz.v85 - limit >= 5) {
       html += '<p class="muted">V85 gefärbt nach den Stufen der Verwaltung (V85 über dem Tempolimit): +5 bis +8 km/h gelb (unkritisch), +9 bis +10 orange ' +
         '(noch akzeptabel), ab +11 rot; bis +4 gilt als unauffällig.</p>';
@@ -259,6 +264,28 @@
     return html + '<figure class="histfig">' + h.svg + '<figcaption class="muted">' + unterschrift + '</figcaption></figure>';
   }
 
+  // Daten fuer die Auswahl: ganze Messung oder ein Abschnitt (eigene Zellen und Gruppen, gleiches Tempolimit), auf Wunsch nur die trockenen
+  // Stunden (eigene Zellen "trocken", dsd2csv.py). Die Verhaltensgruppen gelten fuer alle Stunden und entfallen dann.
+  function datenFuer(daten, nr, wetter) {
+    var quelle = daten, d = {}, i, k;
+    if (nr && nr !== "alle" && daten.abschnitte) {
+      for (i = 0; i < daten.abschnitte.length; i++) {
+        if (String(daten.abschnitte[i].nr) === String(nr)) { quelle = daten.abschnitte[i]; }
+      }
+    }
+    for (k in quelle) { if (quelle.hasOwnProperty(k)) { d[k] = quelle[k]; } }
+    d.limit = daten.limit;
+    d.v = daten.v;
+    if (wetter === "trocken" && quelle.trocken) {
+      d.tageAlle = quelle.tage;
+      d.tage = quelle.trocken.tage;
+      d.z = quelle.trocken.z;
+      d.r = quelle.trocken.r;
+      d.verhalten = null;
+    }
+    return d;
+  }
+
   function starten(abschnitt) {
     var tabelle = abschnitt.querySelector("script.filter-daten"), ziel = abschnitt.querySelector(".filter-ergebnis");
     if (!tabelle || !ziel) { return; }
@@ -267,20 +294,7 @@
     var felder = abschnitt.querySelectorAll("select[data-feld]");
     var abWahl = abschnitt.querySelector('select[data-feld="abschnitt"]'), grWahl = abschnitt.querySelector('select[data-feld="gruppe"]');
     var abInfo = abschnitt.querySelector(".filter-abschnitt-info"), aktivNr = null;
-    function aktiveDaten() {  // ganze Messung oder ein Abschnitt (eigene Zellen und eigene Gruppen, gleiches Tempolimit)
-      if (!abWahl || abWahl.value === "alle" || !daten.abschnitte) { return daten; }
-      var nr = parseInt(abWahl.value, 10);
-      for (var i = 0; i < daten.abschnitte.length; i++) {
-        if (daten.abschnitte[i].nr === nr) {
-          var d = {}, k;
-          for (k in daten.abschnitte[i]) { d[k] = daten.abschnitte[i][k]; }
-          d.limit = daten.limit;
-          d.v = daten.v;
-          return d;
-        }
-      }
-      return daten;
-    }
+    var wetterWahl = abschnitt.querySelector('select[data-feld="wetter"]');
     function gruppenOptionen(d) {  // die Verhaltensgruppen gehoeren zum Abschnitt (bei einem Abschnitt auch zur ganzen Messung)
       if (!grWahl) { return; }
       var alt = grWahl.value, opts = [["alle", "Alle Daten"]], i, vg = d.verhalten;
@@ -304,13 +318,13 @@
       if (grWahl.parentNode) { grWahl.parentNode.hidden = opts.length < 2; }  // nur "Alle Daten": die Auswahl entfaellt
     }
     function zeichnen() {
-      var d = aktiveDaten();
-      var nr = abWahl ? abWahl.value : null;
-      if (nr !== aktivNr) {
-        aktivNr = nr;
+      var nr = abWahl ? abWahl.value : null, wetter = wetterWahl ? wetterWahl.value : "alle";
+      var d = datenFuer(daten, nr, wetter);
+      if (nr + "|" + wetter !== aktivNr) {  // Abschnitt oder Wetter gewechselt: andere Gruppen (ohne Verhaltensgruppen bei nur trockenen Stunden)
+        aktivNr = nr + "|" + wetter;
         gruppenOptionen(d);
         if (abInfo) {
-          abInfo.textContent = (d === daten || !d.von) ? "Ganze Messung." +
+          abInfo.textContent = !d.von ? "Ganze Messung." +
             (wurzel.document.documentElement.classList.contains("labor") ? " Verhaltensgruppen gibt es je Abschnitt: Wählen Sie einen Abschnitt, um sie zu sehen." : "") :
             "Abschnitt " + d.nr + ": " + d.von.split("-").reverse().join(".") + " bis " + d.bis.split("-").reverse().join(".") + ".";
         }
@@ -324,7 +338,7 @@
     zeichnen();
   }
 
-  var api = { waehle: waehle, verhaltensgruppe: verhaltensgruppe, kennzahlen: kennzahlen, klasseV85: klasseV85, klassenbreite: klassenbreite,
+  var api = { waehle: waehle, datenFuer: datenFuer, verhaltensgruppe: verhaltensgruppe, kennzahlen: kennzahlen, klasseV85: klasseV85, klassenbreite: klassenbreite,
               histogrammSvg: histogrammSvg, ergebnisHtml: ergebnisHtml };
   if (typeof module !== "undefined" && module.exports) { module.exports = api; }
   if (wurzel.document) {

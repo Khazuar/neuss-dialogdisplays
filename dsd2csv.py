@@ -935,18 +935,26 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     zd = gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen)
     res["gruppen"], daten = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
                                                  rb["obergrenze_abzug_kmh"] if belegt else None)
+    # Regenklasse je Ortszeit-Stunde (wie im Rauschboden-Modell): fuer die Auswahl "nur trockene Stunden" und das Aggregat (docs/totzeit.md:
+    # Regenphantome verdecken Fahrzeuge, die Verkehrsmenge in Regenstunden ist zu niedrig)
+    regen_f = regenfunktion(ort=ort)
+    klassen = (rauschen.regenklassen(regen_f, rauschen.abgedeckte_stunden(spannen) | {(t.date(), t.hour) for t, _ in bereinigt})
+               if regen_f else None)
+    trocken = (lambda x: klassen.get(x) == rauschen.TROCKEN) if klassen else None
+    if daten and trocken:
+        daten["trocken"] = gruppen.zellen_json(gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen, trocken))
     res["bereinigt"], res["teilzeitraeume"] = kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz)
     res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt if x[1] >= min_kmh], spannen, lim)
     # Brueche in der Messreihe und getrennte Auswertung der Abschnitte (docs/abschnitte.md)
     br = bruch.erkenne(bereinigt, spannen, max(10, int(round(0.5 * lim))) if lim else 15, lim, kalender.besonderer_tag)
     res["abschnitte"], daten_abschnitte = abschnitte_auswerten(br, bereinigt_vorher, bereinigt, teil, spannen, lim, min_kmh, zusatz,
-                                                               belegt, rb, speicher)
+                                                               belegt, rb, speicher, trocken)
     if daten and daten_abschnitte:  # Zellen je Abschnitt fuer die Auswahl auf der Detailseite
         daten["abschnitte"] = daten_abschnitte
     # Verhaltensgruppen je Abschnitt (docs/verhalten.md): alle Fahrzeuge mit nutzbarer Zeit, der Rauschboden ist dort eine eigene Gruppe
     grenzen = [dt.date.fromisoformat(b["datum"]) for b in br["brueche"]] if br.get("geprueft") else []
     if agg_aus is not None:  # Fahrzeuge je Tag, Stunde und km/h (DATEN.md)
-        agg_aus.update(aggregat.bauen(bereinigt, utc, spannen_utc, utc_versatz_h, grenzen, lim, stats, min_kmh))
+        agg_aus.update(aggregat.bauen(bereinigt, utc, spannen_utc, utc_versatz_h, grenzen, lim, stats, min_kmh, klassen))
     res["verhalten"], vz = verhalten_auswerten(bereinigt_vorher, spannen, grenzen, lim, ort, speicher)
     if daten:
         for d in daten.get("abschnitte") or [daten]:
@@ -981,7 +989,7 @@ def kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz):
     return bereinigt_block, teilzeitraeume
 
 
-def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusatz, belegt, rb, speicher):
+def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusatz, belegt, rb, speicher, trocken=None):
     """(Block 'abschnitte', Zellen je Abschnitt): die Messreihe an den erkannten Bruechen zerlegt, jeder Abschnitt einzeln ausgewertet
     (wie die ganze Datei). Gleiche Rauschbodenabzuege wie fuer die ganze Datei; die Gruppen werden je Abschnitt neu angepasst.
     Die Zellen (Liste, eine je Abschnitt, wie die Zellen der Datei) braucht die Auswahl auf der Detailseite."""
@@ -1029,6 +1037,8 @@ def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusat
             e["gruppen"], zellen = gruppen.analysiere(zd, lim, belegt, speicher, _code_hash(("gruppen.py",)),
                                                       rb["obergrenze_abzug_kmh"] if belegt else None)
             if zellen:
+                if trocken:  # dieselben Zellen nur aus trockenen Stunden (Auswahl auf der Detailseite)
+                    zellen["trocken"] = gruppen.zellen_json(gruppen.zellen_bauen(teile_v[i], teile_n[i], sp, trocken))
                 daten_liste.append({"nr": i + 1, "von": e["von"], "bis": e["bis"], **zellen})
         blk["liste"].append(e)
     return blk, daten_liste

@@ -602,6 +602,17 @@ class FilterSeite(unittest.TestCase):
         self.assertIn('data-feld="zeit"', h1)
         self.assertIn('data-feld="tage"', h1)
 
+    def test_auswahl_nur_trockene_stunden(self):
+        _, daten = self.daten()
+        self.assertNotIn('data-feld="wetter"', self.html(daten))  # ohne Zellen fuer trockene Stunden keine Auswahl
+        daten["trocken"] = {"tage": {"0|7": 1}, "z": {"0|7": [30, 1]}, "r": {}}
+        h = self.html(daten)
+        self.assertIn('data-feld="wetter"', h)
+        self.assertIn(">Nur trockene Stunden<", h)
+        self.assertIn("docs/totzeit.md", h)
+        m = re.search(r'<script type="application/json" class="filter-daten">(.*?)</script>', h, re.S)
+        self.assertEqual(json.loads(m.group(1))["trocken"], daten["trocken"])  # die Zellen kommen mit in die Datentabelle
+
     def test_namen_kommen_in_die_datentabelle(self):
         _, daten = self.daten()
         daten["abschnitte"] = [{"nr": 1, "von": "2024-07-24", "bis": "2024-09-03", "tage": {}, "z": {}, "r": {}, "gruppen": [], "w0": 3,

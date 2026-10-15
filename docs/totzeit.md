@@ -125,6 +125,16 @@ durch die Sperre (Untergrenze, siehe Vorbehalt in Versuch 2), nicht 10 %. Regens
 
 ## Was daraus folgt
 
+**Umgesetzt (Oktober 2026):** Statt zu korrigieren, lassen sich Regenstunden weglassen. Die Auswahl „Wetter: nur trockene Stunden“ im Reiter
+Analyse der Detailseiten und die Spalte `regenklasse` der Stundendaten ([DATEN.md](../DATEN.md)) beschränken auf Stunden ohne Regen (auch nicht
+in den drei Stunden davor und der danach). Der Vergleich mit allen Stunden zeigt, wie stark Regen die Zahlen einer Messung bewegt.
+
+Über alle Messungen (`tools/trocken_vergleich.py`; 94 Messungen mit mindestens 200 trockenen und 50 Regenstunden, Regenstunden im Median 17 %
+der Stunden): Nur trockene Stunden haben im Median **0,6 % mehr Fahrzeuge je Stunde** als alle Stunden (10 % der Messungen unter −2,4 %,
+10 % über +3,8 %, höchstens +10,7 % am Kuhweg). V85 bleibt in 83 von 94 Messungen gleich (je 5-mal ±1 km/h, einmal +2), die Einhaltung im Median
+auch (größter Unterschied 2,2 Prozentpunkte). Vorbehalt: Trockene Stunden verteilen sich anders auf Tageszeiten und Jahreszeiten als alle
+Stunden; ein Teil der Unterschiede, auch die negativen, kommt daher und nicht vom Regen.
+
 - **Regenstunden:** Die Verkehrsmenge ist dort messbar zu niedrig, abhängig von der Zahl der Phantome. Für Mengen in Regenstunden (Stunden-
   und Tageswerte) wäre eine Korrektur sinnvoll; sie scheitert vorerst am unerklärten Faktor 2. Ein nächster Versuch: die Sperre je
   Regenstunde aus der beobachteten Folge der Datensätze statt aus der Zahl der Phantome schätzen.
@@ -142,4 +152,5 @@ python3 -I lokal_bauen.py                    # _vorschau/auswertung.json
 python3 -I tools/totzeit_regen.py            # Versuch 1
 python3 -I tools/totzeit_eichung.py          # Versuche 2 bis 5
 python3 -I tools/totzeit_doppelt.py          # Versuch 6
+python3 -I tools/trocken_vergleich.py        # alle gegen nur trockene Stunden (braucht _vorschau/daten von lokal_bauen.py)
 ```

@@ -105,6 +105,7 @@ rund 280 MB entpackt), die Dateien je Standortseite jeweils nur deren Messungen.
 | `ferien` | 1 = Schulferien NRW (nur 2022 bis 2026 bekannt, sonst 0) |
 | `feiertag` | 1 = gesetzlicher Feiertag NRW (ein Feiertag in den Ferien zählt in beiden Spalten) |
 | `voll` | 1 = die Stunde ist vollständig in einem Zeitabschnitt mit nutzbarer Uhr aufgezeichnet; 0 = angebrochen (Anfang, Ende, Lücke) |
+| `regenklasse` | Regen in dieser Stunde an der zugeordneten Wetterstation (`wetterstation` in `messungen.csv`): 0 = trocken (diese Stunde, die drei davor und die danach unter 0,1 mm), 1 = 0,1 bis 0,5 mm, 2 = 0,5 bis 2 mm, 3 = ab 2 mm (Niederschlag der Stunde plus je die Hälfte der Nachbarstunden), 9 = Vor- oder Nachlauf eines Regens oder kein Wert; leer ohne Wetterdaten. Abgeleitet aus Daten des Deutschen Wetterdienstes (Quelle: Deutscher Wetterdienst, CC BY 4.0). |
 | `kmh` | gemessene Geschwindigkeit in ganzen km/h (Auflösung der Geräte) |
 | `anzahl` | Fahrzeuge dieser Geschwindigkeit in dieser Stunde |
 
@@ -150,6 +151,9 @@ def kennzahlen(g):
 w = stunden[(stunden.wochentag <= 5) & (stunden.stunde == 7) & (stunden.ferien == 0) & (stunden.feiertag == 0)]
 print(w.groupby(["messung_id", "abschnitt_nr"]).apply(kennzahlen))
 
+# Nur trockene Stunden: In Regenstunden verdecken Störungen Fahrzeuge (docs/totzeit.md); der Vergleich zeigt, wie stark das die Zahlen bewegt
+trocken = stunden[stunden.regenklasse == 0]
+
 # Zeitreihen und Verknüpfung mit UTC-Daten (zum Beispiel Wetter): UTC-Stunde aus Datum, Stunde und Versatz
 stunden["utc"] = pd.to_datetime(stunden.datum) + pd.to_timedelta(stunden.stunde - stunden.utc_versatz_h, unit="h")
 ```
@@ -173,6 +177,9 @@ Für ganze Messungen, Abschnitte und die üblichen Zeiträume ist `kennzahlen.cs
   Stunde 2 nicht, im Herbst (letzter Sonntag im Oktober) kommt sie zweimal vor (Versatz 2 und 1). Wer nach `(datum, stunde)` allein sortiert oder
   gruppiert, wirft die beiden zusammen. Die UTC-Zeit je Fahrzeug ist eindeutig, weil die Geräteuhr UTC plus ein fester Versatz ist
   (`test_aggregat.py`, Klasse `Zeitumstellung`). `tage.csv` zählt Ortszeit-Tage (der Herbsttag hat 25, der Frühjahrstag 23 Stunden).
+- **Regenstunden.** Bei Regen erzeugen die Geräte Störungen, und jede sperrt das Gerät für einige Sekunden. In Regenstunden fehlen deshalb
+  Fahrzeuge, im Mittel etwa doppelt so viel wie die Sperrzeit der Störungen ([totzeit.md](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/totzeit.md)).
+  Die Daten sind darum nicht korrigiert; wer Mengen vergleicht, kann mit `regenklasse` = 0 auf trockene Stunden beschränken.
 - **Abschnitte** sind erkannte Brüche mit Wahrscheinlichkeit, keine bestätigten Ereignisse.
 - **Messdauer.** Eine Messung dauert im Median 11 Wochen (die kürzesten 10 % unter 2, die längsten 10 % über 19 Wochen). Aussagen zum
   Jahresverlauf oder zu Zeiten außerhalb des Messzeitraums sind nicht möglich. Messzeiträume über viele Monate oder Jahre entstehen nur bei

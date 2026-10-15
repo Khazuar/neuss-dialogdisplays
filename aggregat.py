@@ -12,9 +12,10 @@ Ortszeit-Datum, Ortszeit-Stunde und UTC-Versatz beschriftet. So ist auch die dop
 sind in UTC und Ortszeit dieselben.
 
 Zeilen:
-  stunden  [Datum, Stunde, UTC-Versatz, Abschnitt, voll, [km/h, Anzahl, km/h, Anzahl, ...]], nach UTC geordnet; Datum und Stunde in Ortszeit,
-           voll = 1, wenn die Stunde vollstaendig in einem Zeitabschnitt mit nutzbarer Uhr aufgezeichnet ist (die Zellen der Detailseiten
-           zaehlen nur solche Stunden)
+  stunden  [Datum, Stunde, UTC-Versatz, Abschnitt, voll, Regenklasse, [km/h, Anzahl, km/h, Anzahl, ...]], nach UTC geordnet; Datum und Stunde
+           in Ortszeit, voll = 1, wenn die Stunde vollstaendig in einem Zeitabschnitt mit nutzbarer Uhr aufgezeichnet ist (die Zellen der
+           Detailseiten zaehlen nur solche Stunden), Regenklasse nach rauschen.regenklassen (0 trocken, 1 bis 3 Regen, 9 unklar; None ohne
+           Wetterdaten)
   tage     [Abschnitt, Datum, Fahrzeuge, Mittel, V85, V95, V99, Einhaltung %, qualifizierte Einhaltung %]  (Ortszeit-Tage)
   luecken  [erste Stunde, letzte Stunde (UTC, JJJJ-MM-TTTHH:00Z), Zahl der Stunden]: Stunden zwischen erstem und letztem Fahrzeug, die nicht
            vollstaendig aufgezeichnet sind (Anfang und Ende der Messung, Luecken, Uhrspruenge)
@@ -23,7 +24,8 @@ import bisect
 import collections
 import datetime as dt
 
-SPALTEN_STUNDEN = ["messung_id", "abschnitt_nr", "datum", "wochentag", "stunde", "utc_versatz_h", "zeitraum", "ferien", "feiertag", "voll", "kmh", "anzahl"]
+SPALTEN_STUNDEN = ["messung_id", "abschnitt_nr", "datum", "wochentag", "stunde", "utc_versatz_h", "zeitraum", "ferien", "feiertag", "voll", "regenklasse",
+                   "kmh", "anzahl"]
 ISO_UTC = "%Y-%m-%dT%H:00Z"
 STUNDE = dt.timedelta(hours=1)
 
@@ -50,13 +52,13 @@ def abgedeckte_stunden_utc(spannen_utc):
     return s
 
 
-def bauen(bereinigt, utc, spannen_utc, versatz, grenzen, limit, stats, min_kmh=0):
+def bauen(bereinigt, utc, spannen_utc, versatz, grenzen, limit, stats, min_kmh=0, regenklasse=None):
     """Aggregat einer Datei (siehe Modulkopf).
 
     bereinigt: [(Ortszeit, v)] nach Abzug des Rauschbodens, utc: {id(Fahrzeug): UTC-Zeit} und spannen_utc: [(erste, letzte UTC-Zeit)] je
     Abschnitt mit nutzbarer Zeit (dsd2csv.analysiere_uhr mit mit_utc=True), versatz: Funktion UTC-Zeit -> UTC-Versatz der Ortszeit in Stunden
     (dsd2csv.utc_versatz_h), grenzen: erste Tage der Abschnitte 2, 3, ... (aufsteigende Daten), stats: dsd2csv.stats (damit Tages- und
-    Dateikennzahlen dieselbe Rechnung benutzen)."""
+    Dateikennzahlen dieselbe Rechnung benutzen), regenklasse: {(Ortszeit-Datum, Stunde): Klasse} (rauschen.regenklassen) oder None."""
     abgedeckt = abgedeckte_stunden_utc(spannen_utc)
     je_stunde = collections.defaultdict(collections.Counter)  # UTC-Stunde -> {v: Anzahl}
     je_tag = collections.defaultdict(list)  # (Abschnitt, Ortszeit-Datum) -> [(Zeit, v)]
@@ -72,7 +74,9 @@ def bauen(bereinigt, utc, spannen_utc, versatz, grenzen, limit, stats, min_kmh=0
         flach = []
         for v in sorted(z):
             flach += [v, z[v]]
-        stunden.append([lokal.date().isoformat(), lokal.hour, off, 1 + bisect.bisect_right(grenzen, lokal.date()), 1 if h in abgedeckt else 0, flach])
+        klasse = regenklasse.get((lokal.date(), lokal.hour)) if regenklasse else None
+        stunden.append([lokal.date().isoformat(), lokal.hour, off, 1 + bisect.bisect_right(grenzen, lokal.date()), 1 if h in abgedeckt else 0,
+                        klasse, flach])
     tage = []
     for (nr, d), liste in sorted(je_tag.items()):
         s = stats(liste, limit, min_kmh)
