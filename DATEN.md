@@ -79,9 +79,9 @@ des Bruchs vor diesem Abschnitt, leer bei Abschnitt 1), `anmerkung` (`Beginn der
 
 `messung_id`, `bereich` (`messung` = ganze Datei, `abschnitt`), `abschnitt_nr` (leer bei `messung`), `zeitraum`, `fahrzeuge`, `mittel_kmh`, `v85_kmh`,
 `v95_kmh`, `v99_kmh`, `einhaltung_prozent`, `qualifiziert_prozent` (Einhaltung nur mit Tempolimit), dazu die **Raten**
-`fahrzeuge_je_tag`, `ueber_limit_plus_toleranz_je_tag` (Fahrzeuge über Limit plus Messtoleranz je Tag) und `zusatzrisiko_je_stunde`
+`fahrzeuge_je_stunde`, `ueber_limit_plus_toleranz_je_stunde` (Fahrzeuge über Limit plus Messtoleranz je Stunde) und `zusatzrisiko_je_stunde`
 (Summe von max(0, (v / Tempolimit)⁴ − 1) je Stunde, Potenzmodell nach Nilsson). Die Raten zählen absolut statt anteilig und nur aus
-vollständig aufgezeichneten Stunden; „je Tag“ gilt für das Zeitfenster des Zeitraums (je Nacht für `nacht`, je Schulstunde für `schulweg`),
+vollständig aufgezeichneten Stunden; alle Raten gelten je Stunde der Auswahl und sind für Teilzeiträume vergleichbar (ganztägig mal 24 ergibt je Tag),
 ohne Tempolimit leer (Begründung und Grenzen: [docs/raten.md](docs/raten.md)).
 
 Zeiträume (Ortszeit, alle Tage, außer Schulweg): `alle` (ganze Datei oder ganzer Abschnitt), `nacht` 22–6 Uhr, `vormittag` 6–12, `nachmittag` 12–19,

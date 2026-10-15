@@ -16,11 +16,11 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 def zeile(rel="07_2024_ Einsteinstraße", datei="_15.dsd", n=1000):
     k = {"mittel": 21.4, "maximal": 90, "v85": 28, "v95": 32, "v99": 40}
     h = {"einhaltungsquote_prozent": 88.5, "qualifizierte_einhaltungsquote_prozent": 40.0}
-    g = {"aufprall_fahrzeuge_je_tag": 390.1, "aufprall_mittel_der_aufprallenden_kmh": 33.6, "aufprall_p95_kmh": 51.6,
-         "aufprall_p99_kmh": 69.2, "aufprall_ueber_30_kmh_je_tag": 216.4, "aufprall_ueber_50_kmh_je_tag": 51.8, "anhaltestrecke_bei_limit_m": 27.7}
-    l = {"spitzenpegel_p99_gegenueber_limit_db": 3.7, "mind_3_db_lauter_je_tag": 18.6, "mind_6_db_lauter_je_tag": 1.3}
-    r = {"stunden": 2400, "tagesstunden": 24, "fahrzeuge_je_tag": 1000.0, "ueber_limit_je_tag": 115.0,
-         "ueber_limit_plus_toleranz_je_tag": 60.0, "zusatzrisiko_je_stunde": 1.07}
+    g = {"aufprall_mittel_der_aufprallenden_kmh": 33.6, "aufprall_p95_kmh": 51.6, "aufprall_p99_kmh": 69.2,
+         "aufprall_ueber_30_kmh_je_stunde": 9.0, "aufprall_ueber_50_kmh_je_stunde": 2.2, "anhaltestrecke_bei_limit_m": 27.7}
+    l = {"spitzenpegel_p99_gegenueber_limit_db": 3.7, "mind_3_db_lauter_je_stunde": 0.8, "mind_6_db_lauter_je_stunde": 0.1}
+    r = {"stunden": 2400, "fahrzeuge_je_stunde": 41.7, "ueber_limit_je_stunde": 4.8,
+         "ueber_limit_plus_toleranz_je_stunde": 2.5, "zusatzrisiko_je_stunde": 1.07}
     teil = {"anzahl_fahrzeuge": n, "geschwindigkeit_kmh": k, "einhaltung": h, "raten": r, "gefaehrdung": g, "laerm": l}
     return {"standort": rel, "datei": datei, "seite": f"standorte/{dsd2csv.standort_slug(rel)}.html", "tempolimit_kmh": 30,
             "anzahl_fahrzeuge": n, "messzeitraum": {"start": "2024-07-24 09:48:27", "ende": "2024-12-04 10:38:55"},
@@ -279,10 +279,11 @@ class Seite(unittest.TestCase):
         self.assertIn("Anhaltestrecke 27,7 m", h)
         self.assertIn('<td class="num">33,6</td>', h)  # Ø Aufprall der Fahrzeuge, die auftreffen
         self.assertIn('<td class="num">69,2</td>', h)  # Aufprall am schnellsten Prozent
-        self.assertIn('<td class="num">60</td><td class="num">1,07</td><td class="num">390</td>', h)  # zu schnell je Tag, Zusatzrisiko, Aufprall je Tag
+        self.assertIn('<td class="num">4,8</td><td class="num">2,5</td><td class="num">1,07</td><td class="num">9,0</td><td class="num">2,2</td>', h)  # je Stunde
         self.assertNotIn("Risikoindex", h)  # Anteile und Mittelwerte ueber alle Fahrzeuge gibt es nicht mehr
         self.assertNotIn("Mittelungspegel</th>", h)
-        self.assertIn("19</td><td class=\"num\">1</td>", h)  # lautere Vorbeifahrten je Tag
+        self.assertIn('<td class="num">0,8</td><td class="num">0,1</td>', h)  # lautere Vorbeifahrten je Stunde
+        self.assertNotIn("die auftreffen, je", h)  # gleich der Zahl der Fahrzeuge ueber dem Limit, daher keine eigene Spalte
         self.assertIn("So rechnet das Modell", h)
         self.assertIn("Bei Tempolimit 30&nbsp;km/h", h)  # Umrechnungstabelle fuer das Limit der Datei
         self.assertIn("Lärm (grobe Schätzung)", h)

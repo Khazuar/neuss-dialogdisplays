@@ -659,38 +659,31 @@ def histogramm(vehs):
     return {"ab_kmh": lo, "anzahl": [zaehler.get(v, 0) for v in range(lo, hi + 1)]}
 
 
-def raten_faktor(abgedeckt):
-    """(Stunden, Fenster) einer Auswahl: Zahl der vollstaendig aufgezeichneten Stunden und Zahl der Tagesstunden, die sie umfasst.
-
-    Eine Rate je Tag ist Anzahl / Stunden * Fenster: fuer die ganze Datei je 24 Stunden, fuer die Nacht je Nacht (8 Stunden)."""
-    return len(abgedeckt), len({h for _, h in abgedeckt})
-
-
 def raten(vehs, limit, abgedeckt):
-    """Absolute Kennzahlen je Zeit statt Anteile: Fahrzeuge und Ueberschreitungen je Tag, Zusatzrisiko je Stunde (docs/raten.md).
+    """Absolute Kennzahlen je Stunde statt Anteile: Fahrzeuge, Ueberschreitungen und Zusatzrisiko (docs/raten.md).
 
-    Es zaehlen nur Fahrzeuge aus vollstaendig aufgezeichneten Stunden (abgedeckt: Menge von (Datum, Stunde) der Auswahl). Zusatzrisiko:
-    Summe von max(0, (v/Limit)^4 - 1) je Stunde; Fahrzeuge bis zum Tempolimit zaehlen 0, schnellere die Mehrgefahr gegenueber dem Limit
+    Es zaehlen nur Fahrzeuge aus vollstaendig aufgezeichneten Stunden (abgedeckt: Menge von (Datum, Stunde) der Auswahl); die Rate
+    gilt je Stunde dieser Auswahl, also auch fuer Nacht oder Schulweg unmittelbar vergleichbar. Zusatzrisiko: Summe von
+    max(0, (v/Limit)^4 - 1) je Stunde; Fahrzeuge bis zum Tempolimit zaehlen 0, schnellere die Mehrgefahr gegenueber dem Limit
     (Potenzmodell nach Nilsson). None ohne Tempolimit oder vollstaendige Stunden."""
-    stunden, fenster = raten_faktor(abgedeckt)
+    stunden = len(abgedeckt)
     if not limit or not stunden:
         return None
     zaehler = collections.Counter(v for t, v in vehs if v > 0 and (t.date(), t.hour) in abgedeckt)
-    tag = fenster / stunden
     ueber = sum(c for v, c in zaehler.items() if v > limit)
     ueber_tol = sum(c for v, c in zaehler.items() if v - toleranz(v) > limit)
     zusatz = sum(c * max(0.0, (v / limit) ** GEFAEHRDUNG["exponent"] - 1) for v, c in zaehler.items())
-    return {"stunden": stunden, "tagesstunden": fenster,
-            "fahrzeuge_je_tag": round(sum(zaehler.values()) * tag, 1),
-            "ueber_limit_je_tag": round(ueber * tag, 1),
-            "ueber_limit_plus_toleranz_je_tag": round(ueber_tol * tag, 1),
+    return {"stunden": stunden,
+            "fahrzeuge_je_stunde": round(sum(zaehler.values()) / stunden, 2),
+            "ueber_limit_je_stunde": round(ueber / stunden, 2),
+            "ueber_limit_plus_toleranz_je_stunde": round(ueber_tol / stunden, 2),
             "zusatzrisiko_je_stunde": round(zusatz / stunden, 3)}
 
 
 def gefaehrdung(vehs, limit, abgedeckt=None):
-    """Aufprallgeschwindigkeiten (Tempo, mit dem die Fahrzeuge auf das Hindernis treffen) und Fahrzeuge je Tag, die noch auftreffen.
+    """Aufprallgeschwindigkeiten (Tempo, mit dem die Fahrzeuge auf das Hindernis treffen) und Fahrzeuge je Stunde mit starkem Aufprall.
 
-    None ohne Fahrzeuge oder Tempolimit. Mit abgedeckt (vollstaendig aufgezeichnete Stunden der Auswahl) kommen die Raten je Tag dazu;
+    None ohne Fahrzeuge oder Tempolimit. Mit abgedeckt (vollstaendig aufgezeichnete Stunden der Auswahl) kommen die Raten je Stunde dazu;
     ohne sie nur die Verteilung. Die Perzentile gelten fuer alle Fahrzeuge; weil die Aufprallgeschwindigkeit mit dem Tempo steigt, ist das
     P95 der Aufprallgeschwindigkeit die Aufprallgeschwindigkeit des Fahrzeugs bei der V95. Das Zusatzrisiko je Stunde steht in raten().
     """
@@ -705,11 +698,9 @@ def gefaehrdung(vehs, limit, abgedeckt=None):
     auf = {v: aufprall_kmh(v, limit) for v in zaehler}
     treffer = sum(c for v, c in zaehler.items() if auf[v] > 0.05)
     erg = {}
-    if abgedeckt:
-        tag = (lambda s, f: f / s)(*raten_faktor(abgedeckt))
-        erg["aufprall_fahrzeuge_je_tag"] = round(treffer * tag, 1)
+    if abgedeckt:  # wer ueberhaupt auftrifft, faehrt ueber dem Limit: raten()["ueber_limit_je_stunde"]
         for schwelle in GEFAEHRDUNG["aufprall_schwellen_kmh"]:
-            erg[f"aufprall_ueber_{schwelle}_kmh_je_tag"] = round(tag * sum(c for v, c in zaehler.items() if auf[v] > schwelle), 1)
+            erg[f"aufprall_ueber_{schwelle}_kmh_je_stunde"] = round(sum(c for v, c in zaehler.items() if auf[v] > schwelle) / len(abgedeckt), 2)
     if treffer:
         erg["aufprall_mittel_der_aufprallenden_kmh"] = round(sum(c * auf[v] for v, c in zaehler.items() if auf[v] > 0.05) / treffer, 1)
     kumul, perz = 0, {}
@@ -732,7 +723,7 @@ def pegel_pkw_db(v_kmh):
 def laerm(vehs, limit, abgedeckt=None):
     """Grobe Laermschaetzung relativ zu einem Fahrzeug mit Tempolimit. None ohne Fahrzeuge oder Tempolimit.
 
-    Einzelne lautere Vorbeifahrten wirken je Fahrzeug, also zaehlt ihre Zahl je Tag (mit abgedeckt, den vollstaendig aufgezeichneten Stunden
+    Einzelne lautere Vorbeifahrten wirken je Fahrzeug, also zaehlt ihre Zahl je Stunde (mit abgedeckt, den vollstaendig aufgezeichneten Stunden
     der Auswahl), nicht ihr Anteil. Der Mittelungspegel ist weggefallen: Er haengt von der Masse der Fahrzeuge ab (docs/raten.md)."""
     if not limit:
         return None
@@ -753,9 +744,8 @@ def laerm(vehs, limit, abgedeckt=None):
             break
     erg = {"spitzenpegel_p99_gegenueber_limit_db": round(delta[v99], 1)}
     if abgedeckt:
-        tag = (lambda s, f: f / s)(*raten_faktor(abgedeckt))
-        erg["mind_3_db_lauter_je_tag"] = round(tag * sum(c for v, c in zaehler.items() if delta[v] >= 3), 1)
-        erg["mind_6_db_lauter_je_tag"] = round(tag * sum(c for v, c in zaehler.items() if delta[v] >= 6), 1)
+        for db in (3, 6):
+            erg[f"mind_{db}_db_lauter_je_stunde"] = round(sum(c for v, c in zaehler.items() if delta[v] >= db) / len(abgedeckt), 2)
     return erg
 
 

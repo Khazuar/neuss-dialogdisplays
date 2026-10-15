@@ -300,14 +300,15 @@ def _schaetzung(row, mit_gefaehrdung, mit_laerm):
         if not r:  # Raten brauchen vollstaendig aufgezeichnete Stunden (nicht fuer die Rohdaten ohne nutzbare Zeit)
             continue
         if g and mit_gefaehrdung:
-            gz.append(f'<tr><th scope="row">{e(label)}</th><td class="num">{dez(r["ueber_limit_plus_toleranz_je_tag"], 0)}</td>'
+            gz.append(f'<tr><th scope="row">{e(label)}</th><td class="num">{dez(r["ueber_limit_je_stunde"], 1)}</td><td class="num">{dez(r["ueber_limit_plus_toleranz_je_stunde"], 1)}</td>'
                       f'<td class="num">{dez(r["zusatzrisiko_je_stunde"], 2)}</td>'
-                      f'<td class="num">{dez(g.get("aufprall_fahrzeuge_je_tag"), 0)}</td>'
+                      f'<td class="num">{dez(g.get("aufprall_ueber_30_kmh_je_stunde"), 1)}</td>'
+                      f'<td class="num">{dez(g.get("aufprall_ueber_50_kmh_je_stunde"), 1)}</td>'
                       f'<td class="num">{dez(g.get("aufprall_mittel_der_aufprallenden_kmh"))}</td>'
                       f'<td class="num">{dez(g.get("aufprall_p95_kmh"))}</td><td class="num">{dez(g.get("aufprall_p99_kmh"))}</td></tr>')
         if l and mit_laerm:
-            lz.append(f'<tr><th scope="row">{e(label)}</th><td class="num">{dez(l.get("mind_3_db_lauter_je_tag"), 0)}</td>'
-                      f'<td class="num">{dez(l.get("mind_6_db_lauter_je_tag"), 0)}</td>'
+            lz.append(f'<tr><th scope="row">{e(label)}</th><td class="num">{dez(l.get("mind_3_db_lauter_je_stunde"), 1)}</td>'
+                      f'<td class="num">{dez(l.get("mind_6_db_lauter_je_stunde"), 1)}</td>'
                       f'<td class="num">{dez(l["spitzenpegel_p99_gegenueber_limit_db"])}&nbsp;dB</td></tr>')
     z = []
     if gz:
@@ -315,7 +316,7 @@ def _schaetzung(row, mit_gefaehrdung, mit_laerm):
         z.append('<h4>Gefährdung (Schätzung)</h4>'
                  '<p>Wer sich an der Straße aufhält, trägt das Risiko durch die Fahrzeuge, die <em>schneller als erlaubt</em> fahren, und es '
                  'wächst mit ihrer Zahl, nicht mit ihrem Anteil am Verkehr: Zehn Raser unter hundert Fahrzeugen gefährden nicht mehr als zehn '
-                 'Raser unter tausend. Die Tabelle zählt deshalb je Tag, und Fahrzeuge bis zum Tempolimit zählen nicht. Das Zusatzrisiko je '
+                 'Raser unter tausend. Die Tabelle zählt deshalb je Stunde, und Fahrzeuge bis zum Tempolimit zählen nicht. Das Zusatzrisiko je '
                  'Stunde summiert für jedes Fahrzeug über dem Limit, um wie viel die Unfallschwere die eines Fahrzeugs mit dem Tempolimit '
                  'übersteigt (sie wächst grob mit der 4. Potenz der Geschwindigkeit, Potenzmodell nach Nilsson); ein Fahrzeug mit dem '
                  'doppelten Tempolimit zählt 15. Die Aufprallspalten fragen: Ein Kind tritt genau dort auf die Fahrbahn, wo ein Auto mit dem '
@@ -324,23 +325,24 @@ def _schaetzung(row, mit_gefaehrdung, mit_laerm):
                  'angegebenen Geschwindigkeit auf. Die Werte gelten für vollständig aufgezeichnete Stunden; Fahrzeuge, die die Geräte nicht '
                  'erfassen (etwa 3&nbsp;%, bei Regen mehr), fehlen, die Raten sind also Untergrenzen.</p>'
                  '<div class="tablewrap"><table><caption class="muted">Überschreitungen, Zusatzrisiko und Aufprall nach Zeitraum</caption>'
-                 '<thead><tr><th>Zeitraum</th><th class="num">Fahrzeuge über Limit + Toleranz je Tag</th>'
-                 '<th class="num">Zusatzrisiko je Stunde</th><th class="num">Fahrzeuge, die auftreffen, je Tag</th>'
+                 '<thead><tr><th>Zeitraum</th><th class="num">Fahrzeuge über Limit je Stunde</th>'
+                 '<th class="num">über Limit + Toleranz je Stunde</th><th class="num">Zusatzrisiko je Stunde</th>'
+                 '<th class="num">Aufprall über 30 km/h, je Stunde</th><th class="num">Aufprall über 50 km/h, je Stunde</th>'
                  '<th class="num">Ø Aufprall (nur die auftreffen), km/h</th>'
                  '<th class="num">schnellste 5&nbsp;%: Aufprall, km/h</th><th class="num">schnellstes 1&nbsp;%: Aufprall, km/h</th></tr></thead>'
                  '<tbody>' + "".join(gz) + "</tbody></table></div>"
-                 '<p class="muted">„Je Tag“ gilt für das Zeitfenster der Zeile: ganztägig je 24 Stunden, nachts je Nacht (22–6 Uhr).</p>')
+                 '<p class="muted">Je Stunde der Auswahl, also für Nacht, Abend oder ganze Tage unmittelbar vergleichbar.</p>')
         z.append(umrechnung(row.get("tempolimit_kmh")))
     if lz:
         z.append('<h4>Lärm (grobe Schätzung)</h4>'
                  '<p>Nur der Anteil, der von der Geschwindigkeit der Pkw abhängt, und nur im Vergleich zu einem Fahrzeug mit dem '
                  'Tempolimit; absolute Pegel werden nicht angegeben. Gezählt werden einzelne Vorbeifahrten, die mindestens 3 bzw. 6 dB '
-                 'lauter sind als ein Fahrzeug mit dem Tempolimit, je Tag: Sie wirken je Fahrzeug (Aufwachen, Erschrecken), nicht als '
+                 'lauter sind als ein Fahrzeug mit dem Tempolimit, je Stunde: Sie wirken je Fahrzeug (Aufwachen, Erschrecken), nicht als '
                  'Mittelwert. Einen Mittelungspegel geben wir nicht an: Er hängt von der Masse der Fahrzeuge ab und verschwindet bei viel '
                  'Verkehr, auch wenn viele zu schnell sind. Der Spitzenpegel zeigt, wie viel lauter die schnellsten Fahrten (das schnellste '
                  'Prozent) vorbeifahren.</p>'
                  '<div class="tablewrap"><table><caption class="muted">Lautere Vorbeifahrten gegenüber Tempolimit, nach Zeitraum</caption><thead><tr>'
-                 '<th>Zeitraum</th><th class="num">≥ 3 dB lauter, je Tag</th><th class="num">≥ 6 dB lauter, je Tag</th>'
+                 '<th>Zeitraum</th><th class="num">≥ 3 dB lauter, je Stunde</th><th class="num">≥ 6 dB lauter, je Stunde</th>'
                  '<th class="num">Spitzenpegel (schnellstes %)</th></tr></thead><tbody>' + "".join(lz) +
                  "</tbody></table></div>")
     if z:
@@ -1598,7 +1600,7 @@ def _metrik(d):
     g, h, r = d.get("geschwindigkeit_kmh") or {}, d.get("einhaltung") or {}, d.get("raten") or {}
     return {"n": d.get("anzahl_fahrzeuge"), "mittel": g.get("mittel"), "v85": g.get("v85"), "v95": g.get("v95"), "v99": g.get("v99"),
             "quote": h.get("einhaltungsquote_prozent"), "qual": h.get("qualifizierte_einhaltungsquote_prozent"),
-            "proTag": r.get("fahrzeuge_je_tag"), "ueber": r.get("ueber_limit_plus_toleranz_je_tag"), "risiko": r.get("zusatzrisiko_je_stunde")}
+            "proStunde": r.get("fahrzeuge_je_stunde"), "ueber": r.get("ueber_limit_plus_toleranz_je_stunde"), "risiko": r.get("zusatzrisiko_je_stunde")}
 
 
 def _metriken(d, teil, roh=None):
@@ -1606,7 +1608,7 @@ def _metriken(d, teil, roh=None):
 
     Ein Abschnitt zählt nur Fahrzeuge mit nutzbarer Zeit; „roh“ und „bereinigt“ sind dort gleich."""
     m = {"roh": _metrik(roh or d), "bereinigt": _metrik(d)}
-    for k in ("proTag", "ueber", "risiko"):  # Raten brauchen vollstaendig aufgezeichnete Stunden: auch die Rohdaten zeigen die der nutzbaren Zeit
+    for k in ("proStunde", "ueber", "risiko"):  # Raten brauchen vollstaendig aufgezeichnete Stunden: auch die Rohdaten zeigen die der nutzbaren Zeit
         m["roh"][k] = m["bereinigt"][k]
     for k, t in (teil or {}).items():
         m[k] = _metrik(t)

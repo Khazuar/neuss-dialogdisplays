@@ -31,7 +31,7 @@ from uhr_belege import gesamturteil  # noqa: E402
 
 ZEITRAEUME = ["alle", "nacht", "vormittag", "nachmittag", "abend", "schulweg"]
 KENNZAHLEN = ["fahrzeuge", "mittel_kmh", "v85_kmh", "v95_kmh", "v99_kmh", "einhaltung_prozent", "qualifiziert_prozent",
-              "fahrzeuge_je_tag", "ueber_limit_plus_toleranz_je_tag", "zusatzrisiko_je_stunde"]
+              "fahrzeuge_je_stunde", "ueber_limit_plus_toleranz_je_stunde", "zusatzrisiko_je_stunde"]
 
 
 def kennzahlen(d):
@@ -41,7 +41,7 @@ def kennzahlen(d):
         return [0] + [""] * (len(KENNZAHLEN) - 1)
     g, h, r = d.get("geschwindigkeit_kmh") or {}, d.get("einhaltung") or {}, d.get("raten") or {}
     return [n, g.get("mittel"), g.get("v85"), g.get("v95"), g.get("v99"), h.get("einhaltungsquote_prozent"),
-            h.get("qualifizierte_einhaltungsquote_prozent"), r.get("fahrzeuge_je_tag"), r.get("ueber_limit_plus_toleranz_je_tag"),
+            h.get("qualifizierte_einhaltungsquote_prozent"), r.get("fahrzeuge_je_stunde"), r.get("ueber_limit_plus_toleranz_je_stunde"),
             r.get("zusatzrisiko_je_stunde")]
 
 

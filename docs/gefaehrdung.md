@@ -42,14 +42,14 @@ Aufprallgeschwindigkeit        v_auf = sqrt(v² − 2·a·r)   (0, wenn das Fahr
 Angenommen werden eine Reaktionszeit von **t = 1,0 s** und eine Verzögerung von **a = 7,0 m/s²** (trockene Fahrbahn).
 Ausgegeben wird, **mit wie viel km/h die gemessenen Fahrzeuge auftreffen**:
 
-- `aufprall_fahrzeuge_je_tag`: Fahrzeuge je Tag, die nicht mehr rechtzeitig zum Stehen kommen (Rate aus vollständig aufgezeichneten
-  Stunden, [raten.md](raten.md)).
 - `aufprall_mittel_der_aufprallenden_kmh`: mittlere Aufprallgeschwindigkeit nur der Fahrzeuge, die auftreffen.
 - `aufprall_p95_kmh`, `aufprall_p99_kmh`: Aufprallgeschwindigkeit des Fahrzeugs an der V95 bzw. V99, also was die
   schnellsten 5 % bzw. 1 % mindestens erreichten.
 - `anhaltestrecke_bei_limit_m`: die Strecke, bei der das Auto mit dem Tempolimit gerade noch hält.
-- zusätzlich `aufprall_ueber_30_kmh_je_tag` und `aufprall_ueber_50_kmh_je_tag`: Fahrzeuge je Tag, die mit mehr als 30
-  bzw. 50 km/h auftreffen (Orientierungswerte ohne Aussage über bestimmte Verletzungen).
+- zusätzlich `aufprall_ueber_30_kmh_je_stunde` und `aufprall_ueber_50_kmh_je_stunde`: Fahrzeuge je Stunde, die mit mehr als 30
+  bzw. 50 km/h auftreffen (Orientierungswerte ohne Aussage über bestimmte Verletzungen; Raten aus vollständig aufgezeichneten Stunden,
+  [raten.md](raten.md)). Wie viele Fahrzeuge überhaupt noch auftreffen, steht nicht gesondert da: Im Szenario trifft auf, wer über dem
+  Limit fährt, das ist `ueber_limit_je_stunde` im Block `raten`.
 
 So rechnet das Modell, gerundet (gemessenes Tempo: Tempolimit plus ... km/h):
 
@@ -92,8 +92,8 @@ Beispielhafte Unterschiede zu einem Fahrzeug mit 50 km/h: 70 km/h +2,7 dB, 100 k
 
 - **Spitzenpegel** (`spitzenpegel_p99_gegenueber_limit_db`): Δ des Fahrzeugs bei der V99, also wie viel lauter die
   schnellsten Fahrten gegenüber einem Fahrzeug mit Tempolimit vorbeifahren. Das ist der aussagekräftigere Wert, weil
-  einzelne laute Fahrten stören. Dazu die Zahl der Vorbeifahrten je Tag, die mindestens 3 dB bzw. 6 dB lauter sind
-  (`mind_3_db_lauter_je_tag`, `mind_6_db_lauter_je_tag`). Sie wirken je Fahrzeug (Aufwachen, Erschrecken), deshalb zählt die
+  einzelne laute Fahrten stören. Dazu die Zahl der Vorbeifahrten je Stunde, die mindestens 3 dB bzw. 6 dB lauter sind
+  (`mind_3_db_lauter_je_stunde`, `mind_6_db_lauter_je_stunde`). Sie wirken je Fahrzeug (Aufwachen, Erschrecken), deshalb zählt die
   Zahl, nicht der Anteil.
 - Einen **Mittelungspegel** gibt es nicht mehr (energetisches Mittel aller Fahrzeuge): Er hängt von der Masse der Fahrzeuge ab, und
   Radfahrende (kaum Motorgeräusch) und langsame Fahrzeuge senken ihn, auch wenn viele zu schnell sind ([raten.md](raten.md)).
@@ -124,9 +124,9 @@ Grenzen: Die Uhrzeit ist nur auf etwa eine Stunde belegt ([uhr-bewertung.md](uhr
 ## Beispiel: Düsseldorfer Straße (Tempo 50, 26.10.2025 bis 29.03.2026)
 
 Aus `106_Düsseldorfer Straße/DSD17400 Tempo50_2.yaml` (ganze Messung): Zusatzrisiko 32,2 je Stunde. Im beschriebenen Szenario kämen
-719 Fahrzeuge je Tag nicht mehr rechtzeitig zum Stehen; sie träfen im Mittel mit 34 km/h auf, 399 davon mit mehr als 30 km/h.
+21,4 Fahrzeuge je Stunde (über Limit plus Toleranz) nicht mehr rechtzeitig zum Stehen; sie träfen im Mittel mit 34 km/h auf.
 Das Fahrzeug an der V95 träfe mit 52 km/h auf, das an der V99 mit 69 km/h. Das schnellste Prozent fährt
-etwa 3,7 dB lauter als ein Fahrzeug mit 50 km/h vorbei; 34 Vorbeifahrten je Tag sind mindestens 3 dB lauter, 2,5 mindestens 6 dB. In 71 von 154 Nächten (46 %) fuhr mindestens ein Fahrzeug mit
+etwa 3,7 dB lauter als ein Fahrzeug mit 50 km/h vorbei. In 71 von 154 Nächten (46 %) fuhr mindestens ein Fahrzeug mit
 100 km/h oder mehr, in 23 Nächten (15 %) eines mit 120 km/h oder mehr; im Schnitt sind es 0,84 Fahrten ab 100 km/h je
 Nacht. Die Uhr dieser Messung ist nur „eingeschränkt“ belegt, die Tageszeiten sind also unsicher.
 

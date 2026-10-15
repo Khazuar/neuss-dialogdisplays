@@ -118,10 +118,10 @@ sinnvoll.
     und `schulweg` (Mo–Fr 7–8 Uhr), jeweils in Ortszeit,
   - `verhalten` – Verhaltensgruppen je Abschnitt: Zahl der Gruppen, Vorhersagegewinn, je Gruppe Art, Anteil, Profil, Stabilität, Verhalten
     (Effekte mit Standardfehler) und Tagesgang, dazu der Placebo-Durchgang und die geprüften Stadt-Vorlagen (`docs/verhalten.md`),
-  - `raten` – absolute Kennzahlen je Zeit statt Anteile: Fahrzeuge, Überschreitungen je Tag und Zusatzrisiko je Stunde
-    (`docs/raten.md`; gelten für vollständig aufgezeichnete Stunden, Zeitfenster der Zeile),
-  - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: Aufprallgeschwindigkeit und Fahrzeuge je Tag, die mit mehr als 30 bzw.
-    50 km/h aufträfen, lautere Vorbeifahrten je Tag gegenüber dem Tempolimit (`docs/gefaehrdung.md`),
+  - `raten` – absolute Kennzahlen je Stunde statt Anteile: Fahrzeuge, Überschreitungen und Zusatzrisiko
+    (`docs/raten.md`; gelten für vollständig aufgezeichnete Stunden),
+  - `gefaehrdung` und `laerm` – Schätzungen je Zeitraum: Aufprallgeschwindigkeit und Fahrzeuge je Stunde, die mit mehr als 30 bzw.
+    50 km/h aufträfen, lautere Vorbeifahrten je Stunde gegenüber dem Tempolimit (`docs/gefaehrdung.md`),
   - `nacht_ereignisse` – Nächte (22–6 Uhr) mit Fahrten ab doppeltem Tempolimit, 100 und 120 km/h,
   - `histogramm` – Anzahl Fahrzeuge je ganzem km/h (`ab_kmh`, `anzahl`), auch je Zeitraum; steht nur in der YAML, nicht
     in `summary.csv`. Die Detailseiten zeichnen daraus die Verteilung: eine Klasse je km/h (Auflösung der Geräte), bei

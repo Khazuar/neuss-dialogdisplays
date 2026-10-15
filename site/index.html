@@ -43,7 +43,7 @@
     <span class="v85-orange">ab +9</span> noch akzeptabel, <span class="v85-rot">ab +11</span> kritisch; bis +4 unauffällig.
     Einhaltung <span class="mid">unter 75&nbsp;%</span> gelb, <span class="bad">unter 50&nbsp;%</span> rot.
     <span class="warn" aria-hidden="true">⚠</span> nur teilweise nutzbare Zeitstempel (Tooltip).
-    „Zu schnell pro Tag“: Fahrzeuge über Limit plus Toleranz je Tag, aus vollständig aufgezeichneten Stunden (<a href="https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/raten.md">warum absolut statt als Anteil</a>).
+    „Zu schnell pro Stunde“: Fahrzeuge über Limit plus Toleranz je Stunde, aus vollständig aufgezeichneten Stunden (<a href="https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/raten.md">warum absolut statt als Anteil</a>).
     <span class="grau">Grau am Ende</span>: unbrauchbare Daten (keine Fahrzeuge oder unplausible Geschwindigkeiten).
   </p>
 
@@ -151,8 +151,8 @@ const KENNZAHLEN = [
 const COLUMNS_MESSUNGEN = [
   { key: "standort", label: "Messstelle", wrap: true },
   { key: "tage", label: "Dauer", wrap: true, absteigend: true },
-  { key: "proTag", label: "Fahrzeuge pro Tag", num: true, absteigend: true },
-  { key: "ueber", label: "Zu schnell pro Tag", num: true, absteigend: true },
+  { key: "proStunde", label: "Fahrzeuge pro Stunde", num: true, absteigend: true },
+  { key: "ueber", label: "Zu schnell pro Stunde", num: true, absteigend: true },
   ...KENNZAHLEN,
   { key: "datei", label: "Datei", extra: true },
   { key: "links", label: "Auswertung", nosort: true, extra: true },
@@ -161,8 +161,8 @@ const COLUMNS_MESSUNGEN = [
 const COLUMNS_ABSCHNITTE = [
   { key: "standort", label: "Messstelle", wrap: true },
   { key: "tage", label: "Dauer", wrap: true, absteigend: true },
-  { key: "proTag", label: "Fahrzeuge pro Tag", num: true, absteigend: true },
-  { key: "ueber", label: "Zu schnell pro Tag", num: true, absteigend: true },
+  { key: "proStunde", label: "Fahrzeuge pro Stunde", num: true, absteigend: true },
+  { key: "ueber", label: "Zu schnell pro Stunde", num: true, absteigend: true },
   ...KENNZAHLEN,
   { key: "datei", label: "Datei", extra: true },
 ];
@@ -240,7 +240,7 @@ function zeile(r, idx) {
       quote: num(k("einhaltung.einhaltungsquote_prozent")),
       qual: num(k("einhaltung.qualifizierte_einhaltungsquote_prozent")),
       // Raten (docs/raten.md) gibt es nur mit vollstaendig aufgezeichneten Stunden: auch die Rohdaten zeigen die der nutzbaren Zeit
-      proTag: num(k2("raten.fahrzeuge_je_tag")), ueber: num(k2("raten.ueber_limit_plus_toleranz_je_tag")),
+      proStunde: num(k2("raten.fahrzeuge_je_stunde")), ueber: num(k2("raten.ueber_limit_plus_toleranz_je_stunde")),
       risiko: num(k2("raten.zusatzrisiko_je_stunde")),
     };
   }
@@ -279,7 +279,8 @@ function unbrauchbar(r) {
 // Fahrzeuge pro Kalendertag und Abstand von V85 und V95 zum Tempolimit (hängen vom gewählten Zeitraum ab)
 function ableiten(r) {
   r.kaputt = unbrauchbar(r);
-  if (r.proTag === null || r.proTag === undefined) r.proTag = r.n !== null && r.tage ? r.n / r.tage : null;  // Rate aus den vollständig aufgezeichneten Stunden, sonst Kalendertage
+  // Rate aus den vollständig aufgezeichneten Stunden, sonst Fahrzeuge je Kalendertag geteilt durch 24
+  if (r.proStunde === null || r.proStunde === undefined) r.proStunde = r.n !== null && r.tage ? r.n / r.tage / 24 : null;
   r.v85d = r.v85 !== null && r.limit ? r.v85 - r.limit : null;
   r.v95d = r.v95 !== null && r.limit ? r.v95 - r.limit : null;
 }
@@ -334,8 +335,8 @@ function cell(tr, col, row) {
     if (row.start) teile.push(datum(row.start) + " – " + datum(row.ende));
     if (ansicht === "abschnitte" && row.nr > 1) teile.push("Bruch davor " + (row.bruch === null ? "?" : fmt.format(Math.floor(row.bruch * 1000) / 10) + " %"));
     if (teile.length) unterzeile(td, teile.join(" · "));
-  } else if (col.key === "proTag") {
-    td.append(row.proTag === null ? "–" : fmt.format(Math.round(row.proTag)));
+  } else if (col.key === "proStunde") {
+    td.append(row.proStunde === null ? "–" : fmt1.format(row.proStunde));
     if (row.n !== null) unterzeile(td, fmt.format(row.n) + " insgesamt");
   } else if (col.key === "v85d" || col.key === "v95d") {
     const abs = col.key === "v85d" ? row.v85 : row.v95, d = row[col.key];
@@ -347,7 +348,7 @@ function cell(tr, col, row) {
     td.append(a);
   } else {
     const v = row[col.key];
-    td.textContent = v === null || v === "" ? "–" : col.key === "quote" || col.key === "qual" ? fmt2.format(v) + " %" : col.key === "mittel" ? fmt1.format(v) : col.key === "ueber" ? fmt.format(Math.round(v)) : col.key === "risiko" ? fmt2.format(v) : col.num ? fmt.format(v) : v;
+    td.textContent = v === null || v === "" ? "–" : col.key === "quote" || col.key === "qual" ? fmt2.format(v) + " %" : col.key === "mittel" ? fmt1.format(v) : col.key === "ueber" ? fmt1.format(v) : col.key === "risiko" ? fmt2.format(v) : col.num ? fmt.format(v) : v;
   }
   tr.append(td);
 }

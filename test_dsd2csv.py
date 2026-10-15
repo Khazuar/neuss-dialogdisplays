@@ -145,7 +145,7 @@ class Gefaehrdung(unittest.TestCase):
     def test_alle_fahren_das_limit(self):
         g = d.gefaehrdung([(None, 30)] * 100, 30)
         self.assertEqual(g["aufprall_p99_kmh"], 0.0)
-        self.assertNotIn("aufprall_fahrzeuge_je_tag", g)  # ohne vollstaendig aufgezeichnete Stunden keine Raten
+        self.assertNotIn("aufprall_ueber_30_kmh_je_stunde", g)  # ohne vollstaendig aufgezeichnete Stunden keine Raten
         self.assertNotIn("aufprall_mittel_der_aufprallenden_kmh", g)  # niemand trifft auf
 
     def test_anhaltestrecke(self):
@@ -174,15 +174,16 @@ class Gefaehrdung(unittest.TestCase):
     def test_raten_zaehlen_absolut_nicht_anteilig(self):
         """Zehn Raser unter 100 Fahrzeugen und zehn unter 1000 haben dieselbe Rate (docs/raten.md); die langsamen gleichen nichts aus."""
         t0 = dt.datetime(2025, 3, 3, 10, 5)
-        abged = {(t0.date(), 10), (t0.date(), 11)}  # zwei Stunden, ein Tag mit Fenster 2 Stunden
+        abged = {(t0.date(), 10), (t0.date(), 11)}  # zwei vollstaendig aufgezeichnete Stunden
         raser = [(t0, 40)] * 10
         wenig = raten_von(raser + [(t0, 30)] * 90, 30, abged)
         viel = raten_von(raser + [(t0, 30)] * 990 + [(t0, 20)] * 500, 30, abged)
-        self.assertEqual(wenig["ueber_limit_je_tag"], viel["ueber_limit_je_tag"])
+        self.assertEqual(wenig["ueber_limit_je_stunde"], viel["ueber_limit_je_stunde"])
         self.assertEqual(wenig["zusatzrisiko_je_stunde"], viel["zusatzrisiko_je_stunde"])
-        self.assertEqual(wenig["ueber_limit_je_tag"], 10 * 2 / 2)  # 10 Fahrzeuge in 2 Stunden, je Tag = je 2 Tagesstunden
-        self.assertEqual((wenig["stunden"], wenig["tagesstunden"]), (2, 2))
-        self.assertEqual(wenig["fahrzeuge_je_tag"], 100.0)
+        self.assertEqual(wenig["ueber_limit_je_stunde"], 5.0)  # 10 Fahrzeuge in 2 Stunden
+        self.assertEqual(wenig["stunden"], 2)
+        self.assertEqual(wenig["fahrzeuge_je_stunde"], 50.0)
+        self.assertEqual(viel["fahrzeuge_je_stunde"], 750.0)  # die langsamen zaehlen als Verkehr, aber nicht als Ueberschreitung
 
     def test_zusatzrisiko_waechst_mit_der_vierten_potenz(self):
         t0 = dt.datetime(2025, 3, 3, 10, 5)
@@ -197,20 +198,19 @@ class Gefaehrdung(unittest.TestCase):
         abged = {(t0.date(), 10)}
         fz = [(t0, 33), (t0, 34), (t0 + dt.timedelta(hours=3), 80)]  # 33 ist ueber dem Limit, aber nicht ueber Limit + 3 km/h Toleranz
         r = raten_von(fz, 30, abged)  # die Fahrt von 13 Uhr liegt in keiner aufgezeichneten Stunde
-        self.assertEqual((r["ueber_limit_je_tag"], r["ueber_limit_plus_toleranz_je_tag"], r["fahrzeuge_je_tag"]), (2.0, 1.0, 2.0))
+        self.assertEqual((r["ueber_limit_je_stunde"], r["ueber_limit_plus_toleranz_je_stunde"], r["fahrzeuge_je_stunde"]), (2.0, 1.0, 2.0))
         self.assertIsNone(raten_von(fz, None, abged))
         self.assertIsNone(raten_von(fz, 30, set()))
 
-    def test_gefaehrdung_und_laerm_mit_raten_je_tag(self):
+    def test_gefaehrdung_und_laerm_mit_raten_je_stunde(self):
         t0 = dt.datetime(2025, 3, 3, 10, 5)
         abged = {(t0.date(), 10), (t0.date(), 11)}
         fz = [(t0, 30)] * 90 + [(t0, 40)] * 10
         g = d.gefaehrdung(fz, 30, abged)
-        self.assertEqual(g["aufprall_fahrzeuge_je_tag"], 10.0)  # 10 Fahrzeuge in 2 Stunden, Fenster 2 Stunden
-        self.assertEqual(g["aufprall_ueber_30_kmh_je_tag"], 10.0)
-        self.assertEqual(g["aufprall_ueber_50_kmh_je_tag"], 0.0)
+        self.assertEqual(g["aufprall_ueber_30_kmh_je_stunde"], 5.0)  # 10 Fahrzeuge in 2 Stunden
+        self.assertEqual(g["aufprall_ueber_50_kmh_je_stunde"], 0.0)
         l = d.laerm([(t0, 50)] * 90 + [(t0, 100)] * 10, 50, abged)
-        self.assertEqual((l["mind_3_db_lauter_je_tag"], l["mind_6_db_lauter_je_tag"]), (10.0, 10.0))
+        self.assertEqual((l["mind_3_db_lauter_je_stunde"], l["mind_6_db_lauter_je_stunde"]), (5.0, 5.0))
         self.assertNotIn("mittelungspegel_gegenueber_limit_db", l)
 
     def test_ohne_limit_oder_fahrzeuge(self):
