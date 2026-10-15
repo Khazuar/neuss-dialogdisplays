@@ -43,6 +43,7 @@
     <span class="v85-orange">ab +9</span> noch akzeptabel, <span class="v85-rot">ab +11</span> kritisch; bis +4 unauffällig.
     Einhaltung <span class="mid">unter 75&nbsp;%</span> gelb, <span class="bad">unter 50&nbsp;%</span> rot.
     <span class="warn" aria-hidden="true">⚠</span> nur teilweise nutzbare Zeitstempel (Tooltip).
+    <span class="grau">Grau am Ende</span>: unbrauchbare Daten (keine Fahrzeuge oder unplausible Geschwindigkeiten).
   </p>
 
   <p id="status" role="status">Lade Daten …</p>
@@ -78,7 +79,10 @@
     Sehr langsame Messwerte, deren Rate nicht vom Verkehr abhängt (Fußgänger, Tiere, Echos, Störungen), sind aus allen
     Kennzahlen herausgerechnet, wo sich das belegen lässt; die Detailseiten nennen Anteil und Grund. Zeilen mit
     <span class="warn" aria-hidden="true">⚠</span> haben nur teilweise nutzbare Zeitstempel oder übersprungene
-    Datensätze, der Tooltip nennt den Grund. Das Verfahren steht im README.
+    Datensätze, der Tooltip nennt den Grund. Als <strong>unbrauchbar</strong> gelten Dateien ohne Fahrzeuge und Dateien, deren Geschwindigkeiten
+    nicht plausibel sind (V95 mindestens 60&nbsp;km/h über dem Tempolimit; bei allen anderen Dateien höchstens 25&nbsp;km/h darüber). Sie stehen grau am Ende der Tabelle und
+    sind aus den Farbstufen ausgenommen. Eine nicht nutzbare Geräteuhr allein macht die Geschwindigkeiten nicht unbrauchbar, sie betrifft nur die
+    Auswertung nach Tageszeit. Das Verfahren steht im README.
   </p>
 
   </details>
@@ -250,8 +254,23 @@ function waehleZeitraum(z) {
   document.getElementById("zeitraum-info").textContent = z.info;
 }
 
+// Unbrauchbare Daten: stehen grau am Ende der Tabelle. Maßstab sind die Rohdaten der Datei, unabhängig vom gewählten Zeitraum.
+// Die V95 liegt höchstens 25 km/h über dem Limit (Stand der 109 Dateien, Oktober 2026), nur die Thywissenstraße weicht mit +152 ab (V95 182 km/h,
+// V99 241 km/h bei Limit 30); der Schwellenwert liegt in dieser Lücke. Eine nicht nutzbare Geräteuhr allein macht die Geschwindigkeiten nicht
+// unbrauchbar (11 Dateien mit V85 zwischen 27 und 56 km/h), sie betrifft nur die Zeitauswertung.
+const UNBRAUCHBAR_V95_UEBER_LIMIT = 60;
+function unbrauchbar(r) {
+  const m = r.metriken && r.metriken.roh;
+  if (!m || !m.n) return "keine Fahrzeugdaten";
+  if (r.limit && m.v95 !== null && m.v95 - r.limit >= UNBRAUCHBAR_V95_UEBER_LIMIT) {
+    return "Geschwindigkeiten nicht plausibel (V95 " + fmt.format(m.v95) + " km/h bei Tempolimit " + r.limit + " km/h)";
+  }
+  return "";
+}
+
 // Fahrzeuge pro Kalendertag und Abstand von V85 und V95 zum Tempolimit (hängen vom gewählten Zeitraum ab)
 function ableiten(r) {
+  r.kaputt = unbrauchbar(r);
   r.proTag = r.n !== null && r.tage ? r.n / r.tage : null;
   r.v85d = r.v85 !== null && r.limit ? r.v85 - r.limit : null;
   r.v95d = r.v95 !== null && r.limit ? r.v95 - r.limit : null;
@@ -268,14 +287,14 @@ function cell(tr, col, row) {
   const td = document.createElement("td");
   if (col.num) td.className = "num";
   if (col.wrap) td.className = "wrap";
-  if ((col.key === "quote" || col.key === "qual") && row[col.key] !== null) {
+  if ((col.key === "quote" || col.key === "qual") && row[col.key] !== null && !row.kaputt) {
     if (row[col.key] < 50) td.className += " bad";
     else if (row[col.key] < 75) td.className += " mid";
   }
   if (col.key === "v85d") {
     td.className += " stark";
     const d = row.v85d;  // Stufen der Verwaltung: ab +5 km/h gelb, ab +9 orange, ab +11 rot
-    if (d !== null) {
+    if (d !== null && !row.kaputt) {
       if (d >= 11) td.className += " v85-rot";
       else if (d >= 9) td.className += " v85-orange";
       else if (d >= 5) td.className += " v85-gelb";
@@ -295,6 +314,11 @@ function cell(tr, col, row) {
     }
     const zusatz = [row.verwaltung, ansicht === "abschnitte" ? "Abschnitt " + row.nr + " von " + row.anzahl : ""].filter(Boolean).join(" · ");
     if (zusatz) unterzeile(td, zusatz);
+    if (row.kaputt) {
+      const s = document.createElement("small");
+      s.className = "kaputt"; s.textContent = "Unbrauchbare Daten: " + row.kaputt;
+      td.append(s);
+    }
     td.title = row.datei;
   } else if (col.key === "tage") {
     td.append(row.tage ? fmt.format(row.tage) + " Tage" : "–");
@@ -326,6 +350,7 @@ function render() {
   for (const r of alle) ableiten(r);
   const rows = alle.filter((r) => !q || (r.standort + " " + r.datei + " " + (r.verwaltung || "") + " " + (r.ort || "")).toLowerCase().includes(q));
   rows.sort((a, b) => {
+    if (!!a.kaputt !== !!b.kaputt) return a.kaputt ? 1 : -1;  // unbrauchbare Daten immer ans Ende, in jeder Sortierung
     const x = a[sort.key], y = b[sort.key];
     if (x === y) return 0;
     if (x === null || x === "") return 1;
@@ -336,10 +361,13 @@ function render() {
   body.replaceChildren();
   for (const r of rows) {
     const tr = document.createElement("tr");
+    if (r.kaputt) tr.className = "unbrauchbar";
     for (const col of spalten()) cell(tr, col, r);
     body.append(tr);
   }
-  document.getElementById("status").textContent = rows.length + " von " + alle.length + (ansicht === "abschnitte" ? " Abschnitten" : " Messungen");
+  const kaputt = rows.filter((r) => r.kaputt).length;
+  document.getElementById("status").textContent = rows.length + " von " + alle.length + (ansicht === "abschnitte" ? " Abschnitten" : " Messungen") +
+    (kaputt ? ", davon " + kaputt + " mit unbrauchbaren Daten (grau am Ende)" : "");
   for (const th of document.querySelectorAll("#head th")) {
     th.setAttribute("aria-sort", th.dataset.key === sort.key ? (sort.dir > 0 ? "ascending" : "descending") : "none");
   }

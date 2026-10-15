@@ -173,3 +173,7 @@ table.uebersicht .stark small { font-weight: 400; }
 details.info, details#hinweise { margin: 16px 0; max-width: 90ch; }
 details summary { cursor: pointer; font-weight: 600; }
 @media (max-width: 800px) { table.uebersicht { font-size: 0.8rem; } table.uebersicht th, table.uebersicht td { padding: 5px 6px; } }
+table.uebersicht tr.unbrauchbar td { background: none !important; color: var(--muted); font-weight: 400; opacity: 0.6; }
+table.uebersicht tr.unbrauchbar td.stark { font-size: inherit; }
+table.uebersicht td small.kaputt { color: var(--fg); font-weight: 600; opacity: 1; }
+.legende .grau { opacity: 0.6; text-decoration: underline dotted; }
