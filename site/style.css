@@ -169,6 +169,7 @@ table.uebersicht th.num { white-space: nowrap; }
 table.uebersicht td.wrap { min-width: 12em; max-width: 26em; }
 table.uebersicht td small { display: block; color: var(--muted); font-size: 0.8rem; }
 table.uebersicht .stark { font-weight: 700; font-size: 1rem; }
+table.uebersicht .stark small { font-weight: 400; }
 details.info, details#hinweise { margin: 16px 0; max-width: 90ch; }
 details summary { cursor: pointer; font-weight: 600; }
 @media (max-width: 800px) { table.uebersicht { font-size: 0.8rem; } table.uebersicht th, table.uebersicht td { padding: 5px 6px; } }

@@ -131,20 +131,21 @@ function parseCSV(text) {
 }
 // </parseCSV>
 
-// Standard: Messstelle, Zeitraum, Fahrzeuge, V85 (Kriterium der Verwaltung) und die weiteren Kennzahlen; "extra" erst mit "Alle Spalten"
+// Standard: Messstelle, Dauer, Fahrzeuge pro Tag, V85 über dem Limit (Kriterium der Verwaltung) und die weiteren Kennzahlen;
+// "extra" erst mit "Alle Spalten". Die absoluten Werte (V85, V95, Fahrzeuge insgesamt, Zeitraum) stehen als zweite Zeile in der Zelle.
 const KENNZAHLEN = [
   { key: "limit", label: "Limit", num: true },
-  { key: "v85", label: "V85", num: true },
-  { key: "mittel", label: "Ø", num: true },
-  { key: "v95", label: "V95", num: true },
+  { key: "v85d", label: "V85 über Limit", num: true, absteigend: true },
+  { key: "v95d", label: "V95 über Limit", num: true, absteigend: true },
+  { key: "mittel", label: "Ø km/h", num: true },
   { key: "quote", label: "Einhaltung", num: true },
   { key: "qual", label: "Qualifiziert", num: true, extra: true },
   { key: "v99", label: "V99", num: true, extra: true },
 ];
 const COLUMNS_MESSUNGEN = [
   { key: "standort", label: "Messstelle", wrap: true },
-  { key: "zeitraum", label: "Zeitraum", sortKey: "start", wrap: true },
-  { key: "n", label: "Fahrzeuge", num: true },
+  { key: "tage", label: "Dauer", wrap: true, absteigend: true },
+  { key: "proTag", label: "Fahrzeuge pro Tag", num: true, absteigend: true },
   ...KENNZAHLEN,
   { key: "datei", label: "Datei", extra: true },
   { key: "links", label: "Auswertung", nosort: true, extra: true },
@@ -152,8 +153,8 @@ const COLUMNS_MESSUNGEN = [
 // Ansicht „Abschnitte“: dieselben Kennzahlen je Abschnitt einer Messung (abschnitte.json, seiten_bauen.py)
 const COLUMNS_ABSCHNITTE = [
   { key: "standort", label: "Messstelle", wrap: true },
-  { key: "zeitraum", label: "Zeitraum", sortKey: "start", wrap: true },
-  { key: "n", label: "Fahrzeuge", num: true },
+  { key: "tage", label: "Dauer", wrap: true, absteigend: true },
+  { key: "proTag", label: "Fahrzeuge pro Tag", num: true, absteigend: true },
   ...KENNZAHLEN,
   { key: "datei", label: "Datei", extra: true },
 ];
@@ -182,7 +183,7 @@ const ZEITRAEUME = [
 ];
 let data = [];
 let zeitraum = ZEITRAEUME[0];
-let sort = { key: "quote", dir: 1 };
+let sort = { key: "v85d", dir: -1 };  // zuerst die größte Überschreitung der V85
 
 const num = (v) => (v === "" || v === undefined ? null : Number(v));
 const fmt = new Intl.NumberFormat("de-DE");
@@ -249,6 +250,14 @@ function waehleZeitraum(z) {
   document.getElementById("zeitraum-info").textContent = z.info;
 }
 
+// Fahrzeuge pro Kalendertag und Abstand von V85 und V95 zum Tempolimit (hängen vom gewählten Zeitraum ab)
+function ableiten(r) {
+  r.proTag = r.n !== null && r.tage ? r.n / r.tage : null;
+  r.v85d = r.v85 !== null && r.limit ? r.v85 - r.limit : null;
+  r.v95d = r.v95 !== null && r.limit ? r.v95 - r.limit : null;
+}
+const vorzeichen = (d) => (d > 0 ? "+" + fmt.format(d) : d < 0 ? "−" + fmt.format(-d) : "±0");
+
 function unterzeile(td, text) {
   const s = document.createElement("small");
   s.textContent = text;
@@ -263,10 +272,10 @@ function cell(tr, col, row) {
     if (row[col.key] < 50) td.className += " bad";
     else if (row[col.key] < 75) td.className += " mid";
   }
-  if (col.key === "v85") {
+  if (col.key === "v85d") {
     td.className += " stark";
-    if (row.v85 !== null && row.limit) {  // Stufen der Verwaltung: ab +5 km/h gelb, ab +9 orange, ab +11 rot
-      const d = row.v85 - row.limit;
+    const d = row.v85d;  // Stufen der Verwaltung: ab +5 km/h gelb, ab +9 orange, ab +11 rot
+    if (d !== null) {
       if (d >= 11) td.className += " v85-rot";
       else if (d >= 9) td.className += " v85-orange";
       else if (d >= 5) td.className += " v85-gelb";
@@ -287,15 +296,19 @@ function cell(tr, col, row) {
     const zusatz = [row.verwaltung, ansicht === "abschnitte" ? "Abschnitt " + row.nr + " von " + row.anzahl : ""].filter(Boolean).join(" · ");
     if (zusatz) unterzeile(td, zusatz);
     td.title = row.datei;
-  } else if (col.key === "zeitraum") {
-    td.append(row.start ? datum(row.start) + " – " + datum(row.ende) : "–");
+  } else if (col.key === "tage") {
+    td.append(row.tage ? fmt.format(row.tage) + " Tage" : "–");
     const teile = [];
-    if (row.tage) teile.push(fmt.format(row.tage) + " Tage");
+    if (row.start) teile.push(datum(row.start) + " – " + datum(row.ende));
     if (ansicht === "abschnitte" && row.nr > 1) teile.push("Bruch davor " + (row.bruch === null ? "?" : fmt.format(Math.floor(row.bruch * 1000) / 10) + " %"));
     if (teile.length) unterzeile(td, teile.join(" · "));
-  } else if (col.key === "n") {
-    td.append(row.n === null ? "–" : fmt.format(row.n));
-    if (row.n !== null && row.tage) unterzeile(td, fmt.format(Math.round(row.n / row.tage)) + " je Tag");
+  } else if (col.key === "proTag") {
+    td.append(row.proTag === null ? "–" : fmt.format(Math.round(row.proTag)));
+    if (row.n !== null) unterzeile(td, fmt.format(row.n) + " insgesamt");
+  } else if (col.key === "v85d" || col.key === "v95d") {
+    const abs = col.key === "v85d" ? row.v85 : row.v95, d = row[col.key];
+    td.append(d !== null ? vorzeichen(d) : abs === null ? "–" : fmt.format(abs));
+    if (d !== null) unterzeile(td, (col.key === "v85d" ? "V85 " : "V95 ") + fmt.format(abs) + " km/h");
   } else if (col.key === "links") {
     const a = document.createElement("a");
     a.href = row.yaml; a.textContent = "YAML";
@@ -310,6 +323,7 @@ function cell(tr, col, row) {
 function render() {
   const q = document.getElementById("filter").value.trim().toLowerCase();
   const alle = zeilen();
+  for (const r of alle) ableiten(r);
   const rows = alle.filter((r) => !q || (r.standort + " " + r.datei + " " + (r.verwaltung || "") + " " + (r.ort || "")).toLowerCase().includes(q));
   rows.sort((a, b) => {
     const x = a[sort.key], y = b[sort.key];
@@ -339,13 +353,12 @@ function kopf() {
     const sk = col.sortKey || col.key;
     th.dataset.key = sk;
     if (col.num) th.className = "num";
-    if (col.key === "v85") th.className += " stark";
     if (col.nosort) { th.textContent = col.label; }
     else {
       const b = document.createElement("button");
       b.type = "button"; b.textContent = col.label;
       b.addEventListener("click", () => {
-        sort = { key: sk, dir: sort.key === sk ? -sort.dir : 1 };
+        sort = { key: sk, dir: sort.key === sk ? -sort.dir : col.absteigend ? -1 : 1 };
         render();
       });
       th.append(b);
