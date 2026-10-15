@@ -11,43 +11,10 @@
 <body>
 <main>
   <h1>Neuss Dialogdisplays – Messdaten</h1>
-  <p>
-    Geschwindigkeitsmessungen von Dialogdisplays im Stadtgebiet Neuss, per Informationsfreiheitsanfrage
-    erhalten und aus den Rohdaten (<code>.dsd</code>) ausgewertet. Zu jeder Messung gibt es eine
-    Auswertung (V85, V95, V99, Einhaltungsquote) als YAML. Die Einzelmessungen als CSV (ein Fahrzeug pro
-    Zeile, insgesamt rund 270 MB) gibt es als ZIP-Archiv im Release.
-  </p>
-  <ul class="links">
-    <li><a href="https://github.com/Khazuar/neuss-dialogdisplays#readme">Dokumentation (README)</a></li>
-    <li><a href="https://github.com/Khazuar/neuss-dialogdisplays/releases/latest">Alle Daten inkl. CSV als ZIP (Release)</a></li>
-    <li><a href="https://github.com/Khazuar/neuss-dialogdisplays">Rohdaten und Skripte auf GitHub</a></li>
-    <li><a href="auswertung.yaml">Alle Auswertungen als YAML</a></li>
-    <li><a href="summary.csv">Übersichtstabelle als CSV</a></li>
-    <li><a href="daten/stunden.csv.gz">Bereinigte Daten je Tag, Stunde und km/h (CSV, gzip, rund 12 MB)</a> – dazu
-      <a href="daten/kennzahlen.csv">Kennzahlen je Messung und Abschnitt</a>, <a href="daten/tage.csv">je Tag</a> und das
-      <a href="DATEN.md">Datenwörterbuch</a> (Ortszeit, Rauschboden abgezogen, nach Abschnitten)</li>
-  </ul>
-  <section id="verhaltensgruppen" class="labor" hidden>
-    <h2>Verhaltensgruppen der Stadt</h2>
-    <p class="muted">
-      Teile des Verkehrs mit eigenem Tempo und eigenem Verhalten (Tageszeit, Licht, Wetter, Ferien, Verkehrsmenge), über alle Standorte
-      zusammengefasst. Forschungsstand: Die Gruppen fließen in keine Kennzahl ein.
-    </p>
-    <ul class="links" id="vg-liste"></ul>
-    <p><a href="verhaltensgruppen.html">Alle Stadtgruppen mit Deutung, Belegen und Verhalten</a></p>
-  </section>
-  <p class="muted">
-    Die Auswertungen sind eigene Berechnungen von Fabian Grewing aus den Rohdaten der Stadt Neuss.
-    Sie sind nicht amtlich und nicht geprüft, und Fehler in der Auswertung (Skripte, Annahmen, Zuordnung der Angaben) können nicht ausgeschlossen werden; alle Angaben ohne Gewähr. Die Geräteuhren werden nie auf Sommerzeit umgestellt und
-    sind teils zurückgesetzt oder verstellt; die Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit
-    um und verwenden nur Fahrzeuge mit nutzbarer Zeit (kein Reset, keine Datumssprünge, kein Versatz um Stunden).
-    Das ist eine formale Prüfung; ob die Uhrzeit tatsächlich stimmt, belegen nur die Detailseiten.
-    Sehr langsame Messwerte, deren Rate nicht vom Verkehr abhängt (Fußgänger, Tiere, Echos, Störungen), sind aus allen
-    Kennzahlen herausgerechnet, wo sich das belegen lässt; die Detailseiten nennen Anteil und Grund. Zeilen mit
-    <span class="warn" aria-hidden="true">⚠</span> haben nur teilweise nutzbare Zeitstempel oder übersprungene
-    Datensätze, der Tooltip nennt den Grund. Das Verfahren steht im README. Einhaltungsquoten unter
-    50&nbsp;% sind rot, unter 75&nbsp;% gelb hinterlegt. Der V85 ist nach den Stufen der Verwaltung gefärbt (V85 über dem Tempolimit): ab +5&nbsp;km/h
-    gelb (unkritisch), ab +9 orange (noch akzeptabel), ab +11 rot; bis +4 gilt als unauffällig.
+  <p class="intro">
+    Geschwindigkeitsmessungen von Dialogdisplays im Stadtgebiet Neuss, per Informationsfreiheitsanfrage erhalten und aus den
+    Rohdaten ausgewertet. Eigene Berechnungen von Fabian Grewing, nicht amtlich, alle Angaben ohne Gewähr
+    (<a href="#hinweise">Hinweise, Downloads und Dokumentation</a> unter der Tabelle).
   </p>
 
   <div class="controls">
@@ -66,17 +33,64 @@
       <label for="filter">Filter (Straße, Messstelle, Gerät, Datei)</label>
       <input id="filter" type="search" autocomplete="off">
     </div>
+    <div class="check">
+      <label><input id="alle-spalten" type="checkbox"> Alle Spalten (V99, qualifizierte Einhaltung, Datei, YAML)</label>
+    </div>
   </div>
-  <p id="zeitraum-info" class="muted"></p>
-  <p id="ansicht-info" class="muted"></p>
+
+  <p class="legende muted">
+    V85 über dem Tempolimit (Stufen der Verwaltung): <span class="v85-gelb">ab +5&nbsp;km/h</span> unkritisch,
+    <span class="v85-orange">ab +9</span> noch akzeptabel, <span class="v85-rot">ab +11</span> kritisch; bis +4 unauffällig.
+    Einhaltung <span class="mid">unter 75&nbsp;%</span> gelb, <span class="bad">unter 50&nbsp;%</span> rot.
+    <span class="warn" aria-hidden="true">⚠</span> nur teilweise nutzbare Zeitstempel (Tooltip).
+  </p>
 
   <p id="status" role="status">Lade Daten …</p>
   <div class="tablewrap" hidden>
-    <table>
+    <table class="uebersicht">
       <thead><tr id="head"></tr></thead>
       <tbody id="body"></tbody>
     </table>
   </div>
+  <details class="info">
+    <summary>Was zeigt diese Auswahl?</summary>
+    <p id="zeitraum-info" class="muted"></p>
+    <p id="ansicht-info" class="muted"></p>
+  </details>
+  <details id="hinweise">
+    <summary>Hinweise, Downloads und Dokumentation</summary>
+  <ul class="links">
+    <li><a href="https://github.com/Khazuar/neuss-dialogdisplays#readme">Dokumentation (README)</a></li>
+    <li><a href="https://github.com/Khazuar/neuss-dialogdisplays/releases/latest">Alle Daten inkl. CSV als ZIP (Release)</a></li>
+    <li><a href="https://github.com/Khazuar/neuss-dialogdisplays">Rohdaten und Skripte auf GitHub</a></li>
+    <li><a href="auswertung.yaml">Alle Auswertungen als YAML</a></li>
+    <li><a href="summary.csv">Übersichtstabelle als CSV</a></li>
+    <li><a href="daten/stunden.csv.gz">Bereinigte Daten je Tag, Stunde und km/h (CSV, gzip, rund 12 MB)</a> – dazu
+      <a href="daten/kennzahlen.csv">Kennzahlen je Messung und Abschnitt</a>, <a href="daten/tage.csv">je Tag</a> und das
+      <a href="DATEN.md">Datenwörterbuch</a> (Ortszeit, Rauschboden abgezogen, nach Abschnitten)</li>
+  </ul>
+  <p class="muted">
+    Die Auswertungen sind eigene Berechnungen von Fabian Grewing aus den Rohdaten der Stadt Neuss.
+    Sie sind nicht amtlich und nicht geprüft, und Fehler in der Auswertung (Skripte, Annahmen, Zuordnung der Angaben) können nicht ausgeschlossen werden; alle Angaben ohne Gewähr. Die Geräteuhren werden nie auf Sommerzeit umgestellt und
+    sind teils zurückgesetzt oder verstellt; die Auswertungen nach Tageszeit rechnen deshalb auf Ortszeit
+    um und verwenden nur Fahrzeuge mit nutzbarer Zeit (kein Reset, keine Datumssprünge, kein Versatz um Stunden).
+    Das ist eine formale Prüfung; ob die Uhrzeit tatsächlich stimmt, belegen nur die Detailseiten.
+    Sehr langsame Messwerte, deren Rate nicht vom Verkehr abhängt (Fußgänger, Tiere, Echos, Störungen), sind aus allen
+    Kennzahlen herausgerechnet, wo sich das belegen lässt; die Detailseiten nennen Anteil und Grund. Zeilen mit
+    <span class="warn" aria-hidden="true">⚠</span> haben nur teilweise nutzbare Zeitstempel oder übersprungene
+    Datensätze, der Tooltip nennt den Grund. Das Verfahren steht im README.
+  </p>
+
+  </details>
+  <section id="verhaltensgruppen" class="labor" hidden>
+    <h2>Verhaltensgruppen der Stadt</h2>
+    <p class="muted">
+      Teile des Verkehrs mit eigenem Tempo und eigenem Verhalten (Tageszeit, Licht, Wetter, Ferien, Verkehrsmenge), über alle Standorte
+      zusammengefasst. Forschungsstand: Die Gruppen fließen in keine Kennzahl ein.
+    </p>
+    <ul class="links" id="vg-liste"></ul>
+    <p><a href="verhaltensgruppen.html">Alle Stadtgruppen mit Deutung, Belegen und Verhalten</a></p>
+  </section>
   <footer class="muted">
     <p>
       Lizenz: Daten und Dokumentation <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a>,
@@ -117,47 +131,36 @@ function parseCSV(text) {
 }
 // </parseCSV>
 
-const COLUMNS_MESSUNGEN = [
-  { key: "standort", label: "Standort" },
-  { key: "verwaltung", label: "Messstelle laut Verwaltung" },
-  { key: "limit", label: "Limit km/h", num: true },
-  { key: "quote", label: "Einhaltung", num: true },
-  { key: "qual", label: "Qualifiziert", num: true },
-  { key: "n", label: "Fahrzeuge", num: true },
-  { key: "start", label: "Beginn" },
-  { key: "ende", label: "Ende" },
-  { key: "mittel", label: "Ø km/h", num: true },
+// Standard: Messstelle, Zeitraum, Fahrzeuge, V85 (Kriterium der Verwaltung) und die weiteren Kennzahlen; "extra" erst mit "Alle Spalten"
+const KENNZAHLEN = [
+  { key: "limit", label: "Limit", num: true },
   { key: "v85", label: "V85", num: true },
+  { key: "mittel", label: "Ø", num: true },
   { key: "v95", label: "V95", num: true },
-  { key: "v99", label: "V99", num: true },
-  { key: "hinweis", label: "Hinweis" },
-  { key: "links", label: "Auswertung", nosort: true },
-  { key: "datei", label: "Datei" },
+  { key: "quote", label: "Einhaltung", num: true },
+  { key: "qual", label: "Qualifiziert", num: true, extra: true },
+  { key: "v99", label: "V99", num: true, extra: true },
+];
+const COLUMNS_MESSUNGEN = [
+  { key: "standort", label: "Messstelle", wrap: true },
+  { key: "zeitraum", label: "Zeitraum", sortKey: "start", wrap: true },
+  { key: "n", label: "Fahrzeuge", num: true },
+  ...KENNZAHLEN,
+  { key: "datei", label: "Datei", extra: true },
+  { key: "links", label: "Auswertung", nosort: true, extra: true },
 ];
 // Ansicht „Abschnitte“: dieselben Kennzahlen je Abschnitt einer Messung (abschnitte.json, seiten_bauen.py)
 const COLUMNS_ABSCHNITTE = [
-  { key: "standort", label: "Standort" },
-  { key: "verwaltung", label: "Messstelle laut Verwaltung" },
-  { key: "nr", label: "Abschnitt", num: true },
-  { key: "limit", label: "Limit km/h", num: true },
-  { key: "quote", label: "Einhaltung", num: true },
-  { key: "qual", label: "Qualifiziert", num: true },
+  { key: "standort", label: "Messstelle", wrap: true },
+  { key: "zeitraum", label: "Zeitraum", sortKey: "start", wrap: true },
   { key: "n", label: "Fahrzeuge", num: true },
-  { key: "start", label: "Beginn" },
-  { key: "ende", label: "Ende" },
-  { key: "tage", label: "Tage", num: true },
-  { key: "bruch", label: "Bruch davor", num: true },
-  { key: "mittel", label: "Ø km/h", num: true },
-  { key: "v85", label: "V85", num: true },
-  { key: "v95", label: "V95", num: true },
-  { key: "v99", label: "V99", num: true },
-  { key: "hinweis", label: "Hinweis" },
-  { key: "links", label: "Seite", nosort: true },
-  { key: "datei", label: "Datei" },
+  ...KENNZAHLEN,
+  { key: "datei", label: "Datei", extra: true },
 ];
 let ansicht = "messungen";
 let dataA = [];
-const spalten = () => (ansicht === "abschnitte" ? COLUMNS_ABSCHNITTE : COLUMNS_MESSUNGEN);
+let alleSpalten = false;
+const spalten = () => (ansicht === "abschnitte" ? COLUMNS_ABSCHNITTE : COLUMNS_MESSUNGEN).filter((c) => alleSpalten || !c.extra);
 const zeilen = () => (ansicht === "abschnitte" ? dataA : data);
 
 // Zeitraeume der Auswertung: Praefix der Spalten in summary.csv
@@ -179,7 +182,7 @@ const ZEITRAEUME = [
 ];
 let data = [];
 let zeitraum = ZEITRAEUME[0];
-let sort = { key: "qual", dir: 1 };
+let sort = { key: "quote", dir: 1 };
 
 const num = (v) => (v === "" || v === undefined ? null : Number(v));
 const fmt = new Intl.NumberFormat("de-DE");
@@ -189,11 +192,17 @@ const fmt2 =new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFr
 const bereinige = (ordner) => ordner.split("/")
   .map((t, i) => t.replace(i === 0 ? /^\d+(?:[-_]\d{4})?_\s*/ : /^\d{4}_/, "").replace(/_/g, " ").trim())
   .join(" / ");
+const datum = (iso) => (iso ? iso.slice(8, 10) + "." + iso.slice(5, 7) + "." + iso.slice(0, 4) : "");
+// Kalendertage von Beginn bis Ende (einschließlich); Lücken in der Aufzeichnung zählen mit
+const kalendertage = (von, bis) => (von && bis ? Math.round((Date.UTC(+bis.slice(0, 4), +bis.slice(5, 7) - 1, +bis.slice(8, 10)) -
+  Date.UTC(+von.slice(0, 4), +von.slice(5, 7) - 1, +von.slice(8, 10))) / 86400000) + 1 : null);
 const pfad = (...teile) => teile.join("/").split("/").map(encodeURIComponent).join("/");
 
 function zeile(r, idx) {
   const get = (name) => r[idx[name]];
-  const start = get("messzeitraum.start"), ende = get("messzeitraum.ende");
+  // Zeitraum der Fahrzeuge mit nutzbarer Zeit; die Rohdaten reichen bei zurückgesetzter Geräteuhr bis ins Jahr 2000 zurück
+  const bs = get("bereinigt.messzeitraum.start"), be = get("bereinigt.messzeitraum.ende");
+  const start = bs && be ? bs : get("messzeitraum.start"), ende = bs && be ? be : get("messzeitraum.ende");
   const warnungen = num(get("warnungen")) || 0;
   const gruende = [];
   const uhr = get("uhr.nutzbarkeit");
@@ -226,6 +235,7 @@ function zeile(r, idx) {
     standort: bereinige(get("standort")), seite: get("seite"), datei: get("standort") + "/" + get("datei"),
     limit: num(get("tempolimit_kmh")),
     start: start ? start.slice(0, 10) : "", ende: ende ? ende.slice(0, 10) : "",
+    tage: kalendertage(start ? start.slice(0, 10) : "", ende ? ende.slice(0, 10) : ""),
     hinweis: gruende.join(" | "),
     yaml: pfad(get("standort"), basis + ".yaml"),
     metriken,
@@ -239,41 +249,60 @@ function waehleZeitraum(z) {
   document.getElementById("zeitraum-info").textContent = z.info;
 }
 
+function unterzeile(td, text) {
+  const s = document.createElement("small");
+  s.textContent = text;
+  td.append(s);
+}
+
 function cell(tr, col, row) {
   const td = document.createElement("td");
   if (col.num) td.className = "num";
+  if (col.wrap) td.className = "wrap";
   if ((col.key === "quote" || col.key === "qual") && row[col.key] !== null) {
     if (row[col.key] < 50) td.className += " bad";
     else if (row[col.key] < 75) td.className += " mid";
   }
-  if (col.key === "v85" && row.v85 !== null && row.limit) {  // Stufen der Verwaltung: ab +5 km/h gelb, ab +9 orange, ab +11 rot
-    const d = row.v85 - row.limit;
-    if (d >= 11) td.className += " v85-rot";
-    else if (d >= 9) td.className += " v85-orange";
-    else if (d >= 5) td.className += " v85-gelb";
+  if (col.key === "v85") {
+    td.className += " stark";
+    if (row.v85 !== null && row.limit) {  // Stufen der Verwaltung: ab +5 km/h gelb, ab +9 orange, ab +11 rot
+      const d = row.v85 - row.limit;
+      if (d >= 11) td.className += " v85-rot";
+      else if (d >= 9) td.className += " v85-orange";
+      else if (d >= 5) td.className += " v85-gelb";
+    }
   }
-  if (col.key === "standort" && row.seite) {
-    const a = document.createElement("a");
-    a.href = row.seite; a.textContent = row[col.key];
-    td.append(a);
-  } else if (col.key === "links") {
-    const a = document.createElement("a");
-    a.href = ansicht === "abschnitte" ? row.seite : row.yaml; a.textContent = ansicht === "abschnitte" ? "Detailseite" : "YAML";
-    td.append(a);
-  } else if (col.key === "nr") {
-    td.textContent = row.nr + " von " + row.anzahl;
-  } else if (col.key === "bruch") {
-    td.textContent = row.nr === 1 ? "–" : row.bruch === null ? "?" : fmt.format(Math.floor(row.bruch * 1000) / 10) + " %";
-  } else if (col.key === "hinweis") {
+  if (col.key === "standort") {
+    if (row.seite) {
+      const a = document.createElement("a");
+      a.href = row.seite; a.textContent = row.standort;
+      td.append(a);
+    } else { td.append(row.standort); }
     if (row.hinweis) {
       const s = document.createElement("span");
-      s.className = "warn"; s.textContent = "⚠"; s.title = row.hinweis;
+      s.className = "warn"; s.textContent = " ⚠"; s.title = row.hinweis;
       s.setAttribute("aria-label", row.hinweis);
       td.append(s);
     }
+    const zusatz = [row.verwaltung, ansicht === "abschnitte" ? "Abschnitt " + row.nr + " von " + row.anzahl : ""].filter(Boolean).join(" · ");
+    if (zusatz) unterzeile(td, zusatz);
+    td.title = row.datei;
+  } else if (col.key === "zeitraum") {
+    td.append(row.start ? datum(row.start) + " – " + datum(row.ende) : "–");
+    const teile = [];
+    if (row.tage) teile.push(fmt.format(row.tage) + " Tage");
+    if (ansicht === "abschnitte" && row.nr > 1) teile.push("Bruch davor " + (row.bruch === null ? "?" : fmt.format(Math.floor(row.bruch * 1000) / 10) + " %"));
+    if (teile.length) unterzeile(td, teile.join(" · "));
+  } else if (col.key === "n") {
+    td.append(row.n === null ? "–" : fmt.format(row.n));
+    if (row.n !== null && row.tage) unterzeile(td, fmt.format(Math.round(row.n / row.tage)) + " je Tag");
+  } else if (col.key === "links") {
+    const a = document.createElement("a");
+    a.href = row.yaml; a.textContent = "YAML";
+    td.append(a);
   } else {
     const v = row[col.key];
-    td.textContent = v === null || v === "" ? "–" : col.key === "quote" || col.key === "qual" ? fmt2.format(v) + " %" : col.key === "mittel" ? fmt1.format(v) : col.num ? fmt.format(v) : v;
+    td.textContent = v === null || v === "" ? "–" : col.key === "quote" || col.key === "qual" ? fmt2.format(v) + " %" : col.key === "mittel" ? fmt1.format(v) : col.num ? fmt.format(v) : v;
   }
   tr.append(td);
 }
@@ -307,14 +336,16 @@ function kopf() {
   head.replaceChildren();
   for (const col of spalten()) {
     const th = document.createElement("th");
-    th.dataset.key = col.key;
+    const sk = col.sortKey || col.key;
+    th.dataset.key = sk;
     if (col.num) th.className = "num";
+    if (col.key === "v85") th.className += " stark";
     if (col.nosort) { th.textContent = col.label; }
     else {
       const b = document.createElement("button");
       b.type = "button"; b.textContent = col.label;
       b.addEventListener("click", () => {
-        sort = { key: col.key, dir: sort.key === col.key ? -sort.dir : 1 };
+        sort = { key: sk, dir: sort.key === sk ? -sort.dir : 1 };
         render();
       });
       th.append(b);
@@ -376,6 +407,11 @@ async function start() {
     waehleZeitraum(zeitraum);
     document.querySelector(".tablewrap").hidden = false;
     document.getElementById("filter").addEventListener("input", render);
+    document.getElementById("alle-spalten").addEventListener("change", (e) => {
+      alleSpalten = e.target.checked;
+      kopf();
+      render();
+    });
     render();
   } catch (e) {
     status.textContent = "Die Übersicht konnte nicht geladen werden (" + e.message + "). Die Dateien sind über die Links oben erreichbar.";
