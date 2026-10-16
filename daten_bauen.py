@@ -91,7 +91,7 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
 
     fh_m, w_m = _schreiber(os.path.join(ziel, "messungen.csv"), [
         "messung_id", "standort_seite", "standort_name", "ordner", "datei", "geraet", "tempolimit_kmh", "tempolimit_quelle", "strasse", "lage_breite",
-        "lage_laenge", "lage_unsicherheit_m", "lage_sicherheit", "fahrtrichtung", "beidseitige_messung", "messzeitraum_von", "messzeitraum_bis",
+        "lage_laenge", "lage_unsicherheit_m", "lage_sicherheit", "fahrtrichtung", "beidseitige_messung", "verdeckte_messung", "messzeitraum_von", "messzeitraum_bis",
         "fahrzeuge_in_datei", "fahrzeuge_ohne_nutzbare_zeit", "rauschen_abgezogen", "regenanteil_abgezogen", "wetterstation", "wetterstation_abstand_km", "fahrzeuge_im_aggregat",
         "uhr_nutzbarkeit", "uhr_bewertung", "abschnitte", "bezeichnung_verwaltung"])
     fh_a, w_a = _schreiber(os.path.join(ziel, "abschnitte.csv"), [
@@ -122,7 +122,8 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
                 w_m.writerow([mid, slug, name, rel, r["datei"], (r.get("geraet") or "").strip(), _zelle(r.get("tempolimit_kmh")), _zelle(r.get("tempolimit_quelle")),
                               _zelle(lage.get("strasse")), _zelle(lage.get("breite")), _zelle(lage.get("laenge")), _zelle(lage.get("unsicherheit_m")),
                               _zelle(lage.get("sicherheit")), ", ".join(seiten_bauen.fahrtrichtungen(meta_messung, rel)),
-                              "" if beidseitig is None else int(bool(beidseitig)), (bz.get("start") or "")[:10], (bz.get("ende") or "")[:10], r.get("fahrzeuge_in_datei"),
+                              "" if beidseitig is None else int(bool(beidseitig)),
+                              int(bool((meta_messung.get("geraet") or {}).get("verdeckte_messung"))), (bz.get("start") or "")[:10], (bz.get("ende") or "")[:10], r.get("fahrzeuge_in_datei"),
                               (r.get("uhr") or {}).get("fahrzeuge_ohne_nutzbare_zeit"), rb.get("abgezogen_fahrzeuge") or 0,
                               (rb.get("regen") or {}).get("abgezogen_fahrzeuge") or 0,
                               ((rb.get("regen") or {}).get("wetterstation") or {}).get("name", ""),

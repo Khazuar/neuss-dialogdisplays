@@ -30,7 +30,7 @@
       <select id="zeitraum"></select>
     </div>
     <div>
-      <label for="filter">Filter (Straße, Messstelle, Gerät, Datei)</label>
+      <label for="filter">Filter (Straße, Messstelle, Gerät, Datei, „verdeckt“)</label>
       <input id="filter" type="search" autocomplete="off">
     </div>
     <div class="check">
@@ -321,7 +321,8 @@ function cell(tr, col, row) {
       s.setAttribute("aria-label", row.hinweis);
       td.append(s);
     }
-    const zusatz = [row.verwaltung, ansicht === "abschnitte" ? "Abschnitt " + row.nr + " von " + row.anzahl : ""].filter(Boolean).join(" · ");
+    const zusatz = [row.verwaltung, ansicht === "abschnitte" ? "Abschnitt " + row.nr + " von " + row.anzahl : "",
+      row.verdeckt ? "verdeckte Messung (Display ohne Anzeige)" : ""].filter(Boolean).join(" · ");
     if (zusatz) unterzeile(td, zusatz);
     if (row.kaputt) {
       const s = document.createElement("small");
@@ -357,7 +358,7 @@ function render() {
   const q = document.getElementById("filter").value.trim().toLowerCase();
   const alle = zeilen();
   for (const r of alle) ableiten(r);
-  const rows = alle.filter((r) => !q || (r.standort + " " + r.datei + " " + (r.verwaltung || "") + " " + (r.ort || "")).toLowerCase().includes(q));
+  const rows = alle.filter((r) => !q || (r.standort + " " + r.datei + " " + (r.verwaltung || "") + " " + (r.ort || "") + (r.verdeckt ? " verdeckt" : " offen")).toLowerCase().includes(q));
   rows.sort((a, b) => {
     if (!!a.kaputt !== !!b.kaputt) return a.kaputt ? 1 : -1;  // unbrauchbare Daten immer ans Ende, in jeder Sortierung
     const x = a[sort.key], y = b[sort.key];
@@ -418,7 +419,7 @@ async function start() {
     data = [];
     for (const r of rows) {
       const z = zeile(r, idx), s = seiten[z.datei];
-      if (s) { z.seite = s.seite; z.ort = s.standort; }
+      if (s) { z.seite = s.seite; z.ort = s.standort; z.verdeckt = !!s.verdeckt; }
       const verw = s && s.verwaltung && s.verwaltung.length ? s.verwaltung : [""];
       for (const v of verw) data.push(Object.assign({}, z, { verwaltung: v }));
     }
@@ -427,7 +428,7 @@ async function start() {
     if (abs && abs.ok) { try { abschnitte = await abs.json(); } catch (e) { abschnitte = []; } }
     dataA = abschnitte.map((a) => ({
       standort: bereinige(a.standort), ort: a.ort, seite: a.seite, datei: a.standort + "/" + a.datei, verwaltung: a.verwaltung.join(" / "),
-      nr: a.nr, anzahl: a.anzahl, limit: a.limit, start: a.von, ende: a.bis, tage: a.tage, bruch: a.bruch, hinweis: a.hinweis,
+      nr: a.nr, anzahl: a.anzahl, limit: a.limit, verdeckt: !!a.verdeckt, start: a.von, ende: a.bis, tage: a.tage, bruch: a.bruch, hinweis: a.hinweis,
       metriken: a.metriken, ...a.metriken[zeitraum.id],
     }));
     const ansichtWahl = document.getElementById("ansicht");

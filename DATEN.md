@@ -62,7 +62,8 @@ Reihenfolge deterministisch. `messung_id` ist die Kennung einer DSD-Datei (`m-<o
 `messung_id`, `standort_seite`, `standort_name` (Name der Standortseite, meist die Straße), `ordner` (Ordner in der Lieferung der Stadt), `datei`,
 `geraet` (Konfigurationsnummer), `tempolimit_kmh` und `tempolimit_quelle` (`dsd_konfiguration`, `mitteilung_verwaltung` aus `belege/korrekturen.json`,
 `parameter`), `strasse`, `lage_breite`, `lage_laenge` (WGS 84), `lage_unsicherheit_m` und `lage_sicherheit` (`benannt`, `vermutet`, `widersprüchlich`,
-`manuell korrigiert`), `fahrtrichtung` (aus Ordnername und Mitteilung der Verwaltung), `beidseitige_messung` (1 = laut Mitteilung in beide
+`manuell korrigiert`), `fahrtrichtung` (aus Ordnername und Mitteilung der Verwaltung), `verdeckte_messung` (1 = das Display zeigte nichts an, DSD-Flag; nur an der Villestraße, siehe docs/verdeckt.md),
+`beidseitige_messung` (1 = laut Mitteilung in beide
 Richtungen, leer = unbekannt), `messzeitraum_von`/`_bis`
 (erstes und letztes Fahrzeug mit nutzbarer Zeit), `fahrzeuge_in_datei`, `fahrzeuge_ohne_nutzbare_zeit`, `rauschen_abgezogen`,
 `regenanteil_abgezogen` (Anzahl; der Regenanteil ist in `rauschen_abgezogen` nicht enthalten), `wetterstation` und `wetterstation_abstand_km`

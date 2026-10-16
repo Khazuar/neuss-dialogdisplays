@@ -851,7 +851,8 @@ def messung_fakten(row, meta_messung):
     if g.get("erfassung_ab_kmh") is not None:
         fakten.append(("Erfassung ab", f'{g["erfassung_ab_kmh"]}&nbsp;km/h'))
     if g.get("verdeckte_messung"):
-        fakten.append(("Anzeige", "verdeckte Messung (Display zeigte nichts an)"))
+        fakten.append(("Anzeige", f'verdeckte Messung (Display zeigte nichts an; <a href="{REPO}/blob/main/docs/verdeckt.md">Vergleich mit der '
+                                  'offenen Messung</a>)'))
     if row.get("warnungen"):
         fakten.append(("Übersprungene Datensätze", f'{ganz(row["warnungen"])} mit ungültigem Zeitstempel'))
     return '<dl class="facts">' + "".join(f"<dt>{e(k)}</dt><dd>{v}</dd>" for k, v in fakten) + "</dl>"
@@ -1625,7 +1626,8 @@ def abschnitte_uebersicht(auswertung, uebersicht):
         liste = (r.get("abschnitte") or {}).get("liste") or []
         bz = (r.get("bereinigt") or {}).get("messzeitraum") or r.get("messzeitraum") or {}
         basis = {"standort": r["standort"], "ort": u.get("standort"), "seite": f'{u["seite"]}/messung' if u.get("seite") else None,
-                 "verwaltung": u.get("verwaltung") or [], "datei": r["datei"], "limit": r.get("tempolimit_kmh"), "anzahl": len(liste) or 1}
+                 "verwaltung": u.get("verwaltung") or [], "datei": r["datei"], "limit": r.get("tempolimit_kmh"), "anzahl": len(liste) or 1,
+                 "verdeckt": bool(u.get("verdeckt"))}
         if not liste:
             von, bis = (bz.get("start") or "")[:10], (bz.get("ende") or "")[:10]
             tage = (datetime.date.fromisoformat(bis) - datetime.date.fromisoformat(von)).days + 1 if von and bis else None
@@ -1675,6 +1677,8 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
         for m in messungen:
             verw = [v.get("bezeichnung") for v in (m["meta_messung"] or {}).get("verwaltung", []) if v.get("bezeichnung")]
             uebersicht[f'{m["rel"]}/{m["row"]["datei"]}'] = {"seite": f"standorte/{slug}.html#{m['id']}", "standort": name, "verwaltung": verw}
+            if ((m["meta_messung"] or {}).get("geraet") or {}).get("verdeckte_messung"):  # Display ohne Anzeige (DSD-Flag)
+                uebersicht[f'{m["rel"]}/{m["row"]["datei"]}']["verdeckt"] = True
         for rel in rels:  # alte Adresse je Ordner -> neue Seite
             alt = standort_slug(rel)
             if alt not in neue:

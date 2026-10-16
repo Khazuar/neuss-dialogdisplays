@@ -44,6 +44,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/abschnitte.md` – Brüche in einer Messreihe (Geräte umgehängt?) und die getrennte Auswertung der Abschnitte
 - `docs/verhalten.md` – Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter, Ferien und Verkehrsmenge) mit Placebo-Prüfung,
   drei Ebenen (Abschnitt, Standort, Stadt), Namen, Deutungen und Stadt-Vorlagen; Forschungsstand
+- `docs/verdeckt.md` – Villestraße: offene gegen verdeckte Messung (Display ohne Anzeige), Befund und Grenzen
 - `docs/raten.md` – Raten statt Anteile: warum zu schnelle Fahrzeuge je Tag gezählt werden und was daraus folgt
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `docs/wetter.md` – Wetterdaten des DWD (Quelle, Lizenz, Stationswahl, Zeitangabe) und der Befund, dass Regen das Radar stört
