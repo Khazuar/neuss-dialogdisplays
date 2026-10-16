@@ -172,10 +172,70 @@ def main():
                            "mittel": round(k["mittel"], 1), "v85": k["v85"], "n": k["n"]})
         verlauf[richtung] = punkte
         print("  %s: %s" % (richtung, ", ".join("%s %s %.1f %%" % (p["monat"], p["phase"][0], p["zu_schnell"]) for p in punkte)))
+    pruefungen(daten, ordner)
     if html:
         with open(html, "w", encoding="utf-8") as fh:
             fh.write(SEITE.replace("__DATEN__", json.dumps(seite, ensure_ascii=False)).replace("__VERLAUF__", json.dumps(verlauf, ensure_ascii=False)))
         print("Seite:", html)
+
+
+def perzentil(h, q):
+    """Perzentil mit linearer Interpolation innerhalb der km/h-Klasse (Werte gleichverteilt in [v - 0,5, v + 0,5))."""
+    n, kum = sum(h.values()), 0
+    for v in sorted(h):
+        if kum + h[v] >= q * n:
+            return v - 0.5 + (q * n - kum) / h[v]
+        kum += h[v]
+
+
+def pruefungen(daten, ordner):
+    """Verhalten oder Messung? Eine andere Montage (Radarwinkel) oder Eichung verschiebt alle Geschwindigkeiten um denselben Faktor, auch die
+    langsamen; ein abgeschaltetes Display sollte vor allem die Fahrzeuge um und ueber dem Limit betreffen. Dazu: Gibt es an anderen Standorten
+    eine allgemeine Verschiebung nach Maerz 2024 (Wiederholungsmessungen am selben Standort)?"""
+    def hist(mid, von, bis):
+        h = collections.Counter()
+        for d, t in daten[mid].items():
+            if von <= d <= bis and t["schultag"]:
+                h.update(t["h"])
+        return h
+    q = (0.10, 0.25, 0.50, 0.75, 0.85, 0.95, 0.99)
+    paare = [
+        ("Norf: offen Feb-Maerz 2024 -> verdeckt Apr-Mai 2024", P + "fr-norf-ville-norf-4", dt.date(2024, 2, 1), dt.date(2024, 3, 19),
+         P + "fr-norf-ville-norf-30", dt.date(2024, 3, 27), dt.date(2024, 5, 31)),
+        ("Norf: offen Apr-Mai 2023 -> verdeckt Apr-Mai 2024", P + "fr-norf-ville-norf-3", dt.date(2023, 4, 1), dt.date(2023, 5, 31),
+         P + "fr-norf-ville-norf-30", dt.date(2024, 4, 1), dt.date(2024, 5, 31)),
+        ("Norf: offen Dez 2023 -> offen Dez 2024 (Kontrolle)", P + "fr-norf-ville-norf-3", dt.date(2023, 12, 1), dt.date(2024, 1, 10),
+         P + "fr-norf-ville-norf-12", dt.date(2024, 12, 1), dt.date(2025, 1, 10)),
+        ("GV: offen Feb-Maerz 2024 -> verdeckt Mai-Juni 2024", P + "fr-gv-0000000000000000-4", dt.date(2024, 2, 1), dt.date(2024, 3, 19),
+         P + "fr-gv-l-142-fr-speck20-3", dt.date(2024, 4, 25), dt.date(2024, 6, 30)),
+    ]
+    print("Perzentile (interpoliert, Schultage): Unterschied und Faktor; eine Messverschiebung (Winkel, Eichung) gaebe ueberall denselben Faktor")
+    for name, a, a0, a1, b, b0, b1 in paare:
+        ha, hb = hist(a, a0, a1), hist(b, b0, b1)
+        print("  " + name)
+        print("    " + "  ".join("P%02d %.1f->%.1f (%+.1f, x%.3f)" % (100 * p, x, y, y - x, y / x)
+                                 for p, x, y in ((p, perzentil(ha, p), perzentil(hb, p)) for p in q)))
+    print("Wiederholungsmessungen an anderen Standorten (selbe Standortseite und Limit, erste vor, zweite ab April 2024; ganze Messung):")
+    with open(os.path.join(ordner, "messungen.csv"), encoding="utf-8", newline="") as fh:
+        mess = {m["messung_id"]: m for m in csv.DictReader(fh)}
+    with open(os.path.join(ordner, "kennzahlen.csv"), encoding="utf-8", newline="") as fh:
+        kz = {r["messung_id"]: r for r in csv.DictReader(fh) if r["bereich"] == "messung" and r["zeitraum"] == "alle"}
+    je_seite = collections.defaultdict(list)
+    for mid, m in mess.items():
+        if mid in kz and m["messzeitraum_von"] and m["tempolimit_kmh"] and int(kz[mid]["fahrzeuge"] or 0) > 5000 and "villestrasse" not in mid:
+            je_seite[(m["standort_seite"], m["tempolimit_kmh"])].append(m)
+    n = hoeher = niedriger = 0
+    for (seite, lim), ms in sorted(je_seite.items()):
+        vor = [m for m in ms if m["messzeitraum_bis"] < "2024-04-01"]
+        nach = [m for m in ms if m["messzeitraum_von"] >= "2024-04-01"]
+        if vor and nach:
+            a, b = max(vor, key=lambda m: m["messzeitraum_bis"]), min(nach, key=lambda m: m["messzeitraum_von"])
+            ka, kb = kz[a["messung_id"]], kz[b["messung_id"]]
+            d = int(kb["v85_kmh"]) - int(ka["v85_kmh"])
+            n, hoeher, niedriger = n + 1, hoeher + (d > 0), niedriger + (d < 0)
+            print("    %-24s Limit %s  %s..%s V85 %s -> %s..%s V85 %s (%+d)" % (seite[:24], lim, a["messzeitraum_von"], a["messzeitraum_bis"],
+                                                                         ka["v85_kmh"], b["messzeitraum_von"], b["messzeitraum_bis"], kb["v85_kmh"], d))
+    print("    %d Paare: V85 hoeher %d, niedriger %d, gleich %d" % (n, hoeher, niedriger, n - hoeher - niedriger))
 
 
 SEITE = r"""<!doctype html>
