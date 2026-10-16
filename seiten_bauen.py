@@ -1313,7 +1313,7 @@ eine Stufe (Hypothese, gestützt, tragfähig); ab „tragfähig“ ersetzt sie d
 <p>Rohdaten und Skripte: <a href="{REPO}">GitHub</a> · <a href="{REPO}/blob/main/docs/verhalten.md">Verhaltensgruppen</a></p>
 <p>{e(HINWEIS)}</p>
 <p>Lizenz: Daten und Dokumentation <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a>, Skripte MIT. Wetterdaten: Quelle: Deutscher Wetterdienst (CC BY 4.0).</p>
-<p><a href="index.html">Übersicht</a><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a></p>
+<p><a href="index.html">Übersicht</a><a href="datenschutz.html">Datenschutz</a></p>
 </footer>
 </main>
 </body>
@@ -1548,7 +1548,7 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None):
 <p>Rohdaten und Skripte: <a href="{REPO}">GitHub</a> · <a href="{REPO}/blob/main/docs/metadaten.md">Herkunft der Metadaten</a></p>
 <p>{e(HINWEIS)}</p>
 <p>Lizenz: Daten und Dokumentation <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a>, Skripte MIT. Wetterdaten: Quelle: Deutscher Wetterdienst (CC BY 4.0).</p>
-<p><a href="../index.html">Übersicht</a><a href="../impressum.html">Impressum</a><a href="../datenschutz.html">Datenschutz</a></p>
+<p><a href="../index.html">Übersicht</a><a href="../datenschutz.html">Datenschutz</a></p>
 </footer>
 </main>
 <script src="../seite.js" defer></script>

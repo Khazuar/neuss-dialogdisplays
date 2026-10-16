@@ -42,7 +42,7 @@ class Bauen(unittest.TestCase):
             with open(os.devnull, "w") as aus:
                 start = lb.bauen(os.path.join(t, "eingabe"), ziel, None, 1, ausgabe=aus)
             self.assertEqual(start, os.path.join(ziel, "index.html"))
-            for name in lb.SEITEN + ("impressum.html", "auswertung.json", "summary.csv"):
+            for name in lb.SEITEN + ("auswertung.json", "summary.csv"):
                 self.assertTrue(os.path.exists(os.path.join(ziel, name)), name)
             seiten = [f for f in os.listdir(os.path.join(ziel, "standorte")) if f != "01-teststrasse.html"]  # die alte Adresse leitet weiter
             self.assertEqual(len(seiten), 1)

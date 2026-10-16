@@ -63,7 +63,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `lokal_bauen.py` – baut die GitHub-Pages-Seite lokal nach `_vorschau/` und startet auf Wunsch einen lokalen Server, um sie vor dem Push im Browser anzusehen (`docs/betrieb.md`)
 - `test_dsd2csv.py`, `test_uhr_belege.py`, `test_metadaten.py`, `test_seiten.py`, `test_rauschen.py`, `test_gruppen.py`, `test_filter.py`, `test_lokal.py`, `test_wetter.py`, `test_standorte.py`, `test_bruch.py`, `test_verhalten.py`, `test_aggregat.py` – Tests (`python3 -m unittest -v`; die Modelltests brauchen numpy)
 - `docs/dsd-format.md` – Beschreibung des (undokumentierten) DSD-Formats und bekannte Datenprobleme
-- `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Impressum (Vorlage) und Datenschutz, dazu `filter.js` (Auswahl nach Tageszeit, Tagen, Abschnitt und Gruppe auf den Detailseiten, liest nur die Daten der eigenen Seite) und `seite.js` (Reiter und Auswahl der Messung; ohne JavaScript steht alles untereinander), `labor.js` (Labor-Modus mit `?labor`: blendet den Forschungsstand, derzeit die Verhaltensgruppen, für alle anderen aus). Die Übersicht zeigt wahlweise Messungen (wie bei der Verwaltung) oder Abschnitte (`abschnitte.json`)
+- `site/` – GitHub Pages: Übersichtstabelle der YAML-Auswertungen, Datenschutz und Impressum-Vorlage (derzeit nicht veröffentlicht), dazu `filter.js` (Auswahl nach Tageszeit, Tagen, Abschnitt und Gruppe auf den Detailseiten, liest nur die Daten der eigenen Seite) und `seite.js` (Reiter und Auswahl der Messung; ohne JavaScript steht alles untereinander), `labor.js` (Labor-Modus mit `?labor`: blendet den Forschungsstand, derzeit die Verhaltensgruppen, für alle anderen aus). Die Übersicht zeigt wahlweise Messungen (wie bei der Verwaltung) oder Abschnitte (`abschnitte.json`)
 - `docs/betrieb.md` – Einrichtung von GitHub Pages und Impressum
 - `LICENSE`, `LICENSE-DATEN` – Lizenzen für Software bzw. Daten und Dokumentation, siehe [Lizenz](#lizenz)
 - `.github/workflows/` – erzeugt die abgeleiteten Daten und veröffentlicht sie
@@ -188,5 +188,4 @@ könnte. Das ist keine Rechtsberatung.
 
 Fabian Grewing, <fabian.grewing@proton.me>
 
-- [Impressum](https://khazuar.github.io/neuss-dialogdisplays/impressum.html)
 - [Datenschutzerklärung](https://khazuar.github.io/neuss-dialogdisplays/datenschutz.html)

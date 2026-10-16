@@ -9,8 +9,7 @@ Dieselben Schritte wie .github/workflows/pages.yml (ohne Tests):
   2. daten_bauen.py   bereinigte Daten als CSV (daten/, siehe DATEN.md)
   3. stadtgruppen.py   Verhaltensgruppen auf Standort- und Stadtebene (verhaltensgruppen.json)
   4. seiten_bauen.py   Detailseiten der Standorte und Uebersicht der Verhaltensgruppen
-  5. site/*       Uebersichtsseite, Datenschutz, Stylesheet, Skripte, llms.txt (dazu DATEN.md)
-  6. Impressum aus den Umgebungsvariablen IMPRESSUM_STRASSE, IMPRESSUM_ORT, IMPRESSUM_TELEFON (ohne sie bleiben die Felder leer)
+  5. site/*       Uebersichtsseite, Datenschutz, Stylesheet, Skripte, llms.txt (dazu DATEN.md); das Impressum wird derzeit nicht gebaut
 
 Aufruf:
   python3 -I lokal_bauen.py                  baut nach _vorschau/ und nennt die Adresse der Startseite
@@ -56,8 +55,6 @@ def bauen(eingabe, ziel, cache, jobs, ausgabe=sys.stderr):
     for name in SEITEN:
         shutil.copyfile(os.path.join(HIER, "site", name), os.path.join(ziel, name))
     shutil.copyfile(os.path.join(HIER, "DATEN.md"), os.path.join(ziel, "DATEN.md"))  # Datenwoerterbuch neben den Daten
-    subprocess.run([sys.executable, os.path.join(HIER, "site", "impressum_bauen.py"), os.path.join(HIER, "site", "impressum.html"),
-                    os.path.join(ziel, "impressum.html")], check=True)
     subprocess.run([sys.executable, "-I", os.path.join(HIER, "seo_bauen.py"), "--ziel", ziel], check=True)
     return os.path.join(ziel, "index.html")
 

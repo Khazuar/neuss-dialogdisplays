@@ -47,12 +47,6 @@ jobs:
         run: python -I seiten_bauen.py --auswertung _site/auswertung.json --ziel _site
       - name: Seiten hinzufuegen
         run: cp site/index.html site/datenschutz.html site/style.css site/filter.js site/seite.js site/labor.js site/llms.txt DATEN.md _site/
-      - name: Impressum aus den Repository-Variablen erzeugen
-        env:
-          IMPRESSUM_STRASSE: ${{ vars.IMPRESSUM_STRASSE }}
-          IMPRESSUM_ORT: ${{ vars.IMPRESSUM_ORT }}
-          IMPRESSUM_TELEFON: ${{ vars.IMPRESSUM_TELEFON }}
-        run: python site/impressum_bauen.py site/impressum.html _site/impressum.html
       - name: robots.txt, Sitemap und feste Tabelle fuer Abrufer ohne JavaScript
         run: python -I seo_bauen.py --ziel _site
       - uses: actions/upload-pages-artifact@v3

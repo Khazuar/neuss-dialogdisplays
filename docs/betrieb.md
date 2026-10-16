@@ -9,6 +9,10 @@ GitHub Pages einen kostenpflichtigen Plan.
 
 ## Impressum-Angaben als Repository-Variablen
 
+**Derzeit wird kein Impressum veröffentlicht:** Der Schritt in `pages.yml` und `lokal_bauen.py` ist entfernt, die Seiten verlinken es nicht
+mehr. Vorlage (`site/impressum.html`) und Skript (`site/impressum_bauen.py`) liegen weiter im Repository; zum Wiedereinschalten den Schritt
+„Impressum aus den Repository-Variablen erzeugen“ und die Fußzeilenlinks wieder einsetzen.
+
 Die Anschrift soll nicht in der Git-Historie stehen. Sie wird deshalb beim Bauen der Seite aus
 Repository-Variablen in `site/impressum.html` eingesetzt (`site/impressum_bauen.py`).
 
