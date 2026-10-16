@@ -5,6 +5,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Neuss Dialogdisplays – Messdaten</title>
+<meta name="description" content="Geschwindigkeitsmessungen der Dialogdisplays in Neuss: V85, Einhaltung des Tempolimits, Fahrzeuge je Tag, bereinigte Daten als CSV (CC0). Eigene Auswertung aus einer Informationsfreiheitsanfrage, nicht amtlich.">
+<link rel="canonical" href="https://khazuar.github.io/neuss-dialogdisplays/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Neuss Dialogdisplays – Messdaten">
+<meta property="og:description" content="Geschwindigkeitsmessungen der Dialogdisplays in Neuss: V85, Einhaltung, bereinigte Daten als CSV (CC0).">
+<meta property="og:url" content="https://khazuar.github.io/neuss-dialogdisplays/">
+<meta property="og:locale" content="de_DE">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Dataset","name":"Neuss Dialogdisplays – Messdaten",
+"description":"Geschwindigkeitsmessungen von Dialogdisplays im Stadtgebiet Neuss, per Informationsfreiheitsanfrage erhalten und ausgewertet: V85, V95, Einhaltungsquote, Fahrzeuge je Stunde, bereinigt um Sommerzeit, Rauschboden und Regen. Eigene Berechnungen, nicht amtlich.",
+"url":"https://khazuar.github.io/neuss-dialogdisplays/","inLanguage":"de","isAccessibleForFree":true,
+"license":"https://creativecommons.org/publicdomain/zero/1.0/","creator":{"@type":"Person","name":"Fabian Grewing"},
+"keywords":["Neuss","Dialogdisplay","Geschwindigkeitsmessung","V85","Tempolimit","Informationsfreiheit"],
+"spatialCoverage":{"@type":"Place","name":"Neuss"},
+"distribution":[
+{"@type":"DataDownload","encodingFormat":"text/csv","name":"Messungen","contentUrl":"https://khazuar.github.io/neuss-dialogdisplays/daten/messungen.csv"},
+{"@type":"DataDownload","encodingFormat":"text/csv","name":"Kennzahlen je Messung und Abschnitt","contentUrl":"https://khazuar.github.io/neuss-dialogdisplays/daten/kennzahlen.csv"},
+{"@type":"DataDownload","encodingFormat":"text/csv","name":"Abschnitte","contentUrl":"https://khazuar.github.io/neuss-dialogdisplays/daten/abschnitte.csv"},
+{"@type":"DataDownload","encodingFormat":"text/csv","name":"Kennzahlen je Tag","contentUrl":"https://khazuar.github.io/neuss-dialogdisplays/daten/tage.csv"},
+{"@type":"DataDownload","encodingFormat":"text/csv","name":"Übersichtstabelle","contentUrl":"https://khazuar.github.io/neuss-dialogdisplays/summary.csv"},
+{"@type":"DataDownload","encodingFormat":"application/gzip","name":"Daten je Tag, Stunde und km/h","contentUrl":"https://khazuar.github.io/neuss-dialogdisplays/daten/stunden.csv.gz"}]}
+</script>
 <link rel="stylesheet" href="style.css">
 <script src="labor.js"></script>
 </head>
@@ -47,6 +69,7 @@
     <span class="grau">Grau am Ende</span>: unbrauchbare Daten (keine Fahrzeuge oder unplausible Geschwindigkeiten).
   </p>
 
+<!--STATISCH-->
   <p id="status" role="status">Lade Daten …</p>
   <div class="tablewrap" hidden>
     <table class="uebersicht">
@@ -70,6 +93,7 @@
     <li><a href="daten/stunden.csv.gz">Bereinigte Daten je Tag, Stunde und km/h (CSV, gzip, rund 12 MB)</a> – dazu
       <a href="daten/kennzahlen.csv">Kennzahlen je Messung und Abschnitt</a>, <a href="daten/tage.csv">je Tag</a> und das
       <a href="DATEN.md">Datenwörterbuch</a> (Ortszeit, Rauschboden abgezogen, nach Abschnitten)</li>
+    <li><a href="llms.txt">llms.txt</a>: Dateiübersicht für KI-Assistenten und Skripte</li>
   </ul>
   <p class="muted">
     Die Auswertungen sind eigene Berechnungen von Fabian Grewing aus den Rohdaten der Stadt Neuss.
@@ -457,6 +481,8 @@ async function start() {
     });
     waehleZeitraum(zeitraum);
     document.querySelector(".tablewrap").hidden = false;
+    const fest = document.getElementById("statisch");  // feste Tabelle fuer Abrufer ohne JavaScript (seo_bauen.py)
+    if (fest) fest.hidden = true;
     document.getElementById("filter").addEventListener("input", render);
     document.getElementById("alle-spalten").addEventListener("change", (e) => {
       alleSpalten = e.target.checked;

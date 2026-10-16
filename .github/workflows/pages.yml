@@ -53,6 +53,8 @@ jobs:
           IMPRESSUM_ORT: ${{ vars.IMPRESSUM_ORT }}
           IMPRESSUM_TELEFON: ${{ vars.IMPRESSUM_TELEFON }}
         run: python site/impressum_bauen.py site/impressum.html _site/impressum.html
+      - name: robots.txt, Sitemap und feste Tabelle fuer Abrufer ohne JavaScript
+        run: python -I seo_bauen.py --ziel _site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

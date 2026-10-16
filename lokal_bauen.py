@@ -58,6 +58,7 @@ def bauen(eingabe, ziel, cache, jobs, ausgabe=sys.stderr):
     shutil.copyfile(os.path.join(HIER, "DATEN.md"), os.path.join(ziel, "DATEN.md"))  # Datenwoerterbuch neben den Daten
     subprocess.run([sys.executable, os.path.join(HIER, "site", "impressum_bauen.py"), os.path.join(HIER, "site", "impressum.html"),
                     os.path.join(ziel, "impressum.html")], check=True)
+    subprocess.run([sys.executable, "-I", os.path.join(HIER, "seo_bauen.py"), "--ziel", ziel], check=True)
     return os.path.join(ziel, "index.html")
 
 
