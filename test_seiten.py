@@ -580,6 +580,8 @@ class FilterSeite(unittest.TestCase):
         self.assertIn("Auswertung nach Zeit, Tagen, Abschnitt und Gruppe", h)
         self.assertIn("<noscript>", h)
         self.assertIn('<section class="filter" data-filter hidden>', h)  # ohne JavaScript bleibt der Abschnitt verborgen
+        self.assertIn('<input type="checkbox" data-isoliert>', h)  # Auswahl isoliert darstellen (Standard aus)
+        self.assertNotIn('data-isoliert checked', h)
         self.assertIn('<script src="../filter.js" defer></script>', h)
         for name in ("Alle Daten", 'value="v1">Gruppe 1<', 'value="v2">Gruppe 2<', "Ganztägig", "Nacht (22–6 Uhr)", "Schulweg (7–8 Uhr)",
                      "Werktage (Mo–Fr)", "Sonn- und Feiertage", "Feiertage an Werktagen und Samstagen", ">Montag<", "Verhaltensgruppen des Abschnitts"):

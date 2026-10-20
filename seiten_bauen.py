@@ -648,7 +648,10 @@ def filter_abschnitt(row, daten, sid, namen=None):
             (' Mit „nur trockene Stunden“ fallen Stunden mit Regen weg, dazu die drei Stunden davor und die Stunde danach: Bei Regen erzeugt '
                'das Gerät Störungen, und jede sperrt es für einige Sekunden, sodass in Regenstunden Fahrzeuge fehlen '
                f'(<a href="{REPO}/blob/main/docs/totzeit.md">Gerätesperre</a>). Der Vergleich zeigt, wie stark das die Zahlen bewegt.' if mit_trocken else '') +
-            '</p><div class="controls">' + felder + '</div>' +
+            ' Die graue Gesamtkurve zeigt alle Fahrzeuge der ganzen Messung, farbig ist die Auswahl, in derselben Höhenskala (Anteil an allen Fahrzeugen): '
+            'So sieht man, wie viel kleiner oder größer die Auswahl ist.'
+            '</p><div class="controls">' + felder +
+            '<div class="check"><label><input type="checkbox" data-isoliert> Auswahl isoliert darstellen (Höhe bezogen auf die Auswahl, ohne Gesamtkurve)</label></div></div>' +
             ('<p class="muted filter-abschnitt-info"></p>' if abschnitt_opt else '') +
             '<div class="filter-ergebnis" aria-live="polite"></div>'
             f'<script type="application/json" class="filter-daten">{json_in_html(daten)}</script></section>')

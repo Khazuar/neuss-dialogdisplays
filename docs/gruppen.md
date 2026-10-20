@@ -50,22 +50,15 @@ Mittel, V85/V95/V99, Einhaltung, qualifizierte Einhaltung) und das Histogramm. E
 JavaScript bleibt der Abschnitt verborgen, und die Seite zeigt die Tabelle der Kennzahlen je Zeitraum und das Histogramm aller
 Fahrzeuge, bei vorhandenem Rauschboden auch dessen Bild (alles entfällt mit JavaScript, weil die Auswahl es ersetzt).
 
-Gruppen in der Auswahl sind die **Verhaltensgruppen** des gewählten Abschnitts ([verhalten.md](verhalten.md), „Auf den Seiten“) und,
-wo ein Rauschboden abgezogen wurde, „Rauschboden (herausgerechnet)“: Alle aufgezeichneten Fahrten der Auswahl bleiben grau
-sichtbar, farbig ist der herausgerechnete Rauschboden.
-
-## Auswahl auf den Detailseiten
-
-Jede Detailseite trägt die Zellen der Messung als Datentabelle (JSON in einem `script`-Element). Eine Zelle ist ein
-Histogramm (Anzahl Fahrzeuge je km/h) für einen Tagschlüssel (0 bis 6 Montag bis Sonntag, 7 Feiertag) und eine Stunde. Das
-kleine Skript `site/filter.js` liest nur diese Tabelle der eigenen Seite und rechnet daraus Kennzahlen (Fahrzeuge, je Stunde,
-Mittel, V85/V95/V99, Einhaltung, qualifizierte Einhaltung) und das Histogramm. Es lädt nichts nach und speichert nichts. Ohne
-JavaScript bleibt der Abschnitt verborgen, und die Seite zeigt die Tabelle der Kennzahlen je Zeitraum und das Histogramm aller
-Fahrzeuge, bei vorhandenem Rauschboden auch dessen Bild (alles entfällt mit JavaScript, weil die Auswahl es ersetzt).
+**Gesamtkurve und Auswahl:** Das Histogramm zeigt immer alle Fahrzeuge der ganzen Messung grau (alle Abschnitte, Tageszeiten, Tage und
+Wetter) und die Auswahl farbig, in derselben Höhenskala (Anteil an allen Fahrzeugen). So sieht man, wie klein oder groß eine Auswahl ist: Ein
+Abschnitt, eine Nacht oder trockene Stunden erscheinen entsprechend niedriger. Mit dem Kästchen „Auswahl isoliert darstellen“ (standardmäßig aus)
+bezieht sich die Höhe auf die Auswahl selbst, ohne Gesamtkurve; das ist besser lesbar, wenn die Auswahl sehr klein ist. Die Kennzahlen darüber
+gelten immer für die Auswahl.
 
 Gruppen in der Auswahl sind die **Verhaltensgruppen** des gewählten Abschnitts ([verhalten.md](verhalten.md), „Auf den Seiten“, nur im
-Labor-Modus) und, wo ein Rauschboden abgezogen wurde, „Rauschboden (herausgerechnet)“: Alle aufgezeichneten Fahrten der Auswahl bleiben
-grau sichtbar, farbig ist der herausgerechnete Rauschboden. Die Auswahl „Nur trockene Stunden“ nimmt eigene Zellen nur aus Stunden ohne
+Labor-Modus) und, wo ein Rauschboden abgezogen wurde, „Rauschboden (herausgerechnet)“: Grau bleiben alle aufgezeichneten Fahrten der ganzen
+Messung, farbig ist der herausgerechnete Rauschboden. Die Auswahl „Nur trockene Stunden“ nimmt eigene Zellen nur aus Stunden ohne
 Regen ([totzeit.md](totzeit.md)).
 
 Die Zellen enthalten nur vollständig aufgezeichnete Stunden mit nutzbarer Zeit; die Zahl der Fahrzeuge einer Auswahl kann

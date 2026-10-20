@@ -190,11 +190,37 @@ class FilterJs(unittest.TestCase):
         self.assertIn("hist-grau", r["html"])
         self.assertIn("hist-ok", r["html"])  # der Rauschboden ist farbig
         self.assertNotIn("hist-modell", r["html"])  # keine Kurve
-        self.assertIn("aufgezeichneten Fahrten der Auswahl (Fahrzeuge und Rauschboden)", r["html"])
+        self.assertIn("aufgezeichneten Fahrten der ganzen Messung (Fahrzeuge und Rauschboden)", r["html"])
         self.assertIn("der Rauschboden, der herausgerechnet wurde", r["html"])
         self.assertIn("1.250", r["html"].replace("1,250", "1.250"))  # Zahl der Fahrten des Rauschbodens in der Tabelle
         (leer,) = laufe(self.daten, [{"zeit": "alle", "tage": "alle", "gruppe": "rausch"}])  # ohne abgezogenen Rauschboden
         self.assertIn("kein Rauschboden", leer["html"])
+
+    def test_auswahl_vor_der_gesamtkurve_oder_isoliert(self):
+        """Standard: alle Fahrzeuge der ganzen Messung grau, die Auswahl farbig in derselben Skala (Anteil an allen); isoliert: nur die Auswahl."""
+        skript = ("const f=require(process.argv[1]); const d=JSON.parse(require('fs').readFileSync(process.argv[2],'utf8'));"
+                  "const a={zeit:'nacht',tage:'alle',gruppe:'alle'};"
+                  "console.log(JSON.stringify({std:f.ergebnisHtml(d,a,{gesamt:d}), iso:f.ergebnisHtml(d,a,{gesamt:d,isoliert:true}),"
+                  " alle:f.ergebnisHtml(d,{zeit:'alle',tage:'alle',gruppe:'alle'},{gesamt:d})}));")
+        with tempfile.TemporaryDirectory() as t:
+            p = os.path.join(t, "d.json")
+            with open(p, "w", encoding="utf-8") as fh:
+                json.dump(self.daten, fh)
+            out = json.loads(subprocess.run([NODE, "-e", skript, os.path.join(HIER, "site", "filter.js"), p], stdout=subprocess.PIPE, check=True,
+                                            timeout=60).stdout.decode("utf-8"))
+        self.assertIn("hist-grau", out["std"])  # die Gesamtkurve bleibt sichtbar
+        self.assertIn("Anteil an allen Fahrzeugen der ganzen Messung", out["std"])
+        self.assertNotIn("hist-grau", out["iso"])  # isoliert wie bisher: nur die Auswahl
+        self.assertIn("Anteil der Fahrzeuge der Auswahl je km/h", out["iso"])
+        self.assertNotIn("hist-grau", out["alle"])  # Auswahl = alles: nichts zu vergleichen
+
+        def hoehen(html, klasse):
+            return [float(m.group(1)) for m in re.finditer(r'class="%s" x="[\d.]+" y="[\d.]+" width="[\d.]+" height="([\d.]+)"' % klasse, html)]
+        farbig = hoehen(out["std"], "hist-(?:ok|ueber)")
+        farbig_iso = hoehen(out["iso"], "hist-(?:ok|ueber)")
+        self.assertTrue(farbig and farbig_iso)
+        self.assertLess(max(farbig), max(farbig_iso))  # die Nacht ist klein gegen alle Fahrzeuge; isoliert wird sie auf die eigene Hoehe gedehnt
+        self.assertLessEqual(max(farbig), max(hoehen(out["std"], "hist-grau")) + 0.11)
 
     def test_farbige_saeule_ist_nie_hoeher_als_die_graue(self):
         (g,) = laufe(mit_verhalten(self.daten), [{"zeit": "alle", "tage": "alle", "gruppe": "v2"}])

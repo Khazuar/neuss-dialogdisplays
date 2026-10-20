@@ -200,7 +200,10 @@
     return d >= 11 ? " v85-rot" : d >= 9 ? " v85-orange" : d >= 5 ? " v85-gelb" : "";
   }
 
-  function ergebnisHtml(daten, auswahl) {
+  // optionen.gesamt: Daten der ganzen Messung (alle Abschnitte, Zeiten, Tage, Wetter), Bezug der grauen Gesamtkurve (Standard: daten);
+  // optionen.isoliert: die Auswahl allein darstellen, Hoehe bezogen auf die Auswahl (frueheres Verhalten) statt auf alle Fahrzeuge.
+  function ergebnisHtml(daten, auswahl, optionen) {
+    optionen = optionen || {};
     var limit = daten.limit, gruppe = auswahl.gruppe || "alle", rausch = gruppe === "rausch", vg = /^v\d+$/.test(gruppe);
     var basis = waehle(daten, auswahl.zeit, auswahl.tage, false), rauschHist = null, nBasis;
     if (rausch || vg) {  // alle aufgezeichneten Fahrten (Fahrzeuge und Rauschboden) grau: das Verhaltensmodell enthaelt auch den Rauschboden
@@ -254,11 +257,33 @@
       html += '<p class="muted">Wenige Fahrzeuge in dieser Auswahl: Die Anteile der Gruppen sind unsicher.</p>';
     }
     if (nBasis < HIST.MIN_FAHRZEUGE) { return html + "<p class=\"muted\">Zu wenige Fahrzeuge für ein Histogramm.</p>"; }
-    var h = histogrammSvg(basis.hist, kzAlle, limit, { vorder: vorder, linie: linie, v85: vorder ? kz.v85 : undefined });
-    var unterschrift = 'Anteil der Fahrzeuge der Auswahl je km/h (Klassenbreite ' + h.breite + ' km/h' + (limit ? ", blau bis zum Tempolimit, orange darüber" : "") +
-      '). "je Stunde": Fahrzeuge je vollständig aufgezeichneter Stunde der Auswahl.';
+    // Gesamtkurve: alle Fahrzeuge der ganzen Messung grau, die Auswahl farbig in derselben Hoehe-Skala (Anteil an allen); so zeigt sich, wie
+    // klein oder gross die Auswahl ist. Mit "isoliert" stattdessen nur die Auswahl, Hoehe bezogen auf sie selbst.
+    var gesamt = null, gesamtN = 0, gesamtQuelle = optionen.gesamt || daten;
+    if (!optionen.isoliert) {
+      var gh = waehle(gesamtQuelle, "alle", "alle", false).hist;
+      if (rausch || vg) {
+        var gr = waehle(gesamtQuelle, "alle", "alle", true).hist;
+        for (var q in gr) { gh[q] = (gh[q] || 0) + gr[q]; }
+      }
+      gesamtN = summe(gh);
+      if (gesamtN > nBasis * 1.0005 || (vorder && gesamtN > 0)) { gesamt = gh; }
+    }
+    var h;
+    if (gesamt) {
+      h = histogrammSvg(gesamt, kennzahlen(gesamt, limit), limit, { vorder: vorder || basis.hist, linie: linie, v85: kz.v85 });
+    } else {
+      h = histogrammSvg(basis.hist, kzAlle, limit, { vorder: vorder, linie: linie, v85: vorder ? kz.v85 : undefined });
+    }
+    var unterschrift = (gesamt ? 'Anteil an allen Fahrzeugen der ganzen Messung je km/h' : 'Anteil der Fahrzeuge der Auswahl je km/h') + ' (Klassenbreite ' + h.breite +
+      ' km/h' + (limit ? ", blau bis zum Tempolimit, orange darüber" : "") + '). "je Stunde": Fahrzeuge je vollständig aufgezeichneter Stunde der Auswahl.';
+    if (gesamt && !vorder) {
+      unterschrift += ' Grau: alle Fahrzeuge der ganzen Messung (alle Abschnitte, Tageszeiten, Tage und Wetter). Farbig: die Auswahl; ihre Höhe ist im Vergleich ' +
+        'zu allen Fahrzeugen zu lesen. Mit „Auswahl isoliert darstellen“ bezieht sich die Höhe auf die Auswahl selbst.';
+    }
     if (vorder) {
-      unterschrift += ' Grau: alle aufgezeichneten Fahrten der Auswahl (Fahrzeuge und Rauschboden). Farbig: ' +
+      unterschrift += (gesamt ? ' Grau: alle aufgezeichneten Fahrten der ganzen Messung' : ' Grau: alle aufgezeichneten Fahrten der Auswahl') +
+        ' (Fahrzeuge und Rauschboden). Farbig: ' +
         (rausch ? 'der Rauschboden, der herausgerechnet wurde' : 'der Teil, den die Verhaltensgruppe erklärt (höchstens so hoch wie die Säule), Linie: die Gruppe selbst') + '.';
     }
     return html + '<figure class="histfig">' + h.svg + '<figcaption class="muted">' + unterschrift + '</figcaption></figure>';
@@ -295,6 +320,7 @@
     var abWahl = abschnitt.querySelector('select[data-feld="abschnitt"]'), grWahl = abschnitt.querySelector('select[data-feld="gruppe"]');
     var abInfo = abschnitt.querySelector(".filter-abschnitt-info"), aktivNr = null;
     var wetterWahl = abschnitt.querySelector('select[data-feld="wetter"]');
+    var isolWahl = abschnitt.querySelector('input[data-isoliert]');
     function gruppenOptionen(d) {  // die Verhaltensgruppen gehoeren zum Abschnitt (bei einem Abschnitt auch zur ganzen Messung)
       if (!grWahl) { return; }
       var alt = grWahl.value, opts = [["alle", "Alle Daten"]], i, vg = d.verhalten;
@@ -331,9 +357,10 @@
       }
       var auswahl = {};
       for (var i = 0; i < felder.length; i++) { auswahl[felder[i].getAttribute("data-feld")] = felder[i].value; }
-      ziel.innerHTML = ergebnisHtml(d, auswahl);
+      ziel.innerHTML = ergebnisHtml(d, auswahl, { gesamt: daten, isoliert: !!(isolWahl && isolWahl.checked) });
     }
     for (var i = 0; i < felder.length; i++) { felder[i].addEventListener("change", zeichnen); }
+    if (isolWahl) { isolWahl.addEventListener("change", zeichnen); }
     abschnitt.hidden = false;
     zeichnen();
   }
