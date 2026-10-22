@@ -213,6 +213,20 @@ class Stadtebene(unittest.TestCase):
         self.assertEqual(neu["naechste_nummer"]["R"], 3)
         self.assertEqual(neu["gruppen"][2]["vorlage"]["bezug"], "absolut")
 
+    def test_gruppen_der_einsaetze(self):
+        """stadtgruppen.py nimmt die Verhaltensgruppen der Einsaetze und ordnet sie der Messung zu, auf der der Einsatz beruht."""
+        rows = auswertung()
+        r0 = rows["standorte"][0]
+        ein = {"einsaetze": [{"id": "e-x", "messung": stadtgruppen.seiten_bauen.messung_id(r0["standort"], r0["datei"]),
+                              "kennzahlen": {"verhalten": r0["verhalten"]}},
+                             {"id": "e-ohne", "messung": "m-gibt-es-nicht", "kennzahlen": {"verhalten": r0["verhalten"]}}]}
+        zeilen = stadtgruppen.einsatz_zeilen({"standorte": [dict(r, verhalten={"geprueft": False}) for r in rows["standorte"]]}, ein)
+        self.assertEqual([(z["standort"], z["datei"]) for z in zeilen["standorte"]], [(r0["standort"], r0["datei"])])
+        out = stadtgruppen.ausgabe({"standorte": [dict(r, verhalten={"geprueft": False}) for r in rows["standorte"]]}, {},
+                                   json.loads(json.dumps(self.REG)), ein)
+        self.assertIn(f'{r0["standort"]}/{r0["datei"]}', out["abschnitte"])
+        self.assertIn("Einsätze", out["erzeugt_von"])
+
     def test_stadtgruppen_im_abschnitt(self):
         reg = json.loads(json.dumps(self.REG))
         rows = auswertung()

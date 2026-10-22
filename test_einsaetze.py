@@ -4,6 +4,7 @@ import collections
 import datetime as dt
 import math
 import random
+import tempfile
 import unittest
 
 import einsaetze as E
@@ -44,7 +45,8 @@ def messung(mid, seite, geraet, teile, brueche=(), limit=50, rnd=None):
         voll += v
     br = [(i + 2, tag(t), 1.0) for i, t in enumerate(brueche)]
     return {"id": mid, "rel": mid, "datei": mid + ".dsd", "geraet": geraet, "limit": limit, "seite": seite, "name": seite, "fahrtrichtung": "",
-            "uhr_nutzbar": True, "brueche": br, "grenzen": [b[1] for b in br], "zeilen": zeilen, "voll": voll,
+            "uhr_nutzbar": True, "brueche": br, "grenzen": [b[1] for b in br], "zeilen": zeilen, "voll": voll, "zeilen_bereinigt": zeilen,
+            "versatz": {(d, h): 2 for d, h in voll}, "zeile": None, "ort": (51.2, 6.7),
             "von": tag(teile[0][0]), "bis": tag(teile[-1][1])}
 
 
@@ -148,17 +150,33 @@ class Zuordnung(unittest.TestCase):
             ausgenommen = sum(sum(c.values()) for d, h, v, k, c in m["zeilen"] if d in aus)
             self.assertEqual(im_einsatz[m["id"]] + ausgenommen, gesamt, m["id"])
 
-    def test_kennzahlen_eines_einsatzes(self):
+    def test_einsatz_rechnen(self):
+        """Durchgang C: Kennzahlen, Zellen und Aggregat eines zusammengesetzten Einsatzes; Einsatz-Abschnitte trennen nur Brueche, nicht Dateigrenzen."""
         y = messung("m-y", "a", "G", [(0, 59, A)])
-        e = E.einsaetze_bilden([y], [])[0]
-        self.assertEqual(e["status"], "identisch")
-        k, daten = E.kennzahlen_einsatz(e, {"m-y": y})
-        n = sum(sum(c.values()) for *_x, c in y["zeilen"])
-        self.assertEqual(k["bereinigt"]["anzahl_fahrzeuge"], n)
-        self.assertEqual(sum(daten["tage"].values()), len(y["voll"]))  # alle vollstaendig aufgezeichneten Stunden, auch ohne Fahrzeug
-        self.assertEqual(sum(sum(z[1::2]) for z in daten["z"].values()), n)
+        x = messung("m-x", "b", "G", [(60, 89, A), (90, 119, B)], brueche=[90])
+        _, umh = E.zuordnen([y, x] + self.vergleich)
+        ein = {e["messung"]: e for e in E.einsaetze_bilden([y, x], umh)}
+        self.assertEqual(len(E.einsatz_abschnitte(ein["m-y"])), 1)  # Y#1 und X#1 ueber die Dateigrenze: ein Einsatz-Abschnitt
+        auftrag = E._auftrag(ein["m-y"], {"m-y": y, "m-x": x}, None)
+        erg = E.einsatz_rechnen(auftrag)
+        k, daten = erg["kennzahlen"], erg["zellen"]
+        n = sum(sum(c.values()) for d, h, v, kl, c in y["zeilen"]) + sum(
+            sum(c.values()) for d, h, v, kl, c in x["zeilen"] if d <= tag(88))
+        self.assertEqual(k["bereinigt"]["anzahl_fahrzeuge"] + k["rauschen"].get("abgezogen_fahrzeuge", 0), n)
+        self.assertEqual(sum(daten["tage"].values()), len([s for s in y["voll"]]) + len([s for s in x["voll"] if s[0] <= tag(88)]))
         self.assertIn("raten", k["bereinigt"])
         self.assertEqual(set(k["teilzeitraeume"]), {"nacht", "vormittag", "nachmittag", "abend", "schulweg"})
+        self.assertEqual(sum(sum(z[6][1::2]) for z in erg["aggregat"]), k["bereinigt"]["anzahl_fahrzeuge"])
+        with tempfile.TemporaryDirectory() as ordner:  # ueber den Zwischenspeicher: beim zweiten Mal aus dem Speicher, dasselbe Ergebnis
+            _, erst, _ = E._arbeit((auftrag, ordner))
+            _, zweit, benutzt = E._arbeit((auftrag, ordner))
+            self.assertEqual(erst, zweit)
+            self.assertIn("einsatz", {x[0] for x in benutzt})
+            self.assertEqual(zweit["kennzahlen"]["bereinigt"]["anzahl_fahrzeuge"], k["bereinigt"]["anzahl_fahrzeuge"])
+        zwei = dict(ein["m-y"], teile=[dict(t_, abschnitt=1) for t_ in ein["m-x"]["teile"]] + [
+            {"messung": "m-x", "abschnitt": 1, "von": tag(60).isoformat(), "bis": tag(88).isoformat(), "herkunft": "eigen", "stufe": None}])
+        zwei["teile"].sort(key=lambda t_: t_["von"])
+        self.assertEqual(len(E.einsatz_abschnitte(zwei)), 2)  # zwei Teile derselben Messung trennt ein Bruch
 
 
 if __name__ == "__main__":

@@ -83,6 +83,10 @@ meisten der 41 war ein Teil davon Regen.
 
 ## Abzug
 
+**Je Abschnitt bzw. Einsatz-Abschnitt** (seit 22.10.2026, [einsaetze.md](einsaetze.md)): Der Rauschboden hängt vom Ort ab (Bäume, Gebäude,
+Echos). Er wird deshalb nicht mehr für eine ganze Datei geschätzt, die Daten mehrerer Orte enthalten kann, sondern für die Ansicht „Messung“ je
+Abschnitt und für die Einsätze je Einsatz-Abschnitt, mit der Wetterstation des Einsatzstandorts.
+
 Jedes Fahrzeug zählt anteilig als Rauschen: Die erwartete Zahl je Zelle und km/h ist `a(v) · Stunden`, höchstens die dort
 gemessene Zahl (nachts liegt die Rate des Rauschens oft unter dem Mittel). Entfernt werden ganze Fahrzeuge, gleichmäßig
 über die Zeit verteilt, Rundungsreste laufen in die nächste Zelle. So bleibt jede weitere Auswertung (V85, Einhaltung,

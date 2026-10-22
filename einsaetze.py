@@ -27,6 +27,7 @@ import bisect
 import collections
 import datetime as dt
 import json
+import multiprocessing
 import os
 import sys
 
@@ -36,6 +37,7 @@ import dsd2csv  # noqa: E402
 import gruppen  # noqa: E402
 import kalender  # noqa: E402
 import seiten_bauen  # noqa: E402
+import zwischenspeicher  # noqa: E402
 
 KMIN, KMAX = 15, 100            # Geschwindigkeiten fuer den Vergleich (darunter Fussgaenger, Rauschboden)
 MIN_FAHRZEUGE = 1500            # kleinere Abschnitte werden nicht verglichen
@@ -95,7 +97,10 @@ def messungen_lesen(auswertung, metadaten, aggregat_ordner):
         if os.path.exists(pfad):
             with open(pfad, encoding="utf-8") as fh:
                 agg = json.load(fh)
-        zeilen, voll = stunden_lesen(agg)
+        # Zuordnung und Einsaetze rechnen mit dem Rohaggregat (vor Rauschboden- und Regenabzug, die vom Ort abhaengen)
+        zeilen, voll = stunden_lesen(dict(agg, stunden=agg.get("roh", agg.get("stunden"))))
+        zeilen_b = stunden_lesen(agg)[0] if agg.get("roh") else zeilen
+        versatz = {(dt.date.fromisoformat(d), h): off for d, h, off, *_x in agg.get("roh", agg.get("stunden")) or []}
         liste = (r.get("abschnitte") or {}).get("liste") or []
         brueche = [(a["nr"], dt.date.fromisoformat(a["beginn"]["datum"]), a["beginn"].get("wahrscheinlichkeit"))
                    for a in liste if (a.get("beginn") or {}).get("art") == "Bruch"]
@@ -105,7 +110,8 @@ def messungen_lesen(auswertung, metadaten, aggregat_ordner):
             "limit": r.get("tempolimit_kmh"), "seite": seite.get(rel, (None, rel))[0], "name": seite.get(rel, (None, rel))[1],
             "fahrtrichtung": ", ".join(seiten_bauen.fahrtrichtungen(meta, rel)),
             "uhr_nutzbar": (r.get("uhr") or {}).get("nutzbarkeit") == "nutzbar", "brueche": brueche,
-            "grenzen": [b[1] for b in brueche], "zeilen": zeilen, "voll": voll,
+            "grenzen": [b[1] for b in brueche], "zeilen": zeilen, "voll": voll, "zeilen_bereinigt": zeilen_b, "versatz": versatz,
+            "zeile": r, "ort": dsd2csv.koordinaten(rel) or dsd2csv.ORT_NEUSS,
             "von": tage[0] if tage else None, "bis": tage[-1] if tage else None,
         })
     return out
@@ -359,8 +365,8 @@ def zuordnen(messungen, ereignisse=(), verwaltung=None):
                 wahl = dict(kand[0], stufe="bestaetigt") if kand else None
                 if wahl and v.get("ausgenommen"):
                     wahl["ausgenommen_bestaetigt"] = v["ausgenommen"]
-            elif belegt and not v:
-                wahl = belegt[0]
+            elif zu["art"] == "umhaengen" and not v:  # belegt oder moeglich (gekennzeichnet); nur unmittelbar aufeinanderfolgende Messungen
+                wahl = (belegt or moeglich)[0]
             if wahl:
                 umhaengen.append(wahl)
     return brueche, umhaengen
@@ -418,8 +424,8 @@ def einsaetze_bilden(messungen, umhaengen):
         teile.sort(key=lambda t: (t["von"] or dt.date.min))
         fremd = [t for t in teile if t["herkunft"] != "eigen"]
         abgegeben = [(mid, nr) for (mid, nr) in weg if mid == m["id"]]
-        status = ("bestaetigt" if fremd and all(t["stufe"] == "bestaetigt" for t in fremd) else "abgeleitet" if fremd
-                  else "gekuerzt" if abgegeben else "identisch")
+        status = ("bestaetigt" if fremd and all(t["stufe"] == "bestaetigt" for t in fremd) else "unsicher" if any(t["stufe"] == "moeglich" for t in fremd)
+                  else "abgeleitet" if fremd else "gekuerzt" if abgegeben else "identisch")
         datiert = [t for t in teile if t["von"]]
         out.append({"id": "e-" + m["id"][2:], "messung": m["id"], "seite": m["seite"], "name": m["name"], "fahrtrichtung": m["fahrtrichtung"],
                     "geraet": m["geraet"], "limit": m["limit"], "status": status,
@@ -434,88 +440,221 @@ def einsaetze_bilden(messungen, umhaengen):
     return out
 
 
-def _fahrzeuge(m, von, bis, nur_voll=False):
-    """Fahrzeuge [(Ortszeit, v)] eines Datumsbereichs aus dem Aggregat (Zeit: Mitte der Stunde)."""
+def einsatz_abschnitte(e):
+    """Einsatz-Abschnitte: Teile, die ueber eine Dateigrenze aneinanderstossen, gehoeren zusammen (laut Zuordnung derselbe Ort); zwei Teile
+    derselben Messung trennt ein Bruch, der im Einsatz bleibt (unerklaert, Ferien). Gibt [[Teil, ...], ...] zurueck."""
+    gruppen_, vorige = [], None
+    for t_ in [x for x in e["teile"] if x["von"]]:
+        if vorige is None or vorige["messung"] == t_["messung"]:
+            gruppen_.append([t_])
+        else:
+            gruppen_[-1].append(t_)
+        vorige = t_
+    return gruppen_
+
+
+def _spannen(stunden):
+    """Spannen [(von, bis)] (Ortszeit) aus vollstaendig aufgezeichneten Stunden (Datum, Stunde), zusammenhaengende Stunden verbunden."""
     out = []
-    for datum, h, voll, _k, c in m["zeilen"]:
-        if von <= datum <= bis and (voll or not nur_voll):
-            t = dt.datetime(datum.year, datum.month, datum.day, h, 30)
-            for v, a in c.items():
-                out.extend([(t, v)] * a)
+    for d, h in sorted(set(stunden)):
+        a = dt.datetime(d.year, d.month, d.day, h)
+        if out and out[-1][1] == a:
+            out[-1] = (out[-1][0], a + STUNDE)
+        else:
+            out.append((a, a + STUNDE))
     return out
 
 
-def _zusatz(lim):
-    def zusatz(vehs, abged=None):  # wie dsd2csv.rechnen: Histogramm, Raten, Gefaehrdung, Laerm
-        r = dsd2csv.raten(vehs, lim, abged) if abged else None
-        return {k: x for k, x in (("histogramm", dsd2csv.histogramm(vehs)), ("raten", r), ("gefaehrdung", dsd2csv.gefaehrdung(vehs, lim, abged)),
-                                  ("laerm", dsd2csv.laerm(vehs, lim, abged))) if x}
-    return zusatz
+def _auftrag(e, nach_id, auswertung_zeile):
+    """Eingaben eines Einsatzes fuer Durchgang C (klein genug fuer andere Prozesse): je Einsatz-Abschnitt die Zeilen des Rohaggregats und die
+    vollstaendig aufgezeichneten Stunden, dazu Limit, Ort und bei unveraenderten Einsaetzen die Auswertung der Messung."""
+    host = nach_id[e["messung"]]
+    teile = []
+    for gruppe in einsatz_abschnitte(e):
+        zeilen, voll, versatz = [], [], {}
+        for t_ in gruppe:
+            m = nach_id[t_["messung"]]
+            von, bis = dt.date.fromisoformat(t_["von"]), dt.date.fromisoformat(t_["bis"])
+            zeilen += [z for z in m["zeilen"] if von <= z[0] <= bis]
+            voll += [x for x in m["voll"] if von <= x[0] <= bis]
+            versatz.update({k: v for k, v in m["versatz"].items() if von <= k[0] <= bis})
+        teile.append({"teile": gruppe, "zeilen": zeilen, "voll": voll, "versatz": sorted([d.isoformat(), h, o] for (d, h), o in versatz.items())})
+    return {"id": e["id"], "status": e["status"], "limit": e["limit"], "ort": host["ort"], "abschnitte": teile,
+            "messung_zeile": auswertung_zeile if e["status"] == "identisch" else None}
 
 
-def _zellen(teile, nach_id):
-    """Zellen (Tagschluessel x Stunde) wie gruppen.zellen_bauen aus den Teilen eines Einsatzes, dazu nur trockene Stunden."""
-    def bauen(nur_trocken):
-        D, z = collections.Counter(), collections.defaultdict(collections.Counter)
-        for t in teile:
-            m = nach_id[t["messung"]]
-            von, bis = dt.date.fromisoformat(t["von"]), dt.date.fromisoformat(t["bis"])
-            trocken = {(d, h) for d, h, voll, k, _c in m["zeilen"] if k == 0} if nur_trocken else None
-            for d, h in m["voll"]:
-                if von <= d <= bis and (trocken is None or (d, h) in trocken):
-                    D[(gruppen.tagschluessel(dt.datetime(d.year, d.month, d.day)), h)] += 1
-            for d, h, voll, k, c in m["zeilen"]:
-                if voll and von <= d <= bis and (not nur_trocken or k == 0):
-                    z[(gruppen.tagschluessel(dt.datetime(d.year, d.month, d.day)), h)].update(c)
-        return {"D": D, "z": z, "r": {}}
-    return bauen(False), bauen(True)
+def _fahrzeuge_aus(zeilen):
+    """Fahrzeuge [(Ortszeit, v)] aus Aggregat-Zeilen (Zeit: Mitte der Stunde)."""
+    out = []
+    for datum, h, _voll, _k, c in zeilen:
+        t_ = dt.datetime(datum.year, datum.month, datum.day, h, 30)
+        for v, n in c.items():
+            out.extend([(t_, v)] * n)
+    return out
 
 
-def kennzahlen_einsatz(e, nach_id):
-    """Kennzahlen eines Einsatzes wie in der YAML (Block bereinigt, teilzeitraeume) und die Datentabelle der Detailseite (je Teil ein Abschnitt)."""
-    teile = [t for t in e["teile"] if t["von"]]
-    if not teile:
-        return None, None
-    lim = e["limit"]
-    vehs, abged = [], set()
-    for t in teile:
-        m = nach_id[t["messung"]]
-        von, bis = dt.date.fromisoformat(t["von"]), dt.date.fromisoformat(t["bis"])
-        vehs += _fahrzeuge(m, von, bis)
-        abged |= {(d, h) for d, h in m["voll"] if von <= d <= bis}
-    teil = {k: [f for f in vehs if in_zeitraum(f[0])] for k, (_, in_zeitraum) in dsd2csv.TEILZEITRAEUME.items()}
-    block, teilzeitraeume = dsd2csv.kennzahlen_je_zeitraum(vehs, teil, lim, 0, _zusatz(lim), abged)
-    alle, trocken = _zellen(teile, nach_id)
-    daten = gruppen.datentabelle(alle, lim)
+def einsatz_rechnen(auftrag, speicher=None):
+    """Durchgang C fuer einen Einsatz: je Einsatz-Abschnitt Rauschboden und Regenanteil (bei unveraendertem Einsatz aus der Messung), dann
+    Kennzahlen, Gefaehrdung, Laerm, Naechte, Zellen (mit Rauschboden), Verhaltensgruppen und das bereinigte Aggregat."""
+    lim, ort = auftrag["limit"], tuple(auftrag["ort"])
+    regen_f = dsd2csv.regenfunktion(ort=ort)
+    zeile = auftrag["messung_zeile"]
+    roh, sauber_alle, stunden_alle, rausch_bloecke, grenzen = [], [], [], [], []
+    liste_zeile = ((zeile or {}).get("abschnitte") or {}).get("liste") or []
+    for i, a in enumerate(auftrag["abschnitte"]):
+        vehs = _fahrzeuge_aus(a["zeilen"])
+        stunden = [x for x in a["voll"]]
+        sp = _spannen(stunden)
+        if i:
+            grenzen.append(dt.date.fromisoformat(a["teile"][0]["von"]))
+        rb = dsd2csv.rauschen.pruefen(vehs, sp, lim, regen=regen_f) if vehs else None
+        sauber, regen_weg = vehs, 0
+        if rb and rb["abzug"]:
+            modell = rb["_modell"]
+            sauber = dsd2csv.rauschen.ohne_rauschen(vehs, modell)
+            if modell.get("regen"):
+                regen_weg = len(dsd2csv.rauschen.ohne_rauschen(vehs, dict(modell, regen=None))) - len(sauber)
+        block = dsd2csv.rauschen_block(rb, len(vehs) - len(sauber), len(vehs), regen_weg)
+        if zeile is not None:  # Einsatz = Messung: Rauschboden und Regen der Messung (je Abschnitt gleich geschaetzt) als Beleg daneben
+            alt = (liste_zeile[i].get("rauschen") if len(liste_zeile) > 1 and i < len(liste_zeile) else zeile.get("rauschen"))
+            if alt:
+                block["messung"] = {"abgezogen_fahrzeuge": alt.get("abgezogen_fahrzeuge"), "belegt": alt.get("belegt")}
+        rausch_bloecke.append(block)
+        roh += vehs
+        sauber_alle += sauber
+        stunden_alle += stunden
+    sp_alle = _spannen(stunden_alle)
+    abged = set(stunden_alle)
+
+    def zusatz(vehs, ab=None):
+        r = dsd2csv.raten(vehs, lim, ab) if ab else None
+        return {k: x for k, x in (("histogramm", dsd2csv.histogramm(vehs)), ("raten", r), ("gefaehrdung", dsd2csv.gefaehrdung(vehs, lim, ab)),
+                                  ("laerm", dsd2csv.laerm(vehs, lim, ab))) if x}
+    teil = {k: [f for f in sauber_alle if in_zeitraum(f[0])] for k, (_, in_zeitraum) in dsd2csv.TEILZEITRAEUME.items()}
+    block, teilzeitraeume = dsd2csv.kennzahlen_je_zeitraum(sauber_alle, teil, lim, 0, zusatz, abged)
+    klassen = dsd2csv.rauschen.regenklassen(regen_f, abged) if regen_f else None
+    trocken = (lambda x: klassen.get(x) == dsd2csv.rauschen.TROCKEN) if klassen else None
+    daten = gruppen.datentabelle(gruppen.zellen_bauen(roh, sauber_alle, sp_alle), lim)
+    if daten and trocken:
+        daten["trocken"] = gruppen.zellen_json(gruppen.zellen_bauen(roh, sauber_alle, sp_alle, trocken))
+    liste, daten_abschnitte = [], []
+    if len(auftrag["abschnitte"]) > 1:
+        sauber_ids = {id(f) for f in sauber_alle}
+        for i, a in enumerate(auftrag["abschnitte"]):
+            von, bis = a["teile"][0]["von"], a["teile"][-1]["bis"]
+            r_i = [f for f in roh if von <= f[0].date().isoformat() <= bis]
+            s_i = [f for f in r_i if id(f) in sauber_ids]
+            st_i = set(a["voll"])
+            sp_i = _spannen(st_i)
+            teil_i = {k: [f for f in s_i if in_zeitraum(f[0])] for k, (_, in_zeitraum) in dsd2csv.TEILZEITRAEUME.items()}
+            e_i = {"nr": i + 1, "von": von, "bis": bis, "tage": (dt.date.fromisoformat(bis) - dt.date.fromisoformat(von)).days + 1,
+                   **(dsd2csv.stats(s_i, lim) or {"anzahl_fahrzeuge": 0})}
+            if e_i["anzahl_fahrzeuge"]:
+                e_i.update(zusatz(s_i, st_i))
+                e_i["teilzeitraeume"] = dsd2csv.kennzahlen_je_zeitraum(s_i, teil_i, lim, 0, zusatz, st_i)[1]
+            e_i["rauschen"] = rausch_bloecke[i]
+            liste.append(e_i)
+            z_i = gruppen.datentabelle(gruppen.zellen_bauen(r_i, s_i, sp_i), lim)
+            if z_i:
+                if trocken:
+                    z_i["trocken"] = gruppen.zellen_json(gruppen.zellen_bauen(r_i, s_i, sp_i, trocken))
+                daten_abschnitte.append({"nr": i + 1, "von": von, "bis": bis, **z_i})
+    if daten and daten_abschnitte:
+        daten["abschnitte"] = daten_abschnitte
+    vb, vz = dsd2csv.verhalten_auswerten(roh, sp_alle, grenzen, lim, ort, speicher)
     if daten:
-        if any(trocken["z"].values()):
-            daten["trocken"] = gruppen.zellen_json(trocken)
-        if len(teile) > 1:
-            liste = []
-            for i, t in enumerate(teile):
-                a, tr = _zellen([t], nach_id)
-                if any(a["z"].values()):
-                    d = {"nr": i + 1, "von": t["von"], "bis": t["bis"], **gruppen.zellen_json(a)}
-                    if any(tr["z"].values()):
-                        d["trocken"] = gruppen.zellen_json(tr)
-                    liste.append(d)
-            daten["abschnitte"] = liste
-    return {"bereinigt": block, "teilzeitraeume": teilzeitraeume}, daten
+        for d in daten.get("abschnitte") or [daten]:
+            if vz.get(d.get("nr", 1)):
+                d["verhalten"] = vz[d.get("nr", 1)]
+    # bereinigtes Aggregat des Einsatzes: Zeilen [Datum, Stunde, UTC-Versatz, Einsatz-Abschnitt, voll, Regenklasse, [km/h, Anzahl, ...]]
+    versatz, abschnitt_von = {}, {}
+    for i, a in enumerate(auftrag["abschnitte"]):
+        versatz.update({(dt.date.fromisoformat(d), h): o for d, h, o in a["versatz"]})
+        for d, h, *_x in a["zeilen"]:
+            abschnitt_von[(d, h)] = i + 1
+    je_stunde = collections.defaultdict(collections.Counter)
+    for t_, v in sauber_alle:
+        je_stunde[(t_.date(), t_.hour)][v] += 1
+    agg = []
+    for (d, h), c in sorted(je_stunde.items()):
+        flach = []
+        for v in sorted(c):
+            flach += [v, c[v]]
+        agg.append([d.isoformat(), h, versatz.get((d, h)), abschnitt_von.get((d, h), 1), 1 if (d, h) in abged else 0,
+                    klassen.get((d, h)) if klassen else None, flach])
+    kennzahlen = {"bereinigt": block, "teilzeitraeume": teilzeitraeume, "rauschen": rausch_bloecke[0] if len(rausch_bloecke) == 1 else
+                  {"geprueft": True, "je_abschnitt": True, "belegt": any(b_.get("belegt") for b_ in rausch_bloecke),
+                   "abgezogen_fahrzeuge": len(roh) - len(sauber_alle),
+                   "grund": "Rauschboden und Regenanteil sind je Einsatz-Abschnitt geschätzt"},
+                  "abschnitte": {"geprueft": True, "liste": liste} if liste else {"geprueft": False},
+                  "nacht_ereignisse": dsd2csv.nacht_ereignisse(sauber_alle, sp_alle, lim), "verhalten": vb}
+    nah = dsd2csv.stationen_nach_abstand(ort)
+    if nah and kennzahlen["rauschen"].get("regen"):
+        kennzahlen["rauschen"]["regen"]["wetterstation"] = {"name": nah[0][2], "abstand_km": nah[0][0],
+                                                            "weitere": [f"{n} ({k} km)" for k, _, n in nah[1:3]]}
+    return {"kennzahlen": kennzahlen, "zellen": daten, "aggregat": agg}
+
+
+CODE = None
+
+
+def _code():
+    global CODE
+    if CODE is None:
+        dateien = [os.path.join(HIER, f) for f in ("einsaetze.py", "dsd2csv.py", "rauschen.py", "gruppen.py", "verhalten.py",
+                                                   os.path.join("belege", "wetter.json"), os.path.join("belege", "standorte.json"))]
+        CODE = zwischenspeicher.code_hash(*[f for f in dateien if os.path.exists(f)]) + ("n" if verhalten_da() else "")
+    return CODE
+
+
+def verhalten_da():
+    return dsd2csv.verhalten.verfuegbar()
+
+
+def _arbeit(args):
+    """Ein Einsatz in einem eigenen Prozess, mit Zwischenspeicher (Ebene 'einsatz'). Gibt (ID, Ergebnis, benutzte Eintraege) zurueck."""
+    auftrag, ordner = args
+    sp = zwischenspeicher.Zwischenspeicher(ordner) if ordner else None
+    schl = None
+    if sp:
+        roh = json.dumps(auftrag, sort_keys=True, default=str).encode("utf-8")
+        schl = zwischenspeicher.inhalts_hash(roh, _code())
+        erg = sp.holen("einsatz", schl)
+        if erg is not None:
+            return auftrag["id"], erg, sorted(sp.benutzt)
+    erg = json.loads(json.dumps(einsatz_rechnen(auftrag, sp), default=str))
+    if sp:
+        sp.speichern("einsatz", schl, erg)
+    return auftrag["id"], erg, sorted(sp.benutzt) if sp else []
 
 
 # ------------------------------------------------------------------ Ausgabe
 
-def auswerten(auswertung, metadaten, aggregat_ordner, ereignisse_pfad=None, verwaltung_pfad=None):
+def auswerten(auswertung, metadaten, aggregat_ordner, ereignisse_pfad=None, verwaltung_pfad=None, cache=None, jobs=1):
+    """(einsaetze.json, Zellen je Einsatz, Aggregat je Einsatz)."""
     messungen = messungen_lesen(auswertung, metadaten, aggregat_ordner)
     brueche, umh = zuordnen(messungen, ereignisse_laden(ereignisse_pfad), verwaltung_laden(verwaltung_pfad))
     einsaetze = einsaetze_bilden(messungen, umh)
     nach_id = {m["id"]: m for m in messungen}
-    zellen = {}
+    zeile_von = {m["id"]: m["zeile"] for m in messungen}
+    auftraege = [(_auftrag(e, nach_id, zeile_von[e["messung"]]), cache) for e in einsaetze if any(t_["von"] for t_ in e["teile"])]
+    if jobs > 1:
+        with multiprocessing.Pool(jobs) as pool:
+            ergebnisse = pool.map(_arbeit, auftraege, chunksize=1)
+    else:
+        ergebnisse = [_arbeit(x) for x in auftraege]
+    erg_von = {i: erg for i, erg, _ in ergebnisse}
+    benutzt = {tuple(x) for _, _, b in ergebnisse for x in b}
+    zellen, aggregate = {}, {}
     for e in einsaetze:
-        if e["status"] != "identisch":  # identische Einsaetze zeigen die Kennzahlen der Messung
-            e["kennzahlen"], zellen[e["id"]] = kennzahlen_einsatz(e, nach_id)
+        erg = erg_von.get(e["id"])
+        if erg:
+            e["kennzahlen"] = erg["kennzahlen"]
+            zellen[e["id"]], aggregate[e["id"]] = erg["zellen"], erg["aggregat"]
+    if cache:  # nicht mehr benutzte Einsaetze und Verhaltensgruppen entfernen (die Ebenen je Datei raeumt dsd2csv.py auf)
+        zwischenspeicher.Zwischenspeicher(cache).aufraeumen(benutzt, ("datei", "datei-ohne-numpy"))
     zaehlung = collections.Counter(b["zuordnung"]["art"] + "/" + b["zuordnung"]["stufe"] for b in brueche)
-    return {"einsaetze": einsaetze, "brueche": brueche, "zaehlung": dict(zaehlung)}, zellen
+    return {"einsaetze": einsaetze, "brueche": brueche, "zaehlung": dict(zaehlung)}, zellen, aggregate
 
 
 def main():
@@ -526,18 +665,22 @@ def main():
     ap.add_argument("--ereignisse", default=os.path.join(HIER, "belege", "ereignisse.json"))
     ap.add_argument("--verwaltung", default=os.path.join(HIER, "belege", "brueche-verwaltung.json"))
     ap.add_argument("-o", "--ausgabe", help="Ziel (Standard: einsaetze.json neben der auswertung.json; die Zellen in einsaetze-zellen.json)")
+    ap.add_argument("--cache", help="Zwischenspeicher (wie dsd2csv.py --cache)")
+    ap.add_argument("--jobs", type=int, default=1, help="Einsaetze gleichzeitig rechnen")
     a = ap.parse_args()
     with open(a.auswertung, encoding="utf-8") as fh:
         auswertung = json.load(fh)
     with open(a.metadaten, encoding="utf-8") as fh:
         metadaten = json.load(fh)
-    out, zellen = auswerten(auswertung, metadaten, a.aggregat, a.ereignisse, a.verwaltung)
+    out, zellen, aggregate = auswerten(auswertung, metadaten, a.aggregat, a.ereignisse, a.verwaltung, a.cache, a.jobs)
     ziel = a.ausgabe or os.path.join(os.path.dirname(os.path.abspath(a.auswertung)), "einsaetze.json")
     with open(ziel, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(out, fh, ensure_ascii=False, separators=(",", ":"))
         fh.write("\n")
     with open(os.path.join(os.path.dirname(ziel), "einsaetze-zellen.json"), "w", encoding="utf-8", newline="\n") as fh:
         json.dump(zellen, fh, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(a.aggregat, "einsaetze.aggregat.json"), "w", encoding="utf-8", newline="\n") as fh:  # fuer daten_bauen.py
+        json.dump(aggregate, fh, ensure_ascii=False, separators=(",", ":"))
     st = collections.Counter(e["status"] for e in out["einsaetze"])
     print(f'{len(out["einsaetze"])} Einsätze ({", ".join(f"{k} {v}" for k, v in sorted(st.items()))}), {len(out["brueche"])} Brüche: '
           + ", ".join(f"{k} {v}" for k, v in sorted(out["zaehlung"].items())) + f" -> {ziel}")

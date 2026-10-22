@@ -113,8 +113,9 @@ class Gesamt(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # eine kleine Datei, bei der ein Regenanteil abgezogen wird (dort wichen die Zeitraeume frueher ab)
-        datei = os.path.join(HIER, "15_Schluchenhausstraße", "_7.dsd")
+        # eine kleine Datei mit einem Abschnitt, bei der ein Regenanteil abgezogen wird (dort wichen die Zeitraeume frueher ab); die
+        # Schluchenhausstrasse _7 hat zwei Abschnitte, je Abschnitt ist dort kein Regenanteil belegt
+        datei = os.path.join(HIER, "54-2023_Holunderweg", "DSD16733 Tempo30_4.dsd")
         if not os.path.exists(datei):
             raise unittest.SkipTest("Testdatei fehlt")
         cls.tmp = tempfile.TemporaryDirectory()

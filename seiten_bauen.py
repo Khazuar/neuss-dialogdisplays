@@ -544,6 +544,14 @@ def rauschen_abschnitt(row, mit_filter=False):
     r = row.get("rauschen")
     if not r:
         return ""
+    if r.get("je_abschnitt"):  # je Abschnitt geschaetzt (ein Bruch kann ein Ortswechsel sein)
+        teile = []
+        for a in (row.get("abschnitte") or {}).get("liste") or []:
+            if a.get("rauschen"):
+                teile.append(f'<p class="muted abschnitt-titel">Abschnitt {a["nr"]}: {iso_de(a["von"])} bis {iso_de(a["bis"])}</p>' +
+                             rauschen_abschnitt({"rauschen": a["rauschen"]}).replace('<h4>Rauschboden (verkehrsunabhängige Messwerte)</h4>', "", 1))
+        return ('<h4>Rauschboden (verkehrsunabhängige Messwerte)</h4><p>Rauschboden und Regenanteil sind je Abschnitt geschätzt und abgezogen, '
+                f'weil ein Bruch ein Ortswechsel sein kann ({ganz(r.get("abgezogen_fahrzeuge"))} Fahrzeuge insgesamt).</p>' + "".join(teile))
     z = ['<h4>Rauschboden (verkehrsunabhängige Messwerte)</h4>']
     if not r.get("geprueft"):
         z.append(f'<p>Nicht geprüft: {e(r.get("grund"))}. Die Kennzahlen enthalten alle aufgezeichneten Fahrzeuge.</p>')
@@ -1467,6 +1475,7 @@ def allgemein_teil(name, messungen, verz):
 EINSATZ_STATUS = {
     "identisch": "Einsatz = Messung",
     "abgeleitet": "aus mehreren Messungen zusammengesetzt (abgeleitet, nicht bestätigt)",
+    "unsicher": "aus mehreren Messungen zusammengesetzt (Zuordnung möglich, aber unsicher)",
     "bestaetigt": "aus mehreren Messungen zusammengesetzt; Grenzen des Messzeitraums von der Verwaltung bestätigt",
     "gekuerzt": "ohne Daten, die zu einem anderen Einsatz gehören (abgeleitet, nicht bestätigt)",
 }
@@ -1493,7 +1502,8 @@ def einsatz_eintrag(e, host, zellen):
     k = e.get("kennzahlen") or {}
     block = {key: v for key, v in (k.get("bereinigt") or {}).items() if key != "beschreibung"}
     row = dict(block, standort=host["rel"], datei=host["row"]["datei"], tempolimit_kmh=e["limit"], bereinigt=k.get("bereinigt") or {},
-               teilzeitraeume=k.get("teilzeitraeume") or {})
+               teilzeitraeume=k.get("teilzeitraeume") or {}, rauschen=k.get("rauschen"), abschnitte=k.get("abschnitte") or {},
+               nacht_ereignisse=k.get("nacht_ereignisse"), verhalten=k.get("verhalten"))
     return {"id": e["id"], "rel": host["rel"], "row": row, "meta_messung": host["meta_messung"], "metadaten": host["metadaten"], "uhr_abschnitte": [],
             "zellen": zellen.get(e["id"]), "einsatz": e}
 
@@ -1513,7 +1523,7 @@ def einsatz_teil(m, index):
     """Reiter Messung fuer einen Einsatz: Herkunft der Abschnitte, Zeitraum, Belege der Zuordnung."""
     ein = m["einsatz"]
     host = index.get(ein["messung"]) or {}
-    badge = "ok" if ein["status"] == "bestaetigt" else "mid"
+    badge = "ok" if ein["status"] == "bestaetigt" else "bad" if ein["status"] == "unsicher" else "mid"
     z = [f'<p><span class="badge {badge}">{e(EINSATZ_STATUS[ein["status"]])}</span></p>',
          '<p>Ein <strong>Einsatz</strong> ist der Zeitraum, in dem das Gerät tatsächlich an diesem Standort in diese Fahrtrichtung gemessen hat. '
          'Er kann Abschnitte anderer Messungen desselben Geräts enthalten, wenn das Gerät vor oder nach dem Auslesen noch am alten bzw. schon am '
@@ -1759,9 +1769,9 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None, i
     teile.append(reiter_html("verwaltung", "Verwaltung", verwaltung_teil, alle))
     teile.append(reiter_html("messung", "Messung", lambda m: messung_teil(m, gleich, index, brueche), alle))
     teile.append(reiter_html("analyse", "Analyse", lambda m: analyse_teil(m["row"], m["zellen"], m["id"],
-                                                                         None if m.get("einsatz") else vg_namen(vg, m["rel"], m["row"]["datei"])), alle))
-    teile.append(reiter_html("gruppen", "Verhaltensgruppen", lambda m: ("<p>Verhaltensgruppen gibt es je Messung (Auswahl oben unter „Messungen“).</p>"
-                                                                       if m.get("einsatz") else gruppen_teil(m, vg)), alle)
+                                                                         None if m.get("einsatz_eintrag") else vg_namen(vg, m["rel"], m["row"]["datei"])), alle))
+    teile.append(reiter_html("gruppen", "Verhaltensgruppen", lambda m: ("<p>Verhaltensgruppen gibt es je Einsatz (Auswahl oben unter „Einsätze“).</p>"
+                                                                       if m.get("einsatz_eintrag") else gruppen_teil(m, vg)), alle)
                  .replace("<h2>Verhaltensgruppen</h2>", "<h2>Verhaltensgruppen</h2>" + (gruppen_einleitung() if vg else ""), 1)
                  .replace("</section>", standort_gruppen(vg, slug, messungen) + "</section>"))
     teile.append(reiter_html("vergleich", "Vergleich mit der Verwaltung", lambda m: (
@@ -1914,6 +1924,16 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
             if x and x["status"] != "identisch":
                 m["einsatz_info"] = x
                 m["einsatz_eintrag"] = einsatz_eintrag(x, m, ein_zellen)
+            elif x and (x.get("kennzahlen") or {}).get("verhalten"):  # Einsatz = Messung: die Verhaltensgruppen des Einsatzes
+                m["row"] = dict(m["row"], verhalten=x["kennzahlen"]["verhalten"])
+                ez = ein_zellen.get(x["id"]) or {}
+                vz = {d.get("nr", 1): d["verhalten"] for d in (ez.get("abschnitte") or [ez]) if d.get("verhalten")}
+                if m["zellen"] and vz:
+                    m["zellen"] = dict(m["zellen"])
+                    if m["zellen"].get("abschnitte"):
+                        m["zellen"]["abschnitte"] = [dict(d, verhalten=vz[d["nr"]]) if d["nr"] in vz else d for d in m["zellen"]["abschnitte"]]
+                    elif vz.get(1):
+                        m["zellen"]["verhalten"] = vz[1]
         with open(os.path.join(ziel, "standorte", slug + ".html"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(standortseite(name, messungen, verz, gleich, vg, slug, index, brueche))
         seiten[slug] = rels

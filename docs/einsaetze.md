@@ -28,6 +28,27 @@ mindestens einen Abschnitt, und jedes Fahrzeug liegt genau in einem Einsatz oder
 Die **Hauptauswertung folgt den Einsätzen** (Ansicht „Einsätze“ der Übersicht, erste Wahl auf den Detailseiten). Die **Sicht der Verwaltung**
 (die Messungen, wie geliefert) bleibt vollständig erhalten. Mit ihr vergleichen wir die Mitteilungen.
 
+## Ablauf der Auswertung
+
+1. **Je Messung** (`dsd2csv.py`): Parsen, Uhr, dann die Brüche auf den unkorrigierten Fahrzeugen. Rauschboden und Regenanteil hängen vom Ort
+   ab; ein Ortswechsel erzeugt aber auch ohne Korrektur einen Bruch, und die Bruchsuche zählt ohnehin erst ab der halben Höchstgeschwindigkeit.
+   Für die Ansicht „Messung“ werden Rauschboden und Regenanteil danach **je Abschnitt** geschätzt und abgezogen (ein Bruch kann ein
+   Ortswechsel sein), daraus Kennzahlen, Filter und Aggregat der Messung. Daneben entsteht ein **Rohaggregat** (Stunde × km/h vor jedem Abzug).
+   Verhaltensgruppen gibt es je Messung nicht mehr.
+2. **Zuordnung** (`einsaetze.py`): Brüche erklären und Einsätze bilden, aus dem Rohaggregat (ab 15 km/h, also unabhängig von den Abzügen).
+3. **Je Einsatz** (`einsaetze.py`): Ein Einsatz wird an den Brüchen geteilt, die in ihm bleiben (unerklärt, Ferien); Teile, die über eine
+   Dateigrenze aneinanderstoßen, gehören laut Zuordnung zum selben Ort und bleiben zusammen. Je **Einsatz-Abschnitt** werden Rauschboden und
+   Regenanteil neu geschätzt, mit der Wetterstation des Einsatzstandorts. Ist der Einsatz gleich der Messung, ist das dieselbe Schätzung wie in
+   Schritt 1 (zum Vergleich steht sie dabei). Dann Kennzahlen, Gefährdung, Lärm, Nächte, Zellen der Auswahl (mit Rauschboden) und die
+   **Verhaltensgruppen je Einsatz-Abschnitt**; Zwischenspeicher je Einsatz (Ebene „einsatz“).
+4. `stadtgruppen.py` bildet Standort- und Stadtgruppen aus den Gruppen der Einsätze; `daten_bauen.py` schreibt die Stundendaten beider Sichten
+   (`stunden.csv.gz` je Messung, `einsaetze-stunden.csv.gz` je Einsatz).
+
+Wie stark der Abzug je Abschnitt die Messungen verändert (`tools/abzug_je_abschnitt.py`, 34 Messungen mit mehreren Abschnitten): Die V85 ändert
+sich in 2 Messungen (Konradstraße −7 km/h, Schluchenhausstraße −1 km/h), die Einhaltung im Median um +0,01 Prozentpunkte, höchstens um 7,1. Bei der
+Konradstraße war ein großer Rauschboden für die ganze Datei belegt, je Abschnitt in einem Abschnitt nicht mehr; dort bleiben rund 7.400 langsame
+Fahrten mehr in den Kennzahlen.
+
 ## Zuordnung eines Bruchs
 
 In dieser Rangfolge:
@@ -40,15 +61,16 @@ In dieser Rangfolge:
 3. **Ereignis, plausibel:** Der Bruch liegt auf dem ersten Schultag nach Ferien oder dem ersten Ferientag (±1 Tag, `kalender.py`) oder auf
    Beginn oder Ende eines länger dauernden Ereignisses (`belege/ereignisse.json`). Kurze Ereignisse wie das Schützenfest werden nur als
    zeitliche Nähe genannt: Ein Bruch braucht auf beiden Seiten mindestens 7 Tage. Ein Fest von fünf Tagen erklärt ihn nicht.
-4. **Umhängen, möglich:** schwächere Kriterien, nur als Hinweis.
+4. **Umhängen, möglich:** schwächere Kriterien. Auch sie bilden einen Einsatz, gekennzeichnet als „unsicher“.
 5. **Unerklärt:** Diese Brüche sind Fragen an die Verwaltung.
 
-Nur belegte oder bestätigte Zuordnungen verändern die Einsätze. Der Bruchtag und der Tag davor gehören dann zu keinem Einsatz, denn dort wurde
-umgehängt, transportiert und montiert.
+Belegte, mögliche und bestätigte Zuordnungen verändern die Einsätze, jeweils nur zwischen unmittelbar aufeinanderfolgenden Messungen desselben
+Geräts. Der Bruchtag und der Tag davor gehören dann zu keinem Einsatz, denn dort wurde umgehängt, transportiert und montiert. Die Kennzeichnung
+lautet „abgeleitet, nicht bestätigt“ (belegt), „unsicher“ (möglich) oder „bestätigt“ (Angabe der Verwaltung).
 
 ### Kriterien für „Umhängen, belegt“ (`einsaetze.py`)
 
-Grundlage sind die bereinigten Stundendaten (Aggregat, vollständig aufgezeichnete Stunden, 15 bis 99 km/h).
+Grundlage ist das Rohaggregat (vor Rauschboden- und Regenabzug, vollständig aufgezeichnete Stunden, 15 bis 99 km/h).
 
 - **Score ≤ 1,15:** Die Geschwindigkeitsverteilung und der Tagesgang (Stunde × Werktag/Wochenende) beider Abschnitte unterscheiden sich kaum
   mehr als die geraden von den ungeraden Tagen desselben Abschnitts.
@@ -81,13 +103,15 @@ Von 34 Brüchen sind:
   - Weckhovener Straße (02.12.2025);
   - Martinstraße (21.04.2026).
 
-  Daraus entstehen 9 zusammengesetzte Einsätze, etwa Daimlerstraße bis 02.09.2024 statt bis zum Auslesen am 24.07.2024. 8 Einsätze sind gekürzt.
+  Daraus entstehen 9 zusammengesetzte Einsätze, etwa Daimlerstraße bis 02.09.2024 statt bis zum Auslesen am 24.07.2024.
   Die Einsteinstraße gibt Abschnitt 1 an die Daimlerstraße ab und bekommt Abschnitt 1 der Rosmarinstraße.
 - **3 Umhängen, möglich:**
   - Konrad-Adenauer-Ring 14.05.2023;
   - Matthiasstraße 19.12.2023;
   - Hoistener Schulstraße 13.09.2024. Hier gleicht Abschnitt 1 der Nordkanalallee, aber an der Naht ändert sich der Anteil der Fahrten unter
     15 km/h stark (am Ende der Nordkanalallee etwa die Hälfte, danach kaum noch). Am Auslesetag hat sich also etwas geändert.
+
+  Auch sie bilden Einsätze, gekennzeichnet als „unsicher“. Insgesamt: 9 Einsätze abgeleitet, 3 unsicher, 11 gekürzt, 86 gleich der Messung.
 - **7 Ereignis, plausibel:** fünf Brüche am 27.04.2025 (erster Schultag nach den Osterferien: Pomona, Viersener Straße, Krokusstraße,
   Am Reckberg, Föhrenstraße) und zwei am 27.08.2025 (nach den Sommerferien: Preußenstraße, Münchener Straße). Ein Umhängen zeigt sich dort nicht.
   Die Bruchsuche lässt Ferientage aus; ein Bruch am ersten Schultag heißt also, dass sich der Verkehr über die Ferien geändert hat (neues
@@ -110,15 +134,18 @@ Die Liste mit allen Belegen steht auf der Seite „Brüche“ (`brueche.html`) u
   Tag selbst zuschlägt.
 - **Ferien als Erklärung** sind schwach (siehe oben). Eine Prüfung der Richtung, etwa „mehr Verkehr nach den Ferien“, ist nicht möglich, weil
   die Bruchsuche Ferientage auslässt.
-- **Kennzahlen eines Einsatzes** stammen aus dem Aggregat. Es gibt keinen Rauschboden zum Anzeigen (der Abzug ist schon erfolgt) und keine
-  Verhaltensgruppen; die gibt es je Messung.
+- **Kennzahlen eines Einsatzes** stammen aus dem Rohaggregat (Stundenauflösung). Für Kennzahlen, Rauschboden und Verhaltensgruppen reicht das;
+  Fahrten innerhalb einer Stunde lassen sich nicht weiter ordnen.
+- **Die Messungen sind die Gegenprobe:** Sie bleiben ohne Zusammensetzen und zeigen, was die Verwaltung geliefert hat. Ein Fehler in der
+  Zuordnung zeigt sich als Unterschied zwischen Einsatz und Messung.
 - **Die YAML je Datei** bleibt die Sicht der Verwaltung. Einsätze und Zuordnungen stehen in `einsaetze.json`, `daten/einsaetze.csv` und
   `daten/brueche.csv`.
 
 ## Reproduktion
 
 ```sh
-python3 -I einsaetze.py --auswertung _vorschau/auswertung.json --aggregat _vorschau-aggregat   # einsaetze.json, einsaetze-zellen.json
+python3 -I einsaetze.py --auswertung _vorschau/auswertung.json --aggregat _vorschau-aggregat --cache .zwischenspeicher --jobs 8
+python3 -I tools/abzug_je_abschnitt.py   # Abzug je Abschnitt gegen je Datei (Messungen)
 ```
 
 `lokal_bauen.py` und der Workflow rufen es nach `dsd2csv.py` auf. Tests: `test_einsaetze.py`.

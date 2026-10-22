@@ -325,11 +325,23 @@ def abschnitt_ausgabe(a, stadt):
     return e
 
 
-def ausgabe(auswertung, metadaten, register):
+def einsatz_zeilen(auswertung, einsaetze):
+    """Zeilen wie auswertung["standorte"] mit den Verhaltensgruppen der Einsaetze (einsaetze.py): Schluessel ist die Messung, auf der der
+    Einsatz beruht (rel/Datei), so finden die Seiten die Gruppen beim Einsatz bzw. bei der Messung, die mit ihm zusammenfaellt."""
+    datei_von = {seiten_bauen.messung_id(r["standort"], r["datei"]): (r["standort"], r["datei"]) for r in auswertung["standorte"]}
+    out = []
+    for e in einsaetze.get("einsaetze", []):
+        if e["messung"] in datei_von and (e.get("kennzahlen") or {}).get("verhalten"):
+            rel, datei = datei_von[e["messung"]]
+            out.append({"standort": rel, "datei": datei, "verhalten": e["kennzahlen"]["verhalten"]})
+    return {"standorte": out}
+
+
+def ausgabe(auswertung, metadaten, register, einsaetze=None):
     seiten = seiten_bauen.standortgruppen(auswertung, metadaten)
     seite_von = {rel: slug for slug, _, rels in seiten for rel in rels}
     namen = {slug: name for slug, name, _ in seiten}
-    abschnitte = abschnitte_lesen(auswertung, seite_von)
+    abschnitte = abschnitte_lesen(einsatz_zeilen(auswertung, einsaetze) if einsaetze else auswertung, seite_von)
     stadt = stadtgruppen(abschnitte, register)
     ms = standortgruppen_ms(abschnitte, stadt)
     mit = [a for a in abschnitte if a.get("geprueft")]
@@ -350,7 +362,7 @@ def ausgabe(auswertung, metadaten, register):
     for lst in ms.values():
         for m_ in lst:
             m_.pop("_z", None)
-    return {"erzeugt_von": "stadtgruppen.py aus den Modellen je Abschnitt (verhalten.py)",
+    return {"erzeugt_von": "stadtgruppen.py aus den Modellen je Abschnitt (verhalten.py)" + (", Abschnitte der Einsätze (einsaetze.py)" if einsaetze else ""),
             "hinweis": "Forschungsstand, siehe docs/verhalten.md. Eigene Berechnung, ohne Gewähr. Wetter: Quelle: Deutscher Wetterdienst.",
             "klassen_namen": KLASSEN, "merkmale": MERKMALE, "profil_klassen_kmh": "2-km/h-Klassen ab 0 (0-2, 2-4, ..., 88-90, ab 90)",
             "uebersicht": {"abschnitte": len(abschnitte), "mit_modell": len(mit), "mit_mehreren_gruppen": sum(1 for a in mit if a["K"] > 1),
@@ -388,6 +400,7 @@ def main():
     ap.add_argument("--register", default=REGISTER)
     ap.add_argument("--register-schreiben", action="store_true", help="Vorlagen und Verhalten der S-Gruppen ins Register schreiben")
     ap.add_argument("-o", "--ausgabe", help="Ziel (Standard: verhaltensgruppen.json neben der auswertung.json)")
+    ap.add_argument("--einsaetze", help="einsaetze.json (einsaetze.py; Standard: neben der auswertung.json, falls vorhanden): Gruppen der Einsätze")
     a = ap.parse_args()
     with open(a.auswertung, encoding="utf-8") as fh:
         auswertung = json.load(fh)
@@ -397,7 +410,12 @@ def main():
     if os.path.exists(a.register):
         with open(a.register, encoding="utf-8") as fh:
             register = json.load(fh)
-    out = ausgabe(auswertung, metadaten, register)
+    pfad_e = a.einsaetze or os.path.join(os.path.dirname(os.path.abspath(a.auswertung)), "einsaetze.json")
+    einsaetze = None
+    if os.path.exists(pfad_e):
+        with open(pfad_e, encoding="utf-8") as fh:
+            einsaetze = json.load(fh)
+    out = ausgabe(auswertung, metadaten, register, einsaetze)
     ziel = a.ausgabe or os.path.join(os.path.dirname(os.path.abspath(a.auswertung)), "verhaltensgruppen.json")
     with open(ziel, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(out, fh, ensure_ascii=False, separators=(",", ":"))

@@ -117,6 +117,13 @@ rund 280 MB entpackt), die Dateien je Standortseite jeweils nur deren Messungen.
 | `anzahl` | Fahrzeuge dieser Geschwindigkeit in dieser Stunde |
 | `einsatz_id` | Einsatz, zu dem die Stunde nach unserer Zuordnung gehört (`einsaetze.csv`); leer an ausgenommenen Umhängtagen |
 
+### `einsaetze-stunden.csv.gz` (je Einsatz, Tag, Stunde und km/h)
+
+Wie `stunden.csv.gz`, aber je Einsatz und mit dessen eigenem Abzug von Rauschboden und Regenanteil (geschätzt je Einsatz-Abschnitt, mit der
+Wetterstation des Einsatzstandorts): `einsatz_id`, `einsatz_abschnitt_nr` (Abschnitt im Einsatz; Teile über eine Dateigrenze zählen als einer),
+`datum`, `wochentag`, `stunde`, `utc_versatz_h`, `zeitraum`, `ferien`, `feiertag`, `voll`, `regenklasse`, `kmh`, `anzahl`. Für Auswertungen nach dem
+tatsächlichen Einsatzort ist das die bessere Grundlage; `stunden.csv.gz` bleibt die Sicht der Messungen (Abzug je Abschnitt der Datei).
+
 ### `einsaetze.csv` (eine Zeile je Einsatz)
 
 Ein **Einsatz** ist der Zeitraum, in dem ein Gerät tatsächlich an einem Standort in eine Fahrtrichtung gemessen hat (unsere Zuordnung,
@@ -125,7 +132,7 @@ Abschnitt der neuen Datei zum Einsatz des alten Standorts.
 
 `einsatz_id`, `messung_id` (Messung, auf der der Einsatz beruht: Standort, Fahrtrichtung, Tempolimit), `standort_seite`, `standort_name`, `geraet`,
 `fahrtrichtung`, `tempolimit_kmh`, `von`, `bis`, `status` (`identisch` = gleich der Messung, `abgeleitet` = aus mehreren Messungen
-zusammengesetzt, nicht bestätigt, `bestaetigt` = Grenzen von der Verwaltung bestätigt, `gekuerzt` = Teile der Messung gehören zu einem anderen
+zusammengesetzt, nicht bestätigt, `unsicher` = zusammengesetzt nach einer nur möglichen Zuordnung, `bestaetigt` = Grenzen von der Verwaltung bestätigt, `gekuerzt` = Teile der Messung gehören zu einem anderen
 Einsatz), `teile` (Messung#Abschnitt von..bis und Herkunft), `abgegeben` (Abschnitte, die zu einem anderen Einsatz gehören), `ausgenommene_tage`
 (Umhängtage).
 

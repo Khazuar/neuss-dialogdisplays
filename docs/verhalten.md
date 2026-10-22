@@ -114,9 +114,13 @@ ergänzt oder ersetzt, muss dieser Unterschied geklärt sein.
 
 ## In der Auswertung
 
-Seit Oktober 2026 rechnet die Auswertung selbst die Verhaltensgruppen (`verhalten.py` in `dsd2csv.py`, `stadtgruppen.py` danach); die
-Seiten zeigen sie statt der Formgruppen ([gruppen.md](gruppen.md)). Die Zahlen hier stammen aus `verhaltensgruppen.json` dieses Laufs
-und ändern sich mit neuen Daten.
+Seit Oktober 2026 rechnet die Auswertung selbst die Verhaltensgruppen (`verhalten.py`, `stadtgruppen.py` danach); die
+Seiten zeigen sie statt der Formgruppen ([gruppen.md](gruppen.md)). **Seit dem 22.10.2026 je Einsatz-Abschnitt statt je Abschnitt einer
+Messung** ([einsaetze.md](einsaetze.md)): Daten verschiedener Orte, die in einer Datei stecken, werden nicht mehr zusammen modelliert. Der
+Wechsel brachte bisher wenig: 130 Einsatz-Abschnitte, 109 mit Modell, davon 76 mit mehr als einer Gruppe, im Placebo 53 (vorher 143, 119, 81,
+53); die Standortgruppen bleiben bei 6 an 5 Standorten. Die meisten Einsätze sind gleich ihrer Messung, nur rund 20 haben sich geändert.
+Regenphantome (S-R1) 55 Gruppen an 41 Standorten, S-F1 54 an 37, S-M1 jetzt gefunden (10 an 10, Dämmerung ×1,29, Nacht ×1,26), S-L1 6 an 6.
+Die Tabelle unten ist der Stand vor dem Wechsel. Die Zahlen stammen aus `verhaltensgruppen.json` des jeweiligen Laufs und ändern sich mit neuen Daten.
 
 **Unterschiede zur Forschungsauswertung.** Das Modell ist dasselbe (mit Verkehrsmenge), aber
 

@@ -857,6 +857,27 @@ def regenfunktion(pfad=WETTER, ort=None):
     return regen
 
 
+def rauschen_je_abschnitt(rbs, abgezogen, roh, ort):
+    """YAML-Block zum Rauschboden einer Messung: bei einem Abschnitt wie rauschen_block, sonst Summe und Hinweis (die Bloecke je Abschnitt stehen
+    in abschnitte.liste). rbs: [(rauschen.pruefen, abgezogen, Fahrzeuge, davon Regen)] je Abschnitt."""
+    if len(rbs) == 1:
+        b = rauschen_block(rbs[0][0], abgezogen, roh, rbs[0][3])
+    else:
+        b = {"geprueft": any(r[0] for r in rbs), "je_abschnitt": True, "belegt": any(r[0] and r[0]["belegt"] for r in rbs),
+             "abgezogen_fahrzeuge": abgezogen,
+             "grund": "Rauschboden und Regenanteil sind je Abschnitt geschätzt, weil ein Bruch ein Ortswechsel sein kann (docs/einsaetze.md)"}
+        if abgezogen and roh:
+            b["abgezogen_anteil_prozent"] = round(100 * abgezogen / roh, 2)
+        regen = [r[0]["regen"] for r in rbs if r[0] and r[0].get("regen")]
+        if regen:
+            b["regen"] = {"belegt": any(x["belegt"] for x in regen), "regenstunden": sum(x["regenstunden"] for x in regen),
+                          "abgezogen_fahrzeuge": sum(r[3] for r in rbs)}
+    nah = stationen_nach_abstand(ort)
+    if nah and "regen" in b:  # Station, deren Niederschlag fuer diese Messstelle gilt (Rueckfall: naechste weitere)
+        b["regen"]["wetterstation"] = {"name": nah[0][2], "abstand_km": nah[0][0], "weitere": [f"{n} ({k} km)" for k, _, n in nah[1:3]]}
+    return b
+
+
 def rauschen_block(rb, abgezogen, roh=0, regen_abgezogen=0):
     """YAML-Block zum Rauschboden (rauschen.pruefen). abgezogen: Zahl der herausgerechneten Fahrzeuge, roh: Fahrzeuge in der Datei."""
     if rb is None:
@@ -914,19 +935,38 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     lim, quelle = tempolimit(meta, limit, kor)
     uhr, bereinigt, teil, spannen, utc, spannen_utc = analysiere_uhr(veh, status, mit_utc=True)
     ort = koordinaten(standort)
-    rb = rauschen.pruefen(bereinigt, spannen, lim, regen=regenfunktion(ort=ort))
+    regen_f = regenfunktion(ort=ort)
     anzahl_roh = len(veh)
     bereinigt_vorher = bereinigt
-    belegt = bool(rb and rb["abzug"])  # trockener Rauschboden und/oder Regenanteil belegt
-    regen_abgezogen = 0
-    if belegt:  # verkehrsunabhaengigen Rauschboden und Regenanteil herausrechnen (docs/rauschen.md, docs/wetter.md)
-        modell = rb["_modell"]
-        veh = rauschen.ohne_rauschen_je_v(veh, modell)
-        bereinigt = rauschen.ohne_rauschen(bereinigt, modell)
-        if modell.get("regen"):  # davon der Regenanteil: Unterschied zum Abzug ohne ihn
-            regen_abgezogen = len(rauschen.ohne_rauschen(bereinigt_vorher, dict(modell, regen=None))) - len(bereinigt)
-        # Tageszeiten aus der bereinigten Liste ableiten, nicht je Liste neu ausduennen: Der Regenanteil gilt je Klasse und Geschwindigkeit
-        # fuer die ganze Datei und waere in einer Teilliste ein anderer Abzug (docs/rauschen.md, Verteilung des Regenabzugs auf Stunden)
+    # Brueche auf den unkorrigierten Fahrzeugen (docs/einsaetze.md): Rauschboden und Regenanteil haengen vom Ort ab, ein Ortswechsel erzeugt
+    # aber auch ohne Korrektur einen Bruch. Die Bruchsuche zaehlt ohnehin erst ab der halben Hoechstgeschwindigkeit.
+    br = bruch.erkenne(bereinigt_vorher, spannen, max(10, int(round(0.5 * lim))) if lim else 15, lim, kalender.besonderer_tag)
+    grenzen = [dt.date.fromisoformat(b["datum"]) for b in br["brueche"]] if br.get("geprueft") else []
+    # Rauschboden und Regenanteil je Abschnitt schaetzen und abziehen (nur fuer die Sicht der Messung; die Einsaetze schaetzen neu)
+    je_abschnitt = [[] for _ in range(len(grenzen) + 1)]
+    for f in bereinigt_vorher:
+        je_abschnitt[bisect.bisect_right(grenzen, f[0].date())].append(f)
+    rbs, bereinigt = [], []
+    for i, lst in enumerate(je_abschnitt):
+        von = dt.datetime.min if i == 0 else dt.datetime.combine(grenzen[i - 1], dt.time())
+        bis = dt.datetime.combine(grenzen[i], dt.time()) if i < len(grenzen) else dt.datetime.max
+        sp = [(max(s0, von), min(s1, bis)) for s0, s1 in spannen if s1 >= von and s0 < bis]
+        rb_i = rauschen.pruefen(lst, sp, lim, regen=regen_f) if lst else None
+        sauber, regen_weg = lst, 0
+        if rb_i and rb_i["abzug"]:
+            modell = rb_i["_modell"]
+            sauber = rauschen.ohne_rauschen(lst, modell)
+            if modell.get("regen"):  # davon der Regenanteil: Unterschied zum Abzug ohne ihn
+                regen_weg = len(rauschen.ohne_rauschen(lst, dict(modell, regen=None))) - len(sauber)
+        rbs.append((rb_i, len(lst) - len(sauber), len(lst), regen_weg))
+        bereinigt += sauber
+    belegt = any(r[0] and r[0]["abzug"] for r in rbs)
+    if belegt:
+        # Fahrzeuge ohne nutzbare Zeit (nur Ansicht "Rohdaten"): Abzug nach Geschwindigkeit mit dem Modell des groessten Abschnitts
+        groesster = max(rbs, key=lambda r: r[2])[0]
+        if groesster and groesster["abzug"]:
+            veh = rauschen.ohne_rauschen_je_v(veh, groesster["_modell"])
+        # Tageszeiten aus der bereinigten Liste ableiten, nicht je Liste neu ausduennen (docs/rauschen.md)
         teil = {k: [f for f in bereinigt if in_zeitraum(f[0])] for k, (_, in_zeitraum) in TEILZEITRAEUME.items()}
     res = {
         "standort": standort,
@@ -955,15 +995,10 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
 
     res.update(zusatz(veh))
     res["uhr"] = uhr
-    res["rauschen"] = rauschen_block(rb, anzahl_roh - len(veh) if belegt else 0, anzahl_roh, regen_abgezogen)
-    nah = stationen_nach_abstand(ort)
-    if nah and "regen" in res["rauschen"]:  # Station, deren Niederschlag fuer diese Messstelle gilt (Rueckfall: naechste weitere)
-        res["rauschen"]["regen"]["wetterstation"] = {"name": nah[0][2], "abstand_km": nah[0][0],
-                                                     "weitere": [f"{n} ({k} km)" for k, _, n in nah[1:3]]}
+    res["rauschen"] = rauschen_je_abschnitt(rbs, anzahl_roh - len(veh) if belegt else 0, anzahl_roh, ort)
     daten = gruppen.datentabelle(gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen), lim)  # Zellen fuer die Auswahl der Detailseite
     # Regenklasse je Ortszeit-Stunde (wie im Rauschboden-Modell): fuer die Auswahl "nur trockene Stunden" und das Aggregat (docs/totzeit.md:
     # Regenphantome verdecken Fahrzeuge, die Verkehrsmenge in Regenstunden ist zu niedrig)
-    regen_f = regenfunktion(ort=ort)
     klassen = (rauschen.regenklassen(regen_f, rauschen.abgedeckte_stunden(spannen) | {(t.date(), t.hour) for t, _ in bereinigt})
                if regen_f else None)
     trocken = (lambda x: klassen.get(x) == rauschen.TROCKEN) if klassen else None
@@ -971,21 +1006,18 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
         daten["trocken"] = gruppen.zellen_json(gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen, trocken))
     res["bereinigt"], res["teilzeitraeume"] = kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz, rauschen.abgedeckte_stunden(spannen))
     res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt if x[1] >= min_kmh], spannen, lim)
-    # Brueche in der Messreihe und getrennte Auswertung der Abschnitte (docs/abschnitte.md)
-    br = bruch.erkenne(bereinigt, spannen, max(10, int(round(0.5 * lim))) if lim else 15, lim, kalender.besonderer_tag)
+    # Getrennte Auswertung der Abschnitte (docs/abschnitte.md); der Rauschboden je Abschnitt steht dort mit
     res["abschnitte"], daten_abschnitte = abschnitte_auswerten(br, bereinigt_vorher, bereinigt, teil, spannen, lim, min_kmh, zusatz,
                                                                trocken)
+    for e, (rb_i, weg, n_i, regen_weg) in zip(res["abschnitte"].get("liste") or [], rbs if len(rbs) > 1 else []):
+        e["rauschen"] = rauschen_block(rb_i, weg, n_i, regen_weg)
     if daten and daten_abschnitte:  # Zellen je Abschnitt fuer die Auswahl auf der Detailseite
         daten["abschnitte"] = daten_abschnitte
-    # Verhaltensgruppen je Abschnitt (docs/verhalten.md): alle Fahrzeuge mit nutzbarer Zeit, der Rauschboden ist dort eine eigene Gruppe
-    grenzen = [dt.date.fromisoformat(b["datum"]) for b in br["brueche"]] if br.get("geprueft") else []
-    if agg_aus is not None:  # Fahrzeuge je Tag, Stunde und km/h (DATEN.md)
+    if agg_aus is not None:  # Fahrzeuge je Tag, Stunde und km/h (DATEN.md); "roh": vor jedem Abzug, Grundlage der Einsaetze (einsaetze.py)
         agg_aus.update(aggregat.bauen(bereinigt, utc, spannen_utc, utc_versatz_h, grenzen, lim, stats, min_kmh, klassen))
-    res["verhalten"], vz = verhalten_auswerten(bereinigt_vorher, spannen, grenzen, lim, ort, speicher)
-    if daten:
-        for d in daten.get("abschnitte") or [daten]:
-            if vz.get(d.get("nr", 1)):
-                d["verhalten"] = vz[d.get("nr", 1)]
+        agg_aus["roh"] = aggregat.bauen(bereinigt_vorher, utc, spannen_utc, utc_versatz_h, grenzen, lim, stats, min_kmh, klassen)["stunden"]
+    # Verhaltensgruppen gibt es je Einsatz (einsaetze.py, docs/einsaetze.md), nicht mehr je Messung
+    res["verhalten"] = {"geprueft": False, "grund": "Verhaltensgruppen werden je Einsatz gerechnet (docs/einsaetze.md)"}
     return res, daten
 
 
@@ -1203,7 +1235,8 @@ def main():
               f"warnungen={s['warnungen']}", file=sys.stderr)
     if a.cache and os.path.isdir(a.eingabe) and not any(isinstance(s, str) for _, s, _ in ergebnisse):
         # ohne numpy bleiben die Ergebnisse mit numpy stehen (ein spaeterer Lauf mit numpy braucht sie wieder)
-        weg = zwischenspeicher.Zwischenspeicher(a.cache).aufraeumen(benutzt, () if verhalten.verfuegbar() else NUR_MIT_NUMPY)
+        schonen = ("einsatz", "verhalten", "vorlagen") + (() if verhalten.verfuegbar() else NUR_MIT_NUMPY)  # die raeumt einsaetze.py auf
+        weg = zwischenspeicher.Zwischenspeicher(a.cache).aufraeumen(benutzt, schonen)
         print(f"Zwischenspeicher: {len(benutzt)} Eintraege benutzt, {weg} veraltete entfernt", file=sys.stderr)
     if os.path.isdir(a.eingabe) and rows:
         summe = a.out or a.eingabe

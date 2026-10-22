@@ -31,6 +31,8 @@ import seiten_bauen  # noqa: E402
 from uhr_belege import gesamturteil  # noqa: E402
 
 ZEITRAEUME = ["alle", "nacht", "vormittag", "nachmittag", "abend", "schulweg"]
+SPALTEN_EINSATZ_STUNDEN = ["einsatz_id", "einsatz_abschnitt_nr", "datum", "wochentag", "stunde", "utc_versatz_h", "zeitraum", "ferien", "feiertag",
+                           "voll", "regenklasse", "kmh", "anzahl"]
 KENNZAHLEN = ["fahrzeuge", "mittel_kmh", "v85_kmh", "v95_kmh", "v99_kmh", "einhaltung_prozent", "qualifiziert_prozent",
               "fahrzeuge_je_stunde", "ueber_limit_plus_toleranz_je_stunde", "zusatzrisiko_je_stunde"]
 
@@ -215,6 +217,20 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel, einsaetze=None):
     if einsaetze:
         n["einsaetze"], n["brueche"], k = einsaetze_schreiben(ziel, einsaetze, auswertung, w_k)
         n["kennzahlen"] += k
+        pfad = os.path.join(aggregat_ordner, "einsaetze.aggregat.json")
+        if os.path.exists(pfad):  # Fahrzeuge je Tag, Stunde und km/h je Einsatz (eigener Rauschboden- und Regenabzug)
+            with open(pfad, encoding="utf-8") as fh:
+                agg_e = json.load(fh)
+            fh_e, w_e = _schreiber_gz(os.path.join(ziel, "einsaetze-stunden.csv.gz"), SPALTEN_EINSATZ_STUNDEN)
+            n["einsatz_stunden"] = 0
+            for eid in sorted(agg_e):
+                for datum, stunde, versatz, nr, voll, klasse, flach in agg_e[eid]:
+                    wt, fe, ft = tage_flags(datum)
+                    for i in range(0, len(flach), 2):
+                        w_e.writerow([eid, nr, datum, wt, stunde, _zelle(versatz), stunde_zeitraum[stunde], fe, ft, voll, "" if klasse is None else klasse,
+                                      flach[i], flach[i + 1]])
+                        n["einsatz_stunden"] += 1
+            fh_e.close()
     for fh in (fh_m, fh_a, fh_k, fh_t, fh_l):
         fh.close()
     gesamt.close()
