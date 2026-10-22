@@ -1,0 +1,4 @@
+{
+ "beschreibung": "Angaben der Verwaltung zu Brüchen in den Messreihen (einsaetze.py, docs/einsaetze.md). Ein Eintrag hat Vorrang vor allen eigenen Zuordnungen. Felder: messung (Ordner/Datei wie in der Lieferung), bruch (Bruchtag, ISO), art ('umhaengen', 'ereignis', 'sonstiges'), erklaerung (Wortlaut oder Zusammenfassung), quelle (Schreiben, Datum), bei art 'umhaengen' zusätzlich abschnitt_von (messung_id der Messung, zu deren Standort der Abschnitt vor dem Bruch gehört) und optional ausgenommen (Tage ohne gültige Messung, ISO).",
+ "brueche": []
+}

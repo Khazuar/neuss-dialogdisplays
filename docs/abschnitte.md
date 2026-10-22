@@ -69,6 +69,9 @@ vorher Tage ohne Aufzeichnung; bei keinem liegt der Bruch nahe einer Grenze der 
 Mitteilungen betreffen vor allem andere Zeiträume). Ein Beispiel für den Wert der Trennung: In `47_Bonner Straße` springt das mittlere Tempo am
 14.09.2023 nach einer Lücke von 8 Tagen von 50,6 auf 38,8 km/h, die Fahrzeugzahl ab 25 km/h sinkt auf 37 %. Im ersten Abschnitt liegt die V85 bei
 56 km/h, im zweiten bei 41 km/h; die Gesamtverteilung gibt keinen der beiden Orte wieder.
+Wie die Brüche erklärt werden (Umhängen nach dem Auslesen, Ferien, unerklärt) und wie daraus Einsätze entstehen, beschreibt
+[einsaetze.md](einsaetze.md).
+
 ## Grenzen
 
 - **Auflösung ein Tag.** Ein Wechsel mitten am Tag fällt auf den Tag selbst; Tage mit unvollständiger Aufzeichnung (erster und letzter Tag eines

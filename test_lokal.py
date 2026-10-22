@@ -17,8 +17,10 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 class Befehle(unittest.TestCase):
     def test_befehle(self):
         b = lb.befehle("eingabe", "ziel", "cache", 3)
-        self.assertEqual(len(b), 4)
+        self.assertEqual(len(b), 5)
         self.assertIn("--aggregat", b[0])
+        self.assertTrue(any(x.endswith("einsaetze.py") for x in b[1]))  # Einsaetze vor den Daten und Seiten
+        b = b[:1] + b[2:]
         self.assertTrue(any(x.endswith("daten_bauen.py") for x in b[1]))  # nach der Auswertung, vor den Seiten
         self.assertIn("-I", b[0])
         self.assertIn("--keine-csv", b[0])

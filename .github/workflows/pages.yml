@@ -39,6 +39,8 @@ jobs:
           restore-keys: ergebnisse-
       - name: YAML und Zellen aus den DSD-Dateien erzeugen (ohne CSV je Datei)
         run: python -I dsd2csv.py . -o _site --keine-csv --cache .zwischenspeicher --jobs 4 --aggregat _aggregat
+      - name: Brueche zuordnen und Einsaetze bilden
+        run: python -I einsaetze.py --auswertung _site/auswertung.json --aggregat _aggregat
       - name: Bereinigte Daten als CSV (Kennzahlen, Tage, Stunden)
         run: python -I daten_bauen.py --auswertung _site/auswertung.json --aggregat _aggregat --ziel _site/daten
       - name: Verhaltensgruppen auf Standort- und Stadtebene

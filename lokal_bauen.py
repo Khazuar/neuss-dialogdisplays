@@ -42,6 +42,7 @@ def befehle(eingabe, ziel, cache, jobs):
     zwischen = os.path.join(os.path.dirname(os.path.abspath(ziel)), os.path.basename(ziel) + "-aggregat")  # neben dem Ziel, nicht darin
     auswerten += ["--aggregat", zwischen]
     return [auswerten,
+            py + [os.path.join(HIER, "einsaetze.py"), "--auswertung", auswertung, "--aggregat", zwischen],
             py + [os.path.join(HIER, "daten_bauen.py"), "--auswertung", auswertung, "--aggregat", zwischen, "--ziel", os.path.join(ziel, "daten")],
             py + [os.path.join(HIER, "stadtgruppen.py"), "--auswertung", auswertung],
             py + [os.path.join(HIER, "seiten_bauen.py"), "--auswertung", auswertung, "--ziel", ziel]]

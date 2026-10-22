@@ -25,7 +25,7 @@ import collections
 import datetime as dt
 
 SPALTEN_STUNDEN = ["messung_id", "abschnitt_nr", "datum", "wochentag", "stunde", "utc_versatz_h", "zeitraum", "ferien", "feiertag", "voll", "regenklasse",
-                   "kmh", "anzahl"]
+                   "kmh", "anzahl", "einsatz_id"]
 ISO_UTC = "%Y-%m-%dT%H:00Z"
 STUNDE = dt.timedelta(hours=1)
 

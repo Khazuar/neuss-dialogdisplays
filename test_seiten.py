@@ -215,6 +215,35 @@ class AbschnitteUebersicht(unittest.TestCase):
         self.assertEqual(a[2]["tage"], 134)  # 24.07. bis 04.12.2024
 
 
+class Einsatz(unittest.TestCase):
+    def test_einsatz_und_messung_waehlbar(self):
+        """Ein zusammengesetzter Einsatz steht vor seiner Messung; die Messung nennt, welcher Abschnitt zu einem anderen Einsatz gehört."""
+        rel = "07_2024_ Einsteinstraße"
+        m = s.messung_eintrag(rel, zeile(), {"standorte": {rel: {"messungen": []}}}, {}, {})
+        teil = {"messung": m["id"], "abschnitt": 2, "von": "2024-09-05", "bis": "2024-12-04", "herkunft": "eigen", "stufe": None}
+        fremd = {"messung": "m-79-rosmarinstrasse-16", "abschnitt": 1, "von": "2024-12-04", "bis": "2024-12-11", "herkunft": "vorgaenger", "stufe": "belegt",
+                 "beleg": {"bruchtag": "2024-12-13", "bruch_wahrscheinlichkeit": 1.0, "score": 0.59, "p_nulltest": 0.012, "nulltest_abschnitte": 85,
+                           "verhaeltnis_fahrzeuge": 1.09, "gegenprobe_score": 15.0, "naht": {"stetig": True}}}
+        ein = {"id": "e-07-2024-einsteinstrasse-15", "messung": m["id"], "seite": "einsteinstrasse", "name": "Einsteinstraße", "fahrtrichtung": "",
+               "geraet": "G", "limit": 30, "status": "abgeleitet", "von": "2024-09-05", "bis": "2024-12-11", "teile": [teil, fremd],
+               "abgegeben": [{"abschnitt": 1, "an": "e-76-daimlerstrasse"}], "ausgenommene_tage": ["2024-09-04"],
+               "kennzahlen": {"bereinigt": {"anzahl_fahrzeuge": 1000, "geschwindigkeit_kmh": zeile()["geschwindigkeit_kmh"]}, "teilzeitraeume": {}}}
+        m["einsatz_info"], m["einsatz_eintrag"] = ein, s.einsatz_eintrag(ein, m, {})
+        index = {m["id"]: {"slug": "einsteinstrasse", "name": "Einsteinstraße", "datei": "_15.dsd", "einsatz": ein["id"]},
+                 "m-76-daimlerstrasse": {"slug": "daimlerstrasse", "name": "Daimlerstraße", "datei": "x.dsd", "einsatz": "e-76-daimlerstrasse"},
+                 "m-79-rosmarinstrasse-16": {"slug": "rosmarinstrasse", "name": "Rosmarinstraße", "datei": "_16.dsd", "einsatz": None}}
+        h = s.standortseite("Einsteinstraße", [m], index=index)
+        self.assertIn('<optgroup label="Einsätze (unsere Zuordnung)">', h)
+        self.assertLess(h.index('value="e-07-2024-einsteinstrasse-15"'), h.index(f'value="{m["id"]}"'))  # Einsatz zuerst
+        self.assertIn("aus mehreren Messungen zusammengesetzt (abgeleitet, nicht bestätigt)", h)
+        self.assertIn("Zeitraum der Verwaltung umfasst Daten eines anderen Standorts", h)  # Hinweis an der Messung
+        self.assertIn('href="daimlerstrasse.html#e-76-daimlerstrasse"', h)
+        self.assertIn("Belege der Zuordnung", h)
+        self.assertIn('href="rosmarinstrasse.html#m-79-rosmarinstrasse-16"', h)
+        ein["status"] = "bestaetigt"
+        self.assertIn("von der Verwaltung als unzutreffend bestätigt", s.messung_hinweis(m, index))
+
+
 class Seite(unittest.TestCase):
     def test_reiter_und_abschnittsauswahl(self):
         z = zeile()

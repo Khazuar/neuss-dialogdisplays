@@ -22,6 +22,8 @@ dagegen nur ein exaktes Parsing der DSD-Dateien.
 | Welche Messungen gibt es, wo, mit welchem Tempolimit und wie verlässlich ist die Uhr? | `messungen.csv` |
 | V85, Mittel, Einhaltung je Messung oder Abschnitt, auch nach Tageszeit | `kennzahlen.csv` |
 | Wurde ein Gerät umgehängt (Brüche), wann beginnt ein Abschnitt? | `abschnitte.csv` |
+| Warum gibt es einen Bruch (Umhängen, Ferien, unerklärt)? | `brueche.csv` |
+| Wann hat ein Gerät tatsächlich wo gemessen (Einsätze, unsere Zuordnung)? | `einsaetze.csv`, Kennzahlen mit `bereich` = `einsatz` |
 | Kennzahlen je Kalendertag (Ferien, Feiertage, Wochentag) | `tage.csv` |
 | Eigene Zeitfenster (zum Beispiel 7–8 Uhr, nur Dienstage, nur Ferien), Verteilungen, jede andere Frage nach Stunde und Geschwindigkeit | `stunden/<standort_seite>.csv.gz` oder `stunden.csv.gz` |
 | War in einer Stunde nichts los oder wurde nichts aufgezeichnet? | `luecken.csv` zusammen mit den Stundenzeilen |
@@ -78,7 +80,7 @@ des Bruchs vor diesem Abschnitt, leer bei Abschnitt 1), `anmerkung` (`Beginn der
 
 ### `kennzahlen.csv` (je Messung und Abschnitt und Zeitraum)
 
-`messung_id`, `bereich` (`messung` = ganze Datei, `abschnitt`), `abschnitt_nr` (leer bei `messung`), `zeitraum`, `fahrzeuge`, `mittel_kmh`, `v85_kmh`,
+`messung_id` (bei `einsatz` die Einsatz-ID), `bereich` (`messung` = ganze Datei, `abschnitt`, `einsatz`), `abschnitt_nr` (leer bei `messung` und `einsatz`), `zeitraum`, `fahrzeuge`, `mittel_kmh`, `v85_kmh`,
 `v95_kmh`, `v99_kmh`, `einhaltung_prozent`, `qualifiziert_prozent` (Einhaltung nur mit Tempolimit), dazu die **Raten**
 `fahrzeuge_je_stunde`, `ueber_limit_plus_toleranz_je_stunde` (Fahrzeuge über Limit plus Messtoleranz je Stunde) und `zusatzrisiko_je_stunde`
 (Summe von max(0, (v / Tempolimit)⁴ − 1) je Stunde, Potenzmodell nach Nilsson). Die Raten zählen absolut statt anteilig und nur aus
@@ -113,6 +115,26 @@ rund 280 MB entpackt), die Dateien je Standortseite jeweils nur deren Messungen.
 | `regenklasse` | Regen in dieser Stunde an der zugeordneten Wetterstation (`wetterstation` in `messungen.csv`): 0 = trocken (diese Stunde, die drei davor und die danach unter 0,1 mm), 1 = 0,1 bis 0,5 mm, 2 = 0,5 bis 2 mm, 3 = ab 2 mm (Niederschlag der Stunde plus je die Hälfte der Nachbarstunden), 9 = Vor- oder Nachlauf eines Regens oder kein Wert; leer ohne Wetterdaten. Abgeleitet aus Daten des Deutschen Wetterdienstes (Quelle: Deutscher Wetterdienst, CC BY 4.0). |
 | `kmh` | gemessene Geschwindigkeit in ganzen km/h (Auflösung der Geräte) |
 | `anzahl` | Fahrzeuge dieser Geschwindigkeit in dieser Stunde |
+| `einsatz_id` | Einsatz, zu dem die Stunde nach unserer Zuordnung gehört (`einsaetze.csv`); leer an ausgenommenen Umhängtagen |
+
+### `einsaetze.csv` (eine Zeile je Einsatz)
+
+Ein **Einsatz** ist der Zeitraum, in dem ein Gerät tatsächlich an einem Standort in eine Fahrtrichtung gemessen hat (unsere Zuordnung,
+[docs/einsaetze.md](docs/einsaetze.md)). Meist ist er gleich der Messung. Hing ein Gerät nach dem Auslesen noch am alten Ort, gehört dieser
+Abschnitt der neuen Datei zum Einsatz des alten Standorts.
+
+`einsatz_id`, `messung_id` (Messung, auf der der Einsatz beruht: Standort, Fahrtrichtung, Tempolimit), `standort_seite`, `standort_name`, `geraet`,
+`fahrtrichtung`, `tempolimit_kmh`, `von`, `bis`, `status` (`identisch` = gleich der Messung, `abgeleitet` = aus mehreren Messungen
+zusammengesetzt, nicht bestätigt, `bestaetigt` = Grenzen von der Verwaltung bestätigt, `gekuerzt` = Teile der Messung gehören zu einem anderen
+Einsatz), `teile` (Messung#Abschnitt von..bis und Herkunft), `abgegeben` (Abschnitte, die zu einem anderen Einsatz gehören), `ausgenommene_tage`
+(Umhängtage).
+
+### `brueche.csv` (eine Zeile je Bruch)
+
+`messung_id`, `abschnitt_nr` (Abschnitt nach dem Bruch), `datum`, `wahrscheinlichkeit`, `zuordnung` (`umhaengen`, `ereignis`, `verwaltung`,
+`unerklaert`), `stufe` (`belegt`, `moeglich`, `plausibel`, `bestaetigt`, `offen`), `erklaerung`, dazu die Belege der besten Umhäng-Prüfung:
+`umhaengen_richtung`, `umhaengen_von_messung`, `score`, `p_nulltest`, `verhaeltnis_fahrzeuge`, `gegenprobe_score`, `naht_stetig`; `ereignisse` in der Nähe
+und `gleicher_tag` (Messungen mit einem Bruch ±1 Tag).
 
 ### `luecken.csv`
 

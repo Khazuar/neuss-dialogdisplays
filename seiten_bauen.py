@@ -1462,25 +1462,222 @@ def allgemein_teil(name, messungen, verz):
     return "".join(z)
 
 
+# ------------------------------------------------------------------ Einsaetze (einsaetze.py, docs/einsaetze.md)
+
+EINSATZ_STATUS = {
+    "identisch": "Einsatz = Messung",
+    "abgeleitet": "aus mehreren Messungen zusammengesetzt (abgeleitet, nicht bestätigt)",
+    "bestaetigt": "aus mehreren Messungen zusammengesetzt; Grenzen des Messzeitraums von der Verwaltung bestätigt",
+    "gekuerzt": "ohne Daten, die zu einem anderen Einsatz gehören (abgeleitet, nicht bestätigt)",
+}
+ZUORDNUNG_TEXT = {"umhaengen": "Umhängen", "ereignis": "Ereignis", "unerklaert": "unerklärt", "verwaltung": "Angabe der Verwaltung"}
+STUFE_TEXT = {"belegt": "belegt", "moeglich": "möglich", "plausibel": "plausibel", "bestaetigt": "von der Verwaltung bestätigt", "offen": "offen"}
+
+
+def einsaetze_laden(pfad):
+    """(einsaetze.json, Zellen je Einsatz) oder (None, {}) ohne Datei."""
+    if not pfad or not os.path.exists(pfad):
+        return None, {}
+    with open(pfad, encoding="utf-8") as fh:
+        ein = json.load(fh)
+    zellen = {}
+    zp = os.path.join(os.path.dirname(pfad), "einsaetze-zellen.json")
+    if os.path.exists(zp):
+        with open(zp, encoding="utf-8") as fh:
+            zellen = json.load(fh)
+    return ein, zellen
+
+
+def einsatz_eintrag(e, host, zellen):
+    """Eintrag wie messung_eintrag fuer einen Einsatz, der nicht mit seiner Messung zusammenfaellt (Zeile aus den Kennzahlen des Einsatzes)."""
+    k = e.get("kennzahlen") or {}
+    block = {key: v for key, v in (k.get("bereinigt") or {}).items() if key != "beschreibung"}
+    row = dict(block, standort=host["rel"], datei=host["row"]["datei"], tempolimit_kmh=e["limit"], bereinigt=k.get("bereinigt") or {},
+               teilzeitraeume=k.get("teilzeitraeume") or {})
+    return {"id": e["id"], "rel": host["rel"], "row": row, "meta_messung": host["meta_messung"], "metadaten": host["metadaten"], "uhr_abschnitte": [],
+            "zellen": zellen.get(e["id"]), "einsatz": e}
+
+
+def einsatz_label(m):
+    e = m["einsatz"]
+    return f'{iso_de(e["von"])} bis {iso_de(e["bis"])} · Einsatz: {EINSATZ_STATUS[e["status"]]}'
+
+
+def _messung_link(mid, index, text=None):
+    i = index.get(mid) or {}
+    ziel = f'{i["slug"]}.html#{mid}' if i.get("slug") else f'#{mid}'
+    return f'<a href="{e(ziel)}">{e(text or (i.get("name", "") + ", " + i.get("datei", "")))}</a>'
+
+
+def einsatz_teil(m, index):
+    """Reiter Messung fuer einen Einsatz: Herkunft der Abschnitte, Zeitraum, Belege der Zuordnung."""
+    ein = m["einsatz"]
+    host = index.get(ein["messung"]) or {}
+    badge = "ok" if ein["status"] == "bestaetigt" else "mid"
+    z = [f'<p><span class="badge {badge}">{e(EINSATZ_STATUS[ein["status"]])}</span></p>',
+         '<p>Ein <strong>Einsatz</strong> ist der Zeitraum, in dem das Gerät tatsächlich an diesem Standort in diese Fahrtrichtung gemessen hat. '
+         'Er kann Abschnitte anderer Messungen desselben Geräts enthalten, wenn das Gerät vor oder nach dem Auslesen noch am alten bzw. schon am '
+         'neuen Ort hing. Die Zuordnung beruht auf unseren Kriterien (Geschwindigkeitsverteilung, Tagesgang, Verkehrsmenge, Nulltest gegen andere '
+         'Standorte); sie ist nicht von der Verwaltung bestätigt, wenn das nicht ausdrücklich dasteht. Die Sicht der Verwaltung (die Messung, wie '
+         'geliefert) steht in der Auswahl oben unter „Messungen“.</p>']
+    fakten = [("Zeitraum des Einsatzes", f'{iso_de(ein["von"])} bis {iso_de(ein["bis"])}'),
+              ("Zugrunde liegende Messung", _messung_link(ein["messung"], index)),
+              ("Gerät", e(ein["geraet"]) or "–"), ("Fahrtrichtung", e(ein["fahrtrichtung"]) or "–")]
+    if ein["ausgenommene_tage"]:
+        fakten.append(("Ausgenommen (Umhängen, Transport, Montage)", e(", ".join(iso_de(d) for d in ein["ausgenommene_tage"]))))
+    z.append('<dl class="facts">' + "".join(f"<dt>{e(k)}</dt><dd>{v}</dd>" for k, v in fakten) + "</dl>")
+    zeilen = []
+    for i, t in enumerate(ein["teile"]):
+        if not t["von"]:
+            continue
+        her = {"eigen": "diese Messung",
+               "vorgaenger": "folgende Messung desselben Geräts: Das Gerät hing nach dem Auslesen noch hier",
+               "nachfolger": "vorige Messung desselben Geräts: Das Gerät hing schon hier, bevor sie ausgelesen wurde"}[t["herkunft"]]
+        zeilen.append(f'<tr><td class="num">{i + 1}</td><td>{iso_de(t["von"])} bis {iso_de(t["bis"])}</td><td>{_messung_link(t["messung"], index)}, '
+                      f'Abschnitt {t["abschnitt"]}</td><td>{e(her)}</td><td>{e(STUFE_TEXT.get(t["stufe"], "") if t["stufe"] else "–")}</td></tr>')
+    z.append('<h4>Abschnitte des Einsatzes</h4><div class="tablewrap"><table><thead><tr><th class="num">Nr.</th><th>Zeitraum</th><th>aus Messung</th>'
+             '<th>Herkunft</th><th>Zuordnung</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
+    belege = [t for t in ein["teile"] if t.get("beleg")]
+    if belege:
+        z.append('<h4>Belege der Zuordnung</h4><div class="tablewrap"><table><thead><tr><th>Abschnitt</th><th>Bruch</th><th class="num">Score</th>'
+                 '<th class="num">Nulltest p</th><th class="num">Fahrzeuge (Verhältnis)</th><th class="num">Gegenprobe</th><th>Naht</th></tr></thead><tbody>' +
+                 "".join(f'<tr><td>{_messung_link(t["messung"], index)}, Abschnitt {t["abschnitt"]}</td><td>{iso_de(t["beleg"]["bruchtag"])} '
+                         f'(Wahrscheinlichkeit {dez(100 * (t["beleg"]["bruch_wahrscheinlichkeit"] or 0), 0)}&nbsp;%)</td>'
+                         f'<td class="num">{dez(t["beleg"]["score"], 2)}</td><td class="num">{dez(t["beleg"]["p_nulltest"], 3)} '
+                         f'(von {t["beleg"]["nulltest_abschnitte"]})</td><td class="num">{dez(t["beleg"]["verhaeltnis_fahrzeuge"], 2)}</td>'
+                         f'<td class="num">{dez(t["beleg"]["gegenprobe_score"], 1)}</td>'
+                         f'<td>{"stetig" if (t["beleg"]["naht"] or {}).get("stetig") else "–" if not t["beleg"]["naht"] else "nicht stetig"}</td></tr>'
+                         for t in belege) + "</tbody></table></div>"
+                 '<p class="muted">Score: Abstand von Geschwindigkeitsverteilung und Tagesgang zum Abschnitt der anderen Messung, gemessen am Rauschen '
+                 '(unter 1,15: innerhalb des Rauschens). Nulltest: Anteil der Abschnitte anderer Standorte mit gleichem Tempolimit, die ihm mindestens so '
+                 'ähnlich sind. Gegenprobe: derselbe Abstand für den Abschnitt auf der anderen Seite des Bruchs (über 3: nicht ähnlich). Naht: die '
+                 f'sieben Tage vor und nach dem Auslesen passen zusammen. Verfahren: <a href="{REPO}/blob/main/docs/einsaetze.md">Einsätze</a>.</p>')
+    if host:
+        z.append(f'<p class="muted">Kennzahlen und Auswahl in den anderen Reitern gelten für den Einsatz. Die Angaben der Verwaltung und der Vergleich '
+                 f'mit ihr beziehen sich auf die Messung {_messung_link(ein["messung"], index, host.get("datei"))}.</p>')
+    return "".join(z)
+
+
+def messung_hinweis(m, index):
+    """Hinweis an einer Messung, deren Daten zum Teil zu einem anderen Einsatz gehoeren (abgeleitet oder bestaetigt)."""
+    ein = m.get("einsatz_info")
+    if not ein or not ein["abgegeben"]:
+        return ""
+    teile = []
+    for a in ein["abgegeben"]:
+        ziel = next((x for x in index.values() if x.get("einsatz") == a["an"]), None)
+        link = f'<a href="{e(ziel["slug"])}.html#{e(a["an"])}">{e(ziel["name"])}</a>' if ziel else e(a["an"])
+        teile.append(f'Abschnitt {a["abschnitt"]} gehört zum Einsatz {link}')
+    bestaetigt = ein["status"] == "bestaetigt"
+    return ('<p class="notice" role="note"><strong>Zeitraum der Verwaltung ' +
+            ('von der Verwaltung als unzutreffend bestätigt' if bestaetigt else 'umfasst Daten eines anderen Standorts (abgeleitet, nicht bestätigt)') +
+            ':</strong> ' + "; ".join(teile) + '. Die Kennzahlen dieser Ansicht folgen der Messung, wie geliefert; die Auswertung nach unserer '
+            'Zuordnung zeigt der Einsatz.</p>')
+
+
+def bruch_zuordnung(mid, brueche):
+    """Zuordnung der Brueche einer Messung (einsaetze.py) als kurze Liste."""
+    liste = [b for b in brueche if b["messung"] == mid]
+    if not liste:
+        return ""
+    z = []
+    for b in liste:
+        zu = b["zuordnung"]
+        text = f'{ZUORDNUNG_TEXT.get(zu["art"], zu["art"])}, {STUFE_TEXT.get(zu["stufe"], zu["stufe"])}' + (f': {zu["text"]}' if zu["text"] else "")
+        z.append(f'<li>Bruch am {iso_de(b["datum"])}: {e(text)}</li>')
+    return ('<h4>Erklärung der Brüche</h4><ul>' + "".join(z) + f'</ul><p class="muted">Alle Brüche mit Belegen: <a href="../brueche.html">Übersicht der '
+            'Brüche</a>.</p>')
+
+
+def brueche_seite(ein, index):
+    """Seite brueche.html: alle Brueche mit Zuordnung und Belegen, unerklaerte zuerst."""
+    reihen = {"unerklaert": 0, "umhaengen": 1, "ereignis": 2, "verwaltung": 3}
+    liste = sorted(ein.get("brueche", []), key=lambda b: (reihen.get(b["zuordnung"]["art"], 9), b["datum"]))
+    zeilen = []
+    for b in liste:
+        zu, u = b["zuordnung"], (b["umhaengen"] or [None])[0]
+        stufe_u = {"belegt": "belegt", "moeglich": "möglich", "zurueckgestellt": "zurückgestellt", "keine": "nicht ähnlich"}.get(u["stufe"], u["stufe"]) if u else ""
+        beleg = (f'{"Vorgänger" if u["richtung"] == "vorgaenger" else "Nachfolger"} ({stufe_u}): Score {dez(u["score"], 2)}, p {dez(u["p_nulltest"], 3)}, '
+                 f'Verhältnis {dez(u["verhaeltnis_fahrzeuge"], 2)}, Gegenprobe {dez(u["gegenprobe_score"], 1)}' if u else "–")
+        ev = "; ".join(x["name"] for x in b["ereignisse"]) or "–"
+        zeilen.append(f'<tr><td>{_messung_link(b["messung"], index, b["name"] + ", " + b["datei"])}</td><td>{iso_de(b["datum"])}</td>'
+                      f'<td>{e(ZUORDNUNG_TEXT.get(zu["art"], zu["art"]))}</td><td>{e(STUFE_TEXT.get(zu["stufe"], zu["stufe"]))}</td>'
+                      f'<td>{e(zu["text"]) or "–"}</td><td>{e(beleg)}</td><td>{e(ev)}</td><td class="num">{len(b["gleicher_tag"])}</td></tr>')
+    z = ein.get("zaehlung", {})
+    return f"""<!doctype html>
+<!-- SPDX-License-Identifier: MIT -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brüche in den Messreihen – Neuss Dialogdisplays</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="detail">
+<nav class="muted" aria-label="Navigation"><a href="index.html">← Übersicht aller Messungen</a></nav>
+<h1>Brüche in den Messreihen und ihre Erklärung</h1>
+<p class="notice" role="note"><strong>Hinweis:</strong> {e(HINWEIS)}</p>
+<p>Ein Bruch ist der Tag, an dem sich die Daten einer Messung dauerhaft ändern. Jeder Bruch wird, soweit möglich, erklärt: durch eine Angabe der
+Verwaltung, durch Umhängen (das Gerät hing nach dem Auslesen noch am alten Ort oder schon am neuen; belegt durch Verteilung, Tagesgang und
+Verkehrsmenge im Vergleich zur vorigen bzw. folgenden Messung desselben Geräts) oder durch ein Ereignis (erster Schultag nach den Ferien,
+länger dauernde Ereignisse). Unerklärte Brüche stehen oben; sie sind Fragen an die Verwaltung. Verfahren und Schwellen:
+<a href="{REPO}/blob/main/docs/einsaetze.md">Einsätze</a>. Daten: <a href="daten/brueche.csv">brueche.csv</a>. „Gleicher Tag“: Zahl der anderen Messungen mit einem Bruch ±1 Tag (Hinweis auf eine Umhängaktion).</p>
+<p>{len(liste)} Brüche: {e(", ".join(f"{ZUORDNUNG_TEXT.get(k.split('/')[0], k)} ({STUFE_TEXT.get(k.split('/')[1], k.split('/')[1])}) {v}" for k, v in sorted(z.items())))}.</p>
+<div class="tablewrap"><table><thead><tr><th>Messung</th><th>Bruch</th><th>Zuordnung</th><th>Stufe</th><th>Erklärung</th><th>Belege (Umhängen)</th>
+<th>Ereignisse in der Nähe</th><th class="num">gleicher Tag</th></tr></thead><tbody>{"".join(zeilen)}</tbody></table></div>
+<footer class="muted"><p><a href="index.html">Übersicht</a><a href="datenschutz.html">Datenschutz</a></p></footer>
+</main>
+</body>
+</html>
+"""
+
+
+def einsaetze_uebersicht(ein, auswertung, uebersicht, slug_von):
+    """Eine Zeile je Einsatz fuer die Ansicht „Einsätze“ der Übersicht (einsaetze-uebersicht.json)."""
+    zeilen = {messung_id(r["standort"], r["datei"]): r for r in auswertung["standorte"]}
+    out = []
+    for x in ein.get("einsaetze", []):
+        r = zeilen.get(x["messung"])
+        if not r:
+            continue
+        u = uebersicht.get(f'{r["standort"]}/{r["datei"]}') or {}
+        k = x.get("kennzahlen")
+        metriken = _metriken(k["bereinigt"], k.get("teilzeitraeume")) if k else _metriken(r.get("bereinigt") or r, r.get("teilzeitraeume"), r)
+        ziel = x["id"] if x["status"] != "identisch" else x["messung"]
+        tage = ((datetime.date.fromisoformat(x["bis"]) - datetime.date.fromisoformat(x["von"])).days + 1) if x["von"] and x["bis"] else None
+        out.append({"standort": r["standort"], "ort": u.get("standort"), "seite": f'standorte/{slug_von.get(r["standort"])}.html#{ziel}',
+                    "verwaltung": " / ".join(u.get("verwaltung") or []), "datei": r["datei"], "limit": x["limit"], "von": x["von"], "bis": x["bis"],
+                    "tage": tage, "status": x["status"], "teile": len([t for t in x["teile"] if t["von"]]), "verdeckt": bool(u.get("verdeckt")),
+                    "metriken": metriken})
+    return out
+
+
+
 def verwaltung_teil(m):
     verw = (m["meta_messung"] or {}).get("verwaltung", [])
+    vorspann = (f'<p class="muted">Angaben der Verwaltung zur Messung {e(m["row"]["datei"])}, auf der dieser Einsatz beruht.</p>'
+                if m.get("einsatz") else "")
     if not verw:
         return ("<p>Zu dieser Messung hat die Verwaltung (soweit auffindbar) keine Einschätzung veröffentlicht. Sie berichtet Ergebnisse je Messstelle "
                 "seit Februar 2024; für frühere Messungen gibt es nur den Namen des Ordners.</p>")
-    z = ['<p class="muted">Auszüge aus den Mitteilungen der Verwaltung an die Bezirksausschüsse. Die Sätze stehen im Wortlaut da (Trennfehler des '
+    z = [vorspann + '<p class="muted">Auszüge aus den Mitteilungen der Verwaltung an die Bezirksausschüsse. Die Sätze stehen im Wortlaut da (Trennfehler des '
          'PDF-Textes repariert); maßgeblich ist das verlinkte Dokument. Den Vergleich mit den Daten zeigt der Reiter „Vergleich“.</p>']
     for v in verw:
         z.append(verwaltung_karte(v, mit_abgleich=False))
     return "".join(z)
 
 
-def messung_teil(m, gleich):
+def messung_teil(m, gleich, index=None, brueche=None):
+    if m.get("einsatz"):
+        return einsatz_teil(m, index or {})
     row = m["row"]
     daten = m["zellen"]
-    z = [messung_fakten(row, m["meta_messung"])]
+    z = [messung_hinweis(m, index or {}), messung_fakten(row, m["meta_messung"])]
     z.append(uhr_abschnitt(row, m["uhr_abschnitte"], m["rel"]))
     z.append(ausfaelle(m["uhr_abschnitte"]))
     z.append(bruch_uebersicht(row, m["meta_messung"], gleich, m["rel"], m["id"]))
+    z.append(bruch_zuordnung(m["id"], brueche or []))
     z.append(messqualitaet(row, mit_filter=bool(daten and daten.get("z") and daten.get("r"))))
     for dd in (m["meta_messung"] or {}).get("doppelte_daten", []):
         z.append(f'<p class="notice" role="note">Diese Datei enthält dieselben Fahrzeugdaten wie {e(dd["datei"])} ({dez(dd["anteil_dieser_datei_prozent"], 0)}&nbsp;% '
@@ -1499,17 +1696,26 @@ def reiter_html(reiter_id, titel, teile, messungen):
         z.append(teile)
     else:
         for m in messungen:
+            titel = einsatz_label(m) if m.get("einsatz") else messung_label(m)
             z.append(f'<div class="messung-teil" data-messung="{e(m["id"])}">' +
-                     (f'<h3 class="messung-titel">{e(messung_label(m))}</h3>' if len(messungen) > 1 else "") + teile(m) + "</div>")
+                     (f'<h3 class="messung-titel">{e(titel)}</h3>' if len(messungen) > 1 else "") + teile(m) + "</div>")
     z.append("</section>")
     return "".join(z)
 
 
-def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None):
-    """Seite eines Standorts mit allen Messungen. messungen: [dict(id, rel, row, meta_messung, uhr_abschnitte, zellen, metadaten)].
+def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None, index=None, brueche=None):
+    """Seite eines Standorts mit allen Messungen. messungen: [dict(id, rel, row, meta_messung, uhr_abschnitte, zellen, metadaten)], dazu
+    optional "einsatz_eintrag" (Einsatz, der nicht mit der Messung zusammenfaellt; einsaetze.py) und "einsatz_info".
 
-    slug: Name der Seite (standortgruppen); ihm sind die MS-Gruppen in verhaltensgruppen.json zugeordnet."""
+    slug: Name der Seite (standortgruppen); ihm sind die MS-Gruppen in verhaltensgruppen.json zugeordnet. index: {Messung: Name, Datei, Seite} fuer
+    Verweise auf andere Seiten; brueche: Zuordnung der Brueche (einsaetze.json)."""
     gleich = gleich or {}
+    index = index or {}
+    alle = []  # Einsaetze vor ihren Messungen
+    for m in messungen:
+        if m.get("einsatz_eintrag"):
+            alle.append(m["einsatz_eintrag"])
+        alle.append(m)
     slug = slug or standort_slug(name)
     teile = [f"""<!doctype html>
 <!-- SPDX-License-Identifier: MIT -->
@@ -1528,25 +1734,42 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None):
 <h1>{e(name)}</h1>
 <p class="notice" role="note"><strong>Hinweis:</strong> {e(HINWEIS)}</p>
 """]
-    if len(messungen) > 1:
-        teile.append('<div class="controls messwahl"><div><label for="messwahl">Messung</label><select id="messwahl" data-messwahl>' +
-                     "".join(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>' for m in messungen) + "</select></div></div>"
-                     f'<p class="muted" data-ohne-skript>An diesem Standort gibt es {len(messungen)} Messungen; ohne JavaScript stehen sie in jedem Reiter untereinander.</p>')
+    if len(alle) > 1:
+        if any(m.get("einsatz_eintrag") for m in messungen):  # erst Einsatz oder Messung waehlen, dann das Element
+            opt_e, opt_m = [], []
+            for m in messungen:
+                if m.get("einsatz_eintrag"):
+                    opt_e.append(f'<option value="{e(m["einsatz_eintrag"]["id"])}">{e(einsatz_label(m["einsatz_eintrag"]))}</option>')
+                    opt_m.append(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>')
+                else:
+                    opt_e.append(f'<option value="{e(m["id"])}">{e("Einsatz = Messung: " + messung_label(m))}</option>')
+            optionen = ('<optgroup label="Einsätze (unsere Zuordnung)">' + "".join(opt_e) + '</optgroup>'
+                        '<optgroup label="Messungen (wie bei der Verwaltung geliefert)">' + "".join(opt_m) + '</optgroup>')
+            beschriftung = "Einsatz oder Messung"
+        else:
+            optionen = "".join(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>' for m in messungen)
+            beschriftung = "Messung"
+        teile.append(f'<div class="controls messwahl"><div><label for="messwahl">{beschriftung}</label><select id="messwahl" data-messwahl>' +
+                     optionen + "</select></div></div>"
+                     f'<p class="muted" data-ohne-skript>An diesem Standort gibt es {len(alle)} Einsätze und Messungen; ohne JavaScript stehen sie in jedem Reiter untereinander.</p>')
     teile.append('<nav class="reiter" role="tablist" aria-label="Themen" hidden>' + "".join(
         f'<button type="button" role="tab" id="t-{rid}" aria-controls="r-{rid}" data-ziel="{rid}"'
         + (' class="labor"' if rid in LABOR_REITER else "") + f'>{e(t)}</button>' for rid, t in REITER) + "</nav>")
-    teile.append(reiter_html("allgemein", "Allgemein", allgemein_teil(name, messungen, verz), messungen))
-    teile.append(reiter_html("verwaltung", "Verwaltung", verwaltung_teil, messungen))
-    teile.append(reiter_html("messung", "Messung", lambda m: messung_teil(m, gleich), messungen))
-    teile.append(reiter_html("analyse", "Analyse", lambda m: analyse_teil(m["row"], m["zellen"], m["id"], vg_namen(vg, m["rel"], m["row"]["datei"])),
-                             messungen))
-    teile.append(reiter_html("gruppen", "Verhaltensgruppen", lambda m: gruppen_teil(m, vg), messungen)
+    teile.append(reiter_html("allgemein", "Allgemein", allgemein_teil(name, messungen, verz), alle))
+    teile.append(reiter_html("verwaltung", "Verwaltung", verwaltung_teil, alle))
+    teile.append(reiter_html("messung", "Messung", lambda m: messung_teil(m, gleich, index, brueche), alle))
+    teile.append(reiter_html("analyse", "Analyse", lambda m: analyse_teil(m["row"], m["zellen"], m["id"],
+                                                                         None if m.get("einsatz") else vg_namen(vg, m["rel"], m["row"]["datei"])), alle))
+    teile.append(reiter_html("gruppen", "Verhaltensgruppen", lambda m: ("<p>Verhaltensgruppen gibt es je Messung (Auswahl oben unter „Messungen“).</p>"
+                                                                       if m.get("einsatz") else gruppen_teil(m, vg)), alle)
                  .replace("<h2>Verhaltensgruppen</h2>", "<h2>Verhaltensgruppen</h2>" + (gruppen_einleitung() if vg else ""), 1)
                  .replace("</section>", standort_gruppen(vg, slug, messungen) + "</section>"))
-    teile.append(reiter_html("vergleich", "Vergleich mit der Verwaltung", lambda m: vergleich_teil(m["row"], m["meta_messung"]), messungen))
-    teile.append(reiter_html("gefaehrdung", "Gefährdung", lambda m: je_abschnitt(m["row"], gefaehrdung_teil, m["id"], "gefaehrdung"), messungen))
-    teile.append(reiter_html("laerm", "Lärm", lambda m: je_abschnitt(m["row"], laerm_tabelle, m["id"], "laerm"), messungen))
-    mit_filter = any((m["zellen"] or {}).get("z") for m in messungen)
+    teile.append(reiter_html("vergleich", "Vergleich mit der Verwaltung", lambda m: (
+        "<p>Der Vergleich mit den Angaben der Verwaltung bezieht sich auf die Messung, wie geliefert (Auswahl oben unter „Messungen“).</p>"
+        if m.get("einsatz") else vergleich_teil(m["row"], m["meta_messung"])), alle))
+    teile.append(reiter_html("gefaehrdung", "Gefährdung", lambda m: je_abschnitt(m["row"], gefaehrdung_teil, m["id"], "gefaehrdung"), alle))
+    teile.append(reiter_html("laerm", "Lärm", lambda m: je_abschnitt(m["row"], laerm_tabelle, m["id"], "laerm"), alle))
+    mit_filter = any((m["zellen"] or {}).get("z") for m in alle)
     teile.append(f"""<footer class="muted">
 <p>Rohdaten und Skripte: <a href="{REPO}">GitHub</a> · <a href="{REPO}/blob/main/docs/metadaten.md">Herkunft der Metadaten</a></p>
 <p>{e(HINWEIS)}</p>
@@ -1644,8 +1867,13 @@ def abschnitte_uebersicht(auswertung, uebersicht):
     return out
 
 
-def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, verhalten=None):
-    """Eine Seite je Standort, Weiterleitungen von den alten Seiten je Ordner und uebersicht.json für die Übersichtsseite."""
+def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, verhalten=None, einsaetze=None):
+    """Eine Seite je Standort, Weiterleitungen von den alten Seiten je Ordner und uebersicht.json für die Übersichtsseite.
+
+    einsaetze: Pfad zu einsaetze.json (einsaetze.py); dann gibt es Einsaetze auf den Seiten, einsaetze-uebersicht.json und brueche.html."""
+    ein, ein_zellen = einsaetze_laden(einsaetze)
+    ein_von = {x["messung"]: x for x in (ein or {}).get("einsaetze", [])}
+    brueche = (ein or {}).get("brueche", [])
     verz = standorte.Verzeichnis.laden(adressen) if adressen and os.path.exists(adressen) else None
     vg = None
     if verhalten and os.path.exists(verhalten):
@@ -1665,8 +1893,15 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
     os.makedirs(os.path.join(ziel, "standorte"), exist_ok=True)
     seiten, uebersicht, neue = {}, {}, set()
     gruppen_ = standortgruppen(auswertung, metadaten)
+    slug_von, index = {}, {}
     for slug, name, rels in gruppen_:
         neue.add(slug)
+        for rel in rels:
+            slug_von[rel] = slug
+            for r in je_ordner[rel]:
+                mid = messung_id(rel, r["datei"])
+                x = ein_von.get(mid)
+                index[mid] = {"slug": slug, "name": name, "datei": r["datei"], "einsatz": x["id"] if x and x["status"] != "identisch" else None}
     for slug, name, rels in gruppen_:
         messungen = []
         for rel in rels:
@@ -1674,8 +1909,13 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
             zellen = lade_zellen(zellen_ordner, rel, rows)
             messungen += [messung_eintrag(rel, r, metadaten, uhr["dateien"], zellen) for r in rows]
         messungen.sort(key=_beginn)
+        for m in messungen:
+            x = ein_von.get(m["id"])
+            if x and x["status"] != "identisch":
+                m["einsatz_info"] = x
+                m["einsatz_eintrag"] = einsatz_eintrag(x, m, ein_zellen)
         with open(os.path.join(ziel, "standorte", slug + ".html"), "w", encoding="utf-8", newline="\n") as fh:
-            fh.write(standortseite(name, messungen, verz, gleich, vg, slug))
+            fh.write(standortseite(name, messungen, verz, gleich, vg, slug, index, brueche))
         seiten[slug] = rels
         for m in messungen:
             verw = [v.get("bezeichnung") for v in (m["meta_messung"] or {}).get("verwaltung", []) if v.get("bezeichnung")]
@@ -1692,6 +1932,11 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
         json.dump(uebersicht, fh, ensure_ascii=False, separators=(",", ":"))
     with open(os.path.join(ziel, "abschnitte.json"), "w", encoding="utf-8", newline="\n") as fh:
         json.dump(abschnitte_uebersicht(auswertung, uebersicht), fh, ensure_ascii=False, separators=(",", ":"))
+    if ein:  # Einsaetze fuer die Uebersicht und die Seite der Brueche
+        with open(os.path.join(ziel, "einsaetze-uebersicht.json"), "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(einsaetze_uebersicht(ein, auswertung, uebersicht, slug_von), fh, ensure_ascii=False, separators=(",", ":"))
+        with open(os.path.join(ziel, "brueche.html"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(brueche_seite(ein, {k: dict(v, slug="standorte/" + v["slug"]) for k, v in index.items()}))
     if vg:  # Übersicht der Stadtgruppen und ihre Kurzfassung für index.html
         with open(os.path.join(ziel, "verhaltensgruppen.html"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(verhaltensgruppen_seite(vg))
@@ -1710,13 +1955,15 @@ def main():
     ap.add_argument("--verhalten", help="Verhaltensgruppen (stadtgruppen.py; Standard: verhaltensgruppen.json neben der auswertung.json), optional")
     ap.add_argument("--ziel", required=True, help="Ausgabeordner (die Seiten landen in <ziel>/standorte/)")
     ap.add_argument("--zellen", help="Ordner mit den .zellen.json von dsd2csv.py (Standard: Ordner der auswertung.json)")
+    ap.add_argument("--einsaetze", help="einsaetze.json von einsaetze.py (Standard: neben der auswertung.json, falls vorhanden)")
     a = ap.parse_args()
     daten = []
     for pfad in (a.auswertung, a.metadaten, a.uhr):
         with open(pfad, encoding="utf-8") as fh:
             daten.append(json.load(fh))
     ordner = os.path.dirname(os.path.abspath(a.auswertung))
-    slugs = bauen(*daten, a.ziel, a.zellen or ordner, a.adressen, a.verhalten or os.path.join(ordner, "verhaltensgruppen.json"))
+    slugs = bauen(*daten, a.ziel, a.zellen or ordner, a.adressen, a.verhalten or os.path.join(ordner, "verhaltensgruppen.json"),
+                  a.einsaetze or os.path.join(ordner, "einsaetze.json"))
     print(f"{len(slugs)} Standortseiten in {os.path.join(a.ziel, 'standorte')}", file=sys.stderr)
 
 

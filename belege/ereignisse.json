@@ -1,0 +1,15 @@
+{
+ "beschreibung": "Ereignisse, die Brüche in den Messreihen erklären können (einsaetze.py, docs/einsaetze.md). art 'dauerhaft': länger dauernde Änderung (Baustelle, Sperrung, Umleitung) – Beginn oder Ende kann einen Bruch erklären; art 'kurz': Fest oder Veranstaltung von wenigen Tagen – wird nur als zeitliche Nähe genannt (ein Bruch braucht mindestens 7 Tage auf jeder Seite). ort: Standortseite (Slug) oder null für das ganze Stadtgebiet. Schulferien und Feiertage stehen in kalender.py. pruefung: 'belegt' (Quelle nennt die Tage), 'abgeleitet' (aus der Regel 'letztes Augustwochenende, Freitag bis Dienstag' und Hinweisen der Quelle erschlossen, zu prüfen).",
+ "ereignisse": [
+  {"name": "Neusser Bürger-Schützenfest 2022", "von": "2022-08-26", "bis": "2022-08-30", "art": "kurz", "ort": null, "pruefung": "abgeleitet",
+   "quelle": "https://neuss.de/english/culture/festivals/marksmanship-festival"},
+  {"name": "Neusser Bürger-Schützenfest 2023", "von": "2023-08-25", "bis": "2023-08-29", "art": "kurz", "ort": null, "pruefung": "abgeleitet",
+   "quelle": "https://neuss.de/fileadmin/Pressedienst/pdf/20230815-0_01.pdf"},
+  {"name": "Neusser Bürger-Schützenfest 2024", "von": "2024-08-23", "bis": "2024-08-27", "art": "kurz", "ort": null, "pruefung": "abgeleitet",
+   "quelle": "https://www.neuss.de/fileadmin/Pressedienst/pdf/20240726-0.pdf"},
+  {"name": "Neusser Bürger-Schützenfest 2025", "von": "2025-08-22", "bis": "2025-08-26", "art": "kurz", "ort": null, "pruefung": "belegt",
+   "quelle": "https://www.festivalsindeutschland.de/festival/neusser-buerger-schuetzenfest/2025"},
+  {"name": "Neusser Bürger-Schützenfest 2026 (200. Fest)", "von": "2026-08-28", "bis": "2026-09-01", "art": "kurz", "ort": null, "pruefung": "belegt",
+   "quelle": "https://www.regioactive.de/fest/neusser-buergerschuetzenfest-2026-neuss-2026-08-28-tVxV3MtQ6j"}
+ ]
+}

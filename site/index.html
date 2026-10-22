@@ -43,6 +43,7 @@
     <div>
       <label for="ansicht">Ansicht</label>
       <select id="ansicht">
+        <option value="einsaetze">Einsätze (unsere Zuordnung)</option>
         <option value="messungen">Messungen (wie bei der Verwaltung)</option>
         <option value="abschnitte">Abschnitte (Messungen an Brüchen geteilt)</option>
       </select>
@@ -93,6 +94,7 @@
     <li><a href="daten/stunden.csv.gz">Bereinigte Daten je Tag, Stunde und km/h (CSV, gzip, rund 12 MB)</a> – dazu
       <a href="daten/kennzahlen.csv">Kennzahlen je Messung und Abschnitt</a>, <a href="daten/tage.csv">je Tag</a> und das
       <a href="DATEN.md">Datenwörterbuch</a> (Ortszeit, Rauschboden abgezogen, nach Abschnitten)</li>
+    <li><a href="brueche.html">Brüche in den Messreihen und ihre Erklärung</a> (Umhängen, Ereignisse, unerklärte Brüche)</li>
     <li><a href="llms.txt">llms.txt</a>: Dateiübersicht für KI-Assistenten und Skripte</li>
   </ul>
   <p class="muted">
@@ -190,11 +192,18 @@ const COLUMNS_ABSCHNITTE = [
   ...KENNZAHLEN,
   { key: "datei", label: "Datei", extra: true },
 ];
-let ansicht = "messungen";
+let ansicht = "einsaetze";
 let dataA = [];
+let dataE = [];
+// Einsatz: Zeitraum, in dem das Geraet tatsaechlich an einem Standort gemessen hat (einsaetze.py, docs/einsaetze.md)
+const EINSATZ_STATUS = {
+  abgeleitet: "zusammengesetzt aus mehreren Messungen (abgeleitet, nicht bestätigt)",
+  bestaetigt: "zusammengesetzt aus mehreren Messungen (Grenzen von der Verwaltung bestätigt)",
+  gekuerzt: "ohne Daten eines anderen Standorts (abgeleitet, nicht bestätigt)",
+};
 let alleSpalten = false;
-const spalten = () => (ansicht === "abschnitte" ? COLUMNS_ABSCHNITTE : COLUMNS_MESSUNGEN).filter((c) => alleSpalten || !c.extra);
-const zeilen = () => (ansicht === "abschnitte" ? dataA : data);
+const spalten = () => (ansicht === "messungen" ? COLUMNS_MESSUNGEN : COLUMNS_ABSCHNITTE).filter((c) => alleSpalten || !c.extra);
+const zeilen = () => (ansicht === "abschnitte" ? dataA : ansicht === "einsaetze" ? dataE : data);
 
 // Zeitraeume der Auswertung: Praefix der Spalten in summary.csv
 const ZEITRAEUME = [
@@ -282,7 +291,7 @@ function zeile(r, idx) {
 
 function waehleZeitraum(z) {
   zeitraum = z;
-  for (const r of data.concat(dataA)) Object.assign(r, r.metriken[z.id]);
+  for (const r of data.concat(dataA, dataE)) Object.assign(r, r.metriken[z.id]);
   document.getElementById("zeitraum-info").textContent = z.info;
 }
 
@@ -346,6 +355,7 @@ function cell(tr, col, row) {
       td.append(s);
     }
     const zusatz = [row.verwaltung, ansicht === "abschnitte" ? "Abschnitt " + row.nr + " von " + row.anzahl : "",
+      ansicht === "einsaetze" && EINSATZ_STATUS[row.status] ? "Einsatz " + EINSATZ_STATUS[row.status] : "",
       row.verdeckt ? "verdeckte Messung (Display ohne Anzeige)" : ""].filter(Boolean).join(" · ");
     if (zusatz) unterzeile(td, zusatz);
     if (row.kaputt) {
@@ -382,7 +392,7 @@ function render() {
   const q = document.getElementById("filter").value.trim().toLowerCase();
   const alle = zeilen();
   for (const r of alle) ableiten(r);
-  const rows = alle.filter((r) => !q || (r.standort + " " + r.datei + " " + (r.verwaltung || "") + " " + (r.ort || "") + (r.verdeckt ? " verdeckt" : " offen")).toLowerCase().includes(q));
+  const rows = alle.filter((r) => !q || (r.standort + " " + r.datei + " " + (r.verwaltung || "") + " " + (r.ort || "") + (r.verdeckt ? " verdeckt" : " offen") + (r.status && r.status !== "identisch" ? " zusammengesetzt " + r.status : "")).toLowerCase().includes(q));
   rows.sort((a, b) => {
     if (!!a.kaputt !== !!b.kaputt) return a.kaputt ? 1 : -1;  // unbrauchbare Daten immer ans Ende, in jeder Sortierung
     const x = a[sort.key], y = b[sort.key];
@@ -400,7 +410,7 @@ function render() {
     body.append(tr);
   }
   const kaputt = rows.filter((r) => r.kaputt).length;
-  document.getElementById("status").textContent = rows.length + " von " + alle.length + (ansicht === "abschnitte" ? " Abschnitten" : " Messungen") +
+  document.getElementById("status").textContent = rows.length + " von " + alle.length + (ansicht === "abschnitte" ? " Abschnitten" : ansicht === "einsaetze" ? " Einsätzen" : " Messungen") +
     (kaputt ? ", davon " + kaputt + " mit unbrauchbaren Daten (grau am Ende)" : "");
   for (const th of document.querySelectorAll("#head th")) {
     th.setAttribute("aria-sort", th.dataset.key === sort.key ? (sort.dir > 0 ? "ascending" : "descending") : "none");
@@ -432,7 +442,8 @@ function kopf() {
 async function start() {
   const status = document.getElementById("status");
   try {
-    const [res, ueb, abs] = await Promise.all([fetch("summary.csv"), fetch("uebersicht.json").catch(() => null), fetch("abschnitte.json").catch(() => null)]);
+    const [res, ueb, abs, eu] = await Promise.all([fetch("summary.csv"), fetch("uebersicht.json").catch(() => null), fetch("abschnitte.json").catch(() => null),
+      fetch("einsaetze-uebersicht.json").catch(() => null)]);
     if (!res.ok) throw new Error("HTTP " + res.status);
     const [header, ...rows] = parseCSV(await res.text());
     const idx = Object.fromEntries(header.map((h, i) => [h, i]));
@@ -455,12 +466,26 @@ async function start() {
       nr: a.nr, anzahl: a.anzahl, limit: a.limit, verdeckt: !!a.verdeckt, start: a.von, ende: a.bis, tage: a.tage, bruch: a.bruch, hinweis: a.hinweis,
       metriken: a.metriken, ...a.metriken[zeitraum.id],
     }));
+    // Ansicht „Einsätze“: eine Zeile je Einsatz; ohne die Datei gilt die Ansicht „Messungen“
+    let einsaetze = [];
+    if (eu && eu.ok) { try { einsaetze = await eu.json(); } catch (e) { einsaetze = []; } }
+    dataE = einsaetze.map((a) => ({
+      standort: bereinige(a.standort), ort: a.ort, seite: a.seite, datei: a.standort + "/" + a.datei, verwaltung: a.verwaltung,
+      limit: a.limit, verdeckt: !!a.verdeckt, start: a.von, ende: a.bis, tage: a.tage, status: a.status, hinweis: "",
+      metriken: a.metriken, ...a.metriken[zeitraum.id],
+    }));
     const ansichtWahl = document.getElementById("ansicht");
     const ansichtInfo = document.getElementById("ansicht-info");
-    if (!dataA.length) ansichtWahl.closest("div").hidden = true;
+    if (!dataE.length) { ansicht = "messungen"; ansichtWahl.querySelector('option[value="einsaetze"]').remove(); }
+    if (!dataA.length && !dataE.length) ansichtWahl.closest("div").hidden = true;
+    ansichtWahl.value = ansicht;
+    const einsatzInfo = "Einsätze: der Zeitraum, in dem ein Gerät tatsächlich an einem Standort gemessen hat, nach unserer Zuordnung. Hing ein Gerät nach dem " +
+      "Auslesen noch am alten Ort (belegt durch Verteilung, Tagesgang und Verkehrsmenge), gehört dieser Teil zum alten Standort; die Tage des Umhängens fallen weg. " +
+      "Meist ist ein Einsatz gleich der Messung der Verwaltung. Zusammengesetzte Einsätze sind gekennzeichnet (Filterwort „zusammengesetzt“).";
+    ansichtInfo.textContent = ansicht === "einsaetze" ? einsatzInfo : "";
     ansichtWahl.addEventListener("change", () => {
       ansicht = ansichtWahl.value;
-      ansichtInfo.textContent = ansicht === "abschnitte"
+      ansichtInfo.textContent = ansicht === "einsaetze" ? einsatzInfo : ansicht === "abschnitte"
         ? "Abschnitte: Eine Messreihe ist an erkannten Brüchen geteilt (Gerät umgehängt, Baustelle, andere Verkehrslage), jeder Abschnitt einzeln ausgewertet. " +
           "Messungen ohne erkannten Bruch stehen als ein Abschnitt da. „Bruch davor“ ist die Wahrscheinlichkeit des Bruchs vor dem Abschnitt. " +
           "Mit der Verwaltung vergleichbar bleibt die Ansicht „Messungen“."

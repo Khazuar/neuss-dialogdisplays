@@ -14,6 +14,7 @@ Für Fragen nach Datum, Tageszeit oder Stunde die bereinigten Dateien unter /dat
 ## Bereinigte Daten (CSV)
 
 - [messungen.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/messungen.csv): eine Zeile je Messung (DSD-Datei) mit Standort, Tempolimit, Messzeitraum, Uhr-Bewertung, Abzügen
+- [einsaetze.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/einsaetze.csv): Einsätze (wann ein Gerät tatsächlich wo gemessen hat, unsere Zuordnung) und [brueche.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/brueche.csv): Brüche mit Erklärung
 - [kennzahlen.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/kennzahlen.csv): Fahrzeuge, Mittel, V85, V95, V99, Einhaltung und Raten (Fahrzeuge, zu schnelle Fahrzeuge und Zusatzrisiko je Stunde) je Messung/Abschnitt und Zeitraum (alle, Nacht, Vormittag, Nachmittag, Abend, Schulweg)
 - [abschnitte.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/abschnitte.csv): Abschnitte der Messreihen mit Wahrscheinlichkeit des Bruchs davor
 - [tage.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/tage.csv): Kennzahlen je Kalendertag mit Wochentag, Ferien, Feiertag

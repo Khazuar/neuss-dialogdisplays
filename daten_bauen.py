@@ -13,6 +13,7 @@ Die Dateien enthalten nur, was dsd2csv.py ohnehin berechnet: Ortszeit, nur nutzb
 Abschnitte nach den Bruechen. Reihenfolge und Format sind deterministisch (gleiche Eingabe, gleiche Bytes).
 """
 import argparse
+import collections
 import csv
 import datetime as dt
 import gzip
@@ -73,18 +74,65 @@ def tage_flags(datum, cache={}):
     return cache[datum]
 
 
-def stunden_zeilen(mid, agg, stunde_zeitraum):
-    """Zeilen der Stundendatei einer Messung (aggregat.SPALTEN_STUNDEN)."""
+def stunden_zeilen(mid, agg, stunde_zeitraum, einsatz=None):
+    """Zeilen der Stundendatei einer Messung (aggregat.SPALTEN_STUNDEN). einsatz: Funktion Datum (ISO) -> Einsatz-ID oder "" (Umhaengtag)."""
     for datum, stunde, versatz, abschnitt, voll, klasse, flach in agg["stunden"]:
         wt, fe, ft = tage_flags(datum)
         zr = stunde_zeitraum[stunde]
         klasse = "" if klasse is None else klasse
+        eid = einsatz(datum) if einsatz else ""
         for i in range(0, len(flach), 2):
-            yield [mid, abschnitt, datum, wt, stunde, versatz, zr, fe, ft, voll, klasse, flach[i], flach[i + 1]]
+            yield [mid, abschnitt, datum, wt, stunde, versatz, zr, fe, ft, voll, klasse, flach[i], flach[i + 1], eid]
 
 
-def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
-    """Schreibt alle Dateien nach <ziel>. Gibt eine Kurzfassung {Datei: Zeilen} zurueck."""
+def einsatz_je_datum(einsaetze):
+    """{Messung: Funktion Datum (ISO) -> Einsatz-ID} aus einsaetze.json; Tage ausserhalb aller Teile (Umhaengtage) ergeben ""."""
+    teile = collections.defaultdict(list)
+    for e in (einsaetze or {}).get("einsaetze", []):
+        for t in e["teile"]:
+            if t["von"]:
+                teile[t["messung"]].append((t["von"], t["bis"], e["id"]))
+    return {mid: (lambda d, liste=liste: next((eid for von, bis, eid in liste if von <= d <= bis), "")) for mid, liste in teile.items()}
+
+
+def einsaetze_schreiben(ziel, einsaetze, auswertung, w_k):
+    """einsaetze.csv und brueche.csv (einsaetze.py, docs/einsaetze.md); Kennzahlen der Einsaetze in kennzahlen.csv (bereich = einsatz)."""
+    zeilen = {seiten_bauen.messung_id(r["standort"], r["datei"]): r for r in auswertung["standorte"]}
+    n_e = n_b = n_k = 0
+    fh_e, w_e = _schreiber(os.path.join(ziel, "einsaetze.csv"), [
+        "einsatz_id", "messung_id", "standort_seite", "standort_name", "geraet", "fahrtrichtung", "tempolimit_kmh", "von", "bis", "status", "teile",
+        "abgegeben", "ausgenommene_tage"])
+    for e in einsaetze.get("einsaetze", []):
+        teile = " | ".join(f'{t["messung"]}#{t["abschnitt"]} {t["von"]}..{t["bis"]} ({t["herkunft"]})' for t in e["teile"] if t["von"])
+        w_e.writerow([e["id"], e["messung"], _zelle(e["seite"]), e["name"], e["geraet"], e["fahrtrichtung"], _zelle(e["limit"]), _zelle(e["von"]),
+                      _zelle(e["bis"]), e["status"], teile, " | ".join(f'#{a["abschnitt"]} -> {a["an"]}' for a in e["abgegeben"]),
+                      " ".join(e["ausgenommene_tage"])])
+        n_e += 1
+        k = e.get("kennzahlen")
+        if not k:  # identisch mit der Messung: deren Kennzahlen
+            r = zeilen.get(e["messung"]) or {}
+            k = {"bereinigt": r.get("bereinigt") or {}, "teilzeitraeume": r.get("teilzeitraeume") or {}}
+        for zr in ZEITRAEUME:
+            w_k.writerow([e["id"], "einsatz", "", zr] + kennzahlen(k["bereinigt"] if zr == "alle" else (k["teilzeitraeume"] or {}).get(zr)))
+            n_k += 1
+    fh_e.close()
+    fh_b, w_b = _schreiber(os.path.join(ziel, "brueche.csv"), [
+        "messung_id", "abschnitt_nr", "datum", "wahrscheinlichkeit", "zuordnung", "stufe", "erklaerung", "umhaengen_richtung", "umhaengen_von_messung",
+        "score", "p_nulltest", "verhaeltnis_fahrzeuge", "gegenprobe_score", "naht_stetig", "ereignisse", "gleicher_tag"])
+    for b in einsaetze.get("brueche", []):
+        z, u = b["zuordnung"], (b["umhaengen"] or [{}])[0]
+        w_b.writerow([b["messung"], b["nr"], b["datum"], _zelle(b["wahrscheinlichkeit"]), z["art"], z["stufe"], z["text"], u.get("richtung", ""),
+                      u.get("von_messung", ""), _zelle(u.get("score")), _zelle(u.get("p_nulltest")), _zelle(u.get("verhaeltnis_fahrzeuge")),
+                      _zelle(u.get("gegenprobe_score")), "" if not u.get("naht") else int(u["naht"]["stetig"]),
+                      " | ".join(x["name"] for x in b["ereignisse"]), " ".join(b["gleicher_tag"])])
+        n_b += 1
+    fh_b.close()
+    return n_e, n_b, n_k
+
+
+def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel, einsaetze=None):
+    """Schreibt alle Dateien nach <ziel>. Gibt eine Kurzfassung {Datei: Zeilen} zurueck. einsaetze: einsaetze.json (einsaetze.py) oder None."""
+    einsatz_von = einsatz_je_datum(einsaetze)
     os.makedirs(os.path.join(ziel, "stunden"), exist_ok=True)
     stunde_zeitraum = aggregat.zeitraum_je_stunde(gruppen.ZEITSCHEIBEN)
     zaehler = {}
@@ -159,11 +207,14 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel):
                     for lk in agg["luecken"]:
                         w_l.writerow([mid] + lk)
                         n["luecken"] += 1
-                    for z in stunden_zeilen(mid, agg, stunde_zeitraum):
+                    for z in stunden_zeilen(mid, agg, stunde_zeitraum, einsatz_von.get(mid)):
                         w_s.writerow(z)
                         w_g.writerow(z)
                         n["stunden"] += 1
         fh_s.close()
+    if einsaetze:
+        n["einsaetze"], n["brueche"], k = einsaetze_schreiben(ziel, einsaetze, auswertung, w_k)
+        n["kennzahlen"] += k
     for fh in (fh_m, fh_a, fh_k, fh_t, fh_l):
         fh.close()
     gesamt.close()
@@ -177,12 +228,18 @@ def main():
     ap.add_argument("--metadaten", default=os.path.join(HIER, "belege", "metadaten.json"))
     ap.add_argument("--uhr", default=os.path.join(HIER, "belege", "uhr-bewertung.json"))
     ap.add_argument("--ziel", required=True, help="Ausgabeordner (zum Beispiel _site/daten)")
+    ap.add_argument("--einsaetze", help="einsaetze.json (einsaetze.py); Standard: neben der auswertung.json, falls vorhanden")
     a = ap.parse_args()
     daten = []
     for pfad in (a.auswertung, a.metadaten, a.uhr):
         with open(pfad, encoding="utf-8") as fh:
             daten.append(json.load(fh))
-    n = bauen(daten[0], daten[1], daten[2], a.aggregat, a.ziel)
+    pfad_e = a.einsaetze or os.path.join(os.path.dirname(os.path.abspath(a.auswertung)), "einsaetze.json")
+    einsaetze = None
+    if os.path.exists(pfad_e):
+        with open(pfad_e, encoding="utf-8") as fh:
+            einsaetze = json.load(fh)
+    n = bauen(daten[0], daten[1], daten[2], a.aggregat, a.ziel, einsaetze)
     print("Daten in %s: %s" % (a.ziel, ", ".join("%s %d" % (k, v) for k, v in n.items())), file=sys.stderr)
 
 

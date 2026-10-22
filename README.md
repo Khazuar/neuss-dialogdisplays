@@ -44,6 +44,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/abschnitte.md` – Brüche in einer Messreihe (Geräte umgehängt?) und die getrennte Auswertung der Abschnitte
 - `docs/verhalten.md` – Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter, Ferien und Verkehrsmenge) mit Placebo-Prüfung,
   drei Ebenen (Abschnitt, Standort, Stadt), Namen, Deutungen und Stadt-Vorlagen; Forschungsstand
+- `docs/einsaetze.md` – Einsätze: Brüche erklären (Umhängen, Ereignisse) und Messungen nach dem tatsächlichen Einsatzort abgrenzen
 - `docs/verdeckt.md` – Villestraße: offene gegen verdeckte Messung (Display ohne Anzeige), Befund und Grenzen
 - `docs/raten.md` – Raten statt Anteile: warum zu schnelle Fahrzeuge je Tag gezählt werden und was daraus folgt
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
@@ -54,6 +55,7 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `aggregat.py` – fasst die Fahrzeuge einer Datei je Tag, Stunde und km/h zusammen (Ortszeit, nutzbare Zeit, Rauschboden abgezogen, Abschnitte); `daten_bauen.py` schreibt daraus und aus der Auswertung die CSV-Dateien unter `daten/` (`messungen.csv`, `abschnitte.csv`, `kennzahlen.csv`, `tage.csv`, `luecken.csv`, `stunden/<standort>.csv.gz`, `stunden.csv.gz`)
 - `kalender.py` – Schulferien und Feiertage in NRW
 - `verhalten.py` – Verhaltensgruppen je Abschnitt (Modell, Placebo, Stadt-Vorlagen; braucht numpy, rechnet jeden Abschnitt einzeln mit Zwischenspeicher);
+  `einsaetze.py` – ordnet die Brüche zu und bildet die Einsätze (`einsaetze.json`, `brueche.html`);
   `stadtgruppen.py` – fasst sie zu Gruppen je Standort (MS) und der Stadt (S) zusammen, vergibt Namen aus dem Register und schreibt `verhaltensgruppen.json`
 - `tools/verhalten/` – Forschungsskripte der Verhaltensanalyse (brauchen numpy, nicht Teil der Auswertung)
 - `bruch.py` – erkennt Brüche in der Messreihe einer Datei (Verhalten des Verkehrs ändert sich dauerhaft) und zerlegt sie in Abschnitte mit Begründung und Wahrscheinlichkeit; `dsd2csv.py` wertet jeden Abschnitt einzeln aus (YAML-Block `abschnitte`)
