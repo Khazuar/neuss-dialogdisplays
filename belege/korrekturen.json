@@ -54,5 +54,607 @@
     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=216549&type=do"
    }
   }
+ },
+ "zeitraum": {
+  "02_2024_Bauerbahn, ggü. Nr. 3/20 km.dsd": {
+   "zeitraeume": [
+    [
+     "2024-04-25",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Bauerbahn"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/313/2024",
+     "gremium": "Bezirksausschuss I - Innenstadt",
+     "sitzung": "2024-12-04",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217893&type=do"
+    }
+   ]
+  },
+  "03_2024_Hauptstraße 13a/DSD17385 Tempo30_3.dsd": {
+   "zeitraeume": [
+    [
+     "2024-04-22",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Hauptstraße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/309/2024",
+     "gremium": "Bezirksausschuss IV - Holzheim",
+     "sitzung": "2024-11-05",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=215168&type=do"
+    }
+   ]
+  },
+  "04_2024_Cyriakusstraße 86-88/DSD14180 Tempo30_3.dsd": {
+   "zeitraeume": [
+    [
+     "2024-04-22",
+     "2024-07-04"
+    ]
+   ],
+   "messstellen": [
+    "Cyriakusstraße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/311/2024",
+     "gremium": "Bezirksausschuss VI - Gnadental, Grimlinghausen, Erfttal",
+     "sitzung": "2024-11-28",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217330&type=do"
+    }
+   ]
+  },
+  "05_Quinheimer Straße/_5.dsd": {
+   "zeitraeume": [
+    [
+     "2024-03-19",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Quinheimer Straße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/311/2024",
+     "gremium": "Bezirksausschuss VI - Gnadental, Grimlinghausen, Erfttal",
+     "sitzung": "2024-11-28",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217330&type=do"
+    }
+   ]
+  },
+  "07_Lupinen_Nierenhofstraße/_4.dsd": {
+   "zeitraeume": [
+    [
+     "2023-12-18",
+     "2024-03-19"
+    ]
+   ],
+   "messstellen": [
+    "Lupinenstraße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/288/2024",
+     "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+     "sitzung": "2024-06-27",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209702&type=do"
+    }
+   ]
+  },
+  "103_Rheinfährstraße/DSD16734 Tempo50_2.dsd": {
+   "zeitraeume": [
+    [
+     "2025-07-06",
+     "2025-10-26"
+    ]
+   ],
+   "messstellen": [
+    "Rheinfährstraße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0412/2025",
+     "gremium": "Bezirksausschuss VII - Uedesheim",
+     "sitzung": "2026-03-04",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=239378&type=do"
+    }
+   ]
+  },
+  "105_An der Obererft/_19.dsd": {
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "messstellen": [
+    "An der Obererft (Tempo 30)"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0459/2026",
+     "gremium": "Bezirksausschuss I - Innenstadt",
+     "sitzung": "2026-06-17",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245735&type=do"
+    }
+   ]
+  },
+  "106_Düsseldorfer Straße/DSD17400 Tempo50_2.dsd": {
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "messstellen": [
+    "Düsseldorfer Straße, (beidseitige Messung, Tempo 50)"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0460/2026",
+     "gremium": "Bezirksausschuss II - Nordstadt",
+     "sitzung": "2026-06-24",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245759&type=do"
+    }
+   ]
+  },
+  "108_Deichstraße/DSD16734 Tempo30_7.dsd": {
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "messstellen": [
+    "Deichstraße (Tempo 30)"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0466/2026",
+     "gremium": "Bezirksausschuss VII - Uedesheim",
+     "sitzung": "2026-06-25",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=246544&type=do"
+    }
+   ]
+  },
+  "109_Ruhrstraße/_10.dsd": {
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "messstellen": [
+    "Ruhrstraße (Tempo 30)"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0464/2026",
+     "gremium": "Bezirksausschuss V - Norf",
+     "sitzung": "2026-07-02",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=246992&type=do"
+    }
+   ]
+  },
+  "10_Holzbüttgener Straße/_6.dsd": {
+   "zeitraeume": [
+    [
+     "2023-09-13",
+     "2023-11-16"
+    ]
+   ],
+   "messstellen": [
+    "Holzbüttgener Straße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/255/2024",
+     "gremium": "Bezirksausschuss II - Nordstadt",
+     "sitzung": "2024-03-07",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=203194&type=do"
+    }
+   ]
+  },
+  "110_Rosellener Kirchstraße/DSD17350 Tempo30_6.dsd": {
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "messstellen": [
+    "Rosellener Kirchstraße (Tempo 30)"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0462/2026",
+     "gremium": "Bezirksausschuss VIII - Rosellen",
+     "sitzung": "2026-07-07",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=246955&type=do"
+    }
+   ]
+  },
+  "112_Liedberger Straße/DSD14178 Tempo30_5.dsd": {
+   "zeitraeume": [
+    [
+     "2025-10-26",
+     "2026-03-29"
+    ]
+   ],
+   "messstellen": [
+    "Liedberger Straße (Tempo 30)"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0463/2026",
+     "gremium": "Bezirksausschuss IV - Holzheim",
+     "sitzung": "2026-06-16",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245761&type=do"
+    }
+   ]
+  },
+  "13_2024_Neukirchener Straße/DSD17350 Tempo30_2.dsd": {
+   "zeitraeume": [
+    [
+     "2024-09-16",
+     "2024-12-04"
+    ]
+   ],
+   "messstellen": [
+    "Neukirchener Straße, FR Allerheiligen"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/341/2025",
+     "gremium": "Bezirksausschuss VIII - Rosellen",
+     "sitzung": "2025-02-05",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=221446&type=do"
+    }
+   ]
+  },
+  "17_Nordkanalallee/DSD17400 Tempo30_3.dsd": {
+   "zeitraeume": [
+    [
+     "2024-04-23",
+     "2024-07-23"
+    ]
+   ],
+   "messstellen": [
+    "Nordkanalallee"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/313/2024",
+     "gremium": "Bezirksausschuss I - Innenstadt",
+     "sitzung": "2024-12-04",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217893&type=do"
+    }
+   ]
+  },
+  "20_Nievenheimer Straße/0000000000000000_12.dsd": {
+   "zeitraeume": [
+    [
+     "2023-09-11",
+     "2023-10-26"
+    ]
+   ],
+   "messstellen": [
+    "Nievenheimer Straße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/251/2024",
+     "gremium": "Bezirksausschuss V - Norf",
+     "sitzung": "2024-02-27",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=202481&type=do"
+    }
+   ]
+  },
+  "23-2023_Im_Tal/DSD16734 Tempo30_3.dsd": {
+   "zeitraeume": [
+    [
+     "2024-05-06",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Im Tal"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/313/2024",
+     "gremium": "Bezirksausschuss I - Innenstadt",
+     "sitzung": "2024-12-04",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217893&type=do"
+    }
+   ]
+  },
+  "36_Lanzerather Buschweg/DSD 14178 325er.dsd": {
+   "zeitraeume": [
+    [
+     "2024-04-22",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Lanzerather Buschweg"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/309/2024",
+     "gremium": "Bezirksausschuss IV - Holzheim",
+     "sitzung": "2024-11-05",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=215168&type=do"
+    }
+   ]
+  },
+  "46_Matthiasstraße/_13.dsd": {
+   "zeitraeume": [
+    [
+     "2023-11-16",
+     "2024-03-19"
+    ]
+   ],
+   "messstellen": [
+    "Matthiasstraße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/280/2024",
+     "gremium": "Bezirksausschuss VII - Uedesheim",
+     "sitzung": "2024-06-18",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209026&type=do"
+    }
+   ]
+  },
+  "60_Mühlenstraße/DSD 14180 325er.dsd": {
+   "zeitraeume": [
+    [
+     "2023-12-12",
+     "2024-03-19"
+    ]
+   ],
+   "messstellen": [
+    "Mühlenstraße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/281/2024",
+     "gremium": "Bezirksausschuss I - Innenstadt",
+     "sitzung": "2024-06-19",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209217&type=do"
+    }
+   ]
+  },
+  "70_Aloysiusstraße/DSD17386 Tempo30_2.dsd": {
+   "zeitraeume": [
+    [
+     "2024-05-06",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Aloysiusstraße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/312/2024",
+     "gremium": "Bezirksausschuss VIII - Rosellen",
+     "sitzung": "2024-11-26",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217254&type=do"
+    }
+   ]
+  },
+  "76_Daimlerstraße 140/DSD16135 Tempo30.dsd": {
+   "zeitraeume": [
+    [
+     "2024-04-22",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Daimlerstraße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/310/2024",
+     "gremium": "Bezirksausschuss II - Nordstadt",
+     "sitzung": "2024-11-06",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=215167&type=do"
+    }
+   ]
+  },
+  "87_Mühlenstraße/DSD 14178 325er_3.dsd": {
+   "zeitraeume": [
+    [
+     "2024-12-04",
+     "2025-03-19"
+    ]
+   ],
+   "messstellen": [
+    "Mühlenstraße, FR Windmühlengasse (Wiederholungsmessung)"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0381/2025",
+     "gremium": "Bezirksausschuss I - Innenstadt",
+     "sitzung": "2025-06-24",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=227994&type=do"
+    }
+   ]
+  },
+  "88_Pomona (Eingang)/_17.dsd": {
+   "zeitraeume": [
+    [
+     "2025-03-19",
+     "2025-07-06"
+    ]
+   ],
+   "messstellen": [
+    "Eingang Pomona (beidseitige Messung)"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0459/2026",
+     "gremium": "Bezirksausschuss I - Innenstadt",
+     "sitzung": "2026-06-17",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=245735&type=do"
+    }
+   ]
+  },
+  "97_Preußenstraße/_18.dsd": {
+   "zeitraeume": [
+    [
+     "2025-07-06",
+     "2025-10-26"
+    ]
+   ],
+   "messstellen": [
+    "Preußenstraße"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/0406/2025",
+     "gremium": "Bezirksausschuss I - Innenstadt",
+     "sitzung": "2026-03-05",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=240020&type=do"
+    }
+   ]
+  },
+  "Stationär_Villestraße/FR GV/0000000000000000_3.dsd": {
+   "zeitraeume": [
+    [
+     "2023-03-15",
+     "2024-01-11"
+    ]
+   ],
+   "messstellen": [
+    "Villestraße, Fahrtrichtung Grevenbroich"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/288/2024",
+     "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+     "sitzung": "2024-06-27",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209702&type=do"
+    }
+   ]
+  },
+  "Stationär_Villestraße/FR GV/0000000000000000_4.dsd": {
+   "zeitraeume": [
+    [
+     "2024-01-11",
+     "2024-03-19"
+    ]
+   ],
+   "messstellen": [
+    "Villestraße, Fahrtrichtung Grevenbroich"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/288/2024",
+     "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+     "sitzung": "2024-06-27",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209702&type=do"
+    }
+   ]
+  },
+  "Stationär_Villestraße/FR GV/L 142 FR Speck20_3.dsd": {
+   "zeitraeume": [
+    [
+     "2024-03-27",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Villestraße (FR Speck)"
+   ],
+   "quellen": [
+    {
+     "vorlage": null,
+     "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+     "sitzung": "2024-11-14",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=216549&type=do"
+    }
+   ]
+  },
+  "Stationär_Villestraße/FR Norf/Ville Norf 30.dsd": {
+   "zeitraeume": [
+    [
+     "2024-01-11",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Villestraße (FR Norf)"
+   ],
+   "quellen": [
+    {
+     "vorlage": null,
+     "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+     "sitzung": "2024-11-14",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=216549&type=do"
+    }
+   ]
+  },
+  "Stationär_Villestraße/FR Norf/Ville Norf_3.dsd": {
+   "zeitraeume": [
+    [
+     "2023-03-15",
+     "2024-01-11"
+    ]
+   ],
+   "messstellen": [
+    "Villestraße, Fahrtrichtung Norf"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/288/2024",
+     "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+     "sitzung": "2024-06-27",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209702&type=do"
+    }
+   ]
+  },
+  "Stationär_Villestraße/FR Norf/Ville Norf_4.dsd": {
+   "zeitraeume": [
+    [
+     "2024-01-11",
+     "2024-03-19"
+    ],
+    [
+     "2024-01-11",
+     "2024-07-24"
+    ]
+   ],
+   "messstellen": [
+    "Villestraße, Fahrtrichtung Norf",
+    "Villestraße (FR Norf)"
+   ],
+   "quellen": [
+    {
+     "vorlage": "69/288/2024",
+     "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+     "sitzung": "2024-06-27",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=209702&type=do"
+    },
+    {
+     "vorlage": null,
+     "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+     "sitzung": "2024-11-14",
+     "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=216549&type=do"
+    }
+   ]
+  }
  }
 }

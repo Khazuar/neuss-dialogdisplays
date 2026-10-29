@@ -39,6 +39,24 @@ Regenanteil sind aus der Anpassung über die ganze Datei herausgerechnet. Die YA
 `abschnitte` die Liste `liste` mit `beginn` (Bruch, Wahrscheinlichkeit, Merkmale vorher und nachher, Verschiebung in Streuungen, Lücke in Tagen,
 Begründung) und den Kennzahlen; `summary.csv` enthält die Zahl der Abschnitte und Brüche je Datei.
 
+## Grenzen des Erfassungszeitraums der Verwaltung
+
+Nennt eine Mitteilung der Verwaltung einen Erfassungszeitraum (zugeordnet über den Zeitraum, `belege/korrekturen.json`, Teil `zeitraum`) und
+enthält die Datei Fahrzeuge davor, danach oder zwischen zwei genannten Zeiträumen, setzt `dsd2csv.py` (`zeitraum_grenzen`) dort **künstliche
+Grenzen** (Tagesauflösung: Beginn des Zeitraums, Tag nach seinem Ende). Sie sind keine Brüche und haben keine Wahrscheinlichkeit
+(`beginn.art` = `Erfassungszeitraum`, `grenze_erfassungszeitraum` = `Beginn` oder `Ende`). Fällt eine Grenze auf einen Bruch, bleibt es der
+Bruch mit diesem Vermerk. Die so abgetrennten Abschnitte (einer oder mehrere, etwa wenn davor auch ein Bruch liegt) tragen
+`ausserhalb_erfassungszeitraum: true` und
+
+- bleiben einzeln auswählbar (gekennzeichnet als „außerhalb des offiziellen Messzeitraums“),
+- gehen **nicht** in die Kennzahlen der ganzen Messung ein (Kennzahlen, Tageszeiten, Nächte, Zellen der Auswahl, Rohdaten-Kennzahlen;
+  `fahrzeuge_ausserhalb_erfassungszeitraum` nennt die Zahl) und nicht in den Vergleich mit der Verwaltung,
+- bleiben im Aggregat und in den Stundendaten (mit ihrer Abschnittsnummer).
+
+Stand Oktober 2026 betrifft das zwei Messungen: Holzbüttgener Straße (Bruch am 08.09.2023, Zeitraum der Mitteilung ab 13.09.: Abschnitt 1
+und die fünf Tage dazwischen liegen außerhalb) und Lupinen/Nierenhofstraße (kein Bruch, 32 Tage vor dem Zeitraum). Was die Einsätze mit diesen
+Abschnitten machen, steht in [einsaetze.md](einsaetze.md).
+
 ## Begründung auf den Detailseiten
 
 Je Bruch nennt die Seite: den Unterschied der Verteilungen, die Verschiebung von mittlerem Tempo, 85. und 15. Perzentil und Fahrzeugzahl,

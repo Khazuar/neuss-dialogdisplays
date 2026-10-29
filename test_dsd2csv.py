@@ -280,6 +280,42 @@ class TempolimitQuellen(unittest.TestCase):
         kor = {"tempolimit_kmh": 30, "tempolimit_dsd_kmh": 10}
         self.assertEqual(d.tempolimit(self.META, 50, kor), (50, "parameter"))
 
+class Erfassungszeitraum(unittest.TestCase):
+    """Kuenstliche Grenzen am Erfassungszeitraum der Mitteilung (zeitraum_grenzen)."""
+    TAGE = {dt.date(2023, 7, 19) + dt.timedelta(days=i) for i in range(121)}  # 19.07. bis 16.11.2023
+    BR = {"geprueft": True, "tage": 80, "abschnitte": [{"von": "2023-07-19", "bis": "2023-09-07", "tage": 34},
+                                                        {"von": "2023-09-08", "bis": "2023-11-16", "tage": 46}],
+          "brueche": [{"datum": "2023-09-08", "vorher_bis": "2023-09-07", "wahrscheinlichkeit": 1.0}]}
+
+    def test_zeitraeume_werden_zusammengefasst(self):
+        z = d.zeitraeume_der_mitteilung({"zeitraeume": [["2024-01-11", "2024-03-19"], ["2024-01-11", "2024-07-24"]]})
+        self.assertEqual(z, [(dt.date(2024, 1, 11), dt.date(2024, 7, 24))])
+
+    def test_grenze_neben_einem_bruch(self):
+        z = d.zeitraeume_der_mitteilung({"zeitraeume": [["2023-09-13", "2023-11-16"]]})
+        br = d.zeitraum_grenzen(self.BR, z, self.TAGE)
+        self.assertEqual([(b["datum"], bool(b.get("kuenstlich"))) for b in br["brueche"]], [("2023-09-08", False), ("2023-09-13", True)])
+        self.assertEqual([(a["von"], a["bis"], a["tage"]) for a in br["abschnitte"]],
+                         [("2023-07-19", "2023-09-07", 34), ("2023-09-08", "2023-09-12", None), ("2023-09-13", "2023-11-16", None)])
+
+    def test_grenze_auf_dem_bruch_bleibt_bruch(self):
+        z = d.zeitraeume_der_mitteilung({"zeitraeume": [["2023-09-08", "2023-11-16"]]})
+        br = d.zeitraum_grenzen(self.BR, z, self.TAGE)
+        self.assertEqual(len(br["brueche"]), 1)
+        self.assertEqual(br["brueche"][0]["grenze_erfassungszeitraum"], "Beginn")
+        self.assertFalse(br["brueche"][0].get("kuenstlich"))
+
+    def test_alles_im_zeitraum_aendert_nichts(self):
+        z = d.zeitraeume_der_mitteilung({"zeitraeume": [["2023-07-01", "2023-12-01"]]})
+        self.assertIs(d.zeitraum_grenzen(self.BR, z, self.TAGE), self.BR)
+
+    def test_ohne_bruchsuche_nur_am_zeitraum(self):
+        z = d.zeitraeume_der_mitteilung({"zeitraeume": [["2023-07-19", "2023-10-31"]]})
+        br = d.zeitraum_grenzen({"geprueft": False, "grund": "zu kurz", "tage": 10}, z, self.TAGE)
+        self.assertTrue(br["geprueft"] and br["nur_zeitraum"])
+        self.assertEqual([(b["datum"], b["grenze_erfassungszeitraum"]) for b in br["brueche"]], [("2023-11-01", "Ende")])
+
+
 class Zwischenspeicher(unittest.TestCase):
     """convert() mit Zwischenspeicher an einer echten DSD-Datei mittlerer Groesse."""
 

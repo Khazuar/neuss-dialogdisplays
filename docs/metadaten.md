@@ -117,8 +117,14 @@ den Eintrag in `belege/korrekturen.json` oder startet `dsd2csv.py` mit `--limit`
 sich statistisch deutlich unterscheiden: `10_Holzbüttgener Straße` 19.198 Fahrzeuge vom 19.07. bis 12.09.2023 (V85 32 km/h,
 Ø 20,6) gegenüber 40.659 Fahrzeugen im genannten Zeitraum (V85 40, Ø 29,8; die Mitteilung nennt 39.628), und
 `07_Lupinen_Nierenhofstraße` 20.721 Fahrzeuge vom 16.11. bis 17.12.2023 (V85 30, Ø 15,4) gegenüber V85 32 und Ø 21,7 im
-Zeitraum. Woher sie stammen, lässt sich aus den Daten nicht belegen; ein früherer Einsatz des Geräts ist möglich. Sie sind in
-den Kennzahlen der Datei enthalten, die Abgleichszahlen in `abgleich_dsd` gelten nur für den genannten Zeitraum. Bei acht
+Zeitraum. Woher sie stammen, lässt sich aus den Daten nicht belegen; ein früherer Einsatz des Geräts ist möglich. Die
+Verwaltung hat sie offenbar bewusst nicht berücksichtigt. `metadaten.py` schreibt deshalb die Erfassungszeiträume aller über den
+Zeitraum zugeordneten Mitteilungen (`name_zeitraum`, 31 Dateien) nach `belege/korrekturen.json` (Teil `zeitraum`). `dsd2csv.py`
+setzt an deren Grenzen künstliche Abschnittsgrenzen ([abschnitte.md](abschnitte.md)): Die Daten außerhalb bleiben als eigene,
+gekennzeichnete Abschnitte auswählbar, gehen aber nicht in die Kennzahlen der ganzen Messung und den Vergleich mit der
+Verwaltung ein. Die Einsätze entscheiden selbst, ob sie diese Daten nutzen ([einsaetze.md](einsaetze.md)). Zeiträume, die nur
+über die Werte zugeordnet sind (`name_werte_zeitraum_abweichend`) oder als Tippfehler gelten, verwendet das Verfahren nicht. Die
+Abgleichszahlen in `abgleich_dsd` gelten wie bisher nur für den genannten Zeitraum. Bei acht
 weiteren Messungen decken die Daten nur einen Teil des genannten Zeitraums ab (Beginn 18 bis 38 Tage später oder Ende 26 bis 71
 Tage früher), vermutlich Ausfälle der Geräte. Die beiden Dateien `Villestraße/FR Norf` teilen sich einen Zeitraum der
 Mitteilung und sind hier nicht mitgezählt.

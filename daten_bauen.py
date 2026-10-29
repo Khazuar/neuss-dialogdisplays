@@ -194,8 +194,10 @@ def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel, einsaetze=None):
                     n["abschnitte"] += 1
                 for a in liste:
                     b = a.get("beginn") or {}
-                    w_a.writerow([mid, a["nr"], a["von"], a["bis"], a["tage"], a.get("anzahl_fahrzeuge") or 0, _zelle(b.get("wahrscheinlichkeit")),
-                                  "Beginn der Messung" if b.get("art") != "Bruch" else "Bruch davor"])
+                    anm = {"Bruch": "Bruch davor", "Erfassungszeitraum": "Grenze des Erfassungszeitraums davor"}.get(b.get("art"), "Beginn der Messung")
+                    if a.get("ausserhalb_erfassungszeitraum"):
+                        anm += "; außerhalb des Erfassungszeitraums der Verwaltung"
+                    w_a.writerow([mid, a["nr"], a["von"], a["bis"], a["tage"], a.get("anzahl_fahrzeuge") or 0, _zelle(b.get("wahrscheinlichkeit")), anm])
                     n["abschnitte"] += 1
                 for bereich, nr, block, teil in quellen:
                     for zr in ZEITRAEUME:

@@ -624,8 +624,10 @@ def filter_abschnitt(row, daten, sid, namen=None):
     abschnitte_ = daten.get("abschnitte") or []
     abschnitt_opt = []
     if abschnitte_:
-        abschnitt_opt = [("alle", "Ganze Messung")] + [(str(a["nr"]), f'Abschnitt {a["nr"]} ({iso_de(a["von"])} bis {iso_de(a["bis"])})')
-                                                        for a in abschnitte_]
+        liste = (row.get("abschnitte") or {}).get("liste") or []
+        aussen = {a["nr"] for a in liste if a.get("ausserhalb_erfassungszeitraum")}
+        abschnitt_opt = [("alle", ganze_messung_option(liste))] + [
+            (str(a["nr"]), abschnitt_option(dict(a, ausserhalb_erfassungszeitraum=a["nr"] in aussen))) for a in abschnitte_]
     mit_vg = bool(daten.get("verhalten") or any(a.get("verhalten") for a in abschnitte_))
     gruppen_opt = []
     if mit_vg or daten.get("r"):
@@ -727,7 +729,8 @@ def widersprueche(row, meta_messung):
             innen = f'V85 {ab.get("v85_kmh")}&nbsp;km/h, Ø {dez(ab.get("mittel_kmh"))}&nbsp;km/h'
             z.append(f'Die Datei enthält {ganz(a["fahrzeuge"])} Fahrzeuge {seite_} dem Erfassungszeitraum der Mitteilung '
                      f'({iso_de(a["von"])} bis {iso_de(a["bis"])}; V85 {a["v85_kmh"]}&nbsp;km/h, Ø {dez(a["mittel_kmh"])}&nbsp;km/h, innerhalb des Zeitraums '
-                     f'{innen}). Sie sind in den Kennzahlen unten enthalten; woher sie stammen, lässt sich aus den Daten nicht belegen.')
+                     f'{innen}). Sie stehen als eigener Abschnitt da und gehen nicht in die Kennzahlen der ganzen Messung ein; woher sie stammen, '
+                     'lässt sich aus den Daten nicht belegen.')
         je_tag, dsd_tag = v.get("fahrzeuge_je_tag") or {}, ab.get("fahrzeuge_je_tag")
         if len(je_tag) == 2 and dsd_tag and 0.4 <= dsd_tag / sum(je_tag.values()) <= 0.75:
             z.append(f'Die Mitteilung nennt zwei Richtungen ({" + ".join(ganz(x) for x in je_tag.values())} Fahrzeuge je Tag), die DSD-Datei '
@@ -736,6 +739,19 @@ def widersprueche(row, meta_messung):
         z.append(f'Diese Datei enthält dieselben Fahrzeugdaten wie {e(dd["datei"])} ({dez(dd["anteil_dieser_datei_prozent"], 0)}&nbsp;% dieser Datei '
                  f'sind dort ebenfalls enthalten).')
     return z
+
+
+AUSSERHALB = "außerhalb des offiziellen Messzeitraums"
+
+
+def abschnitt_option(a):
+    """Eintrag der Abschnittsauswahl; Abschnitte außerhalb des Erfassungszeitraums der Mitteilung sind gekennzeichnet."""
+    return f'Abschnitt {a["nr"]} ({iso_de(a["von"])} bis {iso_de(a["bis"])}' + (f', {AUSSERHALB})' if a.get("ausserhalb_erfassungszeitraum") else ")")
+
+
+def ganze_messung_option(liste):
+    """Eintrag der Auswahl für die ganze Messung: mit Abschnitten außerhalb des Erfassungszeitraums nur der offizielle Messzeitraum."""
+    return "Ganze Messung (offizieller Messzeitraum)" if any(a.get("ausserhalb_erfassungszeitraum") for a in liste) else "Ganze Messung"
 
 
 def wahrscheinlichkeit_text(p):
@@ -770,6 +786,16 @@ def abschnitte_text(a):
         return ""
     if not a.get("geprueft"):
         return f'<p>Brüche nicht geprüft: {e(a.get("grund"))}.</p>'
+    zeitraum = ""
+    if a.get("grenzen_erfassungszeitraum"):
+        zeitraum = (f'<p>Die Datei enthält Daten {AUSSERHALB}, den die Mitteilung der Verwaltung nennt. Diese Daten stehen als eigene Abschnitte da '
+                    '(gekennzeichnet) und lassen sich einzeln auswählen; in die Kennzahlen der ganzen Messung und den Vergleich mit der Verwaltung gehen '
+                    'sie nicht ein.</p>')
+    if a.get("nur_zeitraum"):
+        return f'<p>Brüche nicht geprüft: {e(a.get("grund"))}.</p>' + zeitraum
+    if not a.get("brueche") and zeitraum:
+        return (f'<p>In den {ganz(a["tage"])} vollständig aufgezeichneten Tagen wurde kein Bruch erkannt (Verfahren: '
+                f'<a href="{REPO}/blob/main/docs/abschnitte.md">Abschnitte</a>).</p>' + zeitraum)
     nachsatz = ""
     if a.get("ausschlaege"):
         nachsatz += (' Kurze Ausschläge, nach denen der Verkehr zum alten Niveau zurückkehrt (zum Beispiel Feiertage), sind keine Brüche: '
@@ -781,7 +807,18 @@ def abschnitte_text(a):
     return (f'<p>Das Verhalten des Verkehrs ändert sich in dieser Messreihe an {a["brueche"]} {"Stelle" if a["brueche"] == 1 else "Stellen"} so stark, '
             'dass die Teile getrennt ausgewertet werden: Wahrscheinlich hing das Gerät danach an einer anderen Stelle oder war anders eingestellt. '
             'Der Grund lässt sich aus den Daten nicht sagen. Die Wahrscheinlichkeit sagt, wie sicher ein Bruch an dieser Stelle im statistischen Modell '
-            f'ist (Tageswerte, ohne Wochentagsunterschiede, Schulferien und Feiertage), nicht, was geschah.{nachsatz}</p>')
+            f'ist (Tageswerte, ohne Wochentagsunterschiede, Schulferien und Feiertage), nicht, was geschah.{nachsatz}</p>' + zeitraum)
+
+
+def beginn_text(beginn):
+    """Spalte „Beginn“ der Abschnittstabelle: Beginn der Messung, Bruch (mit Wahrscheinlichkeit) oder Grenze des Erfassungszeitraums."""
+    grenze = {"Beginn": "Beginn", "Ende": "Ende"}.get(beginn.get("grenze_erfassungszeitraum"))
+    zr = f'{grenze} des Erfassungszeitraums der Mitteilung' if grenze else ""
+    if beginn["art"] == "Erfassungszeitraum":
+        return zr
+    if beginn["art"] != "Bruch":
+        return "Beginn der Messung"
+    return f'Bruch, {wahrscheinlichkeit_text(beginn["wahrscheinlichkeit"])}' + (f'; zugleich {zr}' if zr else "")
 
 
 def bruch_uebersicht(row, meta_messung, gleich, standort_name, mid):
@@ -795,12 +832,12 @@ def bruch_uebersicht(row, meta_messung, gleich, standort_name, mid):
     verw = (meta_messung or {}).get("verwaltung", [])
     zeilen = []
     for ab in a["liste"]:
-        beginn = ab["beginn"]
-        grund = "Beginn der Messung" if beginn["art"] != "Bruch" else f'Bruch, {wahrscheinlichkeit_text(beginn["wahrscheinlichkeit"])}'
-        zeilen.append(f'<tr><th scope="row">Abschnitt {ab["nr"]}</th><td>{iso_de(ab["von"])} bis {iso_de(ab["bis"])}</td>'
-                      f'<td class="num">{ganz(ab["tage"])}</td><td class="num">{ganz(ab.get("anzahl_fahrzeuge"))}</td><td>{grund}</td></tr>')
-    z.append('<div class="tablewrap"><table><caption class="muted">Abschnitte, an Brüchen getrennt (Fahrzeuge mit nutzbarer Zeit)</caption><thead><tr>'
-             '<th>Abschnitt</th><th>Zeitraum</th><th class="num">Tage</th><th class="num">Fahrzeuge</th><th>Beginn</th></tr></thead><tbody>' +
+        aussen = f'<br><span class="muted">{AUSSERHALB}, nicht berücksichtigt</span>' if ab.get("ausserhalb_erfassungszeitraum") else ""
+        zeilen.append(f'<tr><th scope="row">Abschnitt {ab["nr"]}</th><td>{iso_de(ab["von"])} bis {iso_de(ab["bis"])}{aussen}</td>'
+                      f'<td class="num">{ganz(ab["tage"])}</td><td class="num">{ganz(ab.get("anzahl_fahrzeuge"))}</td><td>{beginn_text(ab["beginn"])}</td></tr>')
+    z.append('<div class="tablewrap"><table><caption class="muted">Abschnitte, an Brüchen' +
+             (' und am Erfassungszeitraum der Mitteilung' if a.get("grenzen_erfassungszeitraum") else '') + ' getrennt (Fahrzeuge mit nutzbarer Zeit)'
+             '</caption><thead><tr><th>Abschnitt</th><th>Zeitraum</th><th class="num">Tage</th><th class="num">Fahrzeuge</th><th>Beginn</th></tr></thead><tbody>' +
              "".join(zeilen) + "</tbody></table></div>")
     for ab in a["liste"]:
         beginn = ab["beginn"]
@@ -823,7 +860,8 @@ def abschnitte_einzeln(row):
          'herausgerechnet).</p>']
     for ab in a["liste"]:
         zz = [f'<details class="abschnitt"><summary>Abschnitt {ab["nr"]}: {iso_de(ab["von"])} bis {iso_de(ab["bis"])} '
-              f'({ganz(ab["tage"])} Tage, {ganz(ab.get("anzahl_fahrzeuge"))} Fahrzeuge)</summary>']
+              f'({ganz(ab["tage"])} Tage, {ganz(ab.get("anzahl_fahrzeuge"))} Fahrzeuge'
+              f'{", " + AUSSERHALB if ab.get("ausserhalb_erfassungszeitraum") else ""})</summary>']
         if ab.get("anzahl_fahrzeuge"):
             sub = dict(ab, tempolimit_kmh=row.get("tempolimit_kmh"))
             zz.append(kennzahlen_tabelle(sub, abschnitt=True))
@@ -843,6 +881,10 @@ def messung_fakten(row, meta_messung):
               ("Tempolimit", f'{limit}&nbsp;km/h ({quelle}{"; DSD-Konfiguration " + str(row["tempolimit_dsd_kmh"]) + " km/h" if row.get("tempolimit_dsd_kmh") else ""})' if limit else "unbekannt"),
               ("Fahrzeuge in der Datei", ganz(row.get("fahrzeuge_in_datei"))),
               ("Fahrzeuge in der Auswertung", ganz(row.get("anzahl_fahrzeuge")))]
+    if row.get("erfassungszeitraum_verwaltung"):
+        fakten.append(("Erfassungszeitraum der Verwaltung", "; ".join(f'{iso_de(a)} bis {iso_de(b)}' for a, b in row["erfassungszeitraum_verwaltung"]) +
+                       f' ({ganz(row.get("fahrzeuge_ausserhalb_erfassungszeitraum"))} Fahrzeuge mit nutzbarer Zeit liegen außerhalb und sind nicht '
+                       'berücksichtigt)'))
     ab, unter = row.get("auswertung_ab_kmh"), row.get("fahrzeuge_unter_auswertung_ab")
     if ab:
         fakten.append(("Ausgewertet ab", f'{ab}&nbsp;km/h ({ganz(unter)} langsamere Fahrzeuge in der Datei sind nicht berücksichtigt)'))
@@ -932,8 +974,9 @@ def vergleich_teil(row, meta_messung):
         if not zz:
             continue
         z.append(f'<h4>{e(v.get("bezeichnung"))}</h4><div class="tablewrap"><table><caption class="muted">Verwaltung; DSD roh: aus der DSD im Erfassungszeitraum '
-                 'der Mitteilung, alle Geschwindigkeiten, ohne Abzug des Rauschbodens (so rechnet offenbar die Verwaltung); diese Auswertung: ganze Datei, '
-                 'nur Fahrzeuge mit nutzbarer Zeit, Rauschboden und Regenphantome herausgerechnet, wo belegt</caption><thead><tr><th>Kennzahl</th>'
+                 'der Mitteilung, alle Geschwindigkeiten, ohne Abzug des Rauschbodens (so rechnet offenbar die Verwaltung); diese Auswertung: ganze Datei '
+                 '(nur im Erfassungszeitraum der Mitteilung, wo die Datei mehr enthält), nur Fahrzeuge mit nutzbarer Zeit, Rauschboden und Regenphantome '
+                 'herausgerechnet, wo belegt</caption><thead><tr><th>Kennzahl</th>'
                  '<th class="num">Verwaltung</th><th class="num">DSD roh</th><th class="num">Diese Auswertung</th></tr></thead><tbody>' + "".join(zz) +
                  "</tbody></table></div>")
         zu = v.get("zuordnung") or {}
@@ -950,13 +993,14 @@ def je_abschnitt(row, baustein, mid, art):
     ganz_ = baustein(row)
     if not liste or not ganz_:
         return ganz_
-    opts = [("alle", "Ganze Messung")] + [(str(a["nr"]), f'Abschnitt {a["nr"]} ({iso_de(a["von"])} bis {iso_de(a["bis"])})') for a in liste]
+    opts = [("alle", ganze_messung_option(liste))] + [(str(a["nr"]), abschnitt_option(a)) for a in liste]
     z = [f'<div class="controls" data-abschnittwahl hidden><div><label for="{e(mid)}-{art}-abschnitt">Abschnitt</label>'
          f'<select id="{e(mid)}-{art}-abschnitt">' + "".join(f'<option value="{v}">{e(t)}</option>' for v, t in opts) + "</select></div></div>",
-         f'<div data-abschnitt="alle"><p class="muted abschnitt-titel">Ganze Messung</p>{ganz_}</div>']
+         f'<div data-abschnitt="alle"><p class="muted abschnitt-titel">{ganze_messung_option(liste)}</p>{ganz_}</div>']
     for a in liste:
         teil = baustein(dict(a, tempolimit_kmh=row.get("tempolimit_kmh")))
-        z.append(f'<div data-abschnitt="{a["nr"]}"><p class="muted abschnitt-titel">Abschnitt {a["nr"]}: {iso_de(a["von"])} bis {iso_de(a["bis"])}</p>'
+        z.append(f'<div data-abschnitt="{a["nr"]}"><p class="muted abschnitt-titel">Abschnitt {a["nr"]}: {iso_de(a["von"])} bis {iso_de(a["bis"])}'
+                 f'{" (" + AUSSERHALB + ")" if a.get("ausserhalb_erfassungszeitraum") else ""}</p>'
                  f'{teil or "<p>Keine Werte.</p>"}</div>')
     return "".join(z)
 
@@ -1477,7 +1521,8 @@ EINSATZ_STATUS = {
     "abgeleitet": "aus mehreren Messungen zusammengesetzt (abgeleitet, nicht bestätigt)",
     "unsicher": "aus mehreren Messungen zusammengesetzt (Zuordnung möglich, aber unsicher)",
     "bestaetigt": "aus mehreren Messungen zusammengesetzt; Grenzen des Messzeitraums von der Verwaltung bestätigt",
-    "gekuerzt": "ohne Daten, die zu einem anderen Einsatz gehören (abgeleitet, nicht bestätigt)",
+    "gekuerzt": "ohne Daten, die zu einem anderen Einsatz gehören oder außerhalb des offiziellen Messzeitraums nicht zuzuordnen sind (abgeleitet, nicht bestätigt)",
+    "ergaenzt": "mit Daten außerhalb des offiziellen Messzeitraums, die dem Rest der Messung gleichen (abgeleitet, nicht bestätigt)",
 }
 ZUORDNUNG_TEXT = {"umhaengen": "Umhängen", "ereignis": "Ereignis", "unerklaert": "unerklärt", "verwaltung": "Angabe der Verwaltung"}
 STUFE_TEXT = {"belegt": "belegt", "moeglich": "möglich", "plausibel": "plausibel", "bestaetigt": "von der Verwaltung bestätigt", "offen": "offen"}
@@ -1543,16 +1588,28 @@ def einsatz_teil(m, index):
         her = {"eigen": "diese Messung",
                "vorgaenger": "folgende Messung desselben Geräts: Das Gerät hing nach dem Auslesen noch hier",
                "nachfolger": "vorige Messung desselben Geräts: Das Gerät hing schon hier, bevor sie ausgelesen wurde"}[t["herkunft"]]
+        az = t.get("ausserhalb_erfassungszeitraum")
+        if az:
+            her += (f'; {AUSSERHALB}, gleicht Abschnitt {az["verglichen_mit"]} (Score {dez(az["score"], 2)}, Verkehrsmenge '
+                    f'{dez(az["verhaeltnis_fahrzeuge"], 2)}) und wird mit ihm ausgewertet')
         zeilen.append(f'<tr><td class="num">{i + 1}</td><td>{iso_de(t["von"])} bis {iso_de(t["bis"])}</td><td>{_messung_link(t["messung"], index)}, '
                       f'Abschnitt {t["abschnitt"]}</td><td>{e(her)}</td><td>{e(STUFE_TEXT.get(t["stufe"], "") if t["stufe"] else "–")}</td></tr>')
     z.append('<h4>Abschnitte des Einsatzes</h4><div class="tablewrap"><table><thead><tr><th class="num">Nr.</th><th>Zeitraum</th><th>aus Messung</th>'
              '<th>Herkunft</th><th>Zuordnung</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
+    if ein.get("nicht_beruecksichtigt"):
+        z.append(f'<h4>Nicht berücksichtigt</h4><p>Diese Abschnitte der Messung liegen {AUSSERHALB} und lassen sich keinem Einsatz zuordnen: Sie '
+                 'gleichen weder dem angrenzenden Abschnitt im Erfassungszeitraum noch einer anderen Messung desselben Geräts. Sie gehen nicht in '
+                 'die Auswertung des Einsatzes ein.</p><ul>' +
+                 "".join(f'<li>Abschnitt {x["abschnitt"]}, {iso_de(x["von"])} bis {iso_de(x["bis"])}: {e(x["grund"])}'
+                         + (f' (Score {dez(x["score"], 2)}, Verkehrsmenge {dez(x["verhaeltnis_fahrzeuge"], 2)} gegen Abschnitt {x["verglichen_mit"]})'
+                            if x.get("score") is not None else "") + '</li>' for x in ein["nicht_beruecksichtigt"]) + "</ul>")
     belege = [t for t in ein["teile"] if t.get("beleg")]
     if belege:
         z.append('<h4>Belege der Zuordnung</h4><div class="tablewrap"><table><thead><tr><th>Abschnitt</th><th>Bruch</th><th class="num">Score</th>'
                  '<th class="num">Nulltest p</th><th class="num">Fahrzeuge (Verhältnis)</th><th class="num">Gegenprobe</th><th>Naht</th></tr></thead><tbody>' +
                  "".join(f'<tr><td>{_messung_link(t["messung"], index)}, Abschnitt {t["abschnitt"]}</td><td>{iso_de(t["beleg"]["bruchtag"])} '
-                         f'(Wahrscheinlichkeit {dez(100 * (t["beleg"]["bruch_wahrscheinlichkeit"] or 0), 0)}&nbsp;%)</td>'
+                         + ('(Grenze des Erfassungszeitraums der Mitteilung)' if t["beleg"].get("kuenstlich") else
+                            f'(Wahrscheinlichkeit {dez(100 * (t["beleg"]["bruch_wahrscheinlichkeit"] or 0), 0)}&nbsp;%)') + '</td>'
                          f'<td class="num">{dez(t["beleg"]["score"], 2)}</td><td class="num">{dez(t["beleg"]["p_nulltest"], 3)} '
                          f'(von {t["beleg"]["nulltest_abschnitte"]})</td><td class="num">{dez(t["beleg"]["verhaeltnis_fahrzeuge"], 2)}</td>'
                          f'<td class="num">{dez(t["beleg"]["gegenprobe_score"], 1)}</td>'
@@ -1873,7 +1930,7 @@ def abschnitte_uebersicht(auswertung, uebersicht):
             continue
         for a in liste:
             out.append(dict(basis, nr=a["nr"], von=a["von"], bis=a["bis"], tage=a["tage"], bruch=(a.get("beginn") or {}).get("wahrscheinlichkeit"),
-                            hinweis="", metriken=_metriken(a, a.get("teilzeitraeume"))))
+                            hinweis=AUSSERHALB if a.get("ausserhalb_erfassungszeitraum") else "", metriken=_metriken(a, a.get("teilzeitraeume"))))
     return out
 
 

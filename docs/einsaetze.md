@@ -91,6 +91,23 @@ Grundlage ist das Rohaggregat (vor Rauschboden- und Regenabzug, vollständig auf
 
 Alle Schwellen sind Festlegungen, kein Befund. Sie stehen als Konstanten in `einsaetze.py`.
 
+### Daten außerhalb des Erfassungszeitraums der Verwaltung
+
+Die Abschnitte, die `dsd2csv.py` an den Grenzen des Erfassungszeitraums einer Mitteilung abtrennt ([abschnitte.md](abschnitte.md)), sind für
+die Einsätze Abschnitte wie alle anderen. Ob sie dazugehören, entscheiden dieselben Kriterien:
+
+1. **Umhängen:** Eine künstliche Grenze kann wie ein Bruch umgehängt werden, wenn der Abschnitt außerhalb dem angrenzenden Abschnitt der vorigen
+   bzw. folgenden Messung desselben Geräts gleicht. Es gelten alle Kriterien für „belegt“, nur die Wahrscheinlichkeit des Bruchs entfällt;
+   „möglich“ genügt hier nicht. An einer solchen Grenze gibt es keinen Umhängtag. Ein Abschnitt im Erfassungszeitraum wechselt über eine
+   künstliche Grenze nie den Einsatz. Eine künstliche Grenze ist kein Bruch und steht nicht in der Liste der Brüche.
+2. **Wieder zusammenfassen:** Ist der Abschnitt nicht umgehängt, wird er mit dem angrenzenden Abschnitt im Erfassungszeitraum verglichen (dem
+   vorigen, sonst dem folgenden; weiter außen liegende nur über die dazwischen liegenden). Bei Score ≤ 1,15, Fahrzeugen je Stunde im
+   Verhältnis 0,7 bis 1,4 und mindestens 1.500 Fahrzeugen bleibt er im Einsatz und bildet mit diesem einen Einsatz-Abschnitt (Status
+   `ergaenzt`, wenn sonst nichts geändert ist).
+3. **Sonst nicht berücksichtigt:** Er gehört zu keinem Einsatz (`nicht_beruecksichtigt` mit Score, Verhältnis und Grund, Status `gekuerzt`).
+
+Ein Einsatz mit solchen Abschnitten ist nie gleich der Messung, denn die Messung zählt sie nicht mit.
+
 ## Ergebnis (Stand Oktober 2026)
 
 Von 34 Brüchen sind:

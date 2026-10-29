@@ -478,13 +478,28 @@ def korrekturen(alle):
     return erg
 
 
+def zeitraeume(alle):
+    """Erfassungszeitraeume aus den Mitteilungen: {"Standort/Datei": {...}} (Eingabe fuer dsd2csv.py: Daten ausserhalb werden als eigener
+    Abschnitt gefuehrt und gehen nicht in die Kennzahlen der Messung ein). Nur Angaben, die ueber den Zeitraum zugeordnet sind."""
+    erg = {}
+    for rel, s in alle.items():
+        for m in s["messungen"]:
+            vs = [v for v in m["verwaltung"] if v.get("zeitraum") and v["zuordnung"]["methode"] == "name_zeitraum"]
+            if vs:
+                erg[f"{rel}/{m['datei']}"] = {
+                    "zeitraeume": sorted(v["zeitraum"] for v in vs), "messstellen": [v["bezeichnung"] for v in vs],
+                    "quellen": [{k: v["quellen"][0].get(k) for k in ("vorlage", "gremium", "sitzung", "dokument")} for v in vs]}
+    return erg
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("eingabe", help="Ordner mit den DSD-Dateien")
     ap.add_argument("--messstellen", default="belege/ris-messstellen.json")
     ap.add_argument("--zuordnung", default="belege/ris-zuordnung.json")
     ap.add_argument("--json", default="belege/metadaten.json", help="alle Metadaten in einer Datei (fuer die Seiten)")
-    ap.add_argument("--korrekturen", default="belege/korrekturen.json", help="Korrekturen des Tempolimits (fuer dsd2csv.py)")
+    ap.add_argument("--korrekturen", default="belege/korrekturen.json",
+                    help="Korrekturen des Tempolimits und Erfassungszeitraeume der Mitteilungen (fuer dsd2csv.py)")
     ap.add_argument("--standorte", default="belege/standorte.json", help="Lage der Standortordner (fuer die Wahl der Wetterstation in dsd2csv.py)")
     ap.add_argument("--adressen", default="belege/neuss-adressen.csv", help="Hauskoordinaten (tools/adressen_laden.py); ohne Datei kein Standort")
     ap.add_argument("--standort-hinweise", default="belege/standort-hinweise.json", help="weitere Ortsangaben (docs/standorte.md)")
@@ -499,7 +514,7 @@ def main():
     kor = korrekturen(alle)
     with open(a.korrekturen, "w", encoding="utf-8", newline="\n") as fh:
         json.dump({"erzeugt_von": "metadaten.py", "hinweis": "Korrekturen aus den Mitteilungen der Verwaltung, siehe docs/metadaten.md",
-                   "tempolimit": kor}, fh, ensure_ascii=False, indent=1)
+                   "tempolimit": kor, "zeitraum": zeitraeume(alle)}, fh, ensure_ascii=False, indent=1)
         fh.write("\n")
     with open(a.json, "w", encoding="utf-8", newline="\n") as fh:
         json.dump({"erzeugt_von": "metadaten.py", "standorte": alle}, fh, ensure_ascii=False, indent=1)

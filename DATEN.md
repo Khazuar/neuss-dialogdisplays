@@ -76,7 +76,10 @@ Stundenzeilen der Messung), `uhr_nutzbarkeit` (formale Prüfung: `nutzbar`, `tei
 ### `abschnitte.csv` (eine Zeile je Abschnitt)
 
 `messung_id`, `abschnitt_nr`, `von`, `bis` (erster und letzter Tag der Fahrzeuge), `tage`, `fahrzeuge`, `bruch_wahrscheinlichkeit` (Wahrscheinlichkeit
-des Bruchs vor diesem Abschnitt, leer bei Abschnitt 1), `anmerkung` (`Beginn der Messung`, `Bruch davor`, `kein Bruch erkannt`, `nicht prüfbar`).
+des Bruchs vor diesem Abschnitt, leer bei Abschnitt 1), `anmerkung` (`Beginn der Messung`, `Bruch davor`, `Grenze des Erfassungszeitraums davor`,
+`kein Bruch erkannt`, `nicht prüfbar`; bei Abschnitten außerhalb des Erfassungszeitraums der Mitteilung ergänzt um `; außerhalb des
+Erfassungszeitraums der Verwaltung`). Diese Abschnitte zählen nicht zu den Kennzahlen der ganzen Messung (`bereich` = `messung`), stehen aber
+in den Stundendaten.
 
 ### `kennzahlen.csv` (je Messung und Abschnitt und Zeitraum)
 
@@ -133,7 +136,8 @@ Abschnitt der neuen Datei zum Einsatz des alten Standorts.
 `einsatz_id`, `messung_id` (Messung, auf der der Einsatz beruht: Standort, Fahrtrichtung, Tempolimit), `standort_seite`, `standort_name`, `geraet`,
 `fahrtrichtung`, `tempolimit_kmh`, `von`, `bis`, `status` (`identisch` = gleich der Messung, `abgeleitet` = aus mehreren Messungen
 zusammengesetzt, nicht bestätigt, `unsicher` = zusammengesetzt nach einer nur möglichen Zuordnung, `bestaetigt` = Grenzen von der Verwaltung bestätigt, `gekuerzt` = Teile der Messung gehören zu einem anderen
-Einsatz), `teile` (Messung#Abschnitt von..bis und Herkunft), `abgegeben` (Abschnitte, die zu einem anderen Einsatz gehören), `ausgenommene_tage`
+Einsatz oder liegen außerhalb des Erfassungszeitraums der Verwaltung und sind nicht zuzuordnen, `ergaenzt` = enthält Daten außerhalb des
+Erfassungszeitraums, die dem Rest gleichen), `teile` (Messung#Abschnitt von..bis und Herkunft), `abgegeben` (Abschnitte, die zu einem anderen Einsatz gehören), `ausgenommene_tage`
 (Umhängtage).
 
 ### `brueche.csv` (eine Zeile je Bruch)

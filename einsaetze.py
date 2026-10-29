@@ -104,13 +104,17 @@ def messungen_lesen(auswertung, metadaten, aggregat_ordner):
         liste = (r.get("abschnitte") or {}).get("liste") or []
         brueche = [(a["nr"], dt.date.fromisoformat(a["beginn"]["datum"]), a["beginn"].get("wahrscheinlichkeit"))
                    for a in liste if (a.get("beginn") or {}).get("art") == "Bruch"]
+        # kuenstliche Grenzen am Erfassungszeitraum der Mitteilung (dsd2csv.zeitraum_grenzen): keine Brueche, aber Abschnittsgrenzen
+        kuenstlich = [(a["nr"], dt.date.fromisoformat(a["beginn"]["datum"])) for a in liste if (a.get("beginn") or {}).get("art") == "Erfassungszeitraum"]
         tage = sorted({z[0] for z in zeilen})
         out.append({
             "id": seiten_bauen.messung_id(rel, datei), "rel": rel, "datei": datei, "geraet": (r.get("geraet") or "").strip(),
             "limit": r.get("tempolimit_kmh"), "seite": seite.get(rel, (None, rel))[0], "name": seite.get(rel, (None, rel))[1],
             "fahrtrichtung": ", ".join(seiten_bauen.fahrtrichtungen(meta, rel)),
-            "uhr_nutzbar": (r.get("uhr") or {}).get("nutzbarkeit") == "nutzbar", "brueche": brueche,
-            "grenzen": [b[1] for b in brueche], "zeilen": zeilen, "voll": voll, "zeilen_bereinigt": zeilen_b, "versatz": versatz,
+            "uhr_nutzbar": (r.get("uhr") or {}).get("nutzbarkeit") == "nutzbar", "brueche": brueche, "kuenstlich": kuenstlich,
+            "grenzen": sorted([b[1] for b in brueche] + [k[1] for k in kuenstlich]),
+            "aussen": {a["nr"] for a in liste if a.get("ausserhalb_erfassungszeitraum")},
+            "zeilen": zeilen, "voll": voll, "zeilen_bereinigt": zeilen_b, "versatz": versatz,
             "zeile": r, "ort": dsd2csv.koordinaten(rel) or dsd2csv.ORT_NEUSS,
             "von": tage[0] if tage else None, "bis": tage[-1] if tage else None,
         })
@@ -228,6 +232,12 @@ def pruefe_umhaengen(y, x, richtung, alle_abschnitte, abschnitt_merkmale):
     gegen = score(fa, fq) if fa else None
     bruch_p = next((b[2] for b in bruch_m["brueche"] if b[0] == bruch_nr), None)
     bruchtag = next((b[1] for b in bruch_m["brueche"] if b[0] == bruch_nr), None)
+    # Grenze des Erfassungszeitraums statt eines Bruchs: die Verwaltung hat die Daten jenseits nicht beruecksichtigt, eine Aenderung des
+    # Verhaltens muss es dort nicht geben (die Gegenprobe prueft, dass die andere Seite der Quelle nicht gleicht)
+    kuenstlich = next((k[1] for k in bruch_m.get("kuenstlich", []) if k[0] == bruch_nr), None)
+    if kuenstlich and probe[1] not in bruch_m.get("aussen", ()):
+        return None  # ueber eine solche Grenze wechselt nur ein Abschnitt ausserhalb des Erfassungszeitraums den Einsatz
+    bruchtag = bruchtag or kuenstlich
     naht = None
     mq, mp = (y, x) if richtung == "vorgaenger" else (x, y)  # Quelle/Probe-Messung
     if richtung == "vorgaenger":
@@ -240,10 +250,11 @@ def pruefe_umhaengen(y, x, richtung, alle_abschnitte, abschnitt_merkmale):
         ns = score(b, a)  # Rauschen der beiden Fenster selbst (7 Tage rauschen staerker als ganze Abschnitte)
         naht = {"score": round(ns, 2), "verhaeltnis": round(verhaeltnis(b, a), 2), "stetig": ns <= NAHT_SCORE and passt_menge(verhaeltnis(b, a))}
     belegt = (s <= SCORE_BELEGT and passt_menge(q) and p <= P_BELEGT and gegen is not None and gegen > GEGENPROBE
-              and (bruch_p or 0) >= BRUCH_P and (naht is None or naht["stetig"]))
+              and ((bruch_p or 0) >= BRUCH_P or kuenstlich) and (naht is None or naht["stetig"]))
     moeglich = s <= SCORE_MOEGLICH and passt_menge(q) and p <= P_MOEGLICH
     return {"richtung": richtung, "von_messung": quelle[0], "von_abschnitt": quelle[1], "abschnitt_messung": probe[0], "abschnitt": probe[1],
             "bruch_messung": bruch_m["id"], "bruch_nr": bruch_nr, "bruchtag": bruchtag.isoformat() if bruchtag else None,
+            **({"kuenstlich": True} if kuenstlich else {}),
             "bruch_wahrscheinlichkeit": bruch_p, "score": round(s, 2), "tvd_verteilung": round(tvd(fp["v"], fq["v"]), 3),
             "tvd_tagesgang": round(tvd(fp["p"], fq["p"]), 3), "rauschen": [round(max(fp["rausch_v"], fq["rausch_v"]), 3),
                                                                           round(max(fp["rausch_p"], fq["rausch_p"]), 3)],
@@ -369,6 +380,10 @@ def zuordnen(messungen, ereignisse=(), verwaltung=None):
                 wahl = (belegt or moeglich)[0]
             if wahl:
                 umhaengen.append(wahl)
+        for nr, _tag in m.get("kuenstlich", []):  # Grenzen des Erfassungszeitraums: keine Brueche, nur belegtes Umhaengen
+            belegt = sorted((e for e in pruefungen.get((m["id"], nr), []) if e["stufe"] == "belegt"), key=lambda e: e["score"])
+            if belegt:
+                umhaengen.append(belegt[0])
     return brueche, umhaengen
 
 
@@ -395,7 +410,7 @@ def einsaetze_bilden(messungen, umhaengen):
         dazu[ziel].append((teil, u))
         tag = dt.date.fromisoformat(u["bruchtag"])
         tage = ({dt.date.fromisoformat(d) for d in u["ausgenommen_bestaetigt"]} if u.get("ausgenommen_bestaetigt")
-                else {tag - TAG, tag})
+                else set() if u.get("kuenstlich") else {tag - TAG, tag})  # an der Grenze des Erfassungszeitraums kein Umhaengtag
         ausgenommen[u["bruch_messung"]] |= tage
     out = []
     for m in messungen:
@@ -407,7 +422,8 @@ def einsaetze_bilden(messungen, umhaengen):
             q = nach_id[mid]
             von, bis = next((a[1], a[2]) for a in abschnitte_der_messung(q) if a[0] == nr)
             beleg = {k: u.get(k) for k in ("bruch_messung", "bruch_nr", "bruchtag", "bruch_wahrscheinlichkeit", "score", "tvd_verteilung", "tvd_tagesgang",
-                                          "rauschen", "verhaeltnis_fahrzeuge", "p_nulltest", "nulltest_abschnitte", "gegenprobe_score", "naht")}
+                                          "rauschen", "verhaeltnis_fahrzeuge", "p_nulltest", "nulltest_abschnitte", "gegenprobe_score", "naht",
+                                          "kuenstlich") if k in u}
             teile.append({"messung": mid, "abschnitt": nr, "von": von, "bis": bis, "herkunft": u["richtung"], "stufe": u["stufe"], "beleg": beleg})
         aus = set()
         for t in teile:  # Umhaengtage abschneiden
@@ -422,10 +438,11 @@ def einsaetze_bilden(messungen, umhaengen):
                 t["bis"] -= TAG
         teile = [t for t in teile if t["von"] is None or t["von"] <= t["bis"]]
         teile.sort(key=lambda t: (t["von"] or dt.date.min))
+        teile, nicht = ausserhalb_pruefen(m, teile)
         fremd = [t for t in teile if t["herkunft"] != "eigen"]
         abgegeben = [(mid, nr) for (mid, nr) in weg if mid == m["id"]]
         status = ("bestaetigt" if fremd and all(t["stufe"] == "bestaetigt" for t in fremd) else "unsicher" if any(t["stufe"] == "moeglich" for t in fremd)
-                  else "abgeleitet" if fremd else "gekuerzt" if abgegeben else "identisch")
+                  else "abgeleitet" if fremd else "gekuerzt" if abgegeben or nicht else "ergaenzt" if m.get("aussen") else "identisch")
         datiert = [t for t in teile if t["von"]]
         out.append({"id": "e-" + m["id"][2:], "messung": m["id"], "seite": m["seite"], "name": m["name"], "fahrtrichtung": m["fahrtrichtung"],
                     "geraet": m["geraet"], "limit": m["limit"], "status": status,
@@ -436,16 +453,59 @@ def einsaetze_bilden(messungen, umhaengen):
                     "abgegeben": [{"abschnitt": nr, "an": "e-" + next(u["von_messung"] for u in umhaengen
                                                                    if (u["abschnitt_messung"], u["abschnitt"]) == (mid, nr))[2:]}
                                   for mid, nr in sorted(abgegeben)],
+                    "nicht_beruecksichtigt": nicht,
                     "ausgenommene_tage": sorted(d.isoformat() for d in aus)})
     return out
 
 
+def ausserhalb_pruefen(m, teile):
+    """Eigene Abschnitte ausserhalb des Erfassungszeitraums der Mitteilung (die nicht umgehaengt sind): Gleicht ein solcher Abschnitt dem
+    naechsten Abschnitt im Erfassungszeitraum (Score bis SCORE_BELEGT, Verkehrsmenge passend, mindestens MIN_FAHRZEUGE), bleibt er im Einsatz und
+    bildet mit ihm einen Einsatz-Abschnitt; sonst wird er nicht beruecksichtigt. Weiter aussen liegende Abschnitte haengen nur ueber die
+    dazwischen liegenden an. Gibt (Teile, nicht beruecksichtigte Teile) zurueck."""
+    aussen = m.get("aussen") or set()
+    eigen = [t for t in teile if t["herkunft"] == "eigen" and t["von"]]
+    if not aussen or not any(t["abschnitt"] in aussen for t in eigen):
+        return teile, []
+    innen = [i for i, t in enumerate(eigen) if t["abschnitt"] not in aussen]
+    behalten, nicht = set(innen), []
+    for j in sorted((j for j, t in enumerate(eigen) if t["abschnitt"] in aussen),
+                    key=lambda j: min((abs(j - k) for k in innen), default=0)):
+        t = eigen[j]
+        vor = [k for k in innen if k < j]
+        k = vor[-1] if vor else next((k for k in innen if k > j), None)  # Vergleich mit dem vorigen, sonst dem folgenden Abschnitt im Zeitraum
+        beleg = {"abschnitt": t["abschnitt"], "von": t["von"].isoformat(), "bis": t["bis"].isoformat(), "messung": t["messung"]}
+        zwischen = range(min(j, k) + 1, max(j, k)) if k is not None else ()
+        if k is None or not all(i in behalten for i in zwischen):
+            nicht.append(dict(beleg, grund="kein angrenzender Abschnitt im Erfassungszeitraum, mit dem er sich vergleichen ließe"))
+            continue
+        r = eigen[k]
+        a, b = merkmale(m["zeilen"], m["voll"], t["von"], t["bis"]), merkmale(m["zeilen"], m["voll"], r["von"], r["bis"])
+        if not a or not b or a["n"] < MIN_FAHRZEUGE:
+            nicht.append(dict(beleg, verglichen_mit=r["abschnitt"], grund=f"weniger als {MIN_FAHRZEUGE} Fahrzeuge für den Vergleich"))
+            continue
+        s, q = score(a, b), verhaeltnis(a, b)
+        werte = {"verglichen_mit": r["abschnitt"], "score": round(s, 2), "verhaeltnis_fahrzeuge": round(q, 2),
+                 "rauschen": [round(max(a["rausch_v"], b["rausch_v"]), 3), round(max(a["rausch_p"], b["rausch_p"]), 3)]}
+        if s <= SCORE_BELEGT and passt_menge(q):
+            behalten.add(j)
+            t["ausserhalb_erfassungszeitraum"] = werte
+            for i in (range(j + 1, k + 1) if j < k else range(k + 1, j + 1)):  # ein Einsatz-Abschnitt mit dem Abschnitt im Zeitraum
+                eigen[i]["anschluss"] = True
+        else:
+            nicht.append(dict(beleg, **werte, grund="gleicht dem Abschnitt im Erfassungszeitraum nicht" if s > SCORE_BELEGT else
+                              "Verkehrsmenge passt nicht zum Abschnitt im Erfassungszeitraum"))
+    weg = {id(eigen[j]) for j in range(len(eigen)) if j not in behalten}
+    return [t for t in teile if id(t) not in weg], sorted(nicht, key=lambda x: x["von"])
+
+
 def einsatz_abschnitte(e):
     """Einsatz-Abschnitte: Teile, die ueber eine Dateigrenze aneinanderstossen, gehoeren zusammen (laut Zuordnung derselbe Ort); zwei Teile
-    derselben Messung trennt ein Bruch, der im Einsatz bleibt (unerklaert, Ferien). Gibt [[Teil, ...], ...] zurueck."""
+    derselben Messung trennt ein Bruch, der im Einsatz bleibt (unerklaert, Ferien), nicht aber eine Grenze des Erfassungszeitraums, ueber die
+    ein gleichender Abschnitt angeschlossen ist (Teil mit 'anschluss'). Gibt [[Teil, ...], ...] zurueck."""
     gruppen_, vorige = [], None
     for t_ in [x for x in e["teile"] if x["von"]]:
-        if vorige is None or vorige["messung"] == t_["messung"]:
+        if vorige is None or (vorige["messung"] == t_["messung"] and not t_.get("anschluss")):
             gruppen_.append([t_])
         else:
             gruppen_[-1].append(t_)

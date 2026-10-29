@@ -64,10 +64,54 @@ def andere(n=22):
     return out
 
 
+def mit_zeitraum(m, ab):
+    """Wie dsd2csv.zeitraum_grenzen: kuenstliche Grenze am Tag ab (Index), alles davor liegt ausserhalb des Erfassungszeitraums."""
+    nr = 2 + sum(1 for b in m["brueche"] if b[1] < tag(ab))
+    m["brueche"] = [(n + 1 if n >= nr else n, d, p) for n, d, p in m["brueche"]]
+    m["kuenstlich"] = [(nr, tag(ab))]
+    m["grenzen"] = sorted([b[1] for b in m["brueche"]] + [tag(ab)])
+    m["aussen"] = set(range(1, nr))
+    return m
+
+
 class Zuordnung(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.vergleich = andere()
+
+    def test_ausserhalb_des_zeitraums_gleich_wird_angeschlossen(self):
+        x = mit_zeitraum(messung("m-x", "b", "G", [(0, 79, A)]), 20)
+        brueche, umh = E.zuordnen([x] + self.vergleich)
+        self.assertEqual(brueche, [])  # die Grenze des Erfassungszeitraums ist kein Bruch
+        e = next(e for e in E.einsaetze_bilden([x], umh) if e["messung"] == "m-x")
+        self.assertEqual(e["status"], "ergaenzt")
+        self.assertEqual(e["nicht_beruecksichtigt"], [])
+        self.assertEqual(len(E.einsatz_abschnitte(e)), 1)  # ein Einsatz-Abschnitt ueber die Grenze hinweg
+        self.assertLessEqual(e["teile"][0]["ausserhalb_erfassungszeitraum"]["score"], E.SCORE_BELEGT)
+
+    def test_ausserhalb_des_zeitraums_anders_wird_nicht_beruecksichtigt(self):
+        x = mit_zeitraum(messung("m-x", "b", "G", [(0, 19, C), (20, 79, A)], brueche=[20]), 30)
+        brueche, umh = E.zuordnen([x] + self.vergleich)
+        e = next(e for e in E.einsaetze_bilden([x], umh) if e["messung"] == "m-x")
+        self.assertEqual(e["status"], "gekuerzt")
+        # Abschnitt 2 (20 bis 29) gleicht dem Abschnitt im Zeitraum, Abschnitt 1 (anderer Ort) nicht
+        self.assertEqual([x_["abschnitt"] for x_ in e["nicht_beruecksichtigt"]], [1], e["nicht_beruecksichtigt"])
+        self.assertEqual([t["abschnitt"] for t in e["teile"]], [2, 3])
+        self.assertEqual(len(E.einsatz_abschnitte(e)), 1)
+        self.assertEqual(e["von"], tag(20).isoformat())
+
+    def test_ausserhalb_des_zeitraums_vom_vorigen_standort_wird_umgehaengt(self):
+        y = messung("m-y", "a", "G", [(0, 59, A)])
+        x = mit_zeitraum(messung("m-x", "b", "G", [(60, 89, A), (90, 119, B)]), 90)  # die Verwaltung zaehlt erst ab Tag 90
+        brueche, umh = E.zuordnen([y, x] + self.vergleich)
+        self.assertEqual(brueche, [])
+        self.assertEqual(len(umh), 1)
+        self.assertTrue(umh[0]["kuenstlich"])
+        ein = {e["messung"]: e for e in E.einsaetze_bilden([y, x] + self.vergleich, umh)}
+        self.assertEqual([(t["messung"], t["abschnitt"]) for t in ein["m-y"]["teile"]], [("m-y", 1), ("m-x", 1)])
+        self.assertEqual(ein["m-y"]["teile"][1]["bis"], tag(89).isoformat())  # an der Grenze kein Umhaengtag
+        self.assertEqual(ein["m-x"]["status"], "gekuerzt")
+        self.assertEqual(ein["m-x"]["nicht_beruecksichtigt"], [])
 
     def test_umhaengen_wird_belegt_und_der_einsatz_zusammengesetzt(self):
         y = messung("m-y", "a", "G", [(0, 59, A)])

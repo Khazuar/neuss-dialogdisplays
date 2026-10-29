@@ -519,9 +519,10 @@ def bewerte_segmente(segs, veh):
                 s["umstellung_auffaellig"] = [u for u in s["zeitumstellung"] if abs(u["abweichung_min"]) >= UMSTELLUNG_MAX_MIN]
 
 
-def analysiere_uhr(veh, status, mit_spannen=False, mit_utc=False):
+def analysiere_uhr(veh, status, mit_spannen=False, mit_utc=False, quelle=None):
     """Gibt (uhr, bereinigt, teilzeitraeume) zurueck, mit mit_spannen=True zusaetzlich die Spannen, mit mit_utc=True Spannen, die UTC-Zeit
-    je Fahrzeug und die UTC-Spannen: (uhr, bereinigt, teilzeitraeume, spannen, utc, spannen_utc).
+    je Fahrzeug und die UTC-Spannen: (uhr, bereinigt, teilzeitraeume, spannen, utc, spannen_utc). quelle: ein dict, in das
+    {id(Fahrzeug in bereinigt): Index in veh} kommt.
 
     utc: {id(Fahrzeug in bereinigt): UTC-Zeit (ohne Zeitzone)}, spannen_utc: [(erste, letzte UTC-Zeit)] je Abschnitt. Die Geraeteuhr
     ist UTC plus ein fester Versatz (sie wird nie umgestellt); die UTC-Zeit ist deshalb eindeutig, auch in der Stunde der Zeitumstellung.
@@ -547,6 +548,8 @@ def analysiere_uhr(veh, status, mit_spannen=False, mit_utc=False):
         for k, (c, i) in enumerate(zip(s["ortszeit"], s["idx"])):
             v = veh[i][1]
             bereinigt.append((c, v))
+            if quelle is not None:
+                quelle[id(bereinigt[-1])] = i
             if mit_utc:
                 utc[id(bereinigt[-1])] = zeiten_utc[k]
             for name, (_, in_zeitraum) in TEILZEITRAEUME.items():
@@ -928,12 +931,74 @@ DATEI_EBENE = "datei" if verhalten.verfuegbar() else "datei-ohne-numpy"
 NUR_MIT_NUMPY = ("datei", "verhalten", "vorlagen")
 
 
-def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher=None, agg_aus=None):
+def zeitraeume_der_mitteilung(eintrag):
+    """[(von, bis)] (Datum, einschliesslich) aus einem Eintrag von belege/korrekturen.json (Teil 'zeitraum'); ueberlappende und aneinander
+    anschliessende Zeitraeume zusammengefasst."""
+    out = []
+    for a, b in sorted((dt.date.fromisoformat(x), dt.date.fromisoformat(y)) for x, y in (eintrag or {}).get("zeitraeume", [])):
+        if out and a <= out[-1][1] + dt.timedelta(days=1):
+            out[-1] = (out[-1][0], max(out[-1][1], b))
+        else:
+            out.append((a, b))
+    return out
+
+
+def im_zeitraum_der_mitteilung(zeitraeume):
+    """Pruefung Datum -> liegt im Erfassungszeitraum; None ohne Zeitraum (dann zaehlt alles)."""
+    if not zeitraeume:
+        return None
+    return lambda d: any(a <= d <= b for a, b in zeitraeume)
+
+
+def zeitraum_grenzen(br, zeitraeume, tage):
+    """Ergebnis der Bruchsuche (bruch.erkenne), ergaenzt um kuenstliche Grenzen am Erfassungszeitraum der Mitteilung: Daten davor, danach
+    oder zwischen zwei Zeitraeumen werden eigene Abschnitte (docs/abschnitte.md). tage: Tage mit Fahrzeugen. Faellt eine Grenze auf einen
+    Bruch, bleibt es der Bruch (mit Vermerk). Ohne Daten ausserhalb unveraendert."""
+    drin = im_zeitraum_der_mitteilung(zeitraeume)
+    tage = sorted(tage)
+    if not drin or all(drin(t) for t in tage):
+        return br
+    art = {}
+    for a, b in zeitraeume:
+        art[a] = "Beginn"
+        art[b + dt.timedelta(days=1)] = "Ende"
+    echte = {dt.date.fromisoformat(b["datum"]): b for b in br["brueche"]} if br.get("geprueft") else {}
+    grenzen = []
+    for g in sorted(set(echte) | set(art)):  # nur Grenzen mit Daten auf beiden Seiten, keine leeren Abschnitte
+        if any(t >= g for t in tage) and any(t < g and (not grenzen or t >= grenzen[-1]) for t in tage):
+            grenzen.append(g)
+    brueche = []
+    for g in grenzen:
+        if g in echte:
+            brueche.append(dict(echte[g], **({"grenze_erfassungszeitraum": art[g]} if g in art else {})))
+        else:
+            brueche.append({"datum": g.isoformat(), "vorher_bis": max(t for t in tage if t < g).isoformat(), "kuenstlich": True,
+                            "grenze_erfassungszeitraum": art[g]})
+    # Abschnitte der Bruchsuche (Tage, die fuer die Suche zaehlten) an den kuenstlichen Grenzen geteilt; dort ist die Zahl unbekannt
+    alt = (br.get("abschnitte") or []) if br.get("geprueft") else []
+    pos = [tage[0]] + grenzen + [tage[-1] + dt.timedelta(days=1)]
+    abschnitte = []
+    for p0, p1 in zip(pos, pos[1:]):
+        drinnen = [x for x in alt if dt.date.fromisoformat(x["von"]) < p1 and dt.date.fromisoformat(x["bis"]) >= p0]
+        ganz = (len(drinnen) == 1 and not any(dt.date.fromisoformat(drinnen[0]["von"]) < g <= dt.date.fromisoformat(drinnen[0]["bis"])
+                                              for g in grenzen if g not in echte))
+        abschnitte.append({"von": p0.isoformat(), "bis": (p1 - dt.timedelta(days=1)).isoformat(), "tage": drinnen[0]["tage"] if ganz else None})
+    neu = dict(br, abschnitte=abschnitte, brueche=brueche)
+    if not br.get("geprueft"):  # keine Bruchsuche moeglich: Abschnitte nur am Erfassungszeitraum
+        neu.update(geprueft=True, nur_zeitraum=True, ab_kmh=None, autokorrelation=None, aufblaehung=None, moegliche_brueche=[], ausschlaege=[],
+                   verworfen_kleiner_unterschied=[])
+    return neu
+
+
+def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher=None, agg_aus=None, zeitraum=None):
     """Alle Kennzahlen einer Datei. Gibt (res, daten) zurueck; daten sind die Zellen fuer die Filter der Detailseite.
 
-    agg_aus: ein dict, in das das bereinigte Aggregat der Datei kommt (aggregat.bauen); es gehoert nicht in res oder daten."""
+    agg_aus: ein dict, in das das bereinigte Aggregat der Datei kommt (aggregat.bauen); es gehoert nicht in res oder daten.
+    zeitraum: Erfassungszeitraeume der Mitteilung (belege/korrekturen.json): Daten ausserhalb bilden eigene Abschnitte und gehen nicht in die
+    Kennzahlen der ganzen Messung ein (bleiben aber im Aggregat und je Abschnitt auswaehlbar)."""
     lim, quelle = tempolimit(meta, limit, kor)
-    uhr, bereinigt, teil, spannen, utc, spannen_utc = analysiere_uhr(veh, status, mit_utc=True)
+    herkunft = {}
+    uhr, bereinigt, teil, spannen, utc, spannen_utc = analysiere_uhr(veh, status, mit_utc=True, quelle=herkunft)
     ort = koordinaten(standort)
     regen_f = regenfunktion(ort=ort)
     anzahl_roh = len(veh)
@@ -941,6 +1006,9 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
     # Brueche auf den unkorrigierten Fahrzeugen (docs/einsaetze.md): Rauschboden und Regenanteil haengen vom Ort ab, ein Ortswechsel erzeugt
     # aber auch ohne Korrektur einen Bruch. Die Bruchsuche zaehlt ohnehin erst ab der halben Hoechstgeschwindigkeit.
     br = bruch.erkenne(bereinigt_vorher, spannen, max(10, int(round(0.5 * lim))) if lim else 15, lim, kalender.besonderer_tag)
+    zeitraeume = zeitraeume_der_mitteilung(zeitraum)
+    br = zeitraum_grenzen(br, zeitraeume, {f[0].date() for f in bereinigt_vorher})
+    drin = im_zeitraum_der_mitteilung(zeitraeume) if any(b.get("grenze_erfassungszeitraum") for b in br.get("brueche") or []) else None
     grenzen = [dt.date.fromisoformat(b["datum"]) for b in br["brueche"]] if br.get("geprueft") else []
     # Rauschboden und Regenanteil je Abschnitt schaetzen und abziehen (nur fuer die Sicht der Messung; die Einsaetze schaetzen neu)
     je_abschnitt = [[] for _ in range(len(grenzen) + 1)]
@@ -962,12 +1030,28 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
         bereinigt += sauber
     belegt = any(r[0] and r[0]["abzug"] for r in rbs)
     if belegt:
+        # Tageszeiten aus der bereinigten Liste ableiten, nicht je Liste neu ausduennen (docs/rauschen.md)
+        teil = {k: [f for f in bereinigt if in_zeitraum(f[0])] for k, (_, in_zeitraum) in TEILZEITRAEUME.items()}
+    teil_abschnitte = teil
+    # Kennzahlen der ganzen Messung nur im Erfassungszeitraum der Mitteilung; die Abschnitte ausserhalb bleiben einzeln auswaehlbar
+    vorher_ganz, bereinigt_ganz, spannen_ganz = bereinigt_vorher, bereinigt, spannen
+    aussen = 0
+    if drin:
+        weg = {herkunft[id(f)] for f in bereinigt_vorher if not drin(f[0].date())}
+        aussen = len(weg)
+        veh = [x for i, x in enumerate(veh) if i not in weg]
+        vorher_ganz = [f for f in bereinigt_vorher if drin(f[0].date())]
+        bereinigt_ganz = [f for f in bereinigt if drin(f[0].date())]
+        spannen_ganz = [(max(s0, dt.datetime.combine(a, dt.time())), min(s1, dt.datetime.combine(b + dt.timedelta(days=1), dt.time())))
+                        for s0, s1 in spannen for a, b in zeitraeume
+                        if s1 >= dt.datetime.combine(a, dt.time()) and s0 < dt.datetime.combine(b + dt.timedelta(days=1), dt.time())]
+        teil = {k: [f for f in bereinigt_ganz if in_zeitraum(f[0])] for k, (_, in_zeitraum) in TEILZEITRAEUME.items()}
+    anzahl_ganz = len(veh)
+    if belegt:
         # Fahrzeuge ohne nutzbare Zeit (nur Ansicht "Rohdaten"): Abzug nach Geschwindigkeit mit dem Modell des groessten Abschnitts
         groesster = max(rbs, key=lambda r: r[2])[0]
         if groesster and groesster["abzug"]:
             veh = rauschen.ohne_rauschen_je_v(veh, groesster["_modell"])
-        # Tageszeiten aus der bereinigten Liste ableiten, nicht je Liste neu ausduennen (docs/rauschen.md)
-        teil = {k: [f for f in bereinigt if in_zeitraum(f[0])] for k, (_, in_zeitraum) in TEILZEITRAEUME.items()}
     res = {
         "standort": standort,
         "datei": name,
@@ -980,6 +1064,8 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
         "auswertung_ab_kmh": min_kmh,
         "fahrzeuge_unter_auswertung_ab": sum(1 for x in veh if x[1] < min_kmh),
         "fahrzeuge_in_datei": anzahl_roh,
+        **({"fahrzeuge_ausserhalb_erfassungszeitraum": aussen,
+            "erfassungszeitraum_verwaltung": [[a.isoformat(), b.isoformat()] for a, b in zeitraeume]} if drin else {}),
         "warnungen": len(warn),
     }
     res.update(stats(veh, lim, min_kmh) or {"anzahl_fahrzeuge": 0})
@@ -995,20 +1081,23 @@ def rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speich
 
     res.update(zusatz(veh))
     res["uhr"] = uhr
-    res["rauschen"] = rauschen_je_abschnitt(rbs, anzahl_roh - len(veh) if belegt else 0, anzahl_roh, ort)
-    daten = gruppen.datentabelle(gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen), lim)  # Zellen fuer die Auswahl der Detailseite
+    res["rauschen"] = rauschen_je_abschnitt(rbs, anzahl_ganz - len(veh) if belegt else 0, anzahl_ganz, ort)
+    daten = gruppen.datentabelle(gruppen.zellen_bauen(vorher_ganz, bereinigt_ganz, spannen_ganz), lim)  # Zellen fuer die Auswahl der Detailseite
     # Regenklasse je Ortszeit-Stunde (wie im Rauschboden-Modell): fuer die Auswahl "nur trockene Stunden" und das Aggregat (docs/totzeit.md:
     # Regenphantome verdecken Fahrzeuge, die Verkehrsmenge in Regenstunden ist zu niedrig)
     klassen = (rauschen.regenklassen(regen_f, rauschen.abgedeckte_stunden(spannen) | {(t.date(), t.hour) for t, _ in bereinigt})
                if regen_f else None)
     trocken = (lambda x: klassen.get(x) == rauschen.TROCKEN) if klassen else None
     if daten and trocken:
-        daten["trocken"] = gruppen.zellen_json(gruppen.zellen_bauen(bereinigt_vorher, bereinigt, spannen, trocken))
-    res["bereinigt"], res["teilzeitraeume"] = kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz, rauschen.abgedeckte_stunden(spannen))
-    res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt if x[1] >= min_kmh], spannen, lim)
+        daten["trocken"] = gruppen.zellen_json(gruppen.zellen_bauen(vorher_ganz, bereinigt_ganz, spannen_ganz, trocken))
+    res["bereinigt"], res["teilzeitraeume"] = kennzahlen_je_zeitraum(bereinigt_ganz, teil, lim, min_kmh, zusatz,
+                                                                     rauschen.abgedeckte_stunden(spannen_ganz))
+    if drin:
+        res["bereinigt"]["beschreibung"] += "; nur im Erfassungszeitraum der Mitteilung der Verwaltung"
+    res["nacht_ereignisse"] = nacht_ereignisse([x for x in bereinigt_ganz if x[1] >= min_kmh], spannen_ganz, lim)
     # Getrennte Auswertung der Abschnitte (docs/abschnitte.md); der Rauschboden je Abschnitt steht dort mit
-    res["abschnitte"], daten_abschnitte = abschnitte_auswerten(br, bereinigt_vorher, bereinigt, teil, spannen, lim, min_kmh, zusatz,
-                                                               trocken)
+    res["abschnitte"], daten_abschnitte = abschnitte_auswerten(br, bereinigt_vorher, bereinigt, teil_abschnitte, spannen, lim, min_kmh, zusatz,
+                                                               trocken, drin)
     for e, (rb_i, weg, n_i, regen_weg) in zip(res["abschnitte"].get("liste") or [], rbs if len(rbs) > 1 else []):
         e["rauschen"] = rauschen_block(rb_i, weg, n_i, regen_weg)
     if daten and daten_abschnitte:  # Zellen je Abschnitt fuer die Auswahl auf der Detailseite
@@ -1050,14 +1139,18 @@ def kennzahlen_je_zeitraum(bereinigt, teil, lim, min_kmh, zusatz, abgedeckt):
     return bereinigt_block, teilzeitraeume
 
 
-def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusatz, trocken=None):
-    """(Block 'abschnitte', Zellen je Abschnitt): die Messreihe an den erkannten Bruechen zerlegt, jeder Abschnitt einzeln ausgewertet
-    (wie die ganze Datei). Gleiche Rauschbodenabzuege wie fuer die ganze Datei.
+def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusatz, trocken=None, drin=None):
+    """(Block 'abschnitte', Zellen je Abschnitt): die Messreihe an den erkannten Bruechen (und den Grenzen des Erfassungszeitraums der
+    Mitteilung, zeitraum_grenzen) zerlegt, jeder Abschnitt einzeln ausgewertet (wie die ganze Datei). Gleiche Rauschbodenabzuege wie fuer die
+    ganze Datei. drin: Datum -> im Erfassungszeitraum (Abschnitte ausserhalb werden markiert).
     Die Zellen (Liste, eine je Abschnitt, wie die Zellen der Datei) braucht die Auswahl auf der Detailseite."""
     if not br.get("geprueft"):
         return {"geprueft": False, "grund": br["grund"]}, []
+    kuenstlich = sum(1 for b in br["brueche"] if b.get("kuenstlich"))
     blk = {"geprueft": True, "tage": br["tage"], "ab_kmh": br["ab_kmh"], "autokorrelation": br["autokorrelation"],
-           "aufblaehung": br["aufblaehung"], "anzahl": len(br["abschnitte"]), "brueche": len(br["brueche"]),
+           "aufblaehung": br["aufblaehung"], "anzahl": len(br["abschnitte"]), "brueche": len(br["brueche"]) - kuenstlich,
+           **({"grenzen_erfassungszeitraum": sum(1 for b in br["brueche"] if b.get("grenze_erfassungszeitraum"))} if drin else {}),
+           **({"nur_zeitraum": True, "grund": br["grund"]} if br.get("nur_zeitraum") else {}),
            "moegliche_brueche": br["moegliche_brueche"], "ausschlaege": br["ausschlaege"],
            "verworfen_kleiner_unterschied": br["verworfen_kleiner_unterschied"], "liste": []}
     if not br["brueche"]:
@@ -1088,8 +1181,12 @@ def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusat
         # Zeitraum nach den Fahrzeugen (auch Ferien, Feiertage, Teiltage); die Suche nach Bruechen zaehlte nur vollstaendige Schultage
         e = {"nr": i + 1, "von": d0.isoformat(), "bis": d1.isoformat(), "tage": (d1 - d0).days + 1,
              "tage_fuer_bruchsuche": a["tage"], "anzahl_fahrzeuge_gesamt": len(teile_n[i])}
+        b = br["brueche"][i - 1] if i else None
         e["beginn"] = ({"art": "Beginn der Messung"} if i == 0 else
-                       {"art": "Bruch", **br["brueche"][i - 1]})
+                       {"art": "Erfassungszeitraum", **{k: x for k, x in b.items() if k != "kuenstlich"}} if b.get("kuenstlich") else
+                       {"art": "Bruch", **b})
+        if drin and not drin(d0):  # Abschnitte liegen ganz innerhalb oder ganz ausserhalb (Grenzen am Erfassungszeitraum)
+            e["ausserhalb_erfassungszeitraum"] = True
         e.update(stats(teile_n[i], lim, min_kmh) or {"anzahl_fahrzeuge": 0})
         if e["anzahl_fahrzeuge"]:
             abged = rauschen.abgedeckte_stunden(sp)
@@ -1105,13 +1202,16 @@ def abschnitte_auswerten(br, vorher, nachher, teil, spannen, lim, min_kmh, zusat
 
 
 def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, korrekturen=None, speicher=None, csv_schreiben=True,
-            aggregat_ordner=None):
+            aggregat_ordner=None, zeitraeume=None):
+    """zeitraeume: Erfassungszeitraeume der Mitteilungen je "Standort/Datei" (belege/korrekturen.json, Teil 'zeitraum')."""
     with open(path, "rb") as fh:
         buf = fh.read()
     name = os.path.basename(path)
     base = os.path.splitext(name)[0]
     kor = (korrekturen or {}).get(f"{standort}/{name}")
-    schluessel = zwischenspeicher.inhalts_hash(buf, _code_hash(), standort, name, limit, kor, min_kmh) if speicher else None
+    zr = (zeitraeume or {}).get(f"{standort}/{name}")
+    schluessel = (zwischenspeicher.inhalts_hash(buf, _code_hash(), standort, name, limit, kor, min_kmh, *([zr] if zr else []))
+                  if speicher else None)
     gespeichert = speicher.holen(DATEI_EBENE, schluessel) if speicher else None
     if gespeichert is None or csv_schreiben or write_status or show_meta:
         meta, veh, status, warn = parse(buf)
@@ -1143,7 +1243,7 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
     else:
         vorher = set(speicher.benutzt) if speicher else set()
         agg = {}
-        res, daten = rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher, agg)
+        res, daten = rechnen(meta, veh, status, warn, standort, name, limit, kor, min_kmh, speicher, agg, zr)
         # wie nach dem Zwischenspeicher: nur JSON-Typen (Treffer und neu gerechnet liefern dasselbe)
         gespeichert = json.loads(json.dumps({"res": res, "daten": daten, "aggregat": agg,
                                              "abhaengig": sorted(speicher.benutzt - vorher) if speicher else []}))
@@ -1166,10 +1266,10 @@ def convert(path, outdir, standort, limit, show_meta, write_status, min_kmh=0, k
 
 def _aufgabe(a):
     """Eine Datei auswerten (auch in einem eigenen Prozess). Gibt (Index, res oder Fehlertext, benutzte Zwischenspeicher-Eintraege)."""
-    i, f, outdir, standort, limit, meta, status, min_kmh, korrekturen, cache, csv_schreiben, aggregat_ordner = a
+    i, f, outdir, standort, limit, meta, status, min_kmh, korrekturen, cache, csv_schreiben, aggregat_ordner, zeitraeume = a
     speicher = zwischenspeicher.Zwischenspeicher(cache) if cache else None
     try:
-        res = convert(f, outdir, standort, limit, meta, status, min_kmh, korrekturen, speicher, csv_schreiben, aggregat_ordner)
+        res = convert(f, outdir, standort, limit, meta, status, min_kmh, korrekturen, speicher, csv_schreiben, aggregat_ordner, zeitraeume)
     except Exception as e:  # eine fehlerhafte Datei soll den Lauf nicht beenden
         return i, f"{type(e).__name__}: {e}", set(speicher.benutzt) if speicher else set()
     return i, res, set(speicher.benutzt) if speicher else set()
@@ -1184,7 +1284,7 @@ def main():
                     help="zusaetzlich Werte unter dieser Geschwindigkeit aus der Auswertung nehmen, CSV bleibt vollstaendig "
                          "(Standard: 0; den Rauschboden rechnet das Skript ohnehin heraus, siehe docs/rauschen.md)")
     ap.add_argument("--korrekturen", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "belege", "korrekturen.json"),
-                    help="Korrekturen des Tempolimits aus den Mitteilungen (Standard: belege/korrekturen.json, falls vorhanden)")
+                    help="Korrekturen des Tempolimits und Erfassungszeitraeume aus den Mitteilungen (Standard: belege/korrekturen.json, falls vorhanden)")
     ap.add_argument("--meta", action="store_true")
     ap.add_argument("--status", action="store_true")
     ap.add_argument("--keine-csv", action="store_true", help="keine CSV je Datei schreiben")
@@ -1200,10 +1300,11 @@ def main():
         wurzel = os.path.dirname(os.path.abspath(a.eingabe))
         files = [a.eingabe]
 
-    korrekturen = {}
+    korrekturen, zeitraeume = {}, {}
     if os.path.exists(a.korrekturen):
         with open(a.korrekturen, encoding="utf-8") as fh:
-            korrekturen = json.load(fh).get("tempolimit", {})
+            k = json.load(fh)
+        korrekturen, zeitraeume = k.get("tempolimit", {}), k.get("zeitraum", {})
     aufgaben = []
     for i, f in enumerate(files):
         # ohne -o neben der DSD, mit -o dieselbe Ordnerstruktur unter dem Ausgabeordner
@@ -1213,7 +1314,7 @@ def main():
         outdir = os.path.join(a.out, rel) if a.out else dsd_ordner
         os.makedirs(outdir, exist_ok=True)
         aufgaben.append((i, f, outdir, standort, a.limit, a.meta, a.status, a.min_kmh, korrekturen, a.cache, not a.keine_csv,
-                         os.path.abspath(a.aggregat) if a.aggregat else None))
+                         os.path.abspath(a.aggregat) if a.aggregat else None, zeitraeume))
     if a.jobs > 1 and len(aufgaben) > 1:
         with multiprocessing.Pool(a.jobs) as pool:
             ergebnisse = list(pool.imap_unordered(_aufgabe, aufgaben))
