@@ -1,226 +1,182 @@
 # SPDX-License-Identifier: MIT
-"""Tests fuer einsaetze.py (Brueche zuordnen, Einsaetze bilden) an synthetischen Messreihen.  Aufruf: python3 -m unittest -v"""
-import collections
+"""Tests fuer einsaetze.py (Teile den Messungen zuordnen, Einsaetze bilden, Brueche erklaeren).  Aufruf: python3 -m unittest -v"""
 import datetime as dt
-import math
-import random
+import os
 import tempfile
 import unittest
 
+import bewegungen as B
 import einsaetze as E
+import test_bewegungen as TB
 
-BASIS = dt.date(2023, 8, 21)  # Montag, weit weg von Ferienanfang und -ende
-
-
-def tag(i):
-    return BASIS + dt.timedelta(days=i)
+TAG = dt.timedelta(days=1)
 
 
-def standort(mittel, spitze, menge=15.0, sd=6.0):
-    """Verkehr eines Standorts: mittleres Tempo, Stunde der Spitze, Fahrzeuge je Stunde im Mittel."""
-    return {"mittel": mittel, "spitze": spitze, "menge": menge, "sd": sd}
+def messung(mid, geraet="G", limit=50, brueche=()):
+    """Messung wie einsaetze.messungen_lesen; brueche: Bruchtage (date)."""
+    return {"id": mid, "rel": mid, "datei": mid + ".dsd", "geraet": geraet, "limit": limit, "seite": mid, "name": mid, "fahrtrichtung": "",
+            "brueche": [(i + 2, d, 1.0) for i, d in enumerate(brueche)], "aussen": False, "zeile": None, "ort": (51.2, 6.7)}
 
 
-def zeilen_fuer(tage, profil, rnd):
-    """Aggregat-Zeilen (Datum, Stunde, voll, Regenklasse, Counter) und vollstaendig aufgezeichnete Stunden fuer eine Folge von Tagen."""
-    zeilen, voll = [], []
-    for d in tage:
-        for h in range(24):
-            faktor = 0.3 + 1.7 * math.exp(-((h - profil["spitze"]) / 3.0) ** 2) * (0.6 if d.weekday() >= 5 else 1.0)
-            n = max(0, int(round(rnd.gauss(profil["menge"] * faktor, math.sqrt(profil["menge"] * faktor)))))
-            c = collections.Counter(max(16, min(98, int(round(rnd.gauss(profil["mittel"], profil["sd"]))))) for _ in range(n))
-            voll.append((d, h))
-            if c:
-                zeilen.append((d, h, 1, 0, c))
-    return zeilen, voll
+def tz(i, h=0):
+    return dt.datetime.combine(TB.tag(i), dt.time(h))
 
 
-def messung(mid, seite, geraet, teile, brueche=(), limit=50, rnd=None):
-    """Messung wie einsaetze.messungen_lesen: teile = [(erster Tag, letzter Tag, Standortprofil)] (Indizes ab BASIS)."""
-    rnd = rnd or random.Random(hash(mid) % 1000)
-    zeilen, voll = [], []
-    for a, b, profil in teile:
-        z, v = zeilen_fuer([tag(i) for i in range(a, b + 1)], profil, rnd)
-        zeilen += z
-        voll += v
-    br = [(i + 2, tag(t), 1.0) for i, t in enumerate(brueche)]
-    return {"id": mid, "rel": mid, "datei": mid + ".dsd", "geraet": geraet, "limit": limit, "seite": seite, "name": seite, "fahrtrichtung": "",
-            "uhr_nutzbar": True, "brueche": br, "grenzen": [b[1] for b in br], "zeilen": zeilen, "voll": voll, "zeilen_bereinigt": zeilen,
-            "versatz": {(d, h): 2 for d, h in voll}, "zeile": None, "ort": (51.2, 6.7),
-            "von": tag(teile[0][0]), "bis": tag(teile[-1][1])}
+def teil(von, bis, dateien, hist, fz_h=50.0):
+    """Teil eines Aufenthalts (von, bis: Tagesindizes ab TB.BASIS); dateien: {Messung: Tage}, die Dateien in dieser Reihenfolge nacheinander."""
+    tage = bis - von + 1
+    info, ab = {}, von
+    for mid, n in dateien.items():
+        info[mid] = {"fahrzeuge": 1000 * n, "tage": n, "von": tz(ab).isoformat(), "bis": tz(ab + n - 1, 23).isoformat(), "rekonstruiert": 0}
+        ab += n
+    return {"von": tz(von).isoformat(), "bis": tz(bis, 23).isoformat(), "tage": tage, "fahrzeuge": 1000 * tage, "dateien": info,
+            "merkmal": {"hist": hist, "fz_h": fz_h, "v85": 40, "n": 1000, "tage": tage}}
 
 
-A, B, C, D = standort(45, 8), standort(30, 17, menge=12), standort(38, 12, sd=8), standort(52, 6)
+def aufenthalt(nr, teile, beginn=None):
+    return {"nr": nr, "von": teile[0]["von"], "bis": teile[-1]["bis"], "beginn": beginn, "ende": None, "konfidenz": "ungeprueft",
+            "brueche": [{"datum": t["von"][:10], "wahrscheinlichkeit": 1.0} for t in teile[1:]], "teile": teile, "zeilen": [],
+            "voll_ohne_fahrzeuge": []}
 
 
-def andere(n=22):
-    """Vergleichsabschnitte anderer Standorte (gleiches Limit) fuer den Nulltest: andere Tempi und Tagesgaenge als A."""
-    out = []
-    for i in range(n):
-        mittel = 33 + 1.3 * i
-        if abs(mittel - 45) < 2:
-            mittel += 4
-        out.append(messung(f"m-z{i}", f"z{i}", f"G{i}", [(0, 29, standort(mittel, 6 + (i % 11) if (i % 11) != 2 else 3))]))
-    return out
+HA, HB, HC = {"20": 50, "22": 50}, {"14": 60, "15": 40}, {"30": 100}
 
 
-def mit_zeitraum(m, ab):
-    """Wie dsd2csv.zeitraum_grenzen: kuenstliche Grenze am Tag ab (Index), alles davor liegt ausserhalb des Erfassungszeitraums."""
-    nr = 2 + sum(1 for b in m["brueche"] if b[1] < tag(ab))
-    m["brueche"] = [(n + 1 if n >= nr else n, d, p) for n, d, p in m["brueche"]]
-    m["kuenstlich"] = [(nr, tag(ab))]
-    m["grenzen"] = sorted([b[1] for b in m["brueche"]] + [tag(ab)])
-    m["aussen"] = set(range(1, nr))
-    return m
+def synthetisch():
+    """Auslesen, dann umhaengen: m-a (Standort A) bis zum Auslesen an Tag 20 um 9 Uhr; die Datei m-b beginnt dort, das Geraet haengt aber noch
+    bis Tag 30 um 10 Uhr bei A und erst danach bei B."""
+    x = TB.geraet([(TB.um(0, 0), TB.um(20, 9), TB.A, 0), (TB.um(20, 9, 5), TB.um(30, 10), TB.A, 1),
+                   (TB.um(30, 10, 45), TB.um(60, 23, 59), TB.Bo, 1)], ["m-a", "m-b"])
+    B.erkennen([x])
+    return x, B._json({"aktionstage": {}, "geraete": [B.geraet_ausgabe(x)]})
 
 
 class Zuordnung(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.vergleich = andere()
+        cls.x, cls.bew = synthetisch()
+        cls.ms = [messung("m-a"), messung("m-b", brueche=[TB.tag(31)])]
+        cls.ein, cls.nicht, cls.ohne, cls.teile = E.einsaetze_bilden(cls.bew["geraete"], cls.ms, {})
+        cls.von = {e["messung"]: e for e in cls.ein}
 
-    def test_ausserhalb_des_zeitraums_gleich_wird_angeschlossen(self):
-        x = mit_zeitraum(messung("m-x", "b", "G", [(0, 79, A)]), 20)
-        brueche, umh = E.zuordnen([x] + self.vergleich)
-        self.assertEqual(brueche, [])  # die Grenze des Erfassungszeitraums ist kein Bruch
-        e = next(e for e in E.einsaetze_bilden([x], umh) if e["messung"] == "m-x")
-        self.assertEqual(e["status"], "ergaenzt")
-        self.assertEqual(e["nicht_beruecksichtigt"], [])
-        self.assertEqual(len(E.einsatz_abschnitte(e)), 1)  # ein Einsatz-Abschnitt ueber die Grenze hinweg
-        self.assertLessEqual(e["teile"][0]["ausserhalb_erfassungszeitraum"]["score"], E.SCORE_BELEGT)
+    def test_auslesen_dann_umhaengen(self):
+        ea, eb = self.von["m-a"], self.von["m-b"]
+        self.assertEqual(ea["status"], "abgeleitet")
+        self.assertEqual([(t["messung"], t["herkunft"]) for t in ea["teile"]], [("m-a", "eigen"), ("m-b", "andere_messung")])
+        self.assertEqual(eb["status"], "gekuerzt")
+        self.assertEqual([a["an"] for a in eb["abgegeben"]], ["e-a"])
+        self.assertEqual(eb["beginn"]["art"], "bewegung")
+        self.assertEqual(eb["beginn"]["bewegung"]["stufe"], "umhaengen")
+        self.assertEqual(ea["ende"]["bewegung"]["stufe"], "umhaengen")
+        # minutengenau: der Einsatz an A endet vor der Luecke, der an B beginnt nach ihr
+        self.assertLess(dt.datetime.fromisoformat(ea["bis_zeit"]), TB.um(30, 10, 5))
+        self.assertGreater(dt.datetime.fromisoformat(eb["von_zeit"]), TB.um(30, 10, 40))
+        self.assertEqual(self.nicht, [])
+        self.assertEqual(self.ohne, [])
 
-    def test_ausserhalb_des_zeitraums_anders_wird_nicht_beruecksichtigt(self):
-        x = mit_zeitraum(messung("m-x", "b", "G", [(0, 19, C), (20, 79, A)], brueche=[20]), 30)
-        brueche, umh = E.zuordnen([x] + self.vergleich)
-        e = next(e for e in E.einsaetze_bilden([x], umh) if e["messung"] == "m-x")
-        self.assertEqual(e["status"], "gekuerzt")
-        # Abschnitt 2 (20 bis 29) gleicht dem Abschnitt im Zeitraum, Abschnitt 1 (anderer Ort) nicht
-        self.assertEqual([x_["abschnitt"] for x_ in e["nicht_beruecksichtigt"]], [1], e["nicht_beruecksichtigt"])
-        self.assertEqual([t["abschnitt"] for t in e["teile"]], [2, 3])
-        self.assertEqual(len(E.einsatz_abschnitte(e)), 1)
-        self.assertEqual(e["von"], tag(20).isoformat())
+    def test_jedes_fahrzeug_in_genau_einem_einsatz(self):
+        n = 0
+        for e in self.ein:
+            auftrag = E._auftrag(e, self.teile[e["id"]], None, (51.2, 6.7))
+            n += sum(sum(z[4][1::2]) for a in auftrag["abschnitte"] for z in a["zeilen"])
+        self.assertEqual(n, len(self.x["s"]))
 
-    def test_ausserhalb_des_zeitraums_vom_vorigen_standort_wird_umgehaengt(self):
-        y = messung("m-y", "a", "G", [(0, 59, A)])
-        x = mit_zeitraum(messung("m-x", "b", "G", [(60, 89, A), (90, 119, B)]), 90)  # die Verwaltung zaehlt erst ab Tag 90
-        brueche, umh = E.zuordnen([y, x] + self.vergleich)
-        self.assertEqual(brueche, [])
-        self.assertEqual(len(umh), 1)
-        self.assertTrue(umh[0]["kuenstlich"])
-        ein = {e["messung"]: e for e in E.einsaetze_bilden([y, x] + self.vergleich, umh)}
-        self.assertEqual([(t["messung"], t["abschnitt"]) for t in ein["m-y"]["teile"]], [("m-y", 1), ("m-x", 1)])
-        self.assertEqual(ein["m-y"]["teile"][1]["bis"], tag(89).isoformat())  # an der Grenze kein Umhaengtag
-        self.assertEqual(ein["m-x"]["status"], "gekuerzt")
-        self.assertEqual(ein["m-x"]["nicht_beruecksichtigt"], [])
-
-    def test_umhaengen_wird_belegt_und_der_einsatz_zusammengesetzt(self):
-        y = messung("m-y", "a", "G", [(0, 59, A)])
-        x = messung("m-x", "b", "G", [(60, 89, A), (90, 119, B)], brueche=[90])  # das Geraet hing nach dem Auslesen noch bei A
-        brueche, umh = E.zuordnen([y, x] + self.vergleich)
-        b = next(b for b in brueche if b["messung"] == "m-x")
-        self.assertEqual((b["zuordnung"]["art"], b["zuordnung"]["stufe"]), ("umhaengen", "belegt"), b["umhaengen"])
-        self.assertEqual(umh[0]["von_messung"], "m-y")
-        ein = {e["messung"]: e for e in E.einsaetze_bilden([y, x] + self.vergleich, umh)}
-        ey, ex = ein["m-y"], ein["m-x"]
-        self.assertEqual(ey["status"], "abgeleitet")
-        self.assertEqual([(t["messung"], t["abschnitt"]) for t in ey["teile"]], [("m-y", 1), ("m-x", 1)])
-        self.assertEqual(ex["status"], "gekuerzt")
-        self.assertEqual([(t["messung"], t["abschnitt"]) for t in ex["teile"]], [("m-x", 2)])
-        # Bruchtag und Vortag gehoeren zu keinem Einsatz
-        self.assertEqual(ey["teile"][1]["bis"], tag(88).isoformat())
-        self.assertEqual(ex["teile"][0]["von"], tag(91).isoformat())
-        self.assertEqual(sorted(set(ey["ausgenommene_tage"] + ex["ausgenommene_tage"])), [tag(89).isoformat(), tag(90).isoformat()])
-        self.assertEqual(ex["abgegeben"], [{"abschnitt": 1, "an": "e-y"}])
-
-    def test_anderer_standort_wird_nicht_zugeordnet(self):
-        y = messung("m-y", "a", "G", [(0, 59, A)])
-        x = messung("m-x", "b", "G", [(60, 89, C), (90, 119, B)], brueche=[90])  # Abschnitt 1 ist ein dritter Ort, nicht A
-        brueche, umh = E.zuordnen([y, x] + self.vergleich)
-        b = next(b for b in brueche if b["messung"] == "m-x")
-        self.assertNotIn(b["zuordnung"]["stufe"], ("belegt", "bestaetigt"))
-        self.assertEqual(umh, [])
-        self.assertTrue(all(e["status"] == "identisch" for e in E.einsaetze_bilden([y, x], umh)))
-
-    def test_kette_ueber_drei_messungen(self):
-        y = messung("m-y", "a", "G", [(0, 59, A)])
-        x = messung("m-x", "b", "G", [(60, 89, A), (90, 119, B)], brueche=[90])
-        z = messung("m-z", "d", "G", [(120, 149, B), (150, 179, D)], brueche=[150])
-        brueche, umh = E.zuordnen([y, x, z] + self.vergleich)
-        ein = {e["messung"]: e for e in E.einsaetze_bilden([y, x, z] + self.vergleich, umh)}
-        self.assertEqual([(t["messung"], t["abschnitt"]) for t in ein["m-y"]["teile"]], [("m-y", 1), ("m-x", 1)])
-        self.assertEqual([(t["messung"], t["abschnitt"]) for t in ein["m-x"]["teile"]], [("m-x", 2), ("m-z", 1)])
-        self.assertEqual([(t["messung"], t["abschnitt"]) for t in ein["m-z"]["teile"]], [("m-z", 2)])
-        self.assertEqual(ein["m-x"]["status"], "abgeleitet")
-
-    def test_angabe_der_verwaltung_hat_vorrang(self):
-        y = messung("m-y", "a", "G", [(0, 59, A)])
-        x = messung("m-x", "b", "G", [(60, 89, A), (90, 119, B)], brueche=[90])
-        verw = {("m-x/m-x.dsd", tag(90).isoformat()): {"art": "umhaengen", "abschnitt_von": "m-y", "erklaerung": "Umhängeprotokoll",
-                                                      "ausgenommen": [tag(90).isoformat()]}}
-        brueche, umh = E.zuordnen([y, x] + self.vergleich, verwaltung=verw)
-        b = next(b for b in brueche if b["messung"] == "m-x")
-        self.assertEqual((b["zuordnung"]["stufe"], b["zuordnung"]["text"]), ("bestaetigt", "Umhängeprotokoll"))
-        ein = {e["messung"]: e for e in E.einsaetze_bilden([y, x], umh)}
-        self.assertEqual(ein["m-y"]["status"], "bestaetigt")
-        self.assertEqual(ein["m-y"]["teile"][1]["bis"], tag(89).isoformat())  # nur der bestaetigte Tag faellt weg
-
-    def test_ferienende_erklaert_einen_bruch(self):
-        # Herbstferien 2023 enden am 14.10. (Samstag), erster Schultag 16.10.
-        i = (dt.date(2023, 10, 16) - BASIS).days
-        x = messung("m-x", "b", "G", [(0, i - 1, C), (i, i + 40, B)], brueche=[i])
-        brueche, _ = E.zuordnen([x])
-        self.assertEqual((brueche[0]["zuordnung"]["art"], brueche[0]["zuordnung"]["stufe"]), ("ereignis", "plausibel"))
-        kurz = [{"von": "2023-08-25", "bis": "2023-08-29", "name": "Fest", "art": "kurz"}]
-        self.assertEqual(E.ereignis_kandidaten(dt.date(2023, 8, 30), "b", kurz)[0]["erklaerung"], False)  # kurze Ereignisse nur als Hinweis
-
-    def test_invarianten(self):
-        y = messung("m-y", "a", "G", [(0, 59, A)])
-        x = messung("m-x", "b", "G", [(60, 89, A), (90, 119, B)], brueche=[90])
-        ms = [y, x]
-        _, umh = E.zuordnen(ms + self.vergleich)
-        ein = E.einsaetze_bilden(ms, umh)
-        self.assertEqual({e["messung"] for e in ein}, {"m-y", "m-x"})  # zu jeder Messung ein Einsatz
-        self.assertTrue(all(e["teile"] for e in ein))  # jeder Einsatz mit mindestens einem Abschnitt
-        # jedes Fahrzeug genau einmal: in einem Einsatz oder an einem ausgenommenen Tag
-        im_einsatz = collections.Counter()
-        for e in ein:
-            for t in e["teile"]:
-                m = next(m for m in ms if m["id"] == t["messung"])
-                von, bis = dt.date.fromisoformat(t["von"]), dt.date.fromisoformat(t["bis"])
-                im_einsatz[t["messung"]] += sum(sum(c.values()) for d, h, v, k, c in m["zeilen"] if von <= d <= bis)
-        aus = {dt.date.fromisoformat(d) for e in ein for d in e["ausgenommene_tage"]}
-        for m in ms:
-            gesamt = sum(sum(c.values()) for *_x, c in m["zeilen"])
-            ausgenommen = sum(sum(c.values()) for d, h, v, k, c in m["zeilen"] if d in aus)
-            self.assertEqual(im_einsatz[m["id"]] + ausgenommen, gesamt, m["id"])
+    def test_bewegung_erklaert_den_bruch_der_messung(self):
+        br = E.brueche_der_messungen(self.ms, self.bew["geraete"], [], {})
+        self.assertEqual(len(br), 1)
+        self.assertEqual((br[0]["zuordnung"]["art"], br[0]["zuordnung"]["stufe"]), ("bewegung", "belegt"))
+        self.assertIn("Umhängen", br[0]["zuordnung"]["text"])
 
     def test_einsatz_rechnen(self):
-        """Durchgang C: Kennzahlen, Zellen und Aggregat eines zusammengesetzten Einsatzes; Einsatz-Abschnitte trennen nur Brueche, nicht Dateigrenzen."""
-        y = messung("m-y", "a", "G", [(0, 59, A)])
-        x = messung("m-x", "b", "G", [(60, 89, A), (90, 119, B)], brueche=[90])
-        _, umh = E.zuordnen([y, x] + self.vergleich)
-        ein = {e["messung"]: e for e in E.einsaetze_bilden([y, x], umh)}
-        self.assertEqual(len(E.einsatz_abschnitte(ein["m-y"])), 1)  # Y#1 und X#1 ueber die Dateigrenze: ein Einsatz-Abschnitt
-        auftrag = E._auftrag(ein["m-y"], {"m-y": y, "m-x": x}, None)
+        e = self.von["m-a"]
+        auftrag = E._auftrag(e, self.teile[e["id"]], None, (51.2, 6.7))
         erg = E.einsatz_rechnen(auftrag)
-        k, daten = erg["kennzahlen"], erg["zellen"]
-        n = sum(sum(c.values()) for d, h, v, kl, c in y["zeilen"]) + sum(
-            sum(c.values()) for d, h, v, kl, c in x["zeilen"] if d <= tag(88))
+        k = erg["kennzahlen"]
+        n = sum(sum(z[4][1::2]) for a in auftrag["abschnitte"] for z in a["zeilen"])
         self.assertEqual(k["bereinigt"]["anzahl_fahrzeuge"] + k["rauschen"].get("abgezogen_fahrzeuge", 0), n)
-        self.assertEqual(sum(daten["tage"].values()), len([s for s in y["voll"]]) + len([s for s in x["voll"] if s[0] <= tag(88)]))
         self.assertIn("raten", k["bereinigt"])
-        self.assertEqual(set(k["teilzeitraeume"]), {"nacht", "vormittag", "nachmittag", "abend", "schulweg"})
         self.assertEqual(sum(sum(z[6][1::2]) for z in erg["aggregat"]), k["bereinigt"]["anzahl_fahrzeuge"])
         with tempfile.TemporaryDirectory() as ordner:  # ueber den Zwischenspeicher: beim zweiten Mal aus dem Speicher, dasselbe Ergebnis
             _, erst, _ = E._arbeit((auftrag, ordner))
             _, zweit, benutzt = E._arbeit((auftrag, ordner))
             self.assertEqual(erst, zweit)
             self.assertIn("einsatz", {x[0] for x in benutzt})
-            self.assertEqual(zweit["kennzahlen"]["bereinigt"]["anzahl_fahrzeuge"], k["bereinigt"]["anzahl_fahrzeuge"])
-        zwei = dict(ein["m-y"], teile=[dict(t_, abschnitt=1) for t_ in ein["m-x"]["teile"]] + [
-            {"messung": "m-x", "abschnitt": 1, "von": tag(60).isoformat(), "bis": tag(88).isoformat(), "herkunft": "eigen", "stufe": None}])
-        zwei["teile"].sort(key=lambda t_: t_["von"])
-        self.assertEqual(len(E.einsatz_abschnitte(zwei)), 2)  # zwei Teile derselben Messung trennt ein Bruch
+
+
+class Teile(unittest.TestCase):
+    def test_ortswechsel_ohne_bewegung(self):
+        """Kein Umhaengen erkannt, aber ein Bruch im Aufenthalt, nach dem die Daten zur folgenden Messung passen: Schnitt am Bruch, Bruchtag
+        und Vortag gehoeren zu keinem Einsatz."""
+        g = {"geraet": "G", "aufenthalte": [aufenthalt(1, [teil(0, 29, {"m-a": 21, "m-b": 9}, HA), teil(30, 59, {"m-b": 30}, HB)])]}
+        ein, nicht, ohne, _ = E.einsaetze_bilden([g], [messung("m-a"), messung("m-b")], {})
+        von = {e["messung"]: e for e in ein}
+        self.assertEqual(von["m-a"]["ende"]["art"], "ortswechsel_ohne_bewegung")
+        self.assertEqual(von["m-b"]["beginn"]["art"], "ortswechsel_ohne_bewegung")
+        self.assertEqual(von["m-a"]["ausgenommene_tage"], [TB.tag(29).isoformat(), TB.tag(30).isoformat()])
+        self.assertEqual(von["m-a"]["bis"], TB.tag(28).isoformat())
+        self.assertEqual(von["m-b"]["von"], TB.tag(31).isoformat())
+
+    def test_bruch_im_einsatz_bleibt(self):
+        """Ein Bruch, nach dem die Daten weiter zur selben Datei gehoeren: zwei Einsatz-Abschnitte, kein Schnitt."""
+        g = {"geraet": "G", "aufenthalte": [aufenthalt(1, [teil(0, 29, {"m-a": 30}, HA), teil(30, 59, {"m-a": 30}, HB)])]}
+        ein, _n, _o, _ = E.einsaetze_bilden([g], [messung("m-a")], {})
+        self.assertEqual(len(ein[0]["abschnitte"]), 2)
+        self.assertEqual(ein[0]["abschnitte"][1]["grenze_davor"]["art"], "bruch")
+        self.assertEqual(ein[0]["ausgenommene_tage"], [])
+        self.assertEqual(ein[0]["status"], "identisch")
+
+    def test_kurzer_fremder_ort_ohne_messung(self):
+        """Fuenf Tage an einem Ort ohne Messung zwischen zwei Messungen (anderer Verkehr, ausserhalb jedes Erfassungszeitraums): keine Messung."""
+        g = {"geraet": "G", "aufenthalte": [aufenthalt(1, [teil(0, 30, {"m-a": 31}, HA)]), aufenthalt(2, [teil(31, 35, {"m-b": 5}, HC, 20.0)]),
+                                            aufenthalt(3, [teil(36, 70, {"m-b": 35}, HB)])]}
+        zr = {"m-a/m-a.dsd": [(TB.tag(0), TB.tag(30))], "m-b/m-b.dsd": [(TB.tag(36), TB.tag(70))]}
+        ein, nicht, ohne, _ = E.einsaetze_bilden([g], [messung("m-a"), messung("m-b")], zr)
+        self.assertEqual(len(nicht), 1)
+        self.assertEqual(nicht[0]["von"][:10], TB.tag(31).isoformat())
+        eb = next(e for e in ein if e["messung"] == "m-b")
+        self.assertEqual(len(eb["nicht_beruecksichtigt"]), 1)
+        self.assertEqual(eb["status"], "gekuerzt")
+
+    def test_messung_ohne_daten(self):
+        g = {"geraet": "G", "aufenthalte": [aufenthalt(1, [teil(0, 30, {"m-a": 31}, HA)])]}
+        _e, _n, ohne, _ = E.einsaetze_bilden([g], [messung("m-a"), messung("m-c")], {})
+        self.assertEqual([o["messung"] for o in ohne], ["m-c"])
+
+
+class Brueche(unittest.TestCase):
+    def test_bewegung_in_den_ferien_erklaert_den_bruch_am_ersten_schultag(self):
+        # Osterferien 2025: 14.04. bis 26.04.; die Bruchsuche laesst Ferientage aus und findet den Bruch am 28.04.
+        b = {"stufe": "umhaengen", "von": "2025-04-14T10:20:00", "bis": "2025-04-14T10:58:00", "z": 12.0}
+        self.assertEqual(E.bewegung_vor(dt.date(2025, 4, 28), [b]), b)
+        frueh = dict(b, von="2025-04-01T10:20:00", bis="2025-04-01T10:58:00")
+        self.assertIsNone(E.bewegung_vor(dt.date(2025, 4, 28), [frueh]))
+        self.assertIsNone(E.bewegung_vor(dt.date(2025, 4, 28), [dict(b, stufe="eingriff")]))
+
+    def test_ferienende_erklaert_einen_bruch(self):
+        # Herbstferien 2023 enden am 14.10. (Samstag), erster Schultag 16.10.
+        zu, _ev, _v = E.erklaeren(dt.date(2023, 10, 16), "b", "m/m.dsd", [], {})
+        self.assertEqual((zu["art"], zu["stufe"]), ("ereignis", "plausibel"))
+        kurz = [{"von": "2023-08-25", "bis": "2023-08-29", "name": "Fest", "art": "kurz"}]
+        self.assertEqual(E.ereignis_kandidaten(dt.date(2023, 8, 30), "b", kurz)[0]["erklaerung"], False)  # kurze Ereignisse nur als Hinweis
+
+    def test_angabe_der_verwaltung_hat_vorrang(self):
+        verw = {("m/m.dsd", "2023-10-16"): {"art": "ereignis", "erklaerung": "Baustelle"}}
+        b = {"stufe": "umhaengen", "von": "2023-10-16T10:00:00", "bis": "2023-10-16T10:30:00", "z": 9.0}
+        zu, _ev, _v = E.erklaeren(dt.date(2023, 10, 16), "b", "m/m.dsd", [], verw, b)
+        self.assertEqual((zu["stufe"], zu["text"]), ("bestaetigt", "Baustelle"))
+
+
+class Defekt(unittest.TestCase):
+    def test_pdf_der_verwaltung(self):
+        with tempfile.TemporaryDirectory() as w:
+            for rel, f in (("01_A", "23_05_04_fehlerhaft_A.pdf"), ("01_A", "23_05_04_A.dsd"), ("02_B/sub", "23_05_04_B.dsd"),
+                           ("02_B", "23_05_04_fehlerhaft_B.pdf"), ("03_C", "2023_07_C_defekt.pdf"), ("03_C", "_7.dsd"), ("04_D", "x.dsd"),
+                           ("04_D", "2023_07_D.pdf"), ("05_E", "24_01_01_E.dsd"), ("05_E", "23_05_04_fehlerhaft_E.pdf")):
+                os.makedirs(os.path.join(w, rel), exist_ok=True)
+                open(os.path.join(w, rel, f), "w").close()
+            ms = [dict(messung(i), rel=rel, datei=f) for i, rel, f in (("m-a", "01_A", "23_05_04_A.dsd"), ("m-b", "02_B/sub", "23_05_04_B.dsd"),
+                                                                      ("m-c", "03_C", "_7.dsd"), ("m-d", "04_D", "x.dsd"), ("m-e", "05_E", "24_01_01_E.dsd"))]
+            self.assertEqual(sorted(E.defekt(ms, w)), ["m-a", "m-b", "m-c"])
 
 
 if __name__ == "__main__":

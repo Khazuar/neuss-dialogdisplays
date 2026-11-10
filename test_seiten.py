@@ -216,32 +216,57 @@ class AbschnitteUebersicht(unittest.TestCase):
 
 
 class Einsatz(unittest.TestCase):
+    def einsatz(self, m, status="abgeleitet"):
+        bew = {"stufe": "umhaengen", "art": "luecke", "von": "2024-12-13T11:28:00", "bis": "2024-12-13T11:55:00", "z": 23.4,
+               "tagesprobe": "2024-12-13T11:50:00", "fz_h": [40, 60]}
+        teil = {"messung": m["id"], "abschnitt": 1, "von": "2024-09-04", "bis": "2024-12-04", "von_zeit": "2024-09-04T14:58:00",
+                "bis_zeit": "2024-12-04T10:00:00", "herkunft": "eigen", "rekonstruiert": 0, "fahrzeuge": 900, "stufe": "sicher"}
+        fremd = {"messung": "m-79-rosmarinstrasse-16", "abschnitt": 1, "von": "2024-12-04", "bis": "2024-12-13", "von_zeit": "2024-12-04T10:05:00",
+                 "bis_zeit": "2024-12-13T11:28:00", "herkunft": "andere_messung", "rekonstruiert": 0, "fahrzeuge": 100, "stufe": "sicher"}
+        return {"id": "e-07-2024-einsteinstrasse-15", "messung": m["id"], "seite": "einsteinstrasse", "name": "Einsteinstraße", "fahrtrichtung": "",
+                "geraet": "G", "limit": 30, "status": status, "von": "2024-09-04", "bis": "2024-12-13", "von_zeit": "2024-09-04T14:58:00",
+                "bis_zeit": "2024-12-13T11:28:00", "beginn": {"art": "bewegung", "bewegung": dict(bew, von="2024-09-04T14:18:00", bis="2024-09-04T14:58:00")},
+                "ende": {"art": "bewegung", "bewegung": bew},
+                "abschnitte": [{"nr": 1, "von": "2024-09-04T14:58:00", "bis": "2024-12-13T11:28:00", "aufenthalt": 8, "grenze_davor": {"art": "bewegung", "bewegung": bew},
+                                "sicher": True, "abstand": 6.2, "belege": ["92 % der Tage in der Datei"]}],
+                "teile": [teil, fremd], "abgegeben": [{"von": "2024-07-24T10:00:00", "bis": "2024-09-04T14:18:00", "fahrzeuge": 500, "an": "e-76-daimlerstrasse",
+                                                       "sicher": True}],
+                "nicht_beruecksichtigt": [], "ausgenommene_tage": [], "rekonstruiert": 0,
+                "kennzahlen": {"bereinigt": {"anzahl_fahrzeuge": 1000, "geschwindigkeit_kmh": zeile()["geschwindigkeit_kmh"]}, "teilzeitraeume": {}}}
+
+    def index(self, m, ein):
+        return {m["id"]: {"slug": "einsteinstrasse", "name": "Einsteinstraße", "datei": "_15.dsd", "einsatz": ein["id"]},
+                "m-76-daimlerstrasse": {"slug": "daimlerstrasse", "name": "Daimlerstraße", "datei": "x.dsd", "einsatz": "e-76-daimlerstrasse"},
+                "m-79-rosmarinstrasse-16": {"slug": "rosmarinstrasse", "name": "Rosmarinstraße", "datei": "_16.dsd", "einsatz": None}}
+
     def test_einsatz_und_messung_waehlbar(self):
-        """Ein zusammengesetzter Einsatz steht vor seiner Messung; die Messung nennt, welcher Abschnitt zu einem anderen Einsatz gehört."""
+        """Ein zusammengesetzter Einsatz steht vor seiner Messung; die Messung nennt, welche Daten zu einem anderen Einsatz gehören."""
         rel = "07_2024_ Einsteinstraße"
         m = s.messung_eintrag(rel, zeile(), {"standorte": {rel: {"messungen": []}}}, {}, {})
-        teil = {"messung": m["id"], "abschnitt": 2, "von": "2024-09-05", "bis": "2024-12-04", "herkunft": "eigen", "stufe": None}
-        fremd = {"messung": "m-79-rosmarinstrasse-16", "abschnitt": 1, "von": "2024-12-04", "bis": "2024-12-11", "herkunft": "vorgaenger", "stufe": "belegt",
-                 "beleg": {"bruchtag": "2024-12-13", "bruch_wahrscheinlichkeit": 1.0, "score": 0.59, "p_nulltest": 0.012, "nulltest_abschnitte": 85,
-                           "verhaeltnis_fahrzeuge": 1.09, "gegenprobe_score": 15.0, "naht": {"stetig": True}}}
-        ein = {"id": "e-07-2024-einsteinstrasse-15", "messung": m["id"], "seite": "einsteinstrasse", "name": "Einsteinstraße", "fahrtrichtung": "",
-               "geraet": "G", "limit": 30, "status": "abgeleitet", "von": "2024-09-05", "bis": "2024-12-11", "teile": [teil, fremd],
-               "abgegeben": [{"abschnitt": 1, "an": "e-76-daimlerstrasse"}], "ausgenommene_tage": ["2024-09-04"],
-               "kennzahlen": {"bereinigt": {"anzahl_fahrzeuge": 1000, "geschwindigkeit_kmh": zeile()["geschwindigkeit_kmh"]}, "teilzeitraeume": {}}}
+        ein = self.einsatz(m)
         m["einsatz_info"], m["einsatz_eintrag"] = ein, s.einsatz_eintrag(ein, m, {})
-        index = {m["id"]: {"slug": "einsteinstrasse", "name": "Einsteinstraße", "datei": "_15.dsd", "einsatz": ein["id"]},
-                 "m-76-daimlerstrasse": {"slug": "daimlerstrasse", "name": "Daimlerstraße", "datei": "x.dsd", "einsatz": "e-76-daimlerstrasse"},
-                 "m-79-rosmarinstrasse-16": {"slug": "rosmarinstrasse", "name": "Rosmarinstraße", "datei": "_16.dsd", "einsatz": None}}
-        h = s.standortseite("Einsteinstraße", [m], index=index)
+        h = s.standortseite("Einsteinstraße", [m], index=self.index(m, ein))
         self.assertIn('<optgroup label="Einsätze (unsere Zuordnung)">', h)
         self.assertLess(h.index('value="e-07-2024-einsteinstrasse-15"'), h.index(f'value="{m["id"]}"'))  # Einsatz zuerst
-        self.assertIn("aus mehreren Messungen zusammengesetzt (abgeleitet, nicht bestätigt)", h)
+        self.assertIn("mit Daten aus Dateien anderer Messungen desselben Geräts (abgeleitet, nicht bestätigt)", h)
         self.assertIn("Zeitraum der Verwaltung umfasst Daten eines anderen Standorts", h)  # Hinweis an der Messung
         self.assertIn('href="daimlerstrasse.html#e-76-daimlerstrasse"', h)
-        self.assertIn("Belege der Zuordnung", h)
+        self.assertIn("Umhängen (Transportlücke) 13.12.2024 11:28–11:55, Änderung z = 23,4, Wechsel im Tagesverlauf um 11:50", h)
         self.assertIn('href="rosmarinstrasse.html#m-79-rosmarinstrasse-16"', h)
-        ein["status"] = "bestaetigt"
-        self.assertIn("von der Verwaltung als unzutreffend bestätigt", s.messung_hinweis(m, index))
+        self.assertIn("92 % der Tage in der Datei", h)
+
+    def test_defekte_messung_nur_als_einsatz(self):
+        """Eine Messung, die die Verwaltung selbst „defekt“ nennt, steht nur als Einsatz da, mit Hinweis."""
+        rel = "07_2024_ Einsteinstraße"
+        m = s.messung_eintrag(rel, zeile(), {"standorte": {rel: {"messungen": []}}}, {}, {})
+        ein = self.einsatz(m, "identisch")
+        m["einsatz_info"], m["einsatz_eintrag"], m["ausblenden"] = ein, s.einsatz_eintrag(ein, m, {}), "2023_07_X_defekt.pdf"
+        h = s.standortseite("Einsteinstraße", [m], index=self.index(m, ein))
+        self.assertIn("bezeichnet die Verwaltung selbst als fehlerhaft", h)
+        self.assertIn('data-messung="e-07-2024-einsteinstrasse-15"', h)
+        self.assertNotIn(f'data-messung="{m["id"]}"', h)
+        a = s.abschnitte_uebersicht({"standorte": [zeile()]}, {"07_2024_ Einsteinstraße/_15.dsd": {"seite": "x", "defekt": "d.pdf"}})
+        self.assertEqual(a, [])
 
 
 class Seite(unittest.TestCase):

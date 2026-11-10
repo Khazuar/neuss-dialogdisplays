@@ -1518,13 +1518,45 @@ def allgemein_teil(name, messungen, verz):
 
 EINSATZ_STATUS = {
     "identisch": "Einsatz = Messung",
-    "abgeleitet": "aus mehreren Messungen zusammengesetzt (abgeleitet, nicht bestätigt)",
-    "unsicher": "aus mehreren Messungen zusammengesetzt (Zuordnung möglich, aber unsicher)",
+    "abgeleitet": "mit Daten aus Dateien anderer Messungen desselben Geräts (abgeleitet, nicht bestätigt)",
+    "unsicher": "Grenzen zu anderen Messungen desselben Geräts unsicher (abgeleitet, nicht bestätigt)",
     "bestaetigt": "aus mehreren Messungen zusammengesetzt; Grenzen des Messzeitraums von der Verwaltung bestätigt",
-    "gekuerzt": "ohne Daten, die zu einem anderen Einsatz gehören oder außerhalb des offiziellen Messzeitraums nicht zuzuordnen sind (abgeleitet, nicht bestätigt)",
-    "ergaenzt": "mit Daten außerhalb des offiziellen Messzeitraums, die dem Rest der Messung gleichen (abgeleitet, nicht bestätigt)",
+    "gekuerzt": "ohne Daten der Datei, die zu einem anderen Einsatz oder zu keinem Standort mit Messung gehören (abgeleitet, nicht bestätigt)",
+    "ergaenzt": "mit Daten außerhalb des offiziellen Messzeitraums oder mit rekonstruierter Geräteuhr (abgeleitet, nicht bestätigt)",
 }
-ZUORDNUNG_TEXT = {"umhaengen": "Umhängen", "ereignis": "Ereignis", "unerklaert": "unerklärt", "verwaltung": "Angabe der Verwaltung"}
+ZUORDNUNG_TEXT = {"umhaengen": "Umhängen", "bewegung": "Umhängen (Bewegung erkannt)", "ereignis": "Ereignis", "unerklaert": "unerklärt",
+                  "verwaltung": "Angabe der Verwaltung"}
+GRENZE_TEXT = {"datenbeginn": "Beginn der Daten (Montage davor, Zeitpunkt unbekannt)", "datenende": "Ende der Daten",
+               "ortswechsel_ohne_bewegung": "Ortswechsel an einem Bruch, ohne erkennbare Transportlücke",
+               "messungswechsel_am_bruch": "Wechsel der Messung am selben Standort an einem Bruch (Auslesen, Umstellen)"}
+BEWEGUNG_STUFE_TEXT = {"umhaengen": "Umhängen (Transportlücke)", "aktionstag": "Umhängen am Aktionstag", "inbetriebnahme": "Inbetriebnahme nach Pause",
+                       "inbetriebnahme_ungeprueft": "Inbetriebnahme nach Pause (ohne Vergleich)"}
+
+
+def zeit_de(s):
+    """'2025-10-26T10:20:00' -> '26.10.2025 10:20'"""
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})", s or "")
+    return f"{m.group(3)}.{m.group(2)}.{m.group(1)} {m.group(4)}:{m.group(5)}" if m else iso_de(s)
+
+
+def grenze_text(g):
+    """Beginn, Ende oder Grenze eines Einsatz-Abschnitts (einsaetze.py) als Text."""
+    if not g:
+        return "–"
+    if g["art"] == "bewegung":
+        b = g.get("bewegung") or {}
+        if not b:
+            return "Bewegung"
+        zeit = (f'{zeit_de(b["von"])}–{b["bis"][11:16]}' if b["von"][:10] == b["bis"][:10] else f'{zeit_de(b["von"])} bis {zeit_de(b["bis"])}')
+        z = f', Änderung z = {dez(b["z"], 1)}' if b.get("z") is not None else ""
+        tp = f', Wechsel im Tagesverlauf um {b["tagesprobe"][11:16]}' if b.get("tagesprobe") else ""
+        return f'{BEWEGUNG_STUFE_TEXT.get(b["stufe"], b["stufe"])} {zeit}{z}{tp}' + (f' ({g["text"]})' if g.get("text") else "")
+    if g["art"] == "bruch":
+        zu = g.get("zuordnung") or {}
+        erkl = f' ({ZUORDNUNG_TEXT.get(zu["art"], zu["art"])}{": " + zu["text"] if zu.get("text") else ""})' if zu else ""
+        return f'Bruch am {iso_de(g.get("datum"))}{erkl}'
+    text = GRENZE_TEXT.get(g["art"], g["art"])
+    return f'{text} am {iso_de(g["datum"])}; {iso_de(g["ausgenommen"][0])} und {iso_de(g["ausgenommen"][1])} ausgenommen' if g.get("datum") else text
 STUFE_TEXT = {"belegt": "belegt", "moeglich": "möglich", "plausibel": "plausibel", "bestaetigt": "von der Verwaltung bestätigt", "offen": "offen"}
 
 
@@ -1565,60 +1597,45 @@ def _messung_link(mid, index, text=None):
 
 
 def einsatz_teil(m, index):
-    """Reiter Messung fuer einen Einsatz: Herkunft der Abschnitte, Zeitraum, Belege der Zuordnung."""
+    """Reiter Messung fuer einen Einsatz: Beginn und Ende, Einsatz-Abschnitte mit ihren Grenzen, Herkunft der Daten, Belege der Zuordnung."""
     ein = m["einsatz"]
     host = index.get(ein["messung"]) or {}
     badge = "ok" if ein["status"] == "bestaetigt" else "bad" if ein["status"] == "unsicher" else "mid"
     z = [f'<p><span class="badge {badge}">{e(EINSATZ_STATUS[ein["status"]])}</span></p>',
          '<p>Ein <strong>Einsatz</strong> ist der Zeitraum, in dem das Gerät tatsächlich an diesem Standort in diese Fahrtrichtung gemessen hat. '
-         'Er kann Abschnitte anderer Messungen desselben Geräts enthalten, wenn das Gerät vor oder nach dem Auslesen noch am alten bzw. schon am '
-         'neuen Ort hing. Die Zuordnung beruht auf unseren Kriterien (Geschwindigkeitsverteilung, Tagesgang, Verkehrsmenge, Nulltest gegen andere '
-         'Standorte); sie ist nicht von der Verwaltung bestätigt, wenn das nicht ausdrücklich dasteht. Die Sicht der Verwaltung (die Messung, wie '
+         'Grundlage sind alle Dateien des Geräts zusammen: Umhängen zeigt sich als Lücke in den Daten, nach der sich der Verkehr deutlich ändert '
+         '(Transportlücke), oder als Inbetriebnahme nach einer längeren Pause. Zwischen zwei solchen Bewegungen hing das Gerät an einem Ort; diese '
+         'Zeiträume sind den Messungen der Verwaltung zugeordnet (Dateien, Erfassungszeitraum der Mitteilung, Tempolimit, Ähnlichkeit). Die '
+         'Zuordnung ist nicht von der Verwaltung bestätigt, wenn das nicht ausdrücklich dasteht. Die Sicht der Verwaltung (die Messung, wie '
          'geliefert) steht in der Auswahl oben unter „Messungen“.</p>']
-    fakten = [("Zeitraum des Einsatzes", f'{iso_de(ein["von"])} bis {iso_de(ein["bis"])}'),
+    fakten = [("Zeitraum des Einsatzes", f'{zeit_de(ein["von_zeit"])} bis {zeit_de(ein["bis_zeit"])}'),
+              ("Beginn", e(grenze_text(ein["beginn"]))), ("Ende", e(grenze_text(ein["ende"]))),
               ("Zugrunde liegende Messung", _messung_link(ein["messung"], index)),
               ("Gerät", e(ein["geraet"]) or "–"), ("Fahrtrichtung", e(ein["fahrtrichtung"]) or "–")]
+    if ein.get("rekonstruiert"):
+        fakten.append(("Rekonstruierte Geräteuhr", f'{dez(ein["rekonstruiert"], 0)} Fahrzeuge aus Abschnitten mit zurückgesetzter Uhr, deren Lage '
+                                                   'wir aus Ankern bestimmt haben (Montage, Auslesen, Zeitumstellung; docs/einsaetze.md)'))
     if ein["ausgenommene_tage"]:
-        fakten.append(("Ausgenommen (Umhängen, Transport, Montage)", e(", ".join(iso_de(d) for d in ein["ausgenommene_tage"]))))
+        fakten.append(("Ausgenommen (Wechsel ohne Transportlücke)", e(", ".join(iso_de(d) for d in ein["ausgenommene_tage"]))))
     z.append('<dl class="facts">' + "".join(f"<dt>{e(k)}</dt><dd>{v}</dd>" for k, v in fakten) + "</dl>")
     zeilen = []
-    for i, t in enumerate(ein["teile"]):
-        if not t["von"]:
-            continue
-        her = {"eigen": "diese Messung",
-               "vorgaenger": "folgende Messung desselben Geräts: Das Gerät hing nach dem Auslesen noch hier",
-               "nachfolger": "vorige Messung desselben Geräts: Das Gerät hing schon hier, bevor sie ausgelesen wurde"}[t["herkunft"]]
-        az = t.get("ausserhalb_erfassungszeitraum")
-        if az:
-            her += (f'; {AUSSERHALB}, gleicht Abschnitt {az["verglichen_mit"]} (Score {dez(az["score"], 2)}, Verkehrsmenge '
-                    f'{dez(az["verhaeltnis_fahrzeuge"], 2)}) und wird mit ihm ausgewertet')
-        zeilen.append(f'<tr><td class="num">{i + 1}</td><td>{iso_de(t["von"])} bis {iso_de(t["bis"])}</td><td>{_messung_link(t["messung"], index)}, '
-                      f'Abschnitt {t["abschnitt"]}</td><td>{e(her)}</td><td>{e(STUFE_TEXT.get(t["stufe"], "") if t["stufe"] else "–")}</td></tr>')
-    z.append('<h4>Abschnitte des Einsatzes</h4><div class="tablewrap"><table><thead><tr><th class="num">Nr.</th><th>Zeitraum</th><th>aus Messung</th>'
-             '<th>Herkunft</th><th>Zuordnung</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>")
+    for a in ein["abschnitte"]:
+        quellen = "; ".join(f'{_messung_link(t["messung"], index)} ({dez(t["fahrzeuge"], 0)} Fahrzeuge'
+                            + (f', davon {dez(t["rekonstruiert"], 0)} mit rekonstruierter Uhr' if t["rekonstruiert"] else "") + ')'
+                            for t in ein["teile"] if t["abschnitt"] == a["nr"])
+        sicher = "–" if a.get("abstand") is None else ("sicher" if a["sicher"] else "unsicher") + f' (Abstand {dez(a["abstand"], 1)})'
+        zeilen.append(f'<tr><td class="num">{a["nr"]}</td><td>{zeit_de(a["von"])} bis {zeit_de(a["bis"])}</td><td>{e(grenze_text(a["grenze_davor"]))}</td>'
+                      f'<td>{quellen}</td><td>{e(sicher)}</td><td>{e("; ".join(a.get("belege") or [])) or "–"}</td></tr>')
+    z.append('<h4>Abschnitte des Einsatzes</h4><div class="tablewrap"><table><thead><tr><th class="num">Nr.</th><th>Zeitraum</th><th>Grenze davor</th>'
+             '<th>Daten aus Datei</th><th>Zuordnung</th><th>Belege</th></tr></thead><tbody>' + "".join(zeilen) + "</tbody></table></div>"
+             '<p class="muted">Zuordnung: Abstand der besten Gesamtzuordnung aller Abschnitte des Geräts zur besten, in der dieser Abschnitt woanders '
+             'hingehört (sicher ab 1,5 Punkten). Belege: Anteil der Tage in der Datei der Messung, Anteil im Erfassungszeitraum der Mitteilung, '
+             f'Tempolimit. Verfahren: <a href="{REPO}/blob/main/docs/einsaetze.md">Einsätze</a>.</p>')
     if ein.get("nicht_beruecksichtigt"):
-        z.append(f'<h4>Nicht berücksichtigt</h4><p>Diese Abschnitte der Messung liegen {AUSSERHALB} und lassen sich keinem Einsatz zuordnen: Sie '
-                 'gleichen weder dem angrenzenden Abschnitt im Erfassungszeitraum noch einer anderen Messung desselben Geräts. Sie gehen nicht in '
-                 'die Auswertung des Einsatzes ein.</p><ul>' +
-                 "".join(f'<li>Abschnitt {x["abschnitt"]}, {iso_de(x["von"])} bis {iso_de(x["bis"])}: {e(x["grund"])}'
-                         + (f' (Score {dez(x["score"], 2)}, Verkehrsmenge {dez(x["verhaeltnis_fahrzeuge"], 2)} gegen Abschnitt {x["verglichen_mit"]})'
-                            if x.get("score") is not None else "") + '</li>' for x in ein["nicht_beruecksichtigt"]) + "</ul>")
-    belege = [t for t in ein["teile"] if t.get("beleg")]
-    if belege:
-        z.append('<h4>Belege der Zuordnung</h4><div class="tablewrap"><table><thead><tr><th>Abschnitt</th><th>Bruch</th><th class="num">Score</th>'
-                 '<th class="num">Nulltest p</th><th class="num">Fahrzeuge (Verhältnis)</th><th class="num">Gegenprobe</th><th>Naht</th></tr></thead><tbody>' +
-                 "".join(f'<tr><td>{_messung_link(t["messung"], index)}, Abschnitt {t["abschnitt"]}</td><td>{iso_de(t["beleg"]["bruchtag"])} '
-                         + ('(Grenze des Erfassungszeitraums der Mitteilung)' if t["beleg"].get("kuenstlich") else
-                            f'(Wahrscheinlichkeit {dez(100 * (t["beleg"]["bruch_wahrscheinlichkeit"] or 0), 0)}&nbsp;%)') + '</td>'
-                         f'<td class="num">{dez(t["beleg"]["score"], 2)}</td><td class="num">{dez(t["beleg"]["p_nulltest"], 3)} '
-                         f'(von {t["beleg"]["nulltest_abschnitte"]})</td><td class="num">{dez(t["beleg"]["verhaeltnis_fahrzeuge"], 2)}</td>'
-                         f'<td class="num">{dez(t["beleg"]["gegenprobe_score"], 1)}</td>'
-                         f'<td>{"stetig" if (t["beleg"]["naht"] or {}).get("stetig") else "–" if not t["beleg"]["naht"] else "nicht stetig"}</td></tr>'
-                         for t in belege) + "</tbody></table></div>"
-                 '<p class="muted">Score: Abstand von Geschwindigkeitsverteilung und Tagesgang zum Abschnitt der anderen Messung, gemessen am Rauschen '
-                 '(unter 1,15: innerhalb des Rauschens). Nulltest: Anteil der Abschnitte anderer Standorte mit gleichem Tempolimit, die ihm mindestens so '
-                 'ähnlich sind. Gegenprobe: derselbe Abstand für den Abschnitt auf der anderen Seite des Bruchs (über 3: nicht ähnlich). Naht: die '
-                 f'sieben Tage vor und nach dem Auslesen passen zusammen. Verfahren: <a href="{REPO}/blob/main/docs/einsaetze.md">Einsätze</a>.</p>')
+        z.append('<h4>Nicht berücksichtigt</h4><p>Diese Daten der Datei gehören zu keinem Standort mit Messung (das Gerät hing nach unserer '
+                 'Zuordnung an einem anderen Ort). Sie gehen in keinen Einsatz ein.</p><ul>' +
+                 "".join(f'<li>{zeit_de(x["von"])} bis {zeit_de(x["bis"])}: {dez(x["fahrzeuge"], 0)} Fahrzeuge</li>'
+                         for x in ein["nicht_beruecksichtigt"]) + "</ul>")
     if host:
         z.append(f'<p class="muted">Kennzahlen und Auswahl in den anderen Reitern gelten für den Einsatz. Die Angaben der Verwaltung und der Vergleich '
                  f'mit ihr beziehen sich auf die Messung {_messung_link(ein["messung"], index, host.get("datei"))}.</p>')
@@ -1626,20 +1643,29 @@ def einsatz_teil(m, index):
 
 
 def messung_hinweis(m, index):
-    """Hinweis an einer Messung, deren Daten zum Teil zu einem anderen Einsatz gehoeren (abgeleitet oder bestaetigt)."""
+    """Hinweis an einer Messung, deren Daten zum Teil zu einem anderen Einsatz oder zu keinem gehoeren, oder die keinen eigenen Einsatz hat."""
+    ohne = m.get("ohne_einsatz")
+    if ohne:
+        links = []
+        for eid in ohne.get("daten_in") or []:
+            ziel = next((x for x in index.values() if x.get("einsatz") == eid), None)
+            links.append(f'<a href="{e(ziel["slug"])}.html#{e(eid)}">{e(ziel["name"])}</a>' if ziel else e(eid))
+        return ('<p class="notice" role="note"><strong>Kein eigener Einsatz:</strong> ' +
+                (f'Die Daten dieser Datei gehören nach unserer Zuordnung zum Einsatz {", ".join(links)} (abgeleitet, nicht bestätigt).'
+                 if links else e(ohne["grund"][0].upper() + ohne["grund"][1:]) + ".") + '</p>')
     ein = m.get("einsatz_info")
-    if not ein or not ein["abgegeben"]:
+    if not ein or not (ein["abgegeben"] or ein.get("nicht_beruecksichtigt")):
         return ""
     teile = []
     for a in ein["abgegeben"]:
         ziel = next((x for x in index.values() if x.get("einsatz") == a["an"]), None)
         link = f'<a href="{e(ziel["slug"])}.html#{e(a["an"])}">{e(ziel["name"])}</a>' if ziel else e(a["an"])
-        teile.append(f'Abschnitt {a["abschnitt"]} gehört zum Einsatz {link}')
-    bestaetigt = ein["status"] == "bestaetigt"
-    return ('<p class="notice" role="note"><strong>Zeitraum der Verwaltung ' +
-            ('von der Verwaltung als unzutreffend bestätigt' if bestaetigt else 'umfasst Daten eines anderen Standorts (abgeleitet, nicht bestätigt)') +
-            ':</strong> ' + "; ".join(teile) + '. Die Kennzahlen dieser Ansicht folgen der Messung, wie geliefert; die Auswertung nach unserer '
-            'Zuordnung zeigt der Einsatz.</p>')
+        teile.append(f'{zeit_de(a["von"])} bis {zeit_de(a["bis"])} gehören zum Einsatz {link}' + ("" if a.get("sicher", True) else " (unsicher)"))
+    for a in ein.get("nicht_beruecksichtigt") or []:
+        teile.append(f'{zeit_de(a["von"])} bis {zeit_de(a["bis"])} gehören zu keinem Standort mit Messung')
+    return ('<p class="notice" role="note"><strong>Zeitraum der Verwaltung umfasst Daten eines anderen Standorts (abgeleitet, nicht '
+            'bestätigt):</strong> ' + "; ".join(teile) + '. Die Kennzahlen dieser Ansicht folgen der Messung, wie geliefert; die Auswertung nach '
+            'unserer Zuordnung zeigt der Einsatz.</p>')
 
 
 def bruch_zuordnung(mid, brueche):
@@ -1658,14 +1684,15 @@ def bruch_zuordnung(mid, brueche):
 
 def brueche_seite(ein, index):
     """Seite brueche.html: alle Brueche mit Zuordnung und Belegen, unerklaerte zuerst."""
-    reihen = {"unerklaert": 0, "umhaengen": 1, "ereignis": 2, "verwaltung": 3}
+    reihen = {"unerklaert": 0, "bewegung": 1, "umhaengen": 1, "ereignis": 2, "verwaltung": 3}
     liste = sorted(ein.get("brueche", []), key=lambda b: (reihen.get(b["zuordnung"]["art"], 9), b["datum"]))
     zeilen = []
     for b in liste:
-        zu, u = b["zuordnung"], (b["umhaengen"] or [None])[0]
-        stufe_u = {"belegt": "belegt", "moeglich": "möglich", "zurueckgestellt": "zurückgestellt", "keine": "nicht ähnlich"}.get(u["stufe"], u["stufe"]) if u else ""
-        beleg = (f'{"Vorgänger" if u["richtung"] == "vorgaenger" else "Nachfolger"} ({stufe_u}): Score {dez(u["score"], 2)}, p {dez(u["p_nulltest"], 3)}, '
-                 f'Verhältnis {dez(u["verhaeltnis_fahrzeuge"], 2)}, Gegenprobe {dez(u["gegenprobe_score"], 1)}' if u else "–")
+        zu = b["zuordnung"]
+        bew = zu.get("bewegung")
+        beleg = (f'Änderung z = {dez(bew["z"], 1)}' if bew.get("z") is not None else "ohne Vergleich") + (
+            f', Wechsel im Tagesverlauf um {bew["tagesprobe"][11:16]}' if bew.get("tagesprobe") else "") + (
+            f', Fahrzeuge je Stunde {bew["fz_h"][0]} → {bew["fz_h"][1]}' if bew.get("fz_h") else "") if bew else "–"
         ev = "; ".join(x["name"] for x in b["ereignisse"]) or "–"
         zeilen.append(f'<tr><td>{_messung_link(b["messung"], index, b["name"] + ", " + b["datei"])}</td><td>{iso_de(b["datum"])}</td>'
                       f'<td>{e(ZUORDNUNG_TEXT.get(zu["art"], zu["art"]))}</td><td>{e(STUFE_TEXT.get(zu["stufe"], zu["stufe"]))}</td>'
@@ -1686,12 +1713,12 @@ def brueche_seite(ein, index):
 <h1>Brüche in den Messreihen und ihre Erklärung</h1>
 <p class="notice" role="note"><strong>Hinweis:</strong> {e(HINWEIS)}</p>
 <p>Ein Bruch ist der Tag, an dem sich die Daten einer Messung dauerhaft ändern. Jeder Bruch wird, soweit möglich, erklärt: durch eine Angabe der
-Verwaltung, durch Umhängen (das Gerät hing nach dem Auslesen noch am alten Ort oder schon am neuen; belegt durch Verteilung, Tagesgang und
-Verkehrsmenge im Vergleich zur vorigen bzw. folgenden Messung desselben Geräts) oder durch ein Ereignis (erster Schultag nach den Ferien,
-länger dauernde Ereignisse). Unerklärte Brüche stehen oben; sie sind Fragen an die Verwaltung. Verfahren und Schwellen:
+Verwaltung, durch eine Bewegung des Geräts kurz davor (Transportlücke mit anderem Verkehr danach, oder Inbetriebnahme nach einer Pause; die
+Bruchsuche braucht auf jeder Seite eine Woche und lässt Ferien aus, darum liegt der Bruch oft einige Tage nach dem Umhängen) oder durch ein
+Ereignis (erster Schultag nach den Ferien, länger dauernde Ereignisse). Unerklärte Brüche stehen oben; sie sind Fragen an die Verwaltung. Verfahren und Schwellen:
 <a href="{REPO}/blob/main/docs/einsaetze.md">Einsätze</a>. Daten: <a href="daten/brueche.csv">brueche.csv</a>. „Gleicher Tag“: Zahl der anderen Messungen mit einem Bruch ±1 Tag (Hinweis auf eine Umhängaktion).</p>
 <p>{len(liste)} Brüche: {e(", ".join(f"{ZUORDNUNG_TEXT.get(k.split('/')[0], k)} ({STUFE_TEXT.get(k.split('/')[1], k.split('/')[1])}) {v}" for k, v in sorted(z.items())))}.</p>
-<div class="tablewrap"><table><thead><tr><th>Messung</th><th>Bruch</th><th>Zuordnung</th><th>Stufe</th><th>Erklärung</th><th>Belege (Umhängen)</th>
+<div class="tablewrap"><table><thead><tr><th>Messung</th><th>Bruch</th><th>Zuordnung</th><th>Stufe</th><th>Erklärung</th><th>Belege (Bewegung)</th>
 <th>Ereignisse in der Nähe</th><th class="num">gleicher Tag</th></tr></thead><tbody>{"".join(zeilen)}</tbody></table></div>
 <footer class="muted"><p><a href="index.html">Übersicht</a><a href="datenschutz.html">Datenschutz</a></p></footer>
 </main>
@@ -1703,6 +1730,7 @@ länger dauernde Ereignisse). Unerklärte Brüche stehen oben; sie sind Fragen a
 def einsaetze_uebersicht(ein, auswertung, uebersicht, slug_von):
     """Eine Zeile je Einsatz fuer die Ansicht „Einsätze“ der Übersicht (einsaetze-uebersicht.json)."""
     zeilen = {messung_id(r["standort"], r["datei"]): r for r in auswertung["standorte"]}
+    defekt = ein.get("defekt") or {}
     out = []
     for x in ein.get("einsaetze", []):
         r = zeilen.get(x["messung"])
@@ -1711,7 +1739,7 @@ def einsaetze_uebersicht(ein, auswertung, uebersicht, slug_von):
         u = uebersicht.get(f'{r["standort"]}/{r["datei"]}') or {}
         k = x.get("kennzahlen")
         metriken = _metriken(k["bereinigt"], k.get("teilzeitraeume")) if k else _metriken(r.get("bereinigt") or r, r.get("teilzeitraeume"), r)
-        ziel = x["id"] if x["status"] != "identisch" else x["messung"]
+        ziel = x["id"] if x["status"] != "identisch" or x["messung"] in defekt else x["messung"]
         tage = ((datetime.date.fromisoformat(x["bis"]) - datetime.date.fromisoformat(x["von"])).days + 1) if x["von"] and x["bis"] else None
         out.append({"standort": r["standort"], "ort": u.get("standort"), "seite": f'standorte/{slug_von.get(r["standort"])}.html#{ziel}',
                     "verwaltung": " / ".join(u.get("verwaltung") or []), "datei": r["datei"], "limit": x["limit"], "von": x["von"], "bis": x["bis"],
@@ -1778,11 +1806,12 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None, i
     Verweise auf andere Seiten; brueche: Zuordnung der Brueche (einsaetze.json)."""
     gleich = gleich or {}
     index = index or {}
-    alle = []  # Einsaetze vor ihren Messungen
+    alle = []  # Einsaetze vor ihren Messungen; Messungen, die die Verwaltung selbst "defekt" nennt, nur als Einsatz
     for m in messungen:
         if m.get("einsatz_eintrag"):
             alle.append(m["einsatz_eintrag"])
-        alle.append(m)
+        if not m.get("ausblenden"):
+            alle.append(m)
     slug = slug or standort_slug(name)
     teile = [f"""<!doctype html>
 <!-- SPDX-License-Identifier: MIT -->
@@ -1801,20 +1830,29 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None, i
 <h1>{e(name)}</h1>
 <p class="notice" role="note"><strong>Hinweis:</strong> {e(HINWEIS)}</p>
 """]
+    for m in messungen:
+        if m.get("ausblenden"):
+            teile.append(f'<p class="notice" role="note">Die Messung {e(m["row"]["datei"])} bezeichnet die Verwaltung selbst als fehlerhaft '
+                         f'(„{e(m["ausblenden"])}“); sie steht hier nicht als Messung. '
+                         + ("Ihre Daten gehen nach unserer Zuordnung in den Einsatz ein, der hier steht.</p>" if m.get("einsatz_eintrag") else
+                            "Ihre Daten gehören nach unserer Zuordnung zu keinem Einsatz an diesem Standort.</p>"))
     if len(alle) > 1:
         if any(m.get("einsatz_eintrag") for m in messungen):  # erst Einsatz oder Messung waehlen, dann das Element
             opt_e, opt_m = [], []
             for m in messungen:
                 if m.get("einsatz_eintrag"):
                     opt_e.append(f'<option value="{e(m["einsatz_eintrag"]["id"])}">{e(einsatz_label(m["einsatz_eintrag"]))}</option>')
-                    opt_m.append(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>')
+                    if not m.get("ausblenden"):
+                        opt_m.append(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>')
+                elif m.get("ausblenden"):
+                    continue
                 else:
                     opt_e.append(f'<option value="{e(m["id"])}">{e("Einsatz = Messung: " + messung_label(m))}</option>')
             optionen = ('<optgroup label="Einsätze (unsere Zuordnung)">' + "".join(opt_e) + '</optgroup>'
                         '<optgroup label="Messungen (wie bei der Verwaltung geliefert)">' + "".join(opt_m) + '</optgroup>')
             beschriftung = "Einsatz oder Messung"
         else:
-            optionen = "".join(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>' for m in messungen)
+            optionen = "".join(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>' for m in messungen if not m.get("ausblenden"))
             beschriftung = "Messung"
         teile.append(f'<div class="controls messwahl"><div><label for="messwahl">{beschriftung}</label><select id="messwahl" data-messwahl>' +
                      optionen + "</select></div></div>"
@@ -1916,6 +1954,8 @@ def abschnitte_uebersicht(auswertung, uebersicht):
     out = []
     for r in auswertung["standorte"]:
         u = uebersicht.get(f'{r["standort"]}/{r["datei"]}') or {}
+        if u.get("defekt"):  # von der Verwaltung selbst als defekt bezeichnet: nicht aufgefuehrt
+            continue
         liste = (r.get("abschnitte") or {}).get("liste") or []
         bz = (r.get("bereinigt") or {}).get("messzeitraum") or r.get("messzeitraum") or {}
         basis = {"standort": r["standort"], "ort": u.get("standort"), "seite": f'{u["seite"]}/messung' if u.get("seite") else None,
@@ -1941,6 +1981,8 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
     ein, ein_zellen = einsaetze_laden(einsaetze)
     ein_von = {x["messung"]: x for x in (ein or {}).get("einsaetze", [])}
     brueche = (ein or {}).get("brueche", [])
+    defekt = (ein or {}).get("defekt") or {}  # Messungen, die die Verwaltung selbst "defekt" nennt: nur als Einsatz
+    ohne_von = {o["messung"]: o for o in (ein or {}).get("messungen_ohne_einsatz", [])}
     verz = standorte.Verzeichnis.laden(adressen) if adressen and os.path.exists(adressen) else None
     vg = None
     if verhalten and os.path.exists(verhalten):
@@ -1968,7 +2010,8 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
             for r in je_ordner[rel]:
                 mid = messung_id(rel, r["datei"])
                 x = ein_von.get(mid)
-                index[mid] = {"slug": slug, "name": name, "datei": r["datei"], "einsatz": x["id"] if x and x["status"] != "identisch" else None}
+                index[mid] = {"slug": slug, "name": name, "datei": r["datei"],
+                              "einsatz": x["id"] if x and (x["status"] != "identisch" or mid in defekt) else None}
     for slug, name, rels in gruppen_:
         messungen = []
         for rel in rels:
@@ -1978,7 +2021,11 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
         messungen.sort(key=_beginn)
         for m in messungen:
             x = ein_von.get(m["id"])
-            if x and x["status"] != "identisch":
+            if m["id"] in defekt:
+                m["ausblenden"] = defekt[m["id"]]
+            if m["id"] in ohne_von:
+                m["ohne_einsatz"] = ohne_von[m["id"]]
+            if x and (x["status"] != "identisch" or m["id"] in defekt):
                 m["einsatz_info"] = x
                 m["einsatz_eintrag"] = einsatz_eintrag(x, m, ein_zellen)
             elif x and (x.get("kennzahlen") or {}).get("verhalten"):  # Einsatz = Messung: die Verhaltensgruppen des Einsatzes
@@ -1997,6 +2044,8 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
         for m in messungen:
             verw = [v.get("bezeichnung") for v in (m["meta_messung"] or {}).get("verwaltung", []) if v.get("bezeichnung")]
             uebersicht[f'{m["rel"]}/{m["row"]["datei"]}'] = {"seite": f"standorte/{slug}.html#{m['id']}", "standort": name, "verwaltung": verw}
+            if m.get("ausblenden"):  # die Uebersicht fuehrt die Messung nicht auf
+                uebersicht[f'{m["rel"]}/{m["row"]["datei"]}']["defekt"] = m["ausblenden"]
             if ((m["meta_messung"] or {}).get("geraet") or {}).get("verdeckte_messung"):  # Display ohne Anzeige (DSD-Flag)
                 uebersicht[f'{m["rel"]}/{m["row"]["datei"]}']["verdeckt"] = True
         for rel in rels:  # alte Adresse je Ordner -> neue Seite

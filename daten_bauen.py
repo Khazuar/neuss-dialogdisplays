@@ -8,7 +8,8 @@ Aufruf (nach dsd2csv.py mit --aggregat):
 Eingaben: auswertung.json (dsd2csv.py), die Zwischenstaende <Ordner>/<Standort>/<Datei>.aggregat.json (dsd2csv.py --aggregat),
 belege/metadaten.json und belege/uhr-bewertung.json. Ausgabe in <ziel>:
   messungen.csv, abschnitte.csv, kennzahlen.csv, tage.csv, luecken.csv (Klartext) sowie stunden/<standort>.csv.gz je Standortseite und
-  stunden.csv.gz (alle Standorte); die Stundendateien sind gzip-komprimiert (Klartext waere rund 280 MB)
+  stunden.csv.gz (alle Standorte); die Stundendateien sind gzip-komprimiert (Klartext waere rund 280 MB). Mit einsaetze.json zusaetzlich
+  einsaetze.csv, brueche.csv, bewegungen.csv und einsaetze-stunden.csv.gz (docs/einsaetze.md).
 Die Dateien enthalten nur, was dsd2csv.py ohnehin berechnet: Ortszeit, nur nutzbare Zeit, Rauschboden und Regenanteil abgezogen,
 Abschnitte nach den Bruechen. Reihenfolge und Format sind deterministisch (gleiche Eingabe, gleiche Bytes).
 """
@@ -77,24 +78,31 @@ def tage_flags(datum, cache={}):
 
 
 def stunden_zeilen(mid, agg, stunde_zeitraum, einsatz=None):
-    """Zeilen der Stundendatei einer Messung (aggregat.SPALTEN_STUNDEN). einsatz: Funktion Datum (ISO) -> Einsatz-ID oder "" (Umhaengtag)."""
+    """Zeilen der Stundendatei einer Messung (aggregat.SPALTEN_STUNDEN). einsatz: Funktion (Datum ISO, Stunde) -> Einsatz-ID oder "" (in
+    keinem Einsatz: Bewegung, Wechsel am Bruch, keiner Messung zugeordnet)."""
     for datum, stunde, versatz, abschnitt, voll, klasse, flach in agg["stunden"]:
         wt, fe, ft = tage_flags(datum)
         zr = stunde_zeitraum[stunde]
         klasse = "" if klasse is None else klasse
-        eid = einsatz(datum) if einsatz else ""
+        eid = einsatz(datum, stunde) if einsatz else ""
         for i in range(0, len(flach), 2):
             yield [mid, abschnitt, datum, wt, stunde, versatz, zr, fe, ft, voll, klasse, flach[i], flach[i + 1], eid]
 
 
-def einsatz_je_datum(einsaetze):
-    """{Messung: Funktion Datum (ISO) -> Einsatz-ID} aus einsaetze.json; Tage ausserhalb aller Teile (Umhaengtage) ergeben ""."""
+def einsatz_je_stunde(einsaetze):
+    """{Messung: Funktion (Datum ISO, Stunde) -> Einsatz-ID} aus einsaetze.json: die Einsaetze, in deren Teilen (von_zeit bis bis_zeit) die
+    Stunde liegt; liegt eine Stunde in zwei Teilen (Umhaengen mitten in der Stunde), der mit dem groesseren Anteil. Sonst ""."""
     teile = collections.defaultdict(list)
     for e in (einsaetze or {}).get("einsaetze", []):
         for t in e["teile"]:
-            if t["von"]:
-                teile[t["messung"]].append((t["von"], t["bis"], e["id"]))
-    return {mid: (lambda d, liste=liste: next((eid for von, bis, eid in liste if von <= d <= bis), "")) for mid, liste in teile.items()}
+            teile[t["messung"]].append((dt.datetime.fromisoformat(t["von_zeit"]), dt.datetime.fromisoformat(t["bis_zeit"]), e["id"]))
+
+    def finde(d, h, liste):
+        a = dt.datetime.fromisoformat(d) + dt.timedelta(hours=h)
+        b = a + dt.timedelta(hours=1)
+        anteile = [((min(b, bis) - max(a, von)).total_seconds(), eid) for von, bis, eid in liste if von < b and bis >= a]
+        return max(anteile)[1] if anteile else ""
+    return {mid: (lambda d, h, liste=liste: finde(d, h, liste)) for mid, liste in teile.items()}
 
 
 def einsaetze_schreiben(ziel, einsaetze, auswertung, w_k):
@@ -102,13 +110,16 @@ def einsaetze_schreiben(ziel, einsaetze, auswertung, w_k):
     zeilen = {seiten_bauen.messung_id(r["standort"], r["datei"]): r for r in auswertung["standorte"]}
     n_e = n_b = n_k = 0
     fh_e, w_e = _schreiber(os.path.join(ziel, "einsaetze.csv"), [
-        "einsatz_id", "messung_id", "standort_seite", "standort_name", "geraet", "fahrtrichtung", "tempolimit_kmh", "von", "bis", "status", "teile",
-        "abgegeben", "ausgenommene_tage"])
+        "einsatz_id", "messung_id", "standort_seite", "standort_name", "geraet", "fahrtrichtung", "tempolimit_kmh", "von", "bis", "status",
+        "beginn", "ende", "teile", "abgegeben", "nicht_beruecksichtigt", "ausgenommene_tage", "fahrzeuge_rekonstruierte_uhr", "messung_defekt"])
+    defekt = einsaetze.get("defekt") or {}
     for e in einsaetze.get("einsaetze", []):
-        teile = " | ".join(f'{t["messung"]}#{t["abschnitt"]} {t["von"]}..{t["bis"]} ({t["herkunft"]})' for t in e["teile"] if t["von"])
-        w_e.writerow([e["id"], e["messung"], _zelle(e["seite"]), e["name"], e["geraet"], e["fahrtrichtung"], _zelle(e["limit"]), _zelle(e["von"]),
-                      _zelle(e["bis"]), e["status"], teile, " | ".join(f'#{a["abschnitt"]} -> {a["an"]}' for a in e["abgegeben"]),
-                      " ".join(e["ausgenommene_tage"])])
+        teile = " | ".join(f'{t["messung"]}#{t["abschnitt"]} {t["von_zeit"]}..{t["bis_zeit"]} ({t["herkunft"]}, {t["stufe"]})' for t in e["teile"])
+        w_e.writerow([e["id"], e["messung"], _zelle(e["seite"]), e["name"], e["geraet"], e["fahrtrichtung"], _zelle(e["limit"]), e["von_zeit"],
+                      e["bis_zeit"], e["status"], _grenze(e["beginn"]), _grenze(e["ende"]), teile,
+                      " | ".join(f'{a["von"]}..{a["bis"]} -> {a["an"]}' for a in e["abgegeben"]),
+                      " | ".join(f'{a["von"]}..{a["bis"]}' for a in e["nicht_beruecksichtigt"]), " ".join(e["ausgenommene_tage"]),
+                      e.get("rekonstruiert") or 0, defekt.get(e["messung"], "")])
         n_e += 1
         k = e.get("kennzahlen")
         if not k:  # identisch mit der Messung: deren Kennzahlen
@@ -119,22 +130,41 @@ def einsaetze_schreiben(ziel, einsaetze, auswertung, w_k):
             n_k += 1
     fh_e.close()
     fh_b, w_b = _schreiber(os.path.join(ziel, "brueche.csv"), [
-        "messung_id", "abschnitt_nr", "datum", "wahrscheinlichkeit", "zuordnung", "stufe", "erklaerung", "umhaengen_richtung", "umhaengen_von_messung",
-        "score", "p_nulltest", "verhaeltnis_fahrzeuge", "gegenprobe_score", "naht_stetig", "ereignisse", "gleicher_tag"])
+        "messung_id", "abschnitt_nr", "datum", "wahrscheinlichkeit", "zuordnung", "stufe", "erklaerung", "bewegung_stufe", "bewegung_von",
+        "bewegung_bis", "bewegung_z", "ereignisse", "gleicher_tag"])
     for b in einsaetze.get("brueche", []):
-        z, u = b["zuordnung"], (b["umhaengen"] or [{}])[0]
-        w_b.writerow([b["messung"], b["nr"], b["datum"], _zelle(b["wahrscheinlichkeit"]), z["art"], z["stufe"], z["text"], u.get("richtung", ""),
-                      u.get("von_messung", ""), _zelle(u.get("score")), _zelle(u.get("p_nulltest")), _zelle(u.get("verhaeltnis_fahrzeuge")),
-                      _zelle(u.get("gegenprobe_score")), "" if not u.get("naht") else int(u["naht"]["stetig"]),
-                      " | ".join(x["name"] for x in b["ereignisse"]), " ".join(b["gleicher_tag"])])
+        z = b["zuordnung"]
+        u = z.get("bewegung") or {}
+        w_b.writerow([b["messung"], b["nr"], b["datum"], _zelle(b["wahrscheinlichkeit"]), z["art"], z["stufe"], z["text"], u.get("stufe", ""),
+                      u.get("von", ""), u.get("bis", ""), _zelle(u.get("z")), " | ".join(x["name"] for x in b["ereignisse"]), " ".join(b["gleicher_tag"])])
         n_b += 1
     fh_b.close()
+    # alle Bewegungen der Geraete (bewegungen.py), auch die, die nichts trennen (Eingriff, Pause am selben Ort, moeglich)
+    fh_w, w_w = _schreiber(os.path.join(ziel, "bewegungen.csv"), [
+        "geraet", "stufe", "art", "von", "bis", "z", "fahrzeuge_je_stunde_vorher", "fahrzeuge_je_stunde_nachher", "tempo_diff_kmh", "tvd",
+        "wechsel_im_tagesverlauf", "aktionstag_mit"])
+    for g in einsaetze.get("geraete", []):
+        for k in g["bewegungen"]:
+            fz = k.get("fz_h") or [None, None]
+            w_w.writerow([g["geraet"], k["stufe"], k["art"], k["von"], k["bis"], _zelle(k.get("z")), _zelle(fz[0]), _zelle(fz[1]),
+                          _zelle(k.get("tempo_diff")), _zelle(k.get("tvd")), k.get("tagesprobe") or "", " ".join(k.get("mit") or [])])
+    fh_w.close()
     return n_e, n_b, n_k
+
+
+def _grenze(g):
+    """Beginn oder Ende eines Einsatzes (einsaetze.py) als kurze Zelle: Art, bei einer Bewegung Stufe und Zeit."""
+    if not g:
+        return ""
+    if g["art"] == "bewegung" and g.get("bewegung"):
+        b = g["bewegung"]
+        return f'{b["stufe"]} {b["von"]}..{b["bis"]}'
+    return g["art"] + (f' {g["datum"]}' if g.get("datum") else "")
 
 
 def bauen(auswertung, metadaten, uhr, aggregat_ordner, ziel, einsaetze=None):
     """Schreibt alle Dateien nach <ziel>. Gibt eine Kurzfassung {Datei: Zeilen} zurueck. einsaetze: einsaetze.json (einsaetze.py) oder None."""
-    einsatz_von = einsatz_je_datum(einsaetze)
+    einsatz_von = einsatz_je_stunde(einsaetze)
     os.makedirs(os.path.join(ziel, "stunden"), exist_ok=True)
     stunde_zeitraum = aggregat.zeitraum_je_stunde(gruppen.ZEITSCHEIBEN)
     zaehler = {}

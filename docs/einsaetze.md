@@ -1,168 +1,287 @@
-# Einsätze: Brüche erklären und Messungen neu abgrenzen
+# Einsätze: Bewegungen der Geräte, Zuordnung zu den Messungen, Brüche
 
 > Eigene Auswertung, nicht amtlich. Fehler im Verfahren und in der Auswertung können nicht ausgeschlossen werden (ohne Gewähr). Keine der
 > Zuordnungen ist von der Verwaltung bestätigt, solange das nicht ausdrücklich dasteht.
 
 ## Worum es geht
 
-Die Verwaltung liefert je Messung eine Datei: Standort, Fahrtrichtung, Zeitraum. In vielen Dateien gibt es einen **Bruch**
-([abschnitte.md](abschnitte.md)): Ab einem Tag ändert sich der Verkehr dauerhaft. Ein Teil dieser Brüche hat eine einfache Ursache. Das Gerät
-wurde ausgelesen (neue Datei, neuer Standort laut Verwaltung), hing aber noch einige Wochen am alten Ort und wurde erst später umgehängt. Dann
-beschreibt der Abschnitt vor dem Bruch noch den alten Standort. Kopien alter Datensätze sind es nicht: Kein Abschnitt hat Stunden, die in einer
-anderen Datei genauso vorkommen (Prüfung im Bericht, der zu diesem Verfahren geführt hat).
+Die Verwaltung liefert je Messung eine Datei: Standort, Fahrtrichtung, Zeitraum. Eine Datei beschreibt aber nicht immer genau einen Standort.
 
-Darum unterscheidet die Auswertung:
+- **Erst auslesen, dann umhängen:** Meist wurde das Gerät an einem Tag ausgelesen (neue Datei) und erst Tage oder Wochen später umgehängt. Der
+  Anfang einer Datei gehört dann noch zum vorigen Standort.
+- **Zurückgesetzte Uhr:** Einige Geräte haben 2023 nach dem Einschalten mit der Werkszeit 01.01.2020 12:00 weitergezählt. Diese Daten hat die
+  Auswertung je Messung bisher verworfen.
+- **Defekte Messungen:** Mehrere Auswertungen hat die Verwaltung selbst als „defekt“ oder „fehlerhaft“ bezeichnet.
+
+Darum setzen wir je Gerät alle Dateien zu einem **Gesamtstrom** zusammen, suchen darin die **Bewegungen** (Umhängen, Inbetriebnahme) und
+ordnen die Zeiträume dazwischen den Messungen zu.
 
 | Begriff | Bedeutung |
 |---|---|
 | **Standort** | physischer Ort (dieselbe Straße, ungefähr derselbe Streckenabschnitt; eine Detailseite) |
 | **Messung** | Datei der Verwaltung: Standort, Fahrtrichtung und Zeitraum, wie geliefert |
-| **Abschnitt** | zeitlicher Bereich einer Messung mit ähnlichen Daten |
-| **Bruch** | Grenze zwischen zwei Abschnitten (Tagesauflösung) |
-| **Zusammengesetzter Abschnitt** | Abschnitte verschiedener Messungen desselben Geräts, unmittelbar nacheinander, die zusammengehören |
-| **Einsatz** | der Zeitraum, in dem ein Gerät tatsächlich an einem Standort in eine Fahrtrichtung gemessen hat |
-
-Meist ist ein Einsatz gleich einer Messung. Zu jeder Messung gibt es einen Einsatz am selben Standort, jeder Einsatz und jede Messung hat
-mindestens einen Abschnitt, und jedes Fahrzeug liegt genau in einem Einsatz oder an einem ausgenommenen Umhängtag (`test_einsaetze.py`).
+| **Gesamtstrom** | alle Fahrzeuge eines Geräts aus allen Dateien, in Ortszeit, ohne Doppelte |
+| **Bewegung** | Unterbrechung mit minutengenauem Beginn und Ende, nach der sich der Verkehr ändert (Umhängen, Inbetriebnahme) |
+| **Aufenthalt** | Zeitraum zwischen zwei Bewegungen: Das Gerät hing an einem Ort |
+| **Bruch** | jede andere dauerhafte Änderung des Verkehrs (Tagesauflösung, [abschnitte.md](abschnitte.md)) |
+| **Teil** | Stück eines Aufenthalts zwischen zwei Brüchen |
+| **Einsatz** | der Zeitraum, in dem ein Gerät tatsächlich an einem Standort in eine Fahrtrichtung gemessen hat: die Teile, die zu einer Messung gehören |
 
 Die **Hauptauswertung folgt den Einsätzen** (Ansicht „Einsätze“ der Übersicht, erste Wahl auf den Detailseiten). Die **Sicht der Verwaltung**
-(die Messungen, wie geliefert) bleibt vollständig erhalten. Mit ihr vergleichen wir die Mitteilungen.
+(die Messungen, wie geliefert) bleibt erhalten. Mit ihr vergleichen wir die Mitteilungen. Nur Messungen, die die Verwaltung selbst als defekt
+bezeichnet, führen wir nicht als Messung auf (siehe unten).
 
-## Ablauf der Auswertung
+## Ablauf
 
-1. **Je Messung** (`dsd2csv.py`): Parsen, Uhr, dann die Brüche auf den unkorrigierten Fahrzeugen. Rauschboden und Regenanteil hängen vom Ort
-   ab; ein Ortswechsel erzeugt aber auch ohne Korrektur einen Bruch, und die Bruchsuche zählt ohnehin erst ab der halben Höchstgeschwindigkeit.
-   Für die Ansicht „Messung“ werden Rauschboden und Regenanteil danach **je Abschnitt** geschätzt und abgezogen (ein Bruch kann ein
-   Ortswechsel sein), daraus Kennzahlen, Filter und Aggregat der Messung. Daneben entsteht ein **Rohaggregat** (Stunde × km/h vor jedem Abzug).
-   Verhaltensgruppen gibt es je Messung nicht mehr.
-2. **Zuordnung** (`einsaetze.py`): Brüche erklären und Einsätze bilden, aus dem Rohaggregat (ab 15 km/h, also unabhängig von den Abzügen).
-3. **Je Einsatz** (`einsaetze.py`): Ein Einsatz wird an den Brüchen geteilt, die in ihm bleiben (unerklärt, Ferien); Teile, die über eine
-   Dateigrenze aneinanderstoßen, gehören laut Zuordnung zum selben Ort und bleiben zusammen. Je **Einsatz-Abschnitt** werden Rauschboden und
-   Regenanteil neu geschätzt, mit der Wetterstation des Einsatzstandorts. Ist der Einsatz gleich der Messung, ist das dieselbe Schätzung wie in
-   Schritt 1 (zum Vergleich steht sie dabei). Dann Kennzahlen, Gefährdung, Lärm, Nächte, Zellen der Auswahl (mit Rauschboden) und die
-   **Verhaltensgruppen je Einsatz-Abschnitt**; Zwischenspeicher je Einsatz (Ebene „einsatz“).
-4. `stadtgruppen.py` bildet Standort- und Stadtgruppen aus den Gruppen der Einsätze; `daten_bauen.py` schreibt die Stundendaten beider Sichten
-   (`stunden.csv.gz` je Messung, `einsaetze-stunden.csv.gz` je Einsatz).
+1. **Je Messung** (`dsd2csv.py`): Parsen, Uhr, Brüche, Kennzahlen der Sicht der Verwaltung (unverändert, [abschnitte.md](abschnitte.md)).
+2. **Gesamtstrom und Bewegungen** (`bewegungen.py`, `uhr_rekonstruktion.py`):
+   1. Gesamtstrom aus den Uhr-Segmenten mit gültiger Uhr;
+   2. erster Durchgang der Bewegungserkennung;
+   3. Rekonstruktion der zurückgesetzten Uhren mit den Montagetagen des ersten Durchgangs als Anker;
+   4. zweiter Durchgang mit den rekonstruierten Daten;
+   5. Aufenthalte, je Aufenthalt die Bruchsuche wie je Messung ([abschnitte.md](abschnitte.md)).
 
-Wie stark der Abzug je Abschnitt die Messungen verändert (`tools/abzug_je_abschnitt.py`, 34 Messungen mit mehreren Abschnitten): Die V85 ändert
-sich in 2 Messungen (Konradstraße −7 km/h, Schluchenhausstraße −1 km/h), die Einhaltung im Median um +0,01 Prozentpunkte, höchstens um 7,1. Bei der
-Konradstraße war ein großer Rauschboden für die ganze Datei belegt, je Abschnitt in einem Abschnitt nicht mehr; dort bleiben rund 7.400 langsame
-Fahrten mehr in den Kennzahlen.
+   Das Ergebnis liegt im Zwischenspeicher (Ebene „bewegungen“); ein Lauf ohne ihn dauert einige Minuten.
+3. **Zuordnung und Einsätze** (`einsaetze.py`): Teile den Messungen zuordnen, Einsätze bilden, Brüche erklären.
+4. **Je Einsatz** (`einsaetze.py`, Durchgang C): Je Einsatz-Abschnitt Rauschboden und Regenanteil (Wetterstation des Standorts),
+   Kennzahlen, Gefährdung, Lärm, Nächte, Zellen der Auswahl und Verhaltensgruppen. Grundlage sind die Stunden des Gesamtstroms (Stunde × km/h,
+   vor jedem Abzug).
+5. `stadtgruppen.py` bildet Standort- und Stadtgruppen aus den Gruppen der Einsätze; `daten_bauen.py` schreibt `einsaetze.csv`,
+   `brueche.csv`, `bewegungen.csv` und die Stundendaten beider Sichten.
 
-## Zuordnung eines Bruchs
+## Gesamtstrom
 
-In dieser Rangfolge:
+- **Gültige Uhr:** Uhr-Segmente mit gültiger Uhr (`dsd2csv.bewerte_segmente`) gehen ein, wenn sie mindestens 200 Fahrzeuge haben und ihre
+  Zeiten zwischen 2019 und dem Tag der Rechnung liegen. Kleinere „gültige“ Segmente sind fast immer Uhr-Müll, etwa die Thywissenstraße 2022.
+- **Zurückgesetzte Uhr:** Diese Segmente gehen nur ein, wenn die Rekonstruktion ihre Lage „belegt“ oder „wahrscheinlich“ macht.
+- **Doppelte Fahrzeuge** (gleiche Zeit und Geschwindigkeit aus zwei Dateien) zählen einmal. Ein Beispiel sind die Dateien `_7.dsd` der
+  Rosellener Schulstraße und der Lanzerather Dorfstraße: Sie sind byteweise gleich.
 
-1. **Angabe der Verwaltung** (`belege/brueche-verwaltung.json`): bestätigt. Sie hat Vorrang. Bei einem bestätigten Umhängen gelten die
-   bestätigten Tage.
-2. **Umhängen, belegt:** Der Abschnitt vor dem Bruch gleicht dem letzten Abschnitt der vorigen Messung desselben Geräts an einem anderen
-   Standort. Spiegelbildlich ist auch möglich, dass der Abschnitt nach dem letzten Bruch dem ersten Abschnitt der folgenden Messung gleicht.
-   Alle Kriterien unten müssen erfüllt sein.
-3. **Ereignis, plausibel:** Der Bruch liegt auf dem ersten Schultag nach Ferien oder dem ersten Ferientag (±1 Tag, `kalender.py`) oder auf
-   Beginn oder Ende eines länger dauernden Ereignisses (`belege/ereignisse.json`). Kurze Ereignisse wie das Schützenfest werden nur als
-   zeitliche Nähe genannt: Ein Bruch braucht auf beiden Seiten mindestens 7 Tage. Ein Fest von fünf Tagen erklärt ihn nicht.
-4. **Umhängen, möglich:** schwächere Kriterien. Auch sie bilden einen Einsatz, gekennzeichnet als „unsicher“.
-5. **Unerklärt:** Diese Brüche sind Fragen an die Verwaltung.
+### Uhr-Rekonstruktion (`uhr_rekonstruktion.py`)
 
-Belegte, mögliche und bestätigte Zuordnungen verändern die Einsätze, jeweils nur zwischen unmittelbar aufeinanderfolgenden Messungen desselben
-Geräts. Der Bruchtag und der Tag davor gehören dann zu keinem Einsatz, denn dort wurde umgehängt, transportiert und montiert. Die Kennzeichnung
-lautet „abgeleitet, nicht bestätigt“ (belegt), „unsicher“ (möglich) oder „bestätigt“ (Angabe der Verwaltung).
+**Hypothese** je Segment mit zurückgesetzter Uhr: Die Uhr begann beim Einschalten bei 01.01.2020 12:00 und lief gleichmäßig weiter, ohne
+Sommerzeit. Echte Zeit = Gerätezeit + Delta. Gesucht ist Delta.
 
-### Kriterien für „Umhängen, belegt“ (`einsaetze.py`)
+**Anker** legen die Lage unabhängig voneinander fest:
 
-Grundlage ist das Rohaggregat (vor Rauschboden- und Regenabzug, vollständig aufgezeichnete Stunden, 15 bis 99 km/h).
+| Anker | Bedingung |
+|---|---|
+| Beginn an Montagetag | Das Einschalten fällt auf einen Tag, an dem ein Gerät sicher montiert wurde (erster Durchgang der Bewegungserkennung). |
+| Ende an Auslese-Runde | Das Ende fällt auf einen Tag, an dem mindestens drei Geräte eine Dateigrenze haben. |
+| Ende am Exportdatum | Das Ende fällt auf das Datum im Dateinamen (±1 Tag). |
+| Ende an nächster Aufzeichnung | Die nächste gültige Aufzeichnung desselben Geräts beginnt direkt nach dem letzten Fahrzeug (±3 Stunden). |
+| Zeitumstellung | Der Tagesgang springt in Gerätezeit am amtlichen Umstellungstag (±1 Tag) um eine Stunde. |
 
-- **Score ≤ 1,15:** Die Geschwindigkeitsverteilung und der Tagesgang (Stunde × Werktag/Wochenende) beider Abschnitte unterscheiden sich kaum
-  mehr als die geraden von den ungeraden Tagen desselben Abschnitts.
-  - Score = Mittel aus totaler Variation der Verteilungen / Rauschen und totaler Variation der Tagesgänge / Rauschen.
-  - Rauschen ist das größere beider Abschnitte, mindestens 0,015 bzw. 0,02.
-- **Fahrzeuge je Stunde** im Verhältnis 0,7 bis 1,4.
-- **Nulltest, p ≤ 0,05:** Kaum ein Abschnitt eines anderen Standorts mit gleichem Tempolimit gleicht dem Vergleichsabschnitt so gut
-  (p = (1 + Treffer) / (1 + Vergleichsabschnitte); bei weniger als 20 mit gleichem Limit alle Limits). Bei rund 85 Vergleichsabschnitten ist
-  p = 0,012 der kleinstmögliche Wert („keiner ähnlicher“).
-- **Gegenprobe > 3:** Der Abschnitt auf der anderen Seite des Bruchs gleicht dem Vergleichsabschnitt nicht.
-- **Bruch sicher:** Wahrscheinlichkeit ≥ 0,9.
-- **Naht stetig:** Die letzten 7 Tage der vorigen Messung und die ersten 7 Tage des Abschnitts passen zusammen (Score ≤ 2 am Rauschen der
-  Fenster, Fahrzeuge je Stunde 0,7 bis 1,4). Am Auslesetag selbst hat sich dann nichts geändert.
-- **Möglich:** Score ≤ 1,5, Verhältnis passt, p ≤ 0,10.
-- **Richtung:** Taucht dasselbe Abschnittspaar in beiden Richtungen auf, zeigt es nur, dass beide zusammengehören. Die Lesart „das Gerät hing
-  nach dem Auslesen noch am alten Ort“ hat dann Vorrang, die Gegenlesung wird „zurückgestellt“. Beispiel: Abschnitt 2 der Einsteinstraße
-  gleicht Abschnitt 1 der Rosmarinstraße. Nach der Vorgänger-Lesart gehört Abschnitt 1 der Rosmarinstraße zur Einsteinstraße.
+**Proben** dürfen nicht widersprechen: Das Wochenmuster (ohne Ferien und Feiertage) muss auf den richtigen Wochentagen liegen. Der
+Werktags-Tagesgang darf höchstens 60 Minuten neben dem typischen Verlauf liegen.
 
-Alle Schwellen sind Festlegungen, kein Befund. Sie stehen als Konstanten in `einsaetze.py`.
+**Kandidaten:** Phase (Wochentag und Uhrzeit des Beginns) aus Wochenmuster und Tagesgang in der ersten Woche nach dem Abbau, dann je 7 Tage
+weiter bis zur nächsten Aufzeichnung. Der Endanker ist immer ein Kandidat.
 
-### Daten außerhalb des Erfassungszeitraums der Verwaltung
+**Entscheidung:**
 
-Die Abschnitte, die `dsd2csv.py` an den Grenzen des Erfassungszeitraums einer Mitteilung abtrennt ([abschnitte.md](abschnitte.md)), sind für
-die Einsätze Abschnitte wie alle anderen. Ob sie dazugehören, entscheiden dieselben Kriterien:
+- **belegt:** mindestens zwei Anker, und kein anderer Kandidat hat ebenso viele.
+- **wahrscheinlich:** ein Anker, Wochenmuster und Tagesgang bestätigt, und kein anderer Kandidat hat einen Anker mit bestätigtem Wochenmuster.
+- **offen:** sonst.
 
-1. **Umhängen:** Eine künstliche Grenze kann wie ein Bruch umgehängt werden, wenn der Abschnitt außerhalb dem angrenzenden Abschnitt der vorigen
-   bzw. folgenden Messung desselben Geräts gleicht. Es gelten alle Kriterien für „belegt“, nur die Wahrscheinlichkeit des Bruchs entfällt;
-   „möglich“ genügt hier nicht. An einer solchen Grenze gibt es keinen Umhängtag. Ein Abschnitt im Erfassungszeitraum wechselt über eine
-   künstliche Grenze nie den Einsatz. Eine künstliche Grenze ist kein Bruch und steht nicht in der Liste der Brüche.
-2. **Wieder zusammenfassen:** Ist der Abschnitt nicht umgehängt, wird er mit dem angrenzenden Abschnitt im Erfassungszeitraum verglichen (dem
-   vorigen, sonst dem folgenden; weiter außen liegende nur über die dazwischen liegenden). Bei Score ≤ 1,15, Fahrzeugen je Stunde im
-   Verhältnis 0,7 bis 1,4 und mindestens 1.500 Fahrzeugen bleibt er im Einsatz und bildet mit diesem einen Einsatz-Abschnitt (Status
-   `ergaenzt`, wenn sonst nichts geändert ist).
-3. **Sonst nicht berücksichtigt:** Er gehört zu keinem Einsatz (`nicht_beruecksichtigt` mit Score, Verhältnis und Grund, Status `gekuerzt`).
+Segmente unter zwei Tagen oder 500 Fahrzeugen werden nicht rekonstruiert. Das betrifft Uhren, die täglich neu gestartet sind, etwa die
+Weinstockstraße mit 48 solchen Segmenten.
 
-Ein Einsatz mit solchen Abschnitten ist nie gleich der Messung, denn die Messung zählt sie nicht mit.
+## Bewegungen (`bewegungen.py`)
 
-## Ergebnis (Stand Oktober 2026)
+### Kandidaten
 
-Von 34 Brüchen sind:
+- **Pause:** mindestens 3 Stunden ohne Fahrzeug, davon mindestens eine Stunde zwischen 7 und 19 Uhr an einem Werktag, oder länger als
+  48 Stunden. Nachts ist an ruhigen Straßen oft stundenlang nichts los.
+- **Lücke:** die längste Lücke eines Werktags zwischen 7 und 19 Uhr, wenn sie länger ist als an jedem anderen Werktag im Umkreis von 21 Tagen
+  (mindestens 15 Minuten).
 
-- **9 Umhängen, belegt:**
-  - Quinheimer Straße (19.04.2024);
-  - Einsteinstraße, Steinhausstraße, Martinusstraße (alle 04.09.2024);
-  - Rosmarinstraße (13.12.2024);
-  - Düsseldorfer Straße, Ruhrstraße (beide 28.11.2025);
-  - Weckhovener Straße (02.12.2025);
-  - Martinstraße (21.04.2026).
+Kandidaten weniger als 2 Tage auseinander sind ein Umbau (etwa abends abgebaut, morgens aufgehängt).
 
-  Daraus entstehen 9 zusammengesetzte Einsätze, etwa Daimlerstraße bis 02.09.2024 statt bis zum Auslesen am 24.07.2024.
-  Die Einsteinstraße gibt Abschnitt 1 an die Daimlerstraße ab und bekommt Abschnitt 1 der Rosmarinstraße.
-- **3 Umhängen, möglich:**
-  - Konrad-Adenauer-Ring 14.05.2023;
-  - Matthiasstraße 19.12.2023;
-  - Hoistener Schulstraße 13.09.2024. Hier gleicht Abschnitt 1 der Nordkanalallee, aber an der Naht ändert sich der Anteil der Fahrten unter
-    15 km/h stark (am Ende der Nordkanalallee etwa die Hälfte, danach kaum noch). Am Auslesetag hat sich also etwas geändert.
+### Änderung über den Kandidaten
 
-  Auch sie bilden Einsätze, gekennzeichnet als „unsicher“. Insgesamt: 9 Einsätze abgeleitet, 3 unsicher, 11 gekürzt, 86 gleich der Messung.
-- **7 Ereignis, plausibel:** fünf Brüche am 27.04.2025 (erster Schultag nach den Osterferien: Pomona, Viersener Straße, Krokusstraße,
-  Am Reckberg, Föhrenstraße) und zwei am 27.08.2025 (nach den Sommerferien: Preußenstraße, Münchener Straße). Ein Umhängen zeigt sich dort nicht.
-  Die Bruchsuche lässt Ferientage aus; ein Bruch am ersten Schultag heißt also, dass sich der Verkehr über die Ferien geändert hat (neues
-  Schuljahr, Baustelle in den Ferien oder Umhängen in den Ferien an einen Ort, der keiner vorigen Messung gleicht). Dass fünf Geräte am selben
-  Tag brechen, spricht eher für eine Umhängaktion in den Osterferien. Die Erklärung „Ferien“ ist deshalb nur plausibel, nicht belegt.
-- **15 unerklärt.** Darunter sind zwei Paare am selben Tag: Holzheimer Weg und Alte Uferstraße am 13.05.2023, Holzbüttgener Straße und
-  Nierenhofstraße am 08.09.2023. Das spricht ebenfalls für Umhängaktionen, aber ohne passende vorige Messung (dort hatten mehrere Geräte keine
-  nutzbare Uhr).
+Verglichen werden bis zu 7 Werktage davor mit bis zu 7 Werktagen danach, jeweils 7 bis 19 Uhr. Beide Seiten haben denselben Ferienstatus.
+Die Fenster reichen höchstens 21 Tage weit und nicht über andere Montagen hinweg.
 
-Die Liste mit allen Belegen steht auf der Seite „Brüche“ (`brueche.html`) und in `daten/brueche.csv`.
+- **Tempoverteilung:** totale Variation ab 15 km/h.
+- **Verkehrsmenge:** |ln| des Verhältnisses der Fahrzeuge je Stunde.
+- **z:** robuster z-Wert (Median, MAD) gegen dieselben Größen an den Tagesgrenzen desselben Geräts im Umkreis von 45 Tagen. Tage näher als
+  10 Tage an einem Kandidaten bleiben dabei weg. Es zählt der größere der beiden Werte.
+
+### Stufen
+
+| Stufe | Bedingung | trennt Aufenthalte |
+|---|---|---|
+| **umhaengen** | Lücke oder Pause bis 48 h mit z ≥ 8, oder z ≥ 4 an einem Aktionstag (±1 Tag) | ja |
+| **inbetriebnahme** | Pause über 48 h mit z ≥ 2,5; montiert spätestens beim ersten Fahrzeug danach | ja |
+| **inbetriebnahme_ungeprueft** | Pause über 48 h ohne Vergleich (zu wenige Werktage davor oder danach) | ja |
+| **aktionstag** | an einem Aktionstag ändert sich der Verkehr über den Tag (z ≥ 2,5), mit einer Lücke von mindestens 10 Minuten | ja |
+| **eingriff** | Lücke am Tag mit Änderung, aber ohne stimmige Tagesprobe (Wartung, Neuausrichtung?) | nein |
+| **pause_gleicher_ort** | Pause über 48 h ohne Änderung (Akku leer?) | nein |
+| **moeglich** | z von 4 bis 8 außerhalb eines Aktionstags, oder z von 2,5 bis 4 | nein |
+
+- **Aktionstag:** ein Werktag, an dem ein Gerät mit z ≥ 8 umgehängt oder in Betrieb genommen wurde. Die Annahme dahinter ist, dass ein Trupp an
+  einem Tag mehrere Displays umhängt. Die Lücken eines Tages liegen nacheinander, und die Wege dazwischen passen zur Entfernung.
+- **Tagesprobe** (für jedes Umhängen und jeden Aktionstag innerhalb eines Tages): Sie sucht den Wechselpunkt im Tagesverlauf aus Tempoverteilung
+  und Verkehrsmenge (Poisson-Prozess mit dem Tagesgang der Tage davor und danach).
+  - Signifikanz: 300 Vertauschungen, p ≤ 0,01.
+  - Die Richtung muss passen.
+  - Der Wechselpunkt liegt höchstens 30 Minuten neben der Lücke.
+
+  Ohne stimmige Probe fällt ein Aktionstag weg, und ein Umhängen wird zum Eingriff.
+
+Die Uhrzeiten sind das letzte Fahrzeug vor und das erste nach der Lücke. An ruhigen Straßen kann die Arbeit am Mast etwas früher oder später
+gewesen sein. Bei einer Inbetriebnahme ist das erste Fahrzeug nur „spätestens“.
+
+## Zuordnung der Teile zu den Messungen (`einsaetze.py`)
+
+Jedes Teil gehört zu einer Messung desselben Geräts oder zu keiner. Die **Reihenfolge der Messungen** gilt als richtig: Sortiert wird nach dem
+ersten Fahrzeug ihrer Datei im Gesamtstrom. Jede Messung bekommt einen zusammenhängenden Block von Teilen.
+
+| Beleg | Punkte |
+|---|---|
+| Anteil der Tage des Teils in der Datei der Messung | × 3 × Größe (Tage / 14, höchstens 1) |
+| Anteil des Teils im Erfassungszeitraum der Mitteilung (`belege/korrekturen.json`) | × 3; ohne Überlappung −1 |
+| Beginn bzw. Ende gleich dem des Erfassungszeitraums (±1 Tag) | je +1 |
+| V85 passt nicht zum Limit (Limit ab 50: V85 unter 35; Limit bis 30: V85 über Limit + 20) | −1 |
+| Teil keiner Messung zugeordnet | −0,5 × Größe |
+| Zwei Aufenthalte nacheinander in derselben Messung, deutlich verschieden (TVD über 0,1 oder Menge außerhalb 0,7–1,4) | −3 |
+| Ein Aufenthalt auf zwei Messungen verteilt (Wechsel an einem Bruch, ohne Bewegung) | −2 |
+| Messung, deren Datei Daten im Gesamtstrom hat, bekommt kein Teil | −2 |
+
+Die beste Gesamtzuordnung findet eine dynamische Programmierung. **Sicherheit** je Teil: Abstand der besten Lösung zur besten, in der das Teil
+woanders hingehört. Ab 1,5 Punkten gilt die Zuordnung als sicher. Der Datei-Anteil ist ein Hinweis, kein Beweis: Nach dem Muster „erst
+auslesen, dann umhängen“ beginnt eine Datei oft noch am vorigen Standort.
+
+## Einsätze
+
+Je Messung gibt es einen Einsatz aus ihren Teilen. Jedes Teil ist ein **Einsatz-Abschnitt**. Rauschboden, Regenanteil und Verhaltensgruppen
+werden je Einsatz-Abschnitt geschätzt.
+
+| Grenze | Bedeutung | ausgenommen |
+|---|---|---|
+| Bewegung | Umhängen oder Inbetriebnahme, minutengenau | die Lücke selbst (keine Daten) |
+| Bewegung ohne Wechsel der Messung | gleicher Standort laut Zuordnung; ungeklärt (anderer Mast, andere Richtung, Neuausrichtung?) | die Lücke |
+| Bruch | bleibt im Einsatz; erklärt durch Ereignis oder unerklärt | nichts |
+| Ortswechsel ohne Bewegung | Wechsel der Messung an einem Bruch, ohne erkennbare Transportlücke | Bruchtag und Vortag |
+| Wechsel der Messung am selben Standort | etwa neues Tempolimit nach dem Auslesen (Viersener Straße) | Bruchtag und Vortag |
+
+| Status | Bedeutung |
+|---|---|
+| `identisch` | nur Daten der eigenen Datei, alle Daten der Datei im Einsatz |
+| `ergaenzt` | wie identisch, aber mit Daten außerhalb des Erfassungszeitraums der Mitteilung oder mit rekonstruierter Uhr |
+| `gekuerzt` | ein Teil der eigenen Datei gehört zu einem anderen Einsatz oder zu keinem Standort mit Messung |
+| `abgeleitet` | enthält Daten aus Dateien anderer Messungen desselben Geräts |
+| `unsicher` | wie abgeleitet oder gekürzt, aber eine der Grenzen beruht auf einer unsicheren Zuordnung |
+
+Der **Erfassungszeitraum der Mitteilung** ist für die Einsätze nur ein Beleg der Zuordnung. Daten außerhalb gehören zum Einsatz, wenn das Gerät
+dort hing. Für die Ansicht „Messung“ bleibt er maßgeblich ([abschnitte.md](abschnitte.md)).
+
+**Nicht zugeordnete Teile** (`nicht_zugeordnet` in `einsaetze.json`) und **Messungen ohne Einsatz** (`messungen_ohne_einsatz`) sind offene
+Fragen. Ein Beispiel ist die Kreitzweg-Datei: Sie setzt nach unserer Zuordnung nur die Nievenheimer Straße fort.
+
+## Brüche der Messungen
+
+Die Brüche je Messung (`dsd2csv.py`) werden in dieser Rangfolge erklärt:
+
+1. **Angabe der Verwaltung** (`belege/brueche-verwaltung.json`): bestätigt.
+2. **Bewegung:** Eine trennende Bewegung desselben Geräts liegt kurz vor dem Bruch, höchstens 8 gewöhnliche Tage davor oder einen Tag danach.
+   Ferien und Feiertage zählen dabei nicht. Die Bruchsuche braucht auf jeder Seite mindestens 7 Tage und lässt Ferien aus; darum liegt der
+   Bruch oft einige Tage nach dem Umhängen. Beispiel: Die Brüche am ersten Schultag nach den Osterferien 2025 (27.04.) gehen auf das
+   Umhängen am 14./15.04.2025 zurück.
+3. **Ereignis, plausibel:** erster Schultag nach Ferien oder erster Ferientag (±1 Tag), Beginn oder Ende eines länger dauernden Ereignisses
+   (`belege/ereignisse.json`). Kurze Ereignisse werden nur als zeitliche Nähe genannt.
+4. **Unerklärt:** Diese Brüche sind Fragen an die Verwaltung.
+
+Die Brüche in den Aufenthalten (Bruchsuche auf dem Gesamtstrom) werden genauso erklärt, ohne Schritt 2. Sie stehen als Grenzen der
+Einsatz-Abschnitte in `einsaetze.json`. Messung und Gesamtstrom finden nicht immer dieselben Brüche: Die Fenster sind verschieden. Die Brüche der
+Messungen aus denen des Gesamtstroms abzuleiten, ist der nächste Schritt.
+
+## Defekte Messungen
+
+Für einige Messungen von 2023 hat die Verwaltung ein PDF beigelegt, das sie selbst „defekt“ oder „fehlerhaft“ nennt. Ein solches PDF liegt im
+Ordner der Messung oder im obersten Ordner darüber; trägt sein Name ein Datum, ist es das Datum im Namen der Datei. Diese Messungen führen wir
+nicht als Messung auf: Zeitraum und Zuordnung der Verwaltung sind dort nach ihrer eigenen Angabe falsch. Ihre Daten gehen in die Einsätze ein,
+soweit die Zuordnung sie trägt. Auf der Detailseite steht dann nur der Einsatz, mit einem Hinweis.
+
+## Ergebnis (Stand November 2026)
+
+**Gesamtstrom:** 11,4 Millionen Fahrzeuge an 12 Geräten.
+
+- **Uhr-Rekonstruktion:** Von den Segmenten mit zurückgesetzter Uhr sind 7 belegt und 1 wahrscheinlich, zusammen rund 217.000 Fahrzeuge aus
+  2023. Davon betroffen sind Cyriakusstraße, Lanzerather Dorfstraße, Rosellener Schulstraße, Buscherhofstraße, Weinstockstraße,
+  Holzheimer Weg 109 und Kuhweg.
+- **Nicht rekonstruiert:** Ein Segment bleibt offen (Kuhweg, 08.09. oder 13.09.2023). 57 sehr kurze Segmente werden nicht rekonstruiert;
+  das sind Uhren, die täglich neu gestartet sind.
+
+**Bewegungen:**
+
+| Stufe | Anzahl |
+|---|---|
+| Umhängen mit Transportlücke | 35 |
+| Umhängen am Aktionstag | 3 |
+| Inbetriebnahme nach Pause | 39 |
+| Inbetriebnahme ohne Vergleich | 18 |
+| Eingriff, Pause am selben Ort, möglich (trennen nichts) | 21 |
+
+Es gibt 40 Aktionstage. **98 Einsätze** in 114 Einsatz-Abschnitten; 88 davon beginnen mit einer erkannten Bewegung.
+
+| Status | Anzahl |
+|---|---|
+| identisch | 26 |
+| abgeleitet | 42 |
+| gekürzt | 19 |
+| unsicher | 11 |
+
+**Befunde 2023:**
+
+- **19.07.2023:** Das war nur eine Auslese-Runde. Umgehängt wurde erst vom 06. bis 13.09.2023.
+- **Kuhweg, Holzbüttgener Straße, Nierenhofstraße:** Diese Dateien beginnen mit sieben Wochen Daten vom jeweils vorigen Standort.
+- **Defekte Messungen:** Hinter den Auswertungen, die die Verwaltung „defekt“ nennt, stecken meist zurückgesetzte Uhren. Die Daten gehören zum
+  Standort, an dem das Gerät nach dem Auslesen hing.
+
+**Brüche der Messungen:** Von 34 Brüchen sind
+
+- 28 durch eine Bewegung belegt;
+- 3 durch eine Inbetriebnahme ohne Vergleich plausibel;
+- 3 unerklärt: Schluchenhausstraße 10.02.2023, Hermannstraße 06.09.2023, Ruhrstraße 09.07.2026.
+
+Darunter sind auch die früher nur mit den Ferien erklärten Brüche nach Ostern und den Sommerferien 2025. Dort wurde am 14./15.04. bzw. am
+17.07.2025 umgehängt.
+
+**Offene Fälle:**
+
+- **Kreitzweg 2023:** Die Datei setzt die Nievenheimer Straße fort, ohne Bewegung und ohne Bruch. Sie hat keinen eigenen Einsatz.
+- **Berghäuschensweg (Datei _7, 2023):** Die Daten gehören zum Einsatz Berghäuschensweg _8. Diese Zuordnung ist unsicher.
+- **Gerät 17385, 04. bis 08.05.2023:** Fünf Tage an einem Ort ohne Messung (68 Fahrzeuge je Stunde, V85 34).
+- **Liedberger Straße:** Am 28.11.2025 wurde umgehängt. Davor zählte das Gerät 841 Fahrzeuge am Tag bei V85 44, danach 126 bei V85 32.
+  Beides liegt im Erfassungszeitraum der Mitteilung, die V85 44 nennt. Welcher Ort ist die Liedberger Straße?
+- **Viersener Straße:** Am 14.04.2025 von 13:53 bis 14:18 wurde umgehängt, die Dateien wechseln aber erst am 15.05. (Tempo 50 auf 30). Wir
+  ordnen die Zeit ab dem 14.04. der Tempo-30-Messung zu. War es ein Richtungswechsel?
+- **Villestraße (stationär):** Drei aufeinanderfolgende Dateien je Richtung (März 2023 bis März 2024) zeigen weder Bewegung noch Bruch. Sie
+  bilden je einen Einsatz.
+- **Brüche kurz nach der Inbetriebnahme:** Norfer Kirchstraße 2023 und Konradstraße 2025 haben einen Bruch genau 8 Tage nach der
+  Inbetriebnahme, der kürzesten Länge, die die Bruchsuche zulässt. Das spricht für eine Änderung in den ersten Tagen, etwa einen Anfangseffekt
+  des Displays.
 
 ## Grenzen und Gegenhypothesen
 
-- **Ähnlichkeit ist kein Beweis.** Straßen gleichen Typs und Limits sehen sich ähnlich. Der Nulltest vergleicht deshalb mit allen Abschnitten
-  gleichen Limits, nicht mit Zufallspaaren. Eine Baustelle oder Sperrung mitten im Einsatz am selben Ort wäre eine andere Erklärung für einen
-  Bruch. Dann aber gliche der Abschnitt davor nicht so genau dem Ende der vorigen Messung an einem anderen Ort.
-- **Nur unmittelbar aufeinander folgende Messungen desselben Geräts** werden verglichen (Ende der vorigen höchstens 3 Tage neben dem Beginn).
-  Geräte mit nicht nutzbarer Uhr bleiben außen vor.
-- **Tagesauflösung:** Der Umhängtag ist der Bruchtag. Der Tag davor wird mit ausgenommen, weil die Bruchsuche einen Wechsel mitten am Tag dem
-  Tag selbst zuschlägt.
-- **Ferien als Erklärung** sind schwach (siehe oben). Eine Prüfung der Richtung, etwa „mehr Verkehr nach den Ferien“, ist nicht möglich, weil
-  die Bruchsuche Ferientage auslässt.
-- **Kennzahlen eines Einsatzes** stammen aus dem Rohaggregat (Stundenauflösung). Für Kennzahlen, Rauschboden und Verhaltensgruppen reicht das;
-  Fahrten innerhalb einer Stunde lassen sich nicht weiter ordnen.
-- **Die Messungen sind die Gegenprobe:** Sie bleiben ohne Zusammensetzen und zeigen, was die Verwaltung geliefert hat. Ein Fehler in der
-  Zuordnung zeigt sich als Unterschied zwischen Einsatz und Messung.
-- **Die YAML je Datei** bleibt die Sicht der Verwaltung. Einsätze und Zuordnungen stehen in `einsaetze.json`, `daten/einsaetze.csv` und
-  `daten/brueche.csv`.
+- **Eine Lücke ist nicht immer ein Umhängen.** Darum braucht ein Umhängen eine deutliche Änderung des Verkehrs (z ≥ 8, an Aktionstagen ≥ 4) und
+  eine stimmige Tagesprobe. Eine Baustelle, die am selben Tag beginnt, an dem das Gerät gewartet wird, sähe genauso aus.
+- **Verschiedene Orte gleichen Typs sehen sich ähnlich.** Ein Umhängen zwischen zwei ähnlichen Straßen ohne Lücke bleibt unentdeckt. Dann liegt
+  es in einem Aufenthalt, und die Zuordnung kann es nur an einem Bruch trennen.
+- **Die Uhr-Rekonstruktion ist eine Hypothese.** Sie beruht auf gleichmäßig laufender Uhr und unabhängigen Ankern. Jede Entscheidung steht mit
+  ihren Ankern in `einsaetze.json` (`geraete[].rekonstruktion`).
+- **Alle Schwellen sind Festlegungen, kein Befund.** Sie stehen als Konstanten in `bewegungen.py`, `uhr_rekonstruktion.py` und `einsaetze.py`.
+- **Kennzahlen eines Einsatzes** beruhen auf Stunden des Gesamtstroms (Stundenauflösung). Für Kennzahlen, Rauschboden und Verhaltensgruppen
+  reicht das.
+- **Die Messungen sind die Gegenprobe:** Sie bleiben ohne Zusammensetzen und zeigen, was die Verwaltung geliefert hat.
 
 ## Reproduktion
 
 ```sh
 python3 -I einsaetze.py --auswertung _vorschau/auswertung.json --aggregat _vorschau-aggregat --cache .zwischenspeicher --jobs 8
-python3 -I tools/abzug_je_abschnitt.py   # Abzug je Abschnitt gegen je Datei (Messungen)
+python3 -I tools/einsatz_v85.py   # V85 der Einsätze gegen Messung und Verwaltung
 ```
 
-`lokal_bauen.py` und der Workflow rufen es nach `dsd2csv.py` auf. Tests: `test_einsaetze.py`.
+`lokal_bauen.py` und der Workflow rufen es nach `dsd2csv.py` auf. Tests: `test_bewegungen.py`, `test_einsaetze.py`.

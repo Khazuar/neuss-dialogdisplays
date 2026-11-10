@@ -24,6 +24,7 @@ dagegen nur ein exaktes Parsing der DSD-Dateien.
 | Wurde ein Gerät umgehängt (Brüche), wann beginnt ein Abschnitt? | `abschnitte.csv` |
 | Warum gibt es einen Bruch (Umhängen, Ferien, unerklärt)? | `brueche.csv` |
 | Wann hat ein Gerät tatsächlich wo gemessen (Einsätze, unsere Zuordnung)? | `einsaetze.csv`, Kennzahlen mit `bereich` = `einsatz` |
+| Wann wurde ein Gerät umgehängt oder in Betrieb genommen (minutengenau)? | `bewegungen.csv` |
 | Kennzahlen je Kalendertag (Ferien, Feiertage, Wochentag) | `tage.csv` |
 | Eigene Zeitfenster (zum Beispiel 7–8 Uhr, nur Dienstage, nur Ferien), Verteilungen, jede andere Frage nach Stunde und Geschwindigkeit | `stunden/<standort_seite>.csv.gz` oder `stunden.csv.gz` |
 | War in einer Stunde nichts los oder wurde nichts aufgezeichnet? | `luecken.csv` zusammen mit den Stundenzeilen |
@@ -118,34 +119,45 @@ rund 280 MB entpackt), die Dateien je Standortseite jeweils nur deren Messungen.
 | `regenklasse` | Regen in dieser Stunde an der zugeordneten Wetterstation (`wetterstation` in `messungen.csv`): 0 = trocken (diese Stunde, die drei davor und die danach unter 0,1 mm), 1 = 0,1 bis 0,5 mm, 2 = 0,5 bis 2 mm, 3 = ab 2 mm (Niederschlag der Stunde plus je die Hälfte der Nachbarstunden), 9 = Vor- oder Nachlauf eines Regens oder kein Wert; leer ohne Wetterdaten. Abgeleitet aus Daten des Deutschen Wetterdienstes (Quelle: Deutscher Wetterdienst, CC BY 4.0). |
 | `kmh` | gemessene Geschwindigkeit in ganzen km/h (Auflösung der Geräte) |
 | `anzahl` | Fahrzeuge dieser Geschwindigkeit in dieser Stunde |
-| `einsatz_id` | Einsatz, zu dem die Stunde nach unserer Zuordnung gehört (`einsaetze.csv`); leer an ausgenommenen Umhängtagen |
+| `einsatz_id` | Einsatz, zu dem die Stunde nach unserer Zuordnung gehört (`einsaetze.csv`; liegt eine Stunde in zwei Einsätzen, der mit dem größeren Anteil); leer, wenn sie zu keinem Einsatz gehört (ausgenommene Tage, keiner Messung zugeordnet) |
 
 ### `einsaetze-stunden.csv.gz` (je Einsatz, Tag, Stunde und km/h)
 
 Wie `stunden.csv.gz`, aber je Einsatz und mit dessen eigenem Abzug von Rauschboden und Regenanteil (geschätzt je Einsatz-Abschnitt, mit der
-Wetterstation des Einsatzstandorts): `einsatz_id`, `einsatz_abschnitt_nr` (Abschnitt im Einsatz; Teile über eine Dateigrenze zählen als einer),
+Wetterstation des Einsatzstandorts). Grundlage ist der Gesamtstrom des Geräts, also auch Daten außerhalb des Erfassungszeitraums der Mitteilung
+und Abschnitte mit rekonstruierter Geräteuhr: `einsatz_id`, `einsatz_abschnitt_nr` (Abschnitt im Einsatz; Grenzen sind Bewegungen und Brüche, nicht Dateigrenzen),
 `datum`, `wochentag`, `stunde`, `utc_versatz_h`, `zeitraum`, `ferien`, `feiertag`, `voll`, `regenklasse`, `kmh`, `anzahl`. Für Auswertungen nach dem
 tatsächlichen Einsatzort ist das die bessere Grundlage; `stunden.csv.gz` bleibt die Sicht der Messungen (Abzug je Abschnitt der Datei).
 
 ### `einsaetze.csv` (eine Zeile je Einsatz)
 
 Ein **Einsatz** ist der Zeitraum, in dem ein Gerät tatsächlich an einem Standort in eine Fahrtrichtung gemessen hat (unsere Zuordnung,
-[docs/einsaetze.md](docs/einsaetze.md)). Meist ist er gleich der Messung. Hing ein Gerät nach dem Auslesen noch am alten Ort, gehört dieser
-Abschnitt der neuen Datei zum Einsatz des alten Standorts.
+[docs/einsaetze.md](docs/einsaetze.md)). Er beginnt und endet meist mit einer Bewegung (Umhängen, Inbetriebnahme). Hing ein Gerät nach dem
+Auslesen noch am alten Ort, gehört dieser Teil der neuen Datei zum Einsatz des alten Standorts.
 
 `einsatz_id`, `messung_id` (Messung, auf der der Einsatz beruht: Standort, Fahrtrichtung, Tempolimit), `standort_seite`, `standort_name`, `geraet`,
-`fahrtrichtung`, `tempolimit_kmh`, `von`, `bis`, `status` (`identisch` = gleich der Messung, `abgeleitet` = aus mehreren Messungen
-zusammengesetzt, nicht bestätigt, `unsicher` = zusammengesetzt nach einer nur möglichen Zuordnung, `bestaetigt` = Grenzen von der Verwaltung bestätigt, `gekuerzt` = Teile der Messung gehören zu einem anderen
-Einsatz oder liegen außerhalb des Erfassungszeitraums der Verwaltung und sind nicht zuzuordnen, `ergaenzt` = enthält Daten außerhalb des
-Erfassungszeitraums, die dem Rest gleichen), `teile` (Messung#Abschnitt von..bis und Herkunft), `abgegeben` (Abschnitte, die zu einem anderen Einsatz gehören), `ausgenommene_tage`
-(Umhängtage).
+`fahrtrichtung`, `tempolimit_kmh`, `von`, `bis` (erstes und letztes Fahrzeug, minutengenau), `status` (`identisch` = nur und alle Daten der
+eigenen Datei, `ergaenzt` = dazu Daten außerhalb des Erfassungszeitraums oder mit rekonstruierter Uhr, `gekuerzt` = Daten der Datei gehören zu
+einem anderen Einsatz oder zu keinem, `abgeleitet` = enthält Daten aus Dateien anderer Messungen, `unsicher` = wie abgeleitet oder gekürzt,
+aber mit unsicherer Zuordnung; alles nicht bestätigt), `beginn`, `ende` (Bewegung mit Stufe und Zeit, oder `bruch`, `datenbeginn`, `datenende`,
+`ortswechsel_ohne_bewegung`, `messungswechsel_am_bruch`), `teile` (Messung#Einsatz-Abschnitt von..bis, Herkunft `eigen` oder
+`andere_messung`, Zuordnung `sicher` oder `unsicher`), `abgegeben` (Zeiträume der eigenen Datei in anderen Einsätzen), `nicht_beruecksichtigt`
+(Zeiträume der eigenen Datei ohne Einsatz), `ausgenommene_tage` (Wechsel am Bruch ohne Transportlücke), `fahrzeuge_rekonstruierte_uhr`,
+`messung_defekt` (PDF, mit dem die Verwaltung die Messung selbst als defekt bezeichnet; die Messung steht dann nur als Einsatz auf der Seite).
 
-### `brueche.csv` (eine Zeile je Bruch)
+### `brueche.csv` (eine Zeile je Bruch einer Messung)
 
-`messung_id`, `abschnitt_nr` (Abschnitt nach dem Bruch), `datum`, `wahrscheinlichkeit`, `zuordnung` (`umhaengen`, `ereignis`, `verwaltung`,
-`unerklaert`), `stufe` (`belegt`, `moeglich`, `plausibel`, `bestaetigt`, `offen`), `erklaerung`, dazu die Belege der besten Umhäng-Prüfung:
-`umhaengen_richtung`, `umhaengen_von_messung`, `score`, `p_nulltest`, `verhaeltnis_fahrzeuge`, `gegenprobe_score`, `naht_stetig`; `ereignisse` in der Nähe
-und `gleicher_tag` (Messungen mit einem Bruch ±1 Tag).
+`messung_id`, `abschnitt_nr` (Abschnitt nach dem Bruch), `datum`, `wahrscheinlichkeit`, `zuordnung` (`bewegung`, `ereignis`, `verwaltung`,
+`unerklaert`), `stufe` (`belegt`, `plausibel`, `bestaetigt`, `offen`), `erklaerung`, dazu die erklärende Bewegung: `bewegung_stufe`,
+`bewegung_von`, `bewegung_bis`, `bewegung_z`; `ereignisse` in der Nähe und `gleicher_tag` (Messungen mit einem Bruch ±1 Tag).
+
+### `bewegungen.csv` (eine Zeile je Bewegung eines Geräts)
+
+Aus dem Gesamtstrom aller Dateien eines Geräts ([docs/einsaetze.md](docs/einsaetze.md)): `geraet`, `stufe` (`umhaengen`, `aktionstag`,
+`inbetriebnahme`, `inbetriebnahme_ungeprueft` trennen Einsätze; `eingriff`, `pause_gleicher_ort`, `moeglich` nicht), `art` (`luecke`, `pause`,
+`aktionstag`), `von`, `bis` (letztes Fahrzeug davor, erstes danach), `z` (Stärke der Änderung des Verkehrs), `fahrzeuge_je_stunde_vorher`,
+`fahrzeuge_je_stunde_nachher`, `tempo_diff_kmh`, `tvd` (Unterschied der Tempoverteilungen, Werktage 7–19 Uhr), `wechsel_im_tagesverlauf`
+(Zeitpunkt aus der Tagesprobe), `aktionstag_mit` (Geräte, die am selben Tag sicher umgehängt wurden).
 
 ### `luecken.csv`
 

@@ -455,6 +455,7 @@ async function start() {
     data = [];
     for (const r of rows) {
       const z = zeile(r, idx), s = seiten[z.datei];
+      if (s && s.defekt) continue;  // von der Verwaltung selbst als defekt bezeichnet: nur als Einsatz (seiten_bauen.py)
       if (s) { z.seite = s.seite; z.ort = s.standort; z.verdeckt = !!s.verdeckt; }
       const verw = s && s.verwaltung && s.verwaltung.length ? s.verwaltung : [""];
       for (const v of verw) data.push(Object.assign({}, z, { verwaltung: v }));
@@ -480,8 +481,8 @@ async function start() {
     if (!dataE.length) { ansicht = "messungen"; ansichtWahl.querySelector('option[value="einsaetze"]').remove(); }
     if (!dataA.length && !dataE.length) ansichtWahl.closest("div").hidden = true;
     ansichtWahl.value = ansicht;
-    const einsatzInfo = "Einsätze: der Zeitraum, in dem ein Gerät tatsächlich an einem Standort gemessen hat, nach unserer Zuordnung. Hing ein Gerät nach dem " +
-      "Auslesen noch am alten Ort (belegt durch Verteilung, Tagesgang und Verkehrsmenge), gehört dieser Teil zum alten Standort; die Tage des Umhängens fallen weg. " +
+    const einsatzInfo = "Einsätze: der Zeitraum, in dem ein Gerät tatsächlich an einem Standort gemessen hat, nach unserer Zuordnung. Umhängen zeigt sich " +
+      "als Lücke in den Daten, nach der sich der Verkehr deutlich ändert; hing ein Gerät nach dem Auslesen noch am alten Ort, gehört dieser Teil zum alten Standort. " +
       "Meist ist ein Einsatz gleich der Messung der Verwaltung. Zusammengesetzte Einsätze sind gekennzeichnet (Filterwort „zusammengesetzt“).";
     ansichtInfo.textContent = ansicht === "einsaetze" ? einsatzInfo : "";
     ansichtWahl.addEventListener("change", () => {

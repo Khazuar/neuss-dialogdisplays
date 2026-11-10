@@ -1,89 +1,80 @@
 # SPDX-License-Identifier: MIT
-"""Brueche zuordnen und Einsaetze bilden (docs/einsaetze.md).
+"""Einsaetze bilden: Aufenthalte der Geraete den Messungen zuordnen und Brueche erklaeren (docs/einsaetze.md).
 
-Begriffe: Eine Messung ist eine Datei der Verwaltung (Standort, Fahrtrichtung, Zeitraum, wie geliefert). Ein Abschnitt ist ein zeitlicher
-Bereich einer Messung mit aehnlichen Daten, ein Bruch die Grenze zwischen zwei Abschnitten (bruch.py). Ein Einsatz ist der Zeitraum, in dem ein
-Geraet tatsaechlich an einem Standort in eine Fahrtrichtung gemessen hat; er besteht aus Abschnitten, auch aus Abschnitten anderer Messungen
-desselben Geraets (zusammengesetzte Abschnitte).
+Begriffe: Eine Messung ist eine Datei der Verwaltung (Standort, Fahrtrichtung, Zeitraum, wie geliefert). Ein Einsatz ist der Zeitraum, in dem
+ein Geraet tatsaechlich an einem Standort in eine Fahrtrichtung gemessen hat. Grundlage ist der Gesamtstrom je Geraet (bewegungen.py): alle
+Dateien zusammen, mit rekonstruierten Uhren, zerlegt an den Bewegungen (Umhaengen, Inbetriebnahme) in Aufenthalte und diese an den Bruechen
+in Teile.
 
-Zuordnung eines Bruchs, in dieser Rangfolge:
-  1. Angabe der Verwaltung (belege/brueche-verwaltung.json): bestaetigt.
-  2. Umhaengen belegt: Der Abschnitt vor dem Bruch gleicht dem letzten Abschnitt der Vorgaenger-Messung desselben Geraets an einem anderen
-     Standort (oder spiegelbildlich der Abschnitt nach dem letzten Bruch dem ersten Abschnitt des Nachfolgers): Geschwindigkeitsverteilung und
-     Tagesgang innerhalb des Rauschens, Verkehrsmenge passend, aehnlicher als fast alle anderen Abschnitte gleichen Tempolimits (Nulltest),
-     Gegenprobe (der Abschnitt auf der anderen Seite des Bruchs gleicht dem Vorgaenger nicht), stetige Naht, sicherer Bruch.
-  3. Ereignis: erster Schultag nach Ferien, Beginn oder Ende eines laenger dauernden Ereignisses am Standort oder stadtweit
-     (belege/ereignisse.json). Kurze Ereignisse (Feste) werden nur als zeitliche Naehe genannt.
-  4. Umhaengen moeglich (schwaechere Kriterien): nur Hinweis.
-  5. Unerklaert: fuer die Nachfrage bei der Verwaltung.
-Nur belegte oder bestaetigte Zuordnungen veraendern die Einsaetze; der Bruchtag und der Tag davor (Umhaengen, Transport, Montage) gehoeren
-dann zu keinem Einsatz.
+1. Zuordnung: Jedes Teil gehoert zu einer Messung desselben Geraets oder zu keiner. Die Reihenfolge der Messungen (nach dem ersten Fahrzeug
+   ihrer Datei im Gesamtstrom) gilt als richtig; jede Messung bekommt einen zusammenhaengenden Block von Teilen (auch keinen). Punkte je Paar
+   (Teil, Messung):
+     datei       Anteil der Tage des Teils in der Datei der Messung x GEWICHT_DATEI x Groesse (Tage / VOLL_TAGE, hoechstens 1). Nach dem
+                 Muster "erst auslesen, dann umhaengen" beginnt eine Datei oft noch am vorigen Standort; der Anteil ist ein Hinweis, kein Beweis.
+     zeitraum    Anteil des Teils im Erfassungszeitraum der Mitteilung (belege/korrekturen.json) x GEWICHT_ZEITRAUM, ohne Ueberlappung -1;
+                 Beginn oder Ende auf +-1 Tag gleich: je +1.
+     tempolimit  V85 passt nicht zum Limit der Messung (Limit ab 50: V85 unter 35; Limit bis 30: V85 ueber Limit + 20): -1.
+     keine       Teil keiner Messung zugeordnet: STRAFE_KEINE x Groesse.
+   Zwischen zwei aufeinanderfolgenden Teilen: verschiedene Aufenthalte in derselben Messung, die sich deutlich unterscheiden (TVD der
+   Tempoverteilung ueber MAX_TVD oder Verkehrsmenge ausserhalb VERHAELTNIS): STRAFE_UNAEHNLICH; derselbe Aufenthalt in verschiedenen
+   Messungen (Ortswechsel an einem Bruch ohne erkannte Bewegung): STRAFE_OHNE_BEWEGUNG. Je Messung, deren Datei Daten im Gesamtstrom hat, die
+   aber kein Teil bekommt: STRAFE_LEER (die Verwaltung hat dort gemessen).
+   Loesung: dynamische Programmierung. Sicherheit je Teil: Abstand der besten Loesung zur besten, in der das Teil woanders hingehoert
+   (sicher ab SICHER_AB).
+2. Einsaetze: je Messung einer aus ihren Teilen; jedes Teil ist ein Einsatz-Abschnitt. Grenzen: Bewegung (minutengenau; die Luecke gehoert
+   zu keinem Einsatz), Bruch (bleibt im Einsatz: Ereignis oder unerklaert) oder Ortswechsel ohne Bewegung (Bruchtag und Vortag gehoeren zu
+   keinem Einsatz). Teile, die keiner Messung zugeordnet sind, sind "nicht beruecksichtigt".
+3. Brueche der Messungen (dsd2csv.py), Zuordnung in dieser Rangfolge: Angabe der Verwaltung (belege/brueche-verwaltung.json), Bewegung
+   desselben Geraets kurz davor (die Bruchsuche braucht bruch.MIN_ABSCHNITT_TAGE auf jeder Seite und laesst Ferien aus), Ereignis (Ferienende,
+   laengere Ereignisse, belege/ereignisse.json), unerklaert. Die Brueche in den Aufenthalten werden genauso erklaert, ohne die Bewegung.
+4. Je Einsatz (Durchgang C): je Einsatz-Abschnitt Rauschboden und Regenanteil, Kennzahlen, Gefaehrdung, Laerm, Naechte, Zellen,
+   Verhaltensgruppen und das bereinigte Aggregat.
 
-Grundlage ist das Aggregat je Datei (aggregat.py: Fahrzeuge je Stunde und km/h, nur nutzbare Zeit, Rauschboden abgezogen). Reines Python.
-Aufruf: python3 -I einsaetze.py --auswertung _vorschau/auswertung.json --aggregat _vorschau-aggregat
+Messungen, deren Auswertung die Verwaltung selbst "defekt" oder "fehlerhaft" nennt (PDF im selben Ordner, bei Datum im Namen mit gleichem
+Datum wie die Datei), stehen unter "defekt"; ihre Daten gehen in die Einsaetze ein.
+Reines Python. Aufruf: python3 -I einsaetze.py --auswertung _vorschau/auswertung.json --aggregat _vorschau-aggregat
 """
 import argparse
-import bisect
 import collections
 import datetime as dt
 import json
 import multiprocessing
 import os
+import re
 import sys
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HIER)
+import bewegungen  # noqa: E402
+import bruch  # noqa: E402
 import dsd2csv  # noqa: E402
 import gruppen  # noqa: E402
 import kalender  # noqa: E402
 import seiten_bauen  # noqa: E402
+import uhr_rekonstruktion  # noqa: E402
 import zwischenspeicher  # noqa: E402
 
-KMIN, KMAX = 15, 100            # Geschwindigkeiten fuer den Vergleich (darunter Fussgaenger, Rauschboden)
-MIN_FAHRZEUGE = 1500            # kleinere Abschnitte werden nicht verglichen
-RAUSCHEN_MIN = (0.015, 0.02)    # Untergrenzen des Rauschens (Verteilung, Tagesgang)
-FOLGE_TAGE = 3                  # Ende des Vorgaengers hoechstens so viele Tage neben dem Beginn der Messung
-VERHAELTNIS = (0.7, 1.4)        # Fahrzeuge je Stunde, Abschnitt gegen Vergleich
-SCORE_BELEGT, SCORE_MOEGLICH = 1.15, 1.5
-P_BELEGT, P_MOEGLICH = 0.05, 0.10
-NULL_MIN = 20                   # so viele Vergleichsabschnitte gleichen Limits braucht der Nulltest, sonst alle Limits
-GEGENPROBE = 3.0                # Score, ab dem der Abschnitt auf der anderen Seite des Bruchs dem Vorgaenger nicht gleicht
-BRUCH_P = 0.9
-NAHT_TAGE, NAHT_SCORE, NAHT_MIN = 7, 2.0, 300
+GEWICHT_DATEI, GEWICHT_ZEITRAUM = 3.0, 3.0
+STRAFE_KEINE, STRAFE_UNAEHNLICH, STRAFE_OHNE_BEWEGUNG, STRAFE_LEER = -0.5, -3.0, -2.0, -2.0
+SICHER_AB = 1.5
+VOLL_TAGE = 14                  # ab so vielen Tagen zaehlen Datei-Anteil und "keine Messung" voll
+MIN_TAGE_MERKMAL = 3            # mit weniger Werktagen gilt ein Teil als aehnlich (zu wenig Daten fuer ein Urteil)
+MAX_TVD, VERHAELTNIS = 0.1, (0.7, 1.4)
+BEWEGUNG_VOR_BRUCH = bruch.MIN_ABSCHNITT_TAGE + 1  # so viele gewoehnliche Tage (ohne Ferien, Feiertage) vor dem Bruch darf die Bewegung liegen
 EREIGNIS_TAGE = 1               # Bruchtag hoechstens so weit neben Beginn oder Ende eines Ereignisses
+DEFEKT = re.compile(r"defekt|fehlerhaft", re.IGNORECASE)
 STUNDE = dt.timedelta(hours=1)
 TAG = dt.timedelta(days=1)
-ISO_UTC = "%Y-%m-%dT%H:00Z"
 
 
-# ------------------------------------------------------------------ Daten je Messung
-
-def stunden_lesen(agg):
-    """(Zeilen, vollstaendig aufgezeichnete Stunden) aus einem Aggregat. Zeile: (Datum, Stunde, voll, Regenklasse, Counter km/h -> Anzahl);
-    vollstaendig: [(Datum, Stunde)] in Ortszeit, auch Stunden ohne Fahrzeug (zwischen erster und letzter Stunde, ausser den Luecken)."""
-    zeilen, utc = [], []
-    for d, h, off, _nr, voll, klasse, flach in agg.get("stunden") or []:
-        datum = dt.date.fromisoformat(d)
-        zeilen.append((datum, h, voll, klasse, collections.Counter(dict(zip(flach[0::2], flach[1::2])))))
-        utc.append(dt.datetime(datum.year, datum.month, datum.day, h) - dt.timedelta(hours=off))
-    if not utc:
-        return zeilen, []
-    luecke = set()
-    for a, _b, n in agg.get("luecken") or []:
-        t = dt.datetime.strptime(a, ISO_UTC)
-        for i in range(n):
-            luecke.add(t + i * STUNDE)
-    voll, h, ende = [], min(utc), max(utc)
-    while h <= ende:
-        if h not in luecke:
-            lokal = h + dt.timedelta(hours=dsd2csv.utc_versatz_h(h))
-            voll.append((lokal.date(), lokal.hour))
-        h += STUNDE
-    return zeilen, voll
+def _zeit(x):
+    return dt.datetime.fromisoformat(x) if isinstance(x, str) else x
 
 
-def messungen_lesen(auswertung, metadaten, aggregat_ordner):
-    """Eine Beschreibung je Messung (Datei) mit Abschnitten, Bruechen und den Stunden des Aggregats."""
+# ------------------------------------------------------------------ Messungen
+
+def messungen_lesen(auswertung, metadaten):
+    """Eine Beschreibung je Messung (Datei) mit ihren Bruechen (dsd2csv.py)."""
     seite = {}
     for slug, name, rels in seiten_bauen.standortgruppen(auswertung, metadaten):
         for rel in rels:
@@ -92,178 +83,173 @@ def messungen_lesen(auswertung, metadaten, aggregat_ordner):
     for r in auswertung["standorte"]:
         rel, datei = r["standort"], r["datei"]
         meta = next((m for m in ((metadaten.get("standorte") or {}).get(rel) or {}).get("messungen", []) if m["datei"] == datei), {})
-        pfad = os.path.join(aggregat_ordner, rel.replace("/", os.sep), os.path.splitext(datei)[0] + ".aggregat.json")
-        agg = {}
-        if os.path.exists(pfad):
-            with open(pfad, encoding="utf-8") as fh:
-                agg = json.load(fh)
-        # Zuordnung und Einsaetze rechnen mit dem Rohaggregat (vor Rauschboden- und Regenabzug, die vom Ort abhaengen)
-        zeilen, voll = stunden_lesen(dict(agg, stunden=agg.get("roh", agg.get("stunden"))))
-        zeilen_b = stunden_lesen(agg)[0] if agg.get("roh") else zeilen
-        versatz = {(dt.date.fromisoformat(d), h): off for d, h, off, *_x in agg.get("roh", agg.get("stunden")) or []}
         liste = (r.get("abschnitte") or {}).get("liste") or []
         brueche = [(a["nr"], dt.date.fromisoformat(a["beginn"]["datum"]), a["beginn"].get("wahrscheinlichkeit"))
                    for a in liste if (a.get("beginn") or {}).get("art") == "Bruch"]
-        # kuenstliche Grenzen am Erfassungszeitraum der Mitteilung (dsd2csv.zeitraum_grenzen): keine Brueche, aber Abschnittsgrenzen
-        kuenstlich = [(a["nr"], dt.date.fromisoformat(a["beginn"]["datum"])) for a in liste if (a.get("beginn") or {}).get("art") == "Erfassungszeitraum"]
-        tage = sorted({z[0] for z in zeilen})
         out.append({
             "id": seiten_bauen.messung_id(rel, datei), "rel": rel, "datei": datei, "geraet": (r.get("geraet") or "").strip(),
             "limit": r.get("tempolimit_kmh"), "seite": seite.get(rel, (None, rel))[0], "name": seite.get(rel, (None, rel))[1],
-            "fahrtrichtung": ", ".join(seiten_bauen.fahrtrichtungen(meta, rel)),
-            "uhr_nutzbar": (r.get("uhr") or {}).get("nutzbarkeit") == "nutzbar", "brueche": brueche, "kuenstlich": kuenstlich,
-            "grenzen": sorted([b[1] for b in brueche] + [k[1] for k in kuenstlich]),
-            "aussen": {a["nr"] for a in liste if a.get("ausserhalb_erfassungszeitraum")},
-            "zeilen": zeilen, "voll": voll, "zeilen_bereinigt": zeilen_b, "versatz": versatz,
-            "zeile": r, "ort": dsd2csv.koordinaten(rel) or dsd2csv.ORT_NEUSS,
-            "von": tage[0] if tage else None, "bis": tage[-1] if tage else None,
-        })
+            "fahrtrichtung": ", ".join(seiten_bauen.fahrtrichtungen(meta, rel)), "brueche": brueche,
+            "aussen": bool(any(a.get("ausserhalb_erfassungszeitraum") for a in liste)), "zeile": r,
+            "ort": dsd2csv.koordinaten(rel) or dsd2csv.ORT_NEUSS})
     return out
 
 
-def abschnitte_der_messung(m):
-    """[(Nr, von, bis)] der Abschnitte einer Messung (Datumsbereiche, einschliesslich), aus den Bruechen."""
-    if not m["von"]:
-        return [(1, None, None)]
-    grenzen = m["grenzen"]
-    out, von = [], m["von"]
-    for i, g in enumerate(grenzen):
-        out.append((i + 1, von, g - TAG))
-        von = g
-    out.append((len(grenzen) + 1, von, m["bis"]))
-    return out
+def zeitraeume_laden(pfad):
+    """{Ordner/Datei: [(von, bis)]} der Erfassungszeitraeume aus den Mitteilungen (belege/korrekturen.json)."""
+    if not pfad or not os.path.exists(pfad):
+        return {}
+    with open(pfad, encoding="utf-8") as fh:
+        k = json.load(fh).get("zeitraum", {})
+    return {schl: [(dt.date.fromisoformat(a), dt.date.fromisoformat(b)) for a, b in v.get("zeitraeume", [])] for schl, v in k.items()}
 
 
-# ------------------------------------------------------------------ Merkmale und Abstand
-
-def merkmale(zeilen, voll, von, bis):
-    """Merkmale eines Datumsbereichs aus vollstaendig aufgezeichneten Stunden: Verteilung (KMIN bis KMAX-1), Tagesgang (Stunde x Werktag/Wochenende),
-    beides auch getrennt nach geraden und ungeraden Tagen (Rauschen), Fahrzeuge und Stunden. None ohne Fahrzeuge."""
-    nb = KMAX - KMIN
-    hv, hp = [0.0] * nb, [0.0] * 48
-    hva, hvb, hpa, hpb = [0.0] * nb, [0.0] * nb, [0.0] * 48, [0.0] * 48
-    n = 0
-    for datum, h, ist_voll, _k, c in zeilen:
-        if not ist_voll or datum < von or datum > bis:
-            continue
-        p = (24 if datum.weekday() >= 5 else 0) + h
-        gerade = datum.toordinal() % 2 == 0
-        for v, a in c.items():
-            if KMIN <= v < KMAX:
-                hv[v - KMIN] += a
-                hp[p] += a
-                (hva if gerade else hvb)[v - KMIN] += a
-                (hpa if gerade else hpb)[p] += a
-                n += a
-    stunden = sum(1 for d, _ in voll if von <= d <= bis)
-    if not n or not stunden:
-        return None
-    return {"v": norm(hv), "p": norm(hp), "rausch_v": tvd(norm(hva), norm(hvb)), "rausch_p": tvd(norm(hpa), norm(hpb)),
-            "n": n, "stunden": stunden, "je_stunde": n / stunden}
-
-
-def norm(x):
-    s = sum(x)
-    return [a / s for a in x] if s else x
-
-
-def tvd(a, b):
-    return 0.5 * sum(abs(x - y) for x, y in zip(a, b))
-
-
-def score(a, b, rauschen_aus=None):
-    """Mittel aus Abstand der Verteilungen und der Tagesgaenge, jeweils durch das groessere Rauschen beider (oder von rauschen_aus) geteilt."""
-    r = rauschen_aus or (a, b)
-    nv = max(max(x["rausch_v"] for x in r), RAUSCHEN_MIN[0])
-    npf = max(max(x["rausch_p"] for x in r), RAUSCHEN_MIN[1])
-    return 0.5 * (tvd(a["v"], b["v"]) / nv + tvd(a["p"], b["p"]) / npf)
-
-
-def verhaeltnis(a, b):
-    return a["je_stunde"] / b["je_stunde"] if b["je_stunde"] else float("inf")
-
-
-def passt_menge(q):
-    return VERHAELTNIS[0] <= q <= VERHAELTNIS[1]
-
-
-# ------------------------------------------------------------------ Umhaengen
-
-def kandidaten(messungen):
-    """Paare (Vorgaenger, Messung) desselben Geraets an verschiedenen Standorten, unmittelbar nacheinander, beide mit nutzbarer Uhr."""
-    je_geraet = collections.defaultdict(list)
+def defekt(messungen, wurzel):
+    """{Messung: PDF} fuer Messungen, deren Auswertung die Verwaltung "defekt" oder "fehlerhaft" nennt: PDF im Ordner der Messung oder im
+    obersten Ordner darueber; traegt der Name ein Datum, muss es das Datum im Namen der Datei sein."""
+    out = {}
     for m in messungen:
-        if m["geraet"] and m["von"] and m["uhr_nutzbar"]:
-            je_geraet[m["geraet"]].append(m)
-    out = []
-    for liste in je_geraet.values():
-        liste.sort(key=lambda m: (m["von"], m["bis"]))
-        for y, x in zip(liste, liste[1:]):
-            if y["seite"] != x["seite"] and abs((x["von"] - y["bis"]).days) <= FOLGE_TAGE:
-                out.append((y, x))
+        teile = m["rel"].split("/")
+        for ordner in {m["rel"], teile[0]}:
+            pfad = os.path.join(wurzel, ordner)
+            for f in sorted(os.listdir(pfad)) if os.path.isdir(pfad) else []:
+                if f.lower().endswith(".pdf") and DEFEKT.search(f):
+                    datum = uhr_rekonstruktion.dateidatum(f)
+                    if datum is None or datum == uhr_rekonstruktion.dateidatum(m["datei"]):
+                        out[m["id"]] = f
     return out
 
 
-def pruefe_umhaengen(y, x, richtung, alle_abschnitte, abschnitt_merkmale):
-    """Pruefung einer Zuordnung. richtung 'vorgaenger': der erste Abschnitt von x stammt vom Standort y; 'nachfolger': der letzte Abschnitt
-    von y stammt vom Standort x. Gibt ein dict mit Belegen und Stufe zurueck oder None, wenn es nichts zu pruefen gibt."""
-    ax, ay = abschnitte_der_messung(x), abschnitte_der_messung(y)
-    if richtung == "vorgaenger":
-        if len(ax) < 2:
-            return None
-        quelle, probe, andere, bruch_m, bruch_nr = (y["id"], ay[-1][0]), (x["id"], 1), (x["id"], 2), x, 2
-    else:
-        if len(ay) < 2:
-            return None
-        quelle, probe, andere, bruch_m, bruch_nr = (x["id"], 1), (y["id"], ay[-1][0]), (y["id"], ay[-1][0] - 1), y, ay[-1][0]
-    fq, fp, fa = abschnitt_merkmale.get(quelle), abschnitt_merkmale.get(probe), abschnitt_merkmale.get(andere)
-    if not fq or not fp:
-        return None
-    s = score(fp, fq)
-    q = verhaeltnis(fp, fq)
-    # Nulltest: wie viele Abschnitte anderer Standorte gleichen der Quelle mindestens so gut (gleiches Tempolimit, sonst alle)?
-    lim = (y if richtung == "vorgaenger" else x)["limit"]
-    ausgenommen = {y["seite"], x["seite"]}
-    vergleich = [(k, f) for k, f in abschnitt_merkmale.items() if alle_abschnitte[k]["seite"] not in ausgenommen]
-    gleich = [(k, f) for k, f in vergleich if alle_abschnitte[k]["limit"] == lim]
-    null = gleich if len(gleich) >= NULL_MIN else vergleich
-    treffer = sum(1 for _, f in null if score(f, fq) <= s and passt_menge(verhaeltnis(f, fq)))
-    p = (1 + treffer) / (1 + len(null))
-    gegen = score(fa, fq) if fa else None
-    bruch_p = next((b[2] for b in bruch_m["brueche"] if b[0] == bruch_nr), None)
-    bruchtag = next((b[1] for b in bruch_m["brueche"] if b[0] == bruch_nr), None)
-    # Grenze des Erfassungszeitraums statt eines Bruchs: die Verwaltung hat die Daten jenseits nicht beruecksichtigt, eine Aenderung des
-    # Verhaltens muss es dort nicht geben (die Gegenprobe prueft, dass die andere Seite der Quelle nicht gleicht)
-    kuenstlich = next((k[1] for k in bruch_m.get("kuenstlich", []) if k[0] == bruch_nr), None)
-    if kuenstlich and probe[1] not in bruch_m.get("aussen", ()):
-        return None  # ueber eine solche Grenze wechselt nur ein Abschnitt ausserhalb des Erfassungszeitraums den Einsatz
-    bruchtag = bruchtag or kuenstlich
-    naht = None
-    mq, mp = (y, x) if richtung == "vorgaenger" else (x, y)  # Quelle/Probe-Messung
-    if richtung == "vorgaenger":
-        a = merkmale(mq["zeilen"], mq["voll"], mq["bis"] - (NAHT_TAGE - 1) * TAG, mq["bis"])
-        b = merkmale(mp["zeilen"], mp["voll"], mp["von"], mp["von"] + (NAHT_TAGE - 1) * TAG)
-    else:
-        a = merkmale(mq["zeilen"], mq["voll"], mq["von"], mq["von"] + (NAHT_TAGE - 1) * TAG)
-        b = merkmale(mp["zeilen"], mp["voll"], mp["bis"] - (NAHT_TAGE - 1) * TAG, mp["bis"])
-    if a and b and a["n"] >= NAHT_MIN and b["n"] >= NAHT_MIN:
-        ns = score(b, a)  # Rauschen der beiden Fenster selbst (7 Tage rauschen staerker als ganze Abschnitte)
-        naht = {"score": round(ns, 2), "verhaeltnis": round(verhaeltnis(b, a), 2), "stetig": ns <= NAHT_SCORE and passt_menge(verhaeltnis(b, a))}
-    belegt = (s <= SCORE_BELEGT and passt_menge(q) and p <= P_BELEGT and gegen is not None and gegen > GEGENPROBE
-              and ((bruch_p or 0) >= BRUCH_P or kuenstlich) and (naht is None or naht["stetig"]))
-    moeglich = s <= SCORE_MOEGLICH and passt_menge(q) and p <= P_MOEGLICH
-    return {"richtung": richtung, "von_messung": quelle[0], "von_abschnitt": quelle[1], "abschnitt_messung": probe[0], "abschnitt": probe[1],
-            "bruch_messung": bruch_m["id"], "bruch_nr": bruch_nr, "bruchtag": bruchtag.isoformat() if bruchtag else None,
-            **({"kuenstlich": True} if kuenstlich else {}),
-            "bruch_wahrscheinlichkeit": bruch_p, "score": round(s, 2), "tvd_verteilung": round(tvd(fp["v"], fq["v"]), 3),
-            "tvd_tagesgang": round(tvd(fp["p"], fq["p"]), 3), "rauschen": [round(max(fp["rausch_v"], fq["rausch_v"]), 3),
-                                                                          round(max(fp["rausch_p"], fq["rausch_p"]), 3)],
-            "verhaeltnis_fahrzeuge": round(q, 2), "p_nulltest": round(p, 3), "nulltest_abschnitte": len(null),
-            "nulltest_gleiches_limit": null is gleich, "gegenprobe_score": round(gegen, 2) if gegen is not None else None, "naht": naht,
-            "stufe": "belegt" if belegt else "moeglich" if moeglich else "keine"}
+# ------------------------------------------------------------------ Zuordnung der Teile
+
+def groesse(a):
+    """Gewicht eines Teils nach Laenge: ein paar Tage am Dateianfang (oft noch der vorige Standort) zaehlen weniger."""
+    return min(1.0, a["tage"] / VOLL_TAGE)
 
 
-# ------------------------------------------------------------------ Ereignisse
+def belege(a, m, zr):
+    """(Punkte, Begruendungen) fuer Teil a -> Messung m."""
+    p, gruende = 0.0, []
+    anteil = (a["dateien"].get(m["id"]) or {}).get("tage", 0) / max(a["tage"], 1)
+    if anteil:
+        p += GEWICHT_DATEI * anteil * groesse(a)
+        gruende.append(f"{round(100 * anteil)} % der Tage in der Datei")
+    z = zr.get(f'{m["rel"]}/{m["datei"]}')
+    if z:
+        von, bis = _zeit(a["von"]).date(), _zeit(a["bis"]).date()
+        drin = sum(max(0, (min(bis, zb) - max(von, za)).days + 1) for za, zb in z) / max((bis - von).days + 1, 1)
+        p += GEWICHT_ZEITRAUM * drin - (1.0 if drin == 0 else 0.0)
+        gruende.append(f"{round(100 * drin)} % im Erfassungszeitraum " + ", ".join(f"{x:%d.%m.%Y}–{y:%d.%m.%Y}" for x, y in z))
+        if any(abs((von - za).days) <= 1 for za, _ in z):
+            p += 1
+            gruende.append("Beginn = Beginn des Erfassungszeitraums")
+        if any(abs((bis - zb).days) <= 1 for _, zb in z):
+            p += 1
+            gruende.append("Ende = Ende des Erfassungszeitraums")
+    lim, v85 = m.get("limit"), (a.get("merkmal") or {}).get("v85")
+    if lim and v85 and ((lim >= 50 and v85 < 35) or (lim <= 30 and v85 > lim + 20)):
+        p -= 1
+        gruende.append(f"V85 {v85} passt nicht zu Tempo {lim}")
+    return p, gruende
+
+
+def vergleich(a, b):
+    """(TVD der Tempoverteilungen, Verhaeltnis der Fahrzeuge je Stunde b/a) zweier Teile; None ohne Daten."""
+    ha, hb = (a.get("merkmal") or {}).get("hist") or {}, (b.get("merkmal") or {}).get("hist") or {}
+    na, nb = sum(ha.values()), sum(hb.values())
+    if not na or not nb:
+        return None, None
+    tvd = 0.5 * sum(abs(ha.get(k, 0) / na - hb.get(k, 0) / nb) for k in set(ha) | set(hb))
+    qa, qb = a["merkmal"]["fz_h"], b["merkmal"]["fz_h"]
+    return tvd, (qb / qa if qa else None)
+
+
+def aehnlich(a, b):
+    ma, mb = a.get("merkmal") or {}, b.get("merkmal") or {}
+    if ma.get("tage", 0) < MIN_TAGE_MERKMAL or mb.get("tage", 0) < MIN_TAGE_MERKMAL:
+        return True  # zu wenig Daten fuer ein Urteil
+    tvd, q = vergleich(a, b)
+    return tvd is not None and tvd <= MAX_TVD and q is not None and VERHAELTNIS[0] <= q <= VERHAELTNIS[1]
+
+
+def loesen(teile, punkte, verboten=None):
+    """Beste Zuordnung: (Liste je Teil: Messungs-Index oder None, Gesamtpunkte). teile: mit 'aufenthalt' (gleicher Wert: derselbe
+    Aufenthalt), punkte[i][j]: Punkte fuer Teil i -> Messung j; verboten: (i, j) darf nicht vorkommen (j None: keine Messung)."""
+    n = len(teile)
+    if not n:
+        return [], 0.0
+    mm = len(punkte[0])
+    neg = float("-inf")
+    # Zustand j (Messung des Teils i, mm: keine); best[i][j] = (Punkte, Zustand des vorigen Teils); letzte[i][j]: zuletzt benutzte Messung
+    best = [[(neg, None)] * (mm + 1) for _ in range(n)]
+    letzte = [[None] * (mm + 1) for _ in range(n)]
+    for i in range(n):
+        gleich = i and teile[i]["aufenthalt"] == teile[i - 1]["aufenthalt"]
+        for j in range(mm + 1):
+            if verboten and verboten == (i, j if j < mm else None):
+                continue
+            eigen = punkte[i][j] if j < mm else STRAFE_KEINE * groesse(teile[i])
+            if i == 0:
+                best[i][j], letzte[i][j] = (eigen + (STRAFE_LEER * j if j < mm else 0.0), None), (j if j < mm else -1)
+                continue
+            kand = []
+            for jv in range(mm + 1):
+                pv, _ = best[i - 1][jv]
+                if pv == neg:
+                    continue
+                lz = letzte[i - 1][jv]
+                if j < mm and lz > j:
+                    continue  # Reihenfolge der Messungen
+                s = pv + eigen + (STRAFE_LEER * (j - lz - 1) if j < mm and lz < j else 0.0)  # uebersprungene Messungen bleiben leer
+                if gleich and jv != j:
+                    s += STRAFE_OHNE_BEWEGUNG
+                elif not gleich and j < mm and jv == j and not aehnlich(teile[i - 1], teile[i]):
+                    s += STRAFE_UNAEHNLICH
+                kand.append((s, jv, j if j < mm else lz))
+            if kand:
+                s, jv, lz = max(kand, key=lambda k: k[0])
+                best[i][j], letzte[i][j] = (s, jv), lz
+    ende = [best[n - 1][x][0] + STRAFE_LEER * (mm - 1 - letzte[n - 1][x]) if best[n - 1][x][0] != neg else neg for x in range(mm + 1)]
+    j = max(range(mm + 1), key=lambda x: ende[x])
+    total = ende[j]
+    weg = [None] * n
+    for i in range(n - 1, -1, -1):
+        weg[i] = j if j < mm else None
+        j = best[i][j][1]
+    return weg, total
+
+
+def zuordnen_geraet(g, messungen, zr):
+    """Teile der Aufenthalte eines Geraets (g aus bewegungen.json) den Messungen zuordnen. Gibt (Teile mit 'messung', 'abstand', 'belege',
+    Messungen in Reihenfolge) zurueck."""
+    nach_id = {m["id"]: m for m in messungen}
+    erster = {}
+    for a in g["aufenthalte"]:
+        for t in a["teile"]:
+            for mid, info in t["dateien"].items():
+                erster[mid] = min(erster.get(mid, info["von"]), info["von"])
+    reihe = sorted((nach_id[mid] for mid in erster if mid in nach_id), key=lambda m: erster[m["id"]])
+    teile = []
+    for a in g["aufenthalte"]:
+        for k, t in enumerate(a["teile"]):
+            teile.append(dict(t, aufenthalt=a["nr"], nr_im_aufenthalt=k, letztes_im_aufenthalt=k == len(a["teile"]) - 1))
+    punkte, gruende = [], []
+    for t in teile:
+        zeile = [belege(t, m, zr) for m in reihe]
+        punkte.append([p for p, _ in zeile])
+        gruende.append([gz for _, gz in zeile])
+    weg, total = loesen(teile, punkte)
+    for i, t in enumerate(teile):
+        j = weg[i]
+        _w, alt = loesen(teile, punkte, verboten=(i, j))
+        t["messung"] = reihe[j]["id"] if j is not None else None
+        t["abstand"] = round(total - alt, 2) if alt != float("-inf") else None
+        t["sicher"] = t["abstand"] is None or t["abstand"] >= SICHER_AB
+        t["belege"] = gruende[i][j] if j is not None else []
+    return teile, reihe
+
+
+# ------------------------------------------------------------------ Brueche erklaeren
 
 def ereignisse_laden(pfad):
     if not pfad or not os.path.exists(pfad):
@@ -300,8 +286,6 @@ def ereignis_kandidaten(tag, seite, ereignisse):
     return out
 
 
-# ------------------------------------------------------------------ Zuordnung aller Brueche
-
 def verwaltung_laden(pfad):
     if not pfad or not os.path.exists(pfad):
         return {}
@@ -309,208 +293,194 @@ def verwaltung_laden(pfad):
         return {(e["messung"], e["bruch"]): e for e in json.load(fh).get("brueche", [])}
 
 
-def zuordnen(messungen, ereignisse=(), verwaltung=None):
-    """(Brueche mit Zuordnung, Umhaengungen fuer die Einsaetze). Umhaengung: dict mit von_messung, abschnitt_messung, abschnitt, nach (Messung,
-    deren Einsatz den Abschnitt bekommt), ausgenommene Tage, Stufe."""
-    verwaltung = verwaltung or {}
-    nach_id = {m["id"]: m for m in messungen}
-    alle, merk = {}, {}
-    for m in messungen:
-        for nr, von, bis in abschnitte_der_messung(m):
-            if von is None:
-                continue
-            alle[(m["id"], nr)] = m
-            f = merkmale(m["zeilen"], m["voll"], von, bis)
-            if f and f["n"] >= MIN_FAHRZEUGE:
-                merk[(m["id"], nr)] = f
-    pruefungen = collections.defaultdict(list)  # (Messung, Bruch-Nr) -> Pruefungen
-    vorgaenger_paare = {}  # (Abschnitt der Quelle, Abschnitt der Probe) -> Pruefung in Richtung Vorgaenger
-    for y, x in kandidaten(messungen):
-        for richtung in ("vorgaenger", "nachfolger"):
-            erg = pruefe_umhaengen(y, x, richtung, alle, merk)
-            if not erg:
-                continue
-            if richtung == "vorgaenger":
-                vorgaenger_paare[((erg["von_messung"], erg["von_abschnitt"]), (erg["abschnitt_messung"], erg["abschnitt"]))] = erg
-            pruefungen[(erg["bruch_messung"], erg["bruch_nr"])].append(erg)
-    # Dasselbe Paar in beiden Richtungen zeigt nur, dass beide Abschnitte zu einem Einsatz gehoeren. Die Lesart "Vorgaenger" (das Geraet hing nach
-    # dem Auslesen noch am alten Ort) hat Vorrang, wenn sie mindestens moeglich ist; die Gegenlesung "Nachfolger" wird dann zurueckgestellt.
-    for liste in pruefungen.values():
-        for e in liste:
-            if e["richtung"] == "nachfolger":
-                gegen = vorgaenger_paare.get(((e["abschnitt_messung"], e["abschnitt"]), (e["von_messung"], e["von_abschnitt"])))
-                if gegen and gegen["stufe"] in ("belegt", "moeglich") and e["stufe"] != "keine":
-                    e["stufe_ohne_vorrang"], e["stufe"] = e["stufe"], "zurueckgestellt"
-                    e["grund"] = (f'dasselbe Abschnittspaar ist als Vorgänger-Zuordnung beim Bruch vom {gegen["bruchtag"]} '
-                                  f'({gegen["stufe"]}) erklärt; diese Lesart hat Vorrang')
+def bewegung_vor(tag, liste):
+    """Die letzte trennende Bewegung, die einen Bruch am Tag tag erklaert: ihr Ende liegt hoechstens BEWEGUNG_VOR_BRUCH gewoehnliche Tage
+    (Ferien und Feiertage zaehlen nicht, die Bruchsuche laesst sie aus) vor dem Bruch oder einen Tag danach. None ohne solche Bewegung."""
+    frueh, n = tag, 0
+    while n < BEWEGUNG_VOR_BRUCH:
+        frueh -= TAG
+        if not kalender.besonderer_tag(frueh):
+            n += 1
+    kand = [b for b in liste if b["stufe"] in bewegungen.TRENNEN and frueh <= _zeit(b["bis"]).date() <= tag + TAG]
+    return max(kand, key=lambda b: b["bis"]) if kand else None
+
+
+STUFE_BEWEGUNG = {"umhaengen": "belegt", "aktionstag": "belegt", "inbetriebnahme": "belegt", "inbetriebnahme_ungeprueft": "plausibel"}
+BEWEGUNG_TEXT = {"umhaengen": "Umhängen", "aktionstag": "Umhängen am Aktionstag", "inbetriebnahme": "Inbetriebnahme nach Pause",
+                 "inbetriebnahme_ungeprueft": "Inbetriebnahme nach Pause (ohne Vergleich)"}
+
+
+def bewegung_text(b):
+    von, bis = _zeit(b["von"]), _zeit(b["bis"])
+    zeit = (f"{von:%d.%m.%Y} {von:%H:%M}–{bis:%H:%M}" if von.date() == bis.date() else f"{von:%d.%m.%Y %H:%M} bis {bis:%d.%m.%Y %H:%M}")
+    return f'{BEWEGUNG_TEXT.get(b["stufe"], b["stufe"])} {zeit}' + (f' (Änderung z = {b["z"]})' if b.get("z") is not None else "")
+
+
+def erklaeren(tag, seite, schluessel, ereignisse, verwaltung, bew=None):
+    """Zuordnung eines Bruchs: (dict art, stufe, text, Ereignisse in der Naehe, Angabe der Verwaltung)."""
+    ev = ereignis_kandidaten(tag, seite, ereignisse)
+    v = verwaltung.get((schluessel, tag.isoformat()))
+    if v:
+        zu = {"art": v.get("art", "verwaltung"), "stufe": "bestaetigt", "text": v.get("erklaerung", ""), "quelle": v.get("quelle")}
+    elif bew:
+        zu = {"art": "bewegung", "stufe": STUFE_BEWEGUNG[bew["stufe"]], "text": bewegung_text(bew), "bewegung": bew}
+    elif any(e["erklaerung"] for e in ev):
+        zu = {"art": "ereignis", "stufe": "plausibel", "text": "; ".join(e["name"] for e in ev if e["erklaerung"])}
+    else:
+        zu = {"art": "unerklaert", "stufe": "offen", "text": ""}
+    return zu, ev, v
+
+
+def brueche_der_messungen(messungen, geraete, ereignisse, verwaltung):
+    """Brueche der Messungen (dsd2csv.py) mit Zuordnung."""
+    bew_von = {g["geraet"]: g["bewegungen"] for g in geraete}
     alle_tage = collections.defaultdict(list)
     for m in messungen:
-        for nr, tag, _p in m["brueche"]:
+        for _nr, tag, _p in m["brueche"]:
             alle_tage[tag].append(m["id"])
-    brueche, umhaengen = [], []
+    out = []
     for m in messungen:
         for nr, tag, p in m["brueche"]:
-            schluessel = f'{m["rel"]}/{m["datei"]}'
-            pr = sorted(pruefungen.get((m["id"], nr), []), key=lambda e: e["score"])
-            ev = ereignis_kandidaten(tag, m["seite"], ereignisse)
-            v = verwaltung.get((schluessel, tag.isoformat()))
+            bew = bewegung_vor(tag, bew_von.get(m["geraet"], []))
+            zu, ev, v = erklaeren(tag, m["seite"], f'{m["rel"]}/{m["datei"]}', ereignisse, verwaltung, bew)
             gleich = sorted({i for d in (tag - TAG, tag, tag + TAG) for i in alle_tage.get(d, []) if i != m["id"]})
-            belegt = [e for e in pr if e["stufe"] == "belegt"]
-            moeglich = [e for e in pr if e["stufe"] == "moeglich"]
-            if v:
-                zu = {"art": v.get("art", "verwaltung"), "stufe": "bestaetigt", "text": v.get("erklaerung", ""), "quelle": v.get("quelle")}
-            elif belegt:
-                zu = {"art": "umhaengen", "stufe": "belegt", "text": _text_umhaengen(belegt[0], nach_id)}
-            elif any(e["erklaerung"] for e in ev):
-                zu = {"art": "ereignis", "stufe": "plausibel", "text": "; ".join(e["name"] for e in ev if e["erklaerung"])}
-            elif moeglich:
-                zu = {"art": "umhaengen", "stufe": "moeglich", "text": _text_umhaengen(moeglich[0], nach_id)}
-            else:
-                zu = {"art": "unerklaert", "stufe": "offen", "text": ""}
-            brueche.append({"messung": m["id"], "rel": m["rel"], "datei": m["datei"], "seite": m["seite"], "name": m["name"], "nr": nr,
-                            "datum": tag.isoformat(), "wahrscheinlichkeit": p, "zuordnung": zu, "umhaengen": pr, "ereignisse": ev,
-                            "gleicher_tag": gleich, "verwaltung": v})
-            wahl = None
-            if v and v.get("art") == "umhaengen" and v.get("abschnitt_von"):
-                kand = [e for e in pr if e["von_messung"] == v["abschnitt_von"]] or pr
-                wahl = dict(kand[0], stufe="bestaetigt") if kand else None
-                if wahl and v.get("ausgenommen"):
-                    wahl["ausgenommen_bestaetigt"] = v["ausgenommen"]
-            elif zu["art"] == "umhaengen" and not v:  # belegt oder moeglich (gekennzeichnet); nur unmittelbar aufeinanderfolgende Messungen
-                wahl = (belegt or moeglich)[0]
-            if wahl:
-                umhaengen.append(wahl)
-        for nr, _tag in m.get("kuenstlich", []):  # Grenzen des Erfassungszeitraums: keine Brueche, nur belegtes Umhaengen
-            belegt = sorted((e for e in pruefungen.get((m["id"], nr), []) if e["stufe"] == "belegt"), key=lambda e: e["score"])
-            if belegt:
-                umhaengen.append(belegt[0])
-    return brueche, umhaengen
-
-
-def _text_umhaengen(e, nach_id):
-    q = nach_id[e["von_messung"]]
-    if e["richtung"] == "vorgaenger":
-        return (f'Abschnitt {e["abschnitt"]} gleicht dem letzten Abschnitt der vorigen Messung desselben Geräts ({q["name"]}, {q["datei"]}): '
-                f'Score {e["score"]}, Nulltest p = {e["p_nulltest"]}')
-    return (f'Abschnitt {e["abschnitt"]} gleicht dem ersten Abschnitt der folgenden Messung desselben Geräts ({q["name"]}, {q["datei"]}): '
-            f'Score {e["score"]}, Nulltest p = {e["p_nulltest"]}')
+            out.append({"messung": m["id"], "rel": m["rel"], "datei": m["datei"], "seite": m["seite"], "name": m["name"], "nr": nr,
+                        "datum": tag.isoformat(), "wahrscheinlichkeit": p, "zuordnung": zu, "ereignisse": ev, "gleicher_tag": gleich, "verwaltung": v})
+    return out
 
 
 # ------------------------------------------------------------------ Einsaetze
 
-def einsaetze_bilden(messungen, umhaengen):
-    """Einsaetze: je Messung einer, mit ihren eigenen Abschnitten, ohne abgegebene und mit hinzugekommenen; Umhaengtage (Bruchtag und Vortag,
-    bei Bestaetigung die bestaetigten Tage) fallen heraus. Teil: (Messung, Abschnitt, von, bis, Herkunft, Stufe)."""
+def _grenze_zwischen(a, b, ereignisse, verwaltung, m):
+    """Art der Grenze zwischen zwei aufeinanderfolgenden Teilen a, b desselben Einsatzes."""
+    if a["aufenthalt"] != b["aufenthalt"]:
+        bew = b["_aufenthalt"]["beginn"]
+        text = ("Pause, danach am selben Standort weiter (ohne Vergleich, zu wenig Daten davor oder danach)" if bew["stufe"] == "inbetriebnahme_ungeprueft"
+                else "Bewegung ohne Wechsel der Messung (ungeklärt: anderer Mast, andere Richtung, Neuausrichtung?)")
+        return {"art": "bewegung", "text": text, "bewegung": bew}
+    tag = _zeit(b["von"]).date()
+    br = next((x for x in b["_aufenthalt"]["brueche"] if x["datum"] == tag.isoformat()), {})
+    zu, ev, _v = erklaeren(tag, m["seite"], f'{m["rel"]}/{m["datei"]}', ereignisse, verwaltung)
+    return {"art": "bruch", "datum": tag.isoformat(), "wahrscheinlichkeit": br.get("wahrscheinlichkeit"), "zuordnung": zu, "ereignisse": ev}
+
+
+def einsaetze_bilden(geraete, messungen, zr, ereignisse=(), verwaltung=None):
+    """(Einsaetze, nicht zugeordnete Teile, Messungen ohne Einsatz, Einsatz-Abschnitte je Einsatz fuer Durchgang C)."""
+    verwaltung = verwaltung or {}
     nach_id = {m["id"]: m for m in messungen}
-    weg, dazu, ausgenommen = set(), collections.defaultdict(list), collections.defaultdict(set)
-    for u in umhaengen:
-        teil = (u["abschnitt_messung"], u["abschnitt"])
-        ziel = u["von_messung"]
-        weg.add(teil)
-        dazu[ziel].append((teil, u))
-        tag = dt.date.fromisoformat(u["bruchtag"])
-        tage = ({dt.date.fromisoformat(d) for d in u["ausgenommen_bestaetigt"]} if u.get("ausgenommen_bestaetigt")
-                else set() if u.get("kuenstlich") else {tag - TAG, tag})  # an der Grenze des Erfassungszeitraums kein Umhaengtag
-        ausgenommen[u["bruch_messung"]] |= tage
-    out = []
-    for m in messungen:
-        teile = []
-        for nr, von, bis in abschnitte_der_messung(m):
-            if (m["id"], nr) not in weg:
-                teile.append({"messung": m["id"], "abschnitt": nr, "von": von, "bis": bis, "herkunft": "eigen", "stufe": None})
-        for (mid, nr), u in dazu.get(m["id"], []):
-            q = nach_id[mid]
-            von, bis = next((a[1], a[2]) for a in abschnitte_der_messung(q) if a[0] == nr)
-            beleg = {k: u.get(k) for k in ("bruch_messung", "bruch_nr", "bruchtag", "bruch_wahrscheinlichkeit", "score", "tvd_verteilung", "tvd_tagesgang",
-                                          "rauschen", "verhaeltnis_fahrzeuge", "p_nulltest", "nulltest_abschnitte", "gegenprobe_score", "naht",
-                                          "kuenstlich") if k in u}
-            teile.append({"messung": mid, "abschnitt": nr, "von": von, "bis": bis, "herkunft": u["richtung"], "stufe": u["stufe"], "beleg": beleg})
-        aus = set()
-        for t in teile:  # Umhaengtage abschneiden
-            weg_tage = ausgenommen.get(t["messung"], set())
-            if t["von"] is None:
+    einsaetze, nicht_zugeordnet, abschnitte_von = [], [], {}
+    ohne = []
+    for g in geraete:
+        auf = {a["nr"]: a for a in g["aufenthalte"]}
+        teile, reihe = zuordnen_geraet(g, [m for m in messungen if m["geraet"] == g["geraet"]], zr)
+        for t in teile:
+            t["_aufenthalt"] = auf[t["aufenthalt"]]
+            t["_von"], t["_bis"] = _zeit(t["von"]), _zeit(t["bis"])
+        # Wechsel der Messung an einem Bruch ohne Bewegung: Bruchtag und Vortag gehoeren zu keinem Einsatz (dort wurde ausgelesen, umgestellt
+        # oder umgehaengt, ohne dass sich eine Luecke zeigt)
+        for a, b in zip(teile, teile[1:]):
+            if a["aufenthalt"] == b["aufenthalt"] and a["messung"] != b["messung"]:
+                tag = b["_von"].date()
+                a["_bis"] = min(a["_bis"], dt.datetime.combine(tag - TAG, dt.time()) - dt.timedelta(seconds=1))
+                b["_von"] = max(b["_von"], dt.datetime.combine(tag + TAG, dt.time()))
+                gleich = a["messung"] and b["messung"] and nach_id[a["messung"]]["seite"] == nach_id[b["messung"]]["seite"]
+                a["schnitt_ende"] = b["schnitt_beginn"] = {"art": "messungswechsel_am_bruch" if gleich else "ortswechsel_ohne_bewegung",
+                                                           "datum": tag.isoformat(), "ausgenommen": [(tag - TAG).isoformat(), tag.isoformat()]}
+        for t in teile:
+            if t["messung"] is None:
+                nicht_zugeordnet.append({"geraet": g["geraet"], "von": t["_von"].isoformat(), "bis": t["_bis"].isoformat(), "tage": t["tage"],
+                                         "fahrzeuge": t["fahrzeuge"], "dateien": sorted(t["dateien"]), "abstand": t["abstand"],
+                                         "merkmal": {k: t["merkmal"].get(k) for k in ("fz_h", "v85", "tage")}})
+        benutzt = {t["messung"] for t in teile}
+        for m in reihe:
+            if m["id"] not in benutzt:
+                bei = sorted({"e-" + t["messung"][2:] for t in teile if m["id"] in t["dateien"] and t["messung"]})
+                ohne.append({"messung": m["id"], "geraet": g["geraet"], "daten_in": bei,
+                             "grund": ("die Daten der Datei gehören nach unserer Zuordnung zu " + ", ".join(bei)) if bei
+                             else "kein Teil des Gesamtstroms zugeordnet"})
+        for m in reihe:
+            eigene = [t for t in teile if t["messung"] == m["id"] and t["_von"] < t["_bis"]]
+            if not eigene:
                 continue
-            while t["von"] in weg_tage and t["von"] <= t["bis"]:
-                aus.add(t["von"])
-                t["von"] += TAG
-            while t["bis"] in weg_tage and t["bis"] >= t["von"]:
-                aus.add(t["bis"])
-                t["bis"] -= TAG
-        teile = [t for t in teile if t["von"] is None or t["von"] <= t["bis"]]
-        teile.sort(key=lambda t: (t["von"] or dt.date.min))
-        teile, nicht = ausserhalb_pruefen(m, teile)
-        fremd = [t for t in teile if t["herkunft"] != "eigen"]
-        abgegeben = [(mid, nr) for (mid, nr) in weg if mid == m["id"]]
-        status = ("bestaetigt" if fremd and all(t["stufe"] == "bestaetigt" for t in fremd) else "unsicher" if any(t["stufe"] == "moeglich" for t in fremd)
-                  else "abgeleitet" if fremd else "gekuerzt" if abgegeben or nicht else "ergaenzt" if m.get("aussen") else "identisch")
-        datiert = [t for t in teile if t["von"]]
-        out.append({"id": "e-" + m["id"][2:], "messung": m["id"], "seite": m["seite"], "name": m["name"], "fahrtrichtung": m["fahrtrichtung"],
-                    "geraet": m["geraet"], "limit": m["limit"], "status": status,
-                    "von": min(t["von"] for t in datiert).isoformat() if datiert else None,
-                    "bis": max(t["bis"] for t in datiert).isoformat() if datiert else None,
-                    "teile": [dict(t, von=t["von"].isoformat() if t["von"] else None, bis=t["bis"].isoformat() if t["bis"] else None)
-                              for t in teile],
-                    "abgegeben": [{"abschnitt": nr, "an": "e-" + next(u["von_messung"] for u in umhaengen
-                                                                   if (u["abschnitt_messung"], u["abschnitt"]) == (mid, nr))[2:]}
-                                  for mid, nr in sorted(abgegeben)],
-                    "nicht_beruecksichtigt": nicht,
-                    "ausgenommene_tage": sorted(d.isoformat() for d in aus)})
-    return out
+            e = _einsatz(m, eigene, teile, ereignisse, verwaltung, nach_id)
+            einsaetze.append(e)
+            abschnitte_von[e["id"]] = eigene
+    bekannt = {mid for g in geraete for a in g["aufenthalte"] for t in a["teile"] for mid in t["dateien"]}
+    ohne += [{"messung": m["id"], "geraet": m["geraet"], "daten_in": [], "grund": "keine Fahrzeuge mit nutzbarer oder rekonstruierter Uhr "
+              "(Uhr-Müll, zu kurze Segmente oder doppelte Datei)" if m["geraet"] else "ohne Gerätenummer"}
+             for m in messungen if m["id"] not in bekannt]
+    return einsaetze, nicht_zugeordnet, ohne, abschnitte_von
 
 
-def ausserhalb_pruefen(m, teile):
-    """Eigene Abschnitte ausserhalb des Erfassungszeitraums der Mitteilung (die nicht umgehaengt sind): Gleicht ein solcher Abschnitt dem
-    naechsten Abschnitt im Erfassungszeitraum (Score bis SCORE_BELEGT, Verkehrsmenge passend, mindestens MIN_FAHRZEUGE), bleibt er im Einsatz und
-    bildet mit ihm einen Einsatz-Abschnitt; sonst wird er nicht beruecksichtigt. Weiter aussen liegende Abschnitte haengen nur ueber die
-    dazwischen liegenden an. Gibt (Teile, nicht beruecksichtigte Teile) zurueck."""
-    aussen = m.get("aussen") or set()
-    eigen = [t for t in teile if t["herkunft"] == "eigen" and t["von"]]
-    if not aussen or not any(t["abschnitt"] in aussen for t in eigen):
-        return teile, []
-    innen = [i for i, t in enumerate(eigen) if t["abschnitt"] not in aussen]
-    behalten, nicht = set(innen), []
-    for j in sorted((j for j, t in enumerate(eigen) if t["abschnitt"] in aussen),
-                    key=lambda j: min((abs(j - k) for k in innen), default=0)):
-        t = eigen[j]
-        vor = [k for k in innen if k < j]
-        k = vor[-1] if vor else next((k for k in innen if k > j), None)  # Vergleich mit dem vorigen, sonst dem folgenden Abschnitt im Zeitraum
-        beleg = {"abschnitt": t["abschnitt"], "von": t["von"].isoformat(), "bis": t["bis"].isoformat(), "messung": t["messung"]}
-        zwischen = range(min(j, k) + 1, max(j, k)) if k is not None else ()
-        if k is None or not all(i in behalten for i in zwischen):
-            nicht.append(dict(beleg, grund="kein angrenzender Abschnitt im Erfassungszeitraum, mit dem er sich vergleichen ließe"))
-            continue
-        r = eigen[k]
-        a, b = merkmale(m["zeilen"], m["voll"], t["von"], t["bis"]), merkmale(m["zeilen"], m["voll"], r["von"], r["bis"])
-        if not a or not b or a["n"] < MIN_FAHRZEUGE:
-            nicht.append(dict(beleg, verglichen_mit=r["abschnitt"], grund=f"weniger als {MIN_FAHRZEUGE} Fahrzeuge für den Vergleich"))
-            continue
-        s, q = score(a, b), verhaeltnis(a, b)
-        werte = {"verglichen_mit": r["abschnitt"], "score": round(s, 2), "verhaeltnis_fahrzeuge": round(q, 2),
-                 "rauschen": [round(max(a["rausch_v"], b["rausch_v"]), 3), round(max(a["rausch_p"], b["rausch_p"]), 3)]}
-        if s <= SCORE_BELEGT and passt_menge(q):
-            behalten.add(j)
-            t["ausserhalb_erfassungszeitraum"] = werte
-            for i in (range(j + 1, k + 1) if j < k else range(k + 1, j + 1)):  # ein Einsatz-Abschnitt mit dem Abschnitt im Zeitraum
-                eigen[i]["anschluss"] = True
+def _einsatz(m, eigene, teile, ereignisse, verwaltung, nach_id):
+    """Ein Einsatz aus den Teilen 'eigene' der Messung m (teile: alle Teile des Geraets)."""
+    eid = "e-" + m["id"][2:]
+    abschnitte, stuecke = [], []
+    for nr, t in enumerate(eigene, 1):
+        if nr == 1:
+            grenze = t.get("schnitt_beginn") or ({"art": "bewegung", "bewegung": t["_aufenthalt"]["beginn"]} if t["nr_im_aufenthalt"] == 0
+                                                 else {"art": "bruch", "datum": t["_von"].date().isoformat()})
+            if grenze["art"] == "bewegung" and not grenze["bewegung"]:
+                grenze = {"art": "datenbeginn"}
         else:
-            nicht.append(dict(beleg, **werte, grund="gleicht dem Abschnitt im Erfassungszeitraum nicht" if s > SCORE_BELEGT else
-                              "Verkehrsmenge passt nicht zum Abschnitt im Erfassungszeitraum"))
-    weg = {id(eigen[j]) for j in range(len(eigen)) if j not in behalten}
-    return [t for t in teile if id(t) not in weg], sorted(nicht, key=lambda x: x["von"])
-
-
-def einsatz_abschnitte(e):
-    """Einsatz-Abschnitte: Teile, die ueber eine Dateigrenze aneinanderstossen, gehoeren zusammen (laut Zuordnung derselbe Ort); zwei Teile
-    derselben Messung trennt ein Bruch, der im Einsatz bleibt (unerklaert, Ferien), nicht aber eine Grenze des Erfassungszeitraums, ueber die
-    ein gleichender Abschnitt angeschlossen ist (Teil mit 'anschluss'). Gibt [[Teil, ...], ...] zurueck."""
-    gruppen_, vorige = [], None
-    for t_ in [x for x in e["teile"] if x["von"]]:
-        if vorige is None or (vorige["messung"] == t_["messung"] and not t_.get("anschluss")):
-            gruppen_.append([t_])
+            grenze = _grenze_zwischen(eigene[nr - 2], t, ereignisse, verwaltung, m)
+        abschnitte.append({"nr": nr, "von": t["_von"].isoformat(), "bis": t["_bis"].isoformat(), "aufenthalt": t["aufenthalt"],
+                           "grenze_davor": grenze, "sicher": t["sicher"], "abstand": t["abstand"], "belege": t["belege"]})
+        for mid, info in sorted(t["dateien"].items(), key=lambda x: x[1]["von"]):
+            von, bis = max(_zeit(info["von"]), t["_von"]), min(_zeit(info["bis"]), t["_bis"])
+            if von > bis:
+                continue
+            stuecke.append({"messung": mid, "abschnitt": nr, "von": von.date().isoformat(), "bis": bis.date().isoformat(),
+                            "von_zeit": von.isoformat(), "bis_zeit": bis.isoformat(), "herkunft": "eigen" if mid == m["id"] else "andere_messung",
+                            "rekonstruiert": info["rekonstruiert"], "fahrzeuge": info["fahrzeuge"], "stufe": "sicher" if t["sicher"] else "unsicher"})
+    letzt = eigene[-1]
+    if letzt.get("schnitt_ende"):
+        ende = letzt["schnitt_ende"]
+    elif letzt["letztes_im_aufenthalt"]:
+        ende = {"art": "bewegung", "bewegung": letzt["_aufenthalt"]["ende"]} if letzt["_aufenthalt"]["ende"] else {"art": "datenende"}
+    else:
+        ende = {"art": "bruch", "datum": letzt["_bis"].date().isoformat()}
+    # eigene Daten in anderen Einsaetzen oder in keinem
+    abgegeben, nicht = [], []
+    for t in teile:
+        info = t["dateien"].get(m["id"])
+        if not info or t["messung"] == m["id"]:
+            continue
+        x = {"von": max(_zeit(info["von"]), t["_von"]).isoformat(), "bis": min(_zeit(info["bis"]), t["_bis"]).isoformat(), "fahrzeuge": info["fahrzeuge"]}
+        if t["messung"]:
+            abgegeben.append(dict(x, an="e-" + t["messung"][2:], sicher=t["sicher"]))
         else:
-            gruppen_[-1].append(t_)
-        vorige = t_
-    return gruppen_
+            nicht.append(dict(x, grund="keiner Messung zugeordnet (Standort ohne Messung oder unklar)"))
+    fremd = any(s["herkunft"] != "eigen" for s in stuecke)
+    unsicher = any(not t["sicher"] for t in eigene) or any(not a["sicher"] for a in abgegeben)
+    rekon = any(s["rekonstruiert"] for s in stuecke if s["herkunft"] == "eigen")
+    status = ("unsicher" if unsicher and (fremd or abgegeben or nicht) else "abgeleitet" if fremd else "gekuerzt" if abgegeben or nicht
+              else "ergaenzt" if m["aussen"] or rekon else "identisch")
+    ausgenommen = sorted({d for t in eigene for s in (t.get("schnitt_beginn"), t.get("schnitt_ende")) if s for d in s["ausgenommen"]})
+    return {"id": eid, "messung": m["id"], "seite": m["seite"], "name": m["name"], "fahrtrichtung": m["fahrtrichtung"], "geraet": m["geraet"],
+            "limit": m["limit"], "status": status, "von": eigene[0]["_von"].date().isoformat(), "bis": letzt["_bis"].date().isoformat(),
+            "von_zeit": eigene[0]["_von"].isoformat(), "bis_zeit": letzt["_bis"].isoformat(), "beginn": abschnitte[0]["grenze_davor"],
+            "ende": ende, "abschnitte": abschnitte, "teile": stuecke, "abgegeben": abgegeben, "nicht_beruecksichtigt": nicht,
+            "ausgenommene_tage": ausgenommen, "rekonstruiert": sum(s["rekonstruiert"] for s in stuecke)}
+
+
+def _auftrag(e, teile, zeile, ort):
+    """Eingaben eines Einsatzes fuer Durchgang C (klein genug fuer andere Prozesse): je Einsatz-Abschnitt die Stunden (Zeilen des
+    Rohaggregats aus bewegungen.py, nur im Zeitraum des Teils) und die vollstaendig aufgezeichneten Stunden, dazu Limit, Ort und bei
+    unveraenderten Einsaetzen die Auswertung der Messung."""
+    abschnitte = []
+    for t in teile:
+        a = t["_aufenthalt"]
+        von = t["_von"].replace(minute=0, second=0, microsecond=0)
+
+        def drin(d, h):
+            return von <= dt.datetime.fromisoformat(d) + h * STUNDE <= t["_bis"]
+        zeilen = [z for z in a["zeilen"] if drin(z[0], z[1])]
+        voll = [[z[0], z[1]] for z in zeilen if z[3]] + [x for x in a["voll_ohne_fahrzeuge"] if drin(x[0], x[1])]
+        abschnitte.append({"von": t["_von"].isoformat(), "bis": t["_bis"].isoformat(), "zeilen": zeilen, "voll": sorted(voll),
+                           "versatz": [[z[0], z[1], z[2]] for z in zeilen]})
+    return {"id": e["id"], "status": e["status"], "limit": e["limit"], "ort": ort, "abschnitte": abschnitte,
+            "messung_zeile": zeile if e["status"] == "identisch" else None}
 
 
 def _spannen(stunden):
@@ -525,48 +495,31 @@ def _spannen(stunden):
     return out
 
 
-def _auftrag(e, nach_id, auswertung_zeile):
-    """Eingaben eines Einsatzes fuer Durchgang C (klein genug fuer andere Prozesse): je Einsatz-Abschnitt die Zeilen des Rohaggregats und die
-    vollstaendig aufgezeichneten Stunden, dazu Limit, Ort und bei unveraenderten Einsaetzen die Auswertung der Messung."""
-    host = nach_id[e["messung"]]
-    teile = []
-    for gruppe in einsatz_abschnitte(e):
-        zeilen, voll, versatz = [], [], {}
-        for t_ in gruppe:
-            m = nach_id[t_["messung"]]
-            von, bis = dt.date.fromisoformat(t_["von"]), dt.date.fromisoformat(t_["bis"])
-            zeilen += [z for z in m["zeilen"] if von <= z[0] <= bis]
-            voll += [x for x in m["voll"] if von <= x[0] <= bis]
-            versatz.update({k: v for k, v in m["versatz"].items() if von <= k[0] <= bis})
-        teile.append({"teile": gruppe, "zeilen": zeilen, "voll": voll, "versatz": sorted([d.isoformat(), h, o] for (d, h), o in versatz.items())})
-    return {"id": e["id"], "status": e["status"], "limit": e["limit"], "ort": host["ort"], "abschnitte": teile,
-            "messung_zeile": auswertung_zeile if e["status"] == "identisch" else None}
-
-
 def _fahrzeuge_aus(zeilen):
-    """Fahrzeuge [(Ortszeit, v)] aus Aggregat-Zeilen (Zeit: Mitte der Stunde)."""
+    """Fahrzeuge [(Ortszeit, v)] aus Stunden-Zeilen [Datum, Stunde, Versatz, voll, [km/h, Anzahl, ...]] (Zeit: Mitte der Stunde)."""
     out = []
-    for datum, h, _voll, _k, c in zeilen:
+    for d, h, _off, _voll, flach in zeilen:
+        datum = dt.date.fromisoformat(d)
         t_ = dt.datetime(datum.year, datum.month, datum.day, h, 30)
-        for v, n in c.items():
+        for v, n in zip(flach[0::2], flach[1::2]):
             out.extend([(t_, v)] * n)
     return out
 
 
 def einsatz_rechnen(auftrag, speicher=None):
-    """Durchgang C fuer einen Einsatz: je Einsatz-Abschnitt Rauschboden und Regenanteil (bei unveraendertem Einsatz aus der Messung), dann
-    Kennzahlen, Gefaehrdung, Laerm, Naechte, Zellen (mit Rauschboden), Verhaltensgruppen und das bereinigte Aggregat."""
+    """Durchgang C fuer einen Einsatz: je Einsatz-Abschnitt Rauschboden und Regenanteil (bei unveraendertem Einsatz neben der Schaetzung der
+    Messung), dann Kennzahlen, Gefaehrdung, Laerm, Naechte, Zellen (mit Rauschboden), Verhaltensgruppen und das bereinigte Aggregat."""
     lim, ort = auftrag["limit"], tuple(auftrag["ort"])
     regen_f = dsd2csv.regenfunktion(ort=ort)
     zeile = auftrag["messung_zeile"]
-    roh, sauber_alle, stunden_alle, rausch_bloecke, grenzen = [], [], [], [], []
+    roh, sauber_alle, stunden_alle, rausch_bloecke, grenzen, roh_je, sauber_je, stunden_je = [], [], [], [], [], [], [], []
     liste_zeile = ((zeile or {}).get("abschnitte") or {}).get("liste") or []
     for i, a in enumerate(auftrag["abschnitte"]):
         vehs = _fahrzeuge_aus(a["zeilen"])
-        stunden = [x for x in a["voll"]]
+        stunden = [(dt.date.fromisoformat(d), h) for d, h in a["voll"]]
         sp = _spannen(stunden)
         if i:
-            grenzen.append(dt.date.fromisoformat(a["teile"][0]["von"]))
+            grenzen.append(dt.date.fromisoformat(a["von"][:10]))
         rb = dsd2csv.rauschen.pruefen(vehs, sp, lim, regen=regen_f) if vehs else None
         sauber, regen_weg = vehs, 0
         if rb and rb["abzug"]:
@@ -583,6 +536,9 @@ def einsatz_rechnen(auftrag, speicher=None):
         roh += vehs
         sauber_alle += sauber
         stunden_alle += stunden
+        roh_je.append(vehs)
+        sauber_je.append(sauber)
+        stunden_je.append(stunden)
     sp_alle = _spannen(stunden_alle)
     abged = set(stunden_alle)
 
@@ -599,12 +555,10 @@ def einsatz_rechnen(auftrag, speicher=None):
         daten["trocken"] = gruppen.zellen_json(gruppen.zellen_bauen(roh, sauber_alle, sp_alle, trocken))
     liste, daten_abschnitte = [], []
     if len(auftrag["abschnitte"]) > 1:
-        sauber_ids = {id(f) for f in sauber_alle}
         for i, a in enumerate(auftrag["abschnitte"]):
-            von, bis = a["teile"][0]["von"], a["teile"][-1]["bis"]
-            r_i = [f for f in roh if von <= f[0].date().isoformat() <= bis]
-            s_i = [f for f in r_i if id(f) in sauber_ids]
-            st_i = set(a["voll"])
+            von, bis = a["von"][:10], a["bis"][:10]
+            r_i, s_i = roh_je[i], sauber_je[i]
+            st_i = set(stunden_je[i])
             sp_i = _spannen(st_i)
             teil_i = {k: [f for f in s_i if in_zeitraum(f[0])] for k, (_, in_zeitraum) in dsd2csv.TEILZEITRAEUME.items()}
             e_i = {"nr": i + 1, "von": von, "bis": bis, "tage": (dt.date.fromisoformat(bis) - dt.date.fromisoformat(von)).days + 1,
@@ -629,9 +583,9 @@ def einsatz_rechnen(auftrag, speicher=None):
     # bereinigtes Aggregat des Einsatzes: Zeilen [Datum, Stunde, UTC-Versatz, Einsatz-Abschnitt, voll, Regenklasse, [km/h, Anzahl, ...]]
     versatz, abschnitt_von = {}, {}
     for i, a in enumerate(auftrag["abschnitte"]):
-        versatz.update({(dt.date.fromisoformat(d), h): o for d, h, o in a["versatz"]})
-        for d, h, *_x in a["zeilen"]:
-            abschnitt_von[(d, h)] = i + 1
+        for d, h, o in a["versatz"]:
+            versatz[(dt.date.fromisoformat(d), h)] = o
+            abschnitt_von[(dt.date.fromisoformat(d), h)] = i + 1
     je_stunde = collections.defaultdict(collections.Counter)
     for t_, v in sauber_alle:
         je_stunde[(t_.date(), t_.hour)][v] += 1
@@ -690,40 +644,53 @@ def _arbeit(args):
 
 # ------------------------------------------------------------------ Ausgabe
 
-def auswerten(auswertung, metadaten, aggregat_ordner, ereignisse_pfad=None, verwaltung_pfad=None, cache=None, jobs=1):
+def bilden(auswertung, metadaten, bew, wurzel=HIER, ereignisse=(), verwaltung=None, zr=None):
+    """(einsaetze.json ohne Kennzahlen, Teile je Einsatz) aus der Auswertung und dem Ergebnis von bewegungen.py."""
+    messungen = messungen_lesen(auswertung, metadaten)
+    einsaetze, nicht, ohne, teile_von = einsaetze_bilden(bew["geraete"], messungen, zr or {}, ereignisse, verwaltung)
+    brueche = brueche_der_messungen(messungen, bew["geraete"], ereignisse, verwaltung or {})
+    zaehlung = collections.Counter(b["zuordnung"]["art"] + "/" + b["zuordnung"]["stufe"] for b in brueche)
+    geraete = [{"geraet": g["geraet"], "fahrzeuge": g["fahrzeuge"], "bewegungen": g["bewegungen"], "rekonstruktion": g["rekonstruktion"],
+                "aufenthalte": [{k: a[k] for k in ("nr", "von", "bis", "beginn", "ende", "konfidenz", "tage", "fahrzeuge", "dateien", "brueche")}
+                                for a in g["aufenthalte"]]} for g in bew["geraete"]]
+    return ({"einsaetze": einsaetze, "brueche": brueche, "zaehlung": dict(zaehlung), "nicht_zugeordnet": nicht, "messungen_ohne_einsatz": ohne,
+             "defekt": defekt(messungen, wurzel), "aktionstage": bew["aktionstage"], "geraete": geraete}, teile_von, messungen)
+
+
+def auswerten(auswertung, metadaten, wurzel=HIER, ereignisse_pfad=None, verwaltung_pfad=None, korrekturen_pfad=None, cache=None, jobs=1):
     """(einsaetze.json, Zellen je Einsatz, Aggregat je Einsatz)."""
-    messungen = messungen_lesen(auswertung, metadaten, aggregat_ordner)
-    brueche, umh = zuordnen(messungen, ereignisse_laden(ereignisse_pfad), verwaltung_laden(verwaltung_pfad))
-    einsaetze = einsaetze_bilden(messungen, umh)
+    bew, benutzt_b = bewegungen.berechnen(auswertung, wurzel, cache)
+    out, teile_von, messungen = bilden(auswertung, metadaten, bew, wurzel, ereignisse_laden(ereignisse_pfad), verwaltung_laden(verwaltung_pfad),
+                                       zeitraeume_laden(korrekturen_pfad))
     nach_id = {m["id"]: m for m in messungen}
-    zeile_von = {m["id"]: m["zeile"] for m in messungen}
-    auftraege = [(_auftrag(e, nach_id, zeile_von[e["messung"]]), cache) for e in einsaetze if any(t_["von"] for t_ in e["teile"])]
+    auftraege = [(_auftrag(e, teile_von[e["id"]], nach_id[e["messung"]]["zeile"], nach_id[e["messung"]]["ort"]), cache) for e in out["einsaetze"]]
     if jobs > 1:
         with multiprocessing.Pool(jobs) as pool:
             ergebnisse = pool.map(_arbeit, auftraege, chunksize=1)
     else:
         ergebnisse = [_arbeit(x) for x in auftraege]
     erg_von = {i: erg for i, erg, _ in ergebnisse}
-    benutzt = {tuple(x) for _, _, b in ergebnisse for x in b}
+    benutzt = {tuple(x) for _, _, b in ergebnisse for x in b} | set(benutzt_b)
     zellen, aggregate = {}, {}
-    for e in einsaetze:
+    for e in out["einsaetze"]:
         erg = erg_von.get(e["id"])
         if erg:
             e["kennzahlen"] = erg["kennzahlen"]
             zellen[e["id"]], aggregate[e["id"]] = erg["zellen"], erg["aggregat"]
-    if cache:  # nicht mehr benutzte Einsaetze und Verhaltensgruppen entfernen (die Ebenen je Datei raeumt dsd2csv.py auf)
+    if cache:  # nicht mehr benutzte Einsaetze, Bewegungen und Verhaltensgruppen entfernen (die Ebenen je Datei raeumt dsd2csv.py auf)
         zwischenspeicher.Zwischenspeicher(cache).aufraeumen(benutzt, ("datei", "datei-ohne-numpy"))
-    zaehlung = collections.Counter(b["zuordnung"]["art"] + "/" + b["zuordnung"]["stufe"] for b in brueche)
-    return {"einsaetze": einsaetze, "brueche": brueche, "zaehlung": dict(zaehlung)}, zellen, aggregate
+    return out, zellen, aggregate
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--auswertung", required=True, help="auswertung.json von dsd2csv.py")
-    ap.add_argument("--aggregat", required=True, help="Ordner der Aggregate (dsd2csv.py --aggregat)")
+    ap.add_argument("--aggregat", required=True, help="Ordner der Aggregate (dsd2csv.py --aggregat); dorthin kommt einsaetze.aggregat.json")
+    ap.add_argument("--daten", default=HIER, help="Ordner mit den DSD-Dateien (Standard: dieses Verzeichnis)")
     ap.add_argument("--metadaten", default=os.path.join(HIER, "belege", "metadaten.json"))
     ap.add_argument("--ereignisse", default=os.path.join(HIER, "belege", "ereignisse.json"))
     ap.add_argument("--verwaltung", default=os.path.join(HIER, "belege", "brueche-verwaltung.json"))
+    ap.add_argument("--korrekturen", default=os.path.join(HIER, "belege", "korrekturen.json"), help="Erfassungszeitraeume der Mitteilungen")
     ap.add_argument("-o", "--ausgabe", help="Ziel (Standard: einsaetze.json neben der auswertung.json; die Zellen in einsaetze-zellen.json)")
     ap.add_argument("--cache", help="Zwischenspeicher (wie dsd2csv.py --cache)")
     ap.add_argument("--jobs", type=int, default=1, help="Einsaetze gleichzeitig rechnen")
@@ -732,17 +699,19 @@ def main():
         auswertung = json.load(fh)
     with open(a.metadaten, encoding="utf-8") as fh:
         metadaten = json.load(fh)
-    out, zellen, aggregate = auswerten(auswertung, metadaten, a.aggregat, a.ereignisse, a.verwaltung, a.cache, a.jobs)
+    out, zellen, aggregate = auswerten(auswertung, metadaten, a.daten, a.ereignisse, a.verwaltung, a.korrekturen, a.cache, a.jobs)
     ziel = a.ausgabe or os.path.join(os.path.dirname(os.path.abspath(a.auswertung)), "einsaetze.json")
     with open(ziel, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(out, fh, ensure_ascii=False, separators=(",", ":"))
         fh.write("\n")
     with open(os.path.join(os.path.dirname(ziel), "einsaetze-zellen.json"), "w", encoding="utf-8", newline="\n") as fh:
         json.dump(zellen, fh, ensure_ascii=False, separators=(",", ":"))
+    os.makedirs(a.aggregat, exist_ok=True)
     with open(os.path.join(a.aggregat, "einsaetze.aggregat.json"), "w", encoding="utf-8", newline="\n") as fh:  # fuer daten_bauen.py
         json.dump(aggregate, fh, ensure_ascii=False, separators=(",", ":"))
     st = collections.Counter(e["status"] for e in out["einsaetze"])
-    print(f'{len(out["einsaetze"])} Einsätze ({", ".join(f"{k} {v}" for k, v in sorted(st.items()))}), {len(out["brueche"])} Brüche: '
+    print(f'{len(out["einsaetze"])} Einsätze ({", ".join(f"{k} {v}" for k, v in sorted(st.items()))}), {len(out["nicht_zugeordnet"])} Teile ohne '
+          f'Messung, {len(out["messungen_ohne_einsatz"])} Messungen ohne Einsatz, {len(out["brueche"])} Brüche: '
           + ", ".join(f"{k} {v}" for k, v in sorted(out["zaehlung"].items())) + f" -> {ziel}")
 
 
