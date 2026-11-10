@@ -17,3 +17,6 @@
 !site/**
 !.github/**
 __pycache__/
+
+# Experimentelle Untersuchungen (Skripte und Ergebnisse) bleiben lokal
+exploration/
