@@ -201,7 +201,7 @@ def loesen(teile, punkte, verboten=None):
                 if j < mm and lz > j:
                     continue  # Reihenfolge der Messungen
                 s = pv + eigen + (STRAFE_LEER * (j - lz - 1) if j < mm and lz < j else 0.0)  # uebersprungene Messungen bleiben leer
-                if gleich and jv != j:
+                if gleich and jv != j and teile[i].get("grenze") != "dateigrenze":  # an einer ungeprueften Dateigrenze ist der Wechsel normal
                     s += STRAFE_OHNE_BEWEGUNG
                 elif not gleich and j < mm and jv == j and not aehnlich(teile[i - 1], teile[i]):
                     s += STRAFE_UNAEHNLICH
@@ -358,10 +358,20 @@ def _grenze_zwischen(a, b, ereignisse, verwaltung, m):
         text = ("Pause, danach am selben Standort weiter (ohne Vergleich, zu wenig Daten davor oder danach)" if bew["stufe"] == "inbetriebnahme_ungeprueft"
                 else "Bewegung ohne Wechsel der Messung (ungeklärt: anderer Mast, andere Richtung, Neuausrichtung?)")
         return {"art": "bewegung", "text": text, "bewegung": bew}
-    tag = _zeit(b["von"]).date()
-    br = next((x for x in b["_aufenthalt"]["brueche"] if x["datum"] == tag.isoformat()), {})
+    br = bruch_vor(b)
+    if br.get("art") == "dateigrenze":
+        return {"art": "dateigrenze_ungeprueft", "datum": br["datum"], "grund": br.get("grund")}
+    tag = dt.date.fromisoformat(br["datum"]) if br else _zeit(b["von"]).date()
     zu, ev, _v = erklaeren(tag, m["seite"], f'{m["rel"]}/{m["datei"]}', ereignisse, verwaltung)
-    return {"art": "bruch", "datum": tag.isoformat(), "wahrscheinlichkeit": br.get("wahrscheinlichkeit"), "zuordnung": zu, "ereignisse": ev}
+    return {"art": "bruch", "datum": tag.isoformat(), "zeit": br.get("zeit"), "verfeinert": br.get("verfeinert"),
+            "wahrscheinlichkeit": br.get("wahrscheinlichkeit"), "zuordnung": zu, "ereignisse": ev}
+
+
+def bruch_vor(t):
+    """Der Bruch des Aufenthalts, an dem das Teil t beginnt (verfeinerter Zeitpunkt am naechsten an seinem ersten Fahrzeug); {} ohne."""
+    liste = t["_aufenthalt"]["brueche"]
+    von = _zeit(t["von"])
+    return min(liste, key=lambda x: abs((_zeit(x.get("zeit") or x["datum"]) - von).total_seconds())) if liste else {}
 
 
 def einsaetze_bilden(geraete, messungen, zr, ereignisse=(), verwaltung=None):
@@ -376,16 +386,23 @@ def einsaetze_bilden(geraete, messungen, zr, ereignisse=(), verwaltung=None):
         for t in teile:
             t["_aufenthalt"] = auf[t["aufenthalt"]]
             t["_von"], t["_bis"] = _zeit(t["von"]), _zeit(t["bis"])
-        # Wechsel der Messung an einem Bruch ohne Bewegung: Bruchtag und Vortag gehoeren zu keinem Einsatz (dort wurde ausgelesen, umgestellt
-        # oder umgehaengt, ohne dass sich eine Luecke zeigt)
+        # Wechsel der Messung an einem Bruch ohne Bewegung: der Tag des Wechsels gehoert zu keinem Einsatz (dort wurde ausgelesen, umgestellt
+        # oder umgehaengt, ohne dass sich eine Luecke zeigt); ist der Zeitpunkt nicht verfeinert (nur der Bruchtag bekannt), auch der Vortag
         for a, b in zip(teile, teile[1:]):
             if a["aufenthalt"] == b["aufenthalt"] and a["messung"] != b["messung"]:
+                br = bruch_vor(b)
+                if br.get("art") == "dateigrenze":  # ungeprueft: kein Schnitt, nur gekennzeichnet
+                    a["schnitt_ende"] = b["schnitt_beginn"] = {"art": "dateigrenze_ungeprueft", "datum": b["_von"].date().isoformat(),
+                                                               "grund": br.get("grund"), "ausgenommen": []}
+                    continue
                 tag = b["_von"].date()
-                a["_bis"] = min(a["_bis"], dt.datetime.combine(tag - TAG, dt.time()) - dt.timedelta(seconds=1))
+                weg = [tag] if br.get("verfeinert") else [tag - TAG, tag]
+                a["_bis"] = min(a["_bis"], dt.datetime.combine(weg[0], dt.time()) - dt.timedelta(seconds=1))
                 b["_von"] = max(b["_von"], dt.datetime.combine(tag + TAG, dt.time()))
                 gleich = a["messung"] and b["messung"] and nach_id[a["messung"]]["seite"] == nach_id[b["messung"]]["seite"]
                 a["schnitt_ende"] = b["schnitt_beginn"] = {"art": "messungswechsel_am_bruch" if gleich else "ortswechsel_ohne_bewegung",
-                                                           "datum": tag.isoformat(), "ausgenommen": [(tag - TAG).isoformat(), tag.isoformat()]}
+                                                           "datum": tag.isoformat(), "zeit": br.get("zeit"),
+                                                           "ausgenommen": [d.isoformat() for d in weg]}
         for t in teile:
             if t["messung"] is None:
                 nicht_zugeordnet.append({"geraet": g["geraet"], "von": t["_von"].isoformat(), "bis": t["_bis"].isoformat(), "tage": t["tage"],

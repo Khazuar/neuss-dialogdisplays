@@ -1528,7 +1528,9 @@ ZUORDNUNG_TEXT = {"umhaengen": "Umhängen", "bewegung": "Umhängen (Bewegung erk
                   "verwaltung": "Angabe der Verwaltung"}
 GRENZE_TEXT = {"datenbeginn": "Beginn der Daten (Montage davor, Zeitpunkt unbekannt)", "datenende": "Ende der Daten",
                "ortswechsel_ohne_bewegung": "Ortswechsel an einem Bruch, ohne erkennbare Transportlücke",
-               "messungswechsel_am_bruch": "Wechsel der Messung am selben Standort an einem Bruch (Auslesen, Umstellen)"}
+               "messungswechsel_am_bruch": "Wechsel der Messung am selben Standort an einem Bruch (Auslesen, Umstellen)",
+               "dateigrenze_ungeprueft": "Dateigrenze, ungeprüft (die Daten erlauben keine Bruchsuche, etwa weil das Gerät tagsüber nichts "
+                                         "aufzeichnete; die Grenze folgt der Datei der Verwaltung)"}
 BEWEGUNG_STUFE_TEXT = {"umhaengen": "Umhängen (Transportlücke)", "aktionstag": "Umhängen am Aktionstag", "inbetriebnahme": "Inbetriebnahme nach Pause",
                        "inbetriebnahme_ungeprueft": "Inbetriebnahme nach Pause (ohne Vergleich)"}
 
@@ -1556,7 +1558,10 @@ def grenze_text(g):
         erkl = f' ({ZUORDNUNG_TEXT.get(zu["art"], zu["art"])}{": " + zu["text"] if zu.get("text") else ""})' if zu else ""
         return f'Bruch am {iso_de(g.get("datum"))}{erkl}'
     text = GRENZE_TEXT.get(g["art"], g["art"])
-    return f'{text} am {iso_de(g["datum"])}; {iso_de(g["ausgenommen"][0])} und {iso_de(g["ausgenommen"][1])} ausgenommen' if g.get("datum") else text
+    if not g.get("datum"):
+        return text
+    weg = g.get("ausgenommen") or []
+    return f'{text} am {iso_de(g["datum"])}' + (f'; {" und ".join(iso_de(d) for d in weg)} ausgenommen' if weg else "")
 STUFE_TEXT = {"belegt": "belegt", "moeglich": "möglich", "plausibel": "plausibel", "bestaetigt": "von der Verwaltung bestätigt", "offen": "offen"}
 
 

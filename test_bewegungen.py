@@ -76,6 +76,44 @@ class Bewegungen(unittest.TestCase):
         self.assertEqual(sum(a["fahrzeuge"] for a in auf), len(x["s"]))  # jedes Fahrzeug in genau einem Aufenthalt
         self.assertEqual(auf[0]["brueche"], [])  # die Bruchsuche findet im Aufenthalt keinen Ortswechsel mehr
 
+    def test_umhaengen_von_laut_nach_ruhig(self):
+        """Vom lauten Ort A an einen ruhigen Ort: die natuerlichen Luecken am neuen Ort sind laenger als die Transportluecke (15 Minuten);
+        erkannt wird sie an den Fahrzeugen, die nach der Stunde davor in ihr zu erwarten waren."""
+        ruhig = standort(28, 13, menge=8)
+        x = geraet([(um(0, 0), um(30, 9), standort(45, 8, menge=300), 0), (um(30, 9, 15), um(60, 23, 59), ruhig, 0)], ["m-a"])
+        B.erkennen([x])
+        trennend = [k for k in x["kandidaten"] if k["stufe"] in B.TRENNEN]
+        self.assertEqual(len(trennend), 1, [(k["von"], k["stufe"], k.get("z")) for k in x["kandidaten"]])
+        self.assertLessEqual(abs((trennend[0]["von"] - um(30, 9)).total_seconds()), 5 * 60)  # Abbau am lauten Ort: genau
+        self.assertGreaterEqual(trennend[0]["bis"], um(30, 9, 15))  # Montage am ruhigen Ort: spaetestens beim ersten Fahrzeug
+
+    def test_bruch_wird_verfeinert(self):
+        """Ein Wechsel ohne Luecke drei Tage nach der Inbetriebnahme: die Bruchsuche braucht 7 volle Tage je Abschnitt und meldet ihn spaeter;
+        die Verfeinerung findet die Stunde."""
+        x = geraet([(um(0, 0), um(9, 23, 59), C, 0), (um(13, 9), um(16, 14), A, 0), (um(16, 14), um(50, 23, 59), Bo, 0)], ["m-a"])
+        B.erkennen([x])
+        auf = B.aufenthalte(x, {0: 50})[-1]
+        self.assertEqual(len(auf["brueche"]), 1, auf["brueche"])
+        b = auf["brueche"][0]
+        self.assertGreaterEqual(dt.date.fromisoformat(b["datum"]), tag(20))  # die Bruchsuche: frueher geht nicht
+        self.assertTrue(b["verfeinert"])
+        self.assertLessEqual(abs((b["zeit"] - um(16, 14)).total_seconds()), 2 * 3600)
+        self.assertEqual(auf["teile"][1]["von"], min(t for t, _v, _i in x["s"] if t >= b["zeit"]))
+
+    def test_ohne_bruchsuche_trennen_die_dateigrenzen(self):
+        """Ein Geraet zeichnet werktags von 9 bis 18 Uhr nichts auf: keine vollen Tage, keine Bruchsuche. Dann trennen die Dateigrenzen."""
+        x = geraet([(um(0, 0), um(20, 8), A, 0), (um(20, 8), um(40, 23, 59), A, 1)], ["m-a", "m-b"])
+        x["s"] = [f for f in x["s"] if f[0].weekday() >= 5 or not 9 <= f[0].hour < 18]
+        zeiten = [f[0] for f in x["s"]]
+        stuecke = [0] + [i + 1 for i, (a, b) in enumerate(zip(zeiten, zeiten[1:])) if b - a > dt.timedelta(hours=3)] + [len(zeiten)]
+        x["spannen"] = [(zeiten[a], zeiten[b - 1]) for a, b in zip(stuecke, stuecke[1:])]  # die Uhr-Segmente enden an den Luecken
+        B.erkennen([x])
+        auf = B.aufenthalte(x, {0: 50, 1: 50})
+        self.assertEqual(len(auf), 1)
+        self.assertEqual([b["art"] for b in auf[0]["brueche"]], ["dateigrenze"])
+        self.assertEqual([t["grenze"] for t in auf[0]["teile"]], [None, "dateigrenze"])
+        self.assertEqual([list(t["dateien"]) for t in auf[0]["teile"]], [["m-a"], ["m-b"]])
+
     def test_pause_ohne_aenderung_trennt_nicht(self):
         """Drei Tage aus (Akku?), danach derselbe Verkehr: pause_gleicher_ort, ein Aufenthalt."""
         x = geraet([(um(0, 0), um(30, 9), A, 0), (um(33, 11), um(60, 23, 59), A, 0)], ["m-a"])

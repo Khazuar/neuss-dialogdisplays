@@ -125,6 +125,18 @@ class Teile(unittest.TestCase):
         self.assertEqual(ein[0]["ausgenommene_tage"], [])
         self.assertEqual(ein[0]["status"], "identisch")
 
+    def test_ungepruefte_dateigrenze(self):
+        """Ohne Bruchsuche getrennt an der Dateigrenze: jede Datei ihre Messung, kein Schnitt, Grenze als ungeprueft gekennzeichnet."""
+        t1, t2 = teil(0, 19, {"m-a": 20}, HA), dict(teil(20, 39, {"m-b": 20}, HA), grenze="dateigrenze")
+        a = aufenthalt(1, [t1, t2])
+        a["brueche"] = [{"datum": TB.tag(20).isoformat(), "zeit": t2["von"], "art": "dateigrenze", "verfeinert": False}]
+        ein, _n, _o, _ = E.einsaetze_bilden([{"geraet": "G", "aufenthalte": [a]}], [messung("m-a"), messung("m-b")], {})
+        von = {e["messung"]: e for e in ein}
+        self.assertEqual(von["m-a"]["ende"]["art"], "dateigrenze_ungeprueft")
+        self.assertEqual(von["m-b"]["beginn"]["art"], "dateigrenze_ungeprueft")
+        self.assertEqual(von["m-a"]["ausgenommene_tage"], [])
+        self.assertEqual(von["m-b"]["status"], "identisch")
+
     def test_kurzer_fremder_ort_ohne_messung(self):
         """Fuenf Tage an einem Ort ohne Messung zwischen zwei Messungen (anderer Verkehr, ausserhalb jedes Erfassungszeitraums): keine Messung."""
         g = {"geraet": "G", "aufenthalte": [aufenthalt(1, [teil(0, 30, {"m-a": 31}, HA)]), aufenthalt(2, [teil(31, 35, {"m-b": 5}, HC, 20.0)]),

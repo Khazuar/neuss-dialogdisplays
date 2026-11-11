@@ -95,8 +95,13 @@ Weinstockstraße mit 48 solchen Segmenten.
   48 Stunden. Nachts ist an ruhigen Straßen oft stundenlang nichts los.
 - **Lücke:** die längste Lücke eines Werktags zwischen 7 und 19 Uhr, wenn sie länger ist als an jedem anderen Werktag im Umkreis von 21 Tagen
   (mindestens 15 Minuten).
+- **Unerwartete Lücke:** eine Lücke ab 10 Minuten zwischen 7 und 19 Uhr an einem Werktag, in der nach dem Verkehr der Stunde davor oder danach
+  mindestens 20 Fahrzeuge zu erwarten waren. Beim Wechsel von einer lauten an eine ruhige Straße sind die natürlichen Lücken am neuen Ort länger
+  als die Transportlücke; das Längenkriterium allein übersieht dann das Umhängen. Beispiel: Konradstraße, 15.05.2025, 08:52 bis 09:35.
+  Diese Kandidaten erben nie die Änderung eines benachbarten Kandidaten (siehe unten).
 
-Kandidaten weniger als 2 Tage auseinander sind ein Umbau (etwa abends abgebaut, morgens aufgehängt).
+Kandidaten weniger als 2 Tage auseinander, zwischen denen höchstens 50 Fahrzeuge liegen, sind ein Umbau (etwa abends abgebaut, morgens
+aufgehängt). Liegt dazwischen Verkehr, bleiben sie getrennt.
 
 ### Änderung über den Kandidaten
 
@@ -128,7 +133,32 @@ Die Fenster reichen höchstens 21 Tage weit und nicht über andere Montagen hinw
   - Die Richtung muss passen.
   - Der Wechselpunkt liegt höchstens 30 Minuten neben der Lücke.
 
-  Ohne stimmige Probe fällt ein Aktionstag weg, und ein Umhängen wird zum Eingriff.
+  Ohne stimmige Probe fällt ein Aktionstag weg, und ein Umhängen wird zum Eingriff. Fällt ein Kandidat weg, ist er keine Grenze der
+  Vergleichsfenster mehr, und die übrigen werden neu geprüft.
+
+### Brüche in den Aufenthalten und ihre Verfeinerung
+
+Die Bruchsuche ([abschnitte.md](abschnitte.md)) läuft je Aufenthalt. Sie liefert nur den Tag eines Bruchs und braucht auf jeder Seite
+mindestens **7 volle Tage** (24 Stunden mit Daten, ohne Ferien und Feiertage). Diese Mindestlänge ist eine Festlegung, keine Eigenschaft der
+Daten: Jeder Abschnitt soll jeden Wochentag einmal enthalten, damit Werktag und Wochenende sich ausgleichen und der Mittelwert stabil ist. Die
+Folgen:
+
+- Ein Wechsel in den ersten 7 vollen Tagen eines Aufenthalts kann nicht am richtigen Tag stehen. Er wird übersehen oder auf den 8. Tag
+  geschoben (der angebrochene Montagetag zählt nicht).
+- Eine Episode unter 7 Tagen kann kein eigener Abschnitt sein. Episoden bis 21 Tage, nach denen der Verkehr zum alten Niveau zurückkehrt, gelten
+  als Ausschlag.
+
+Darum wird jeder Bruch **auf Fahrzeugebene verfeinert**: im Fenster von 9 Tagen vor bis 2 Tagen nach dem Bruchtag der Wechselpunkt der
+Log-Likelihood aus Tempoverteilung und Verkehrsmenge (Poisson mit dem Tagesgang je Werktag, Samstag, Sonntag) der Seiten davor und danach. Die
+Seiten werden einmal mit dem neuen Zeitpunkt neu geschätzt. Liegt das Ergebnis am Rand des Fensters, bleibt es beim Bruchtag. Die Teile werden am
+verfeinerten Zeitpunkt getrennt.
+
+**Ohne Bruchsuche trennen die Dateigrenzen.** Ist die Bruchsuche in einem Aufenthalt nicht möglich (weniger als 14 volle Tage) oder sieht sie
+den Verkehr am Tag nicht (weniger als die Hälfte der Werktagsstunden von 9 bis 17 Uhr mit Fahrzeugen), wird der Aufenthalt an den
+Dateigrenzen geteilt. Diese Grenzen heißen „ungeprüft“: Dort ist die Angabe der Verwaltung der einzige Hinweis, es gibt keinen Schnitt.
+Beispiel: Das Gerät an Krupp- und Berghäuschensweg zählte von Oktober 2022 bis März 2023 werktags zwischen etwa 9 und 18 Uhr keine Fahrzeuge,
+während die Uhr weiterlief. Beispiel: Viersener Straße, Bruch am 14.05.2025 (Bruchsuche) → 14.05.2025, 07:18 (verfeinert); dort wurde das
+Tempolimit auf 30 gesenkt.
 
 Die Uhrzeiten sind das letzte Fahrzeug vor und das erste nach der Lücke. An ruhigen Straßen kann die Arbeit am Mast etwas früher oder später
 gewesen sein. Bei einer Inbetriebnahme ist das erste Fahrzeug nur „spätestens“.
@@ -163,8 +193,9 @@ werden je Einsatz-Abschnitt geschätzt.
 | Bewegung | Umhängen oder Inbetriebnahme, minutengenau | die Lücke selbst (keine Daten) |
 | Bewegung ohne Wechsel der Messung | gleicher Standort laut Zuordnung; ungeklärt (anderer Mast, andere Richtung, Neuausrichtung?) | die Lücke |
 | Bruch | bleibt im Einsatz; erklärt durch Ereignis oder unerklärt | nichts |
-| Ortswechsel ohne Bewegung | Wechsel der Messung an einem Bruch, ohne erkennbare Transportlücke | Bruchtag und Vortag |
-| Wechsel der Messung am selben Standort | etwa neues Tempolimit nach dem Auslesen (Viersener Straße) | Bruchtag und Vortag |
+| Ortswechsel ohne Bewegung | Wechsel der Messung an einem Bruch, ohne erkennbare Transportlücke | Tag des verfeinerten Wechsels (ohne Verfeinerung: Bruchtag und Vortag) |
+| Wechsel der Messung am selben Standort | etwa neues Tempolimit nach dem Auslesen (Viersener Straße) | wie beim Ortswechsel ohne Bewegung |
+| Dateigrenze, ungeprüft | ohne Bruchsuche: die Datei der Verwaltung entscheidet | nichts |
 
 | Status | Bedeutung |
 |---|---|
@@ -218,20 +249,20 @@ soweit die Zuordnung sie trägt. Auf der Detailseite steht dann nur der Einsatz,
 
 | Stufe | Anzahl |
 |---|---|
-| Umhängen mit Transportlücke | 35 |
-| Umhängen am Aktionstag | 3 |
+| Umhängen mit Transportlücke | 39 |
+| Umhängen am Aktionstag | 1 |
 | Inbetriebnahme nach Pause | 39 |
-| Inbetriebnahme ohne Vergleich | 18 |
-| Eingriff, Pause am selben Ort, möglich (trennen nichts) | 21 |
+| Inbetriebnahme ohne Vergleich | 13 |
+| Eingriff, Pause am selben Ort, möglich (trennen nichts) | 55 |
 
-Es gibt 40 Aktionstage. **98 Einsätze** in 114 Einsatz-Abschnitten; 88 davon beginnen mit einer erkannten Bewegung.
+Es gibt 52 Aktionstage. **99 Einsätze** in 112 Einsatz-Abschnitten; 87 davon beginnen mit einer erkannten Bewegung.
 
 | Status | Anzahl |
 |---|---|
-| identisch | 26 |
-| abgeleitet | 42 |
-| gekürzt | 19 |
-| unsicher | 11 |
+| identisch | 25 |
+| abgeleitet | 43 |
+| gekürzt | 21 |
+| unsicher | 10 |
 
 **Befunde 2023:**
 
@@ -242,8 +273,8 @@ Es gibt 40 Aktionstage. **98 Einsätze** in 114 Einsatz-Abschnitten; 88 davon be
 
 **Brüche der Messungen:** Von 34 Brüchen sind
 
-- 28 durch eine Bewegung belegt;
-- 3 durch eine Inbetriebnahme ohne Vergleich plausibel;
+- 29 durch eine Bewegung belegt;
+- 2 durch eine Inbetriebnahme ohne Vergleich plausibel;
 - 3 unerklärt: Schluchenhausstraße 10.02.2023, Hermannstraße 06.09.2023, Ruhrstraße 09.07.2026.
 
 Darunter sind auch die früher nur mit den Ferien erklärten Brüche nach Ostern und den Sommerferien 2025. Dort wurde am 14./15.04. bzw. am
@@ -252,17 +283,20 @@ Darunter sind auch die früher nur mit den Ferien erklärten Brüche nach Ostern
 **Offene Fälle:**
 
 - **Kreitzweg 2023:** Die Datei setzt die Nievenheimer Straße fort, ohne Bewegung und ohne Bruch. Sie hat keinen eigenen Einsatz.
-- **Berghäuschensweg (Datei _7, 2023):** Die Daten gehören zum Einsatz Berghäuschensweg _8. Diese Zuordnung ist unsicher.
+- **Krupp- und Berghäuschensweg (2022/23):** Das Gerät zählte werktags tagsüber nichts; die Bruchsuche sieht nur Nächte und Wochenenden.
+  Getrennt wird an den Dateigrenzen (ungeprüft).
 - **Gerät 17385, 04. bis 08.05.2023:** Fünf Tage an einem Ort ohne Messung (68 Fahrzeuge je Stunde, V85 34).
+- **Gerät 16734, 09. bis 15.05.2025:** Sechs Tage an einem lauten Ort ohne Messung (rund 1.400 Fahrzeuge am Tag, V85 47), dann Umhängen am
+  15.05.2025 zwischen 08:52 und 09:35 an die Konradstraße. Die Datei der Konradstraße beginnt am 09.05.
 - **Liedberger Straße:** Am 28.11.2025 wurde umgehängt. Davor zählte das Gerät 841 Fahrzeuge am Tag bei V85 44, danach 126 bei V85 32.
   Beides liegt im Erfassungszeitraum der Mitteilung, die V85 44 nennt. Welcher Ort ist die Liedberger Straße?
 - **Viersener Straße:** Am 14.04.2025 von 13:53 bis 14:18 wurde umgehängt, die Dateien wechseln aber erst am 15.05. (Tempo 50 auf 30). Wir
   ordnen die Zeit ab dem 14.04. der Tempo-30-Messung zu. War es ein Richtungswechsel?
 - **Villestraße (stationär):** Drei aufeinanderfolgende Dateien je Richtung (März 2023 bis März 2024) zeigen weder Bewegung noch Bruch. Sie
   bilden je einen Einsatz.
-- **Brüche kurz nach der Inbetriebnahme:** Norfer Kirchstraße 2023 und Konradstraße 2025 haben einen Bruch genau 8 Tage nach der
-  Inbetriebnahme, der kürzesten Länge, die die Bruchsuche zulässt. Das spricht für eine Änderung in den ersten Tagen, etwa einen Anfangseffekt
-  des Displays.
+- **Brüche kurz nach der Inbetriebnahme:** Norfer Kirchstraße 2023 hat einen Bruch, verfeinert auf den 20.09.2023, eine Woche nach der
+  Inbetriebnahme. In der ersten Woche fuhren 32 bis 37 % schneller als erlaubt, danach 45 bis 55 %. Bei der Konradstraße 2025 war es dagegen
+  ein übersehenes Umhängen (siehe oben).
 
 ## Grenzen und Gegenhypothesen
 

@@ -12,10 +12,12 @@ Bewegung: eine Unterbrechung mit minutengenauem Beginn und Ende, nach der sich d
   Pause   keine Fahrzeuge ueber mindestens PAUSE_H Stunden, davon mindestens eine Stunde im FENSTER eines Werktags (oder laenger als
           PAUSE_LANG_H; nachts ist an ruhigen Strassen oft stundenlang nichts los)
   Luecke  an einem Werktag die laengste Luecke im FENSTER, laenger als an jedem anderen Werktag im Umkreis von UMKREIS_TAGE Tagen und
-          mindestens MIN_LUECKE_H
-Kandidaten weniger als ZUSAMMEN_TAGE auseinander sind ein Umbau. Aenderung ueber den Kandidaten: bis zu TAGE_VERGLEICH Werktage davor gegen
-danach (FENSTER, gleicher Ferienstatus, hoechstens SUCHE_TAGE weit, nicht ueber andere Montagen hinweg): Tempoverteilung (TVD ab KMIN km/h)
-und Verkehrsmenge (|ln| des Verhaeltnisses der Fahrzeuge je Stunde). z = robuster z-Wert (Median, MAD) gegen dieselben Groessen an den
+          mindestens MIN_LUECKE_H; oder eine Luecke ab MIN_STELLE_MIN Minuten im FENSTER eines Werktags, in der nach dem Verkehr der
+          Stunde davor oder danach (UMGEBUNG) mindestens E_MIN Fahrzeuge zu erwarten waren (beim Wechsel von einer lauten an eine ruhige
+          Strasse sind die natuerlichen Luecken am neuen Ort laenger als die Transportluecke)
+Kandidaten weniger als ZUSAMMEN_TAGE auseinander ohne Verkehr dazwischen (hoechstens ZUSAMMEN_MAX_FZ Fahrzeuge) sind ein Umbau.
+Aenderung ueber den Kandidaten: bis zu TAGE_VERGLEICH Werktage davor gegen danach (FENSTER, gleicher Ferienstatus, hoechstens SUCHE_TAGE
+weit, nicht ueber andere Montagen hinweg): Tempoverteilung (TVD ab KMIN km/h) und Verkehrsmenge (|ln| des Verhaeltnisses der Fahrzeuge je Stunde). z = robuster z-Wert (Median, MAD) gegen dieselben Groessen an den
 Tagesgrenzen im Umkreis von NULL_TAGE Tagen (ohne die Naehe von Kandidaten), der groessere von beiden.
 
 Einstufung:
@@ -32,12 +34,21 @@ Tagesgang der Tage davor und danach), PERMUTATIONEN Vertauschungen, p <= P_TAG, 
 Bewegungen (umhaengen, inbetriebnahme, inbetriebnahme_ungeprueft, aktionstag) trennen Aufenthalte. Je Aufenthalt: Brueche (bruch.erkenne,
 wie je Messung), Teile zwischen den Bruechen mit Merkmalen fuer die Zuordnung (einsaetze.py), Stunden (Format des Rohaggregats) und die
 Tage je Datei.
+Verfeinerung der Brueche: Die Bruchsuche liefert nur den Tag und braucht auf jeder Seite bruch.MIN_ABSCHNITT_TAGE volle Tage; ein Wechsel
+in den ersten Tagen eines Aufenthalts landet deshalb einige Tage zu spaet. Der Zeitpunkt wird je Fahrzeug gesucht, zwischen VERFEINERN_VOR
+Tagen vor und VERFEINERN_NACH Tagen nach dem Bruchtag: Wechselpunkt der Log-Likelihood aus Tempoverteilung und Verkehrsmenge (Poisson mit
+dem Tagesgang je Werktag, Samstag, Sonntag) der Seiten davor und danach; die Seiten werden einmal mit dem neuen Zeitpunkt neu geschaetzt.
+Die Teile werden am verfeinerten Zeitpunkt getrennt. Ist die Bruchsuche nicht moeglich (zu wenige vollstaendig aufgezeichnete Tage) oder sieht
+sie den Verkehr am Tag nicht (weniger als MIN_TAGSUEBER der Werktagsstunden von 9 bis 17 Uhr mit Fahrzeugen, etwa weil ein Geraet tagsueber
+nichts zaehlt, die Uhr aber weiterlaeuft), trennen die Dateigrenzen den Aufenthalt in Teile ("dateigrenze", ungeprueft): Dann ist die Angabe
+der Verwaltung der einzige Hinweis.
 
 Ablauf: erster Lauf nur mit gueltigen Uhren -> Montagetage -> Uhr-Rekonstruktion -> zweiter Lauf mit den rekonstruierten Segmenten.
 Reines Python. Aufruf ueber einsaetze.py."""
 import bisect
 import collections
 import datetime as dt
+import functools
 import hashlib
 import math
 import os
@@ -63,9 +74,12 @@ TAGE_VERGLEICH = 7
 Z_SICHER, Z_MOEGLICH, Z_STARK = 4.0, 2.5, 8.0
 PERMUTATIONEN, P_TAG, NAEHE_MIN = 300, 0.01, 30
 TRENNEN = ("umhaengen", "inbetriebnahme", "inbetriebnahme_ungeprueft", "aktionstag")
-ZUSAMMEN_TAGE = 2
+ZUSAMMEN_TAGE, ZUSAMMEN_MAX_FZ = 2, 50
 SUCHE_TAGE = 21
 MIN_STELLE_MIN = 10
+E_MIN, UMGEBUNG = 20.0, dt.timedelta(hours=1)
+VERFEINERN_VOR, VERFEINERN_NACH = bruch.MIN_ABSCHNITT_TAGE + 2, 2
+MIN_TAGSUEBER = 0.5
 NULL_TAGE, NULL_MIN, NULL_ABSTAND = 45, 15, 10
 KMIN, KBIN, KMAX = 15, 2, 80
 TAG = dt.timedelta(days=1)
@@ -73,10 +87,12 @@ STUNDE = dt.timedelta(hours=1)
 CODE_DATEIEN = ("bewegungen.py", "uhr_rekonstruktion.py", "dsd2csv.py", "bruch.py", "kalender.py", "uhr_belege.py", "rauschen.py")
 
 
+@functools.lru_cache(maxsize=None)
 def werktag(tag):
     return tag.weekday() < 5 and not kalender.feiertag(tag)
 
 
+@functools.lru_cache(maxsize=None)
 def ferien(tag):
     return kalender.besonderer_tag(tag) == "ferien"
 
@@ -138,10 +154,13 @@ def kandidaten(s):
     pausen, je_tag = [], {}
     for a, b in zip(zeiten, zeiten[1:]):
         h = (b - a).total_seconds() / 3600
-        tags = sum(_beschnitten(a, b, a.date() + i * TAG) for i in range((b.date() - a.date()).days + 1) if werktag(a.date() + i * TAG))
-        if h >= PAUSE_H and (tags >= 1.0 or h > PAUSE_LANG_H):
-            pausen.append({"art": "pause", "von": a, "bis": b, "stunden": round(h, 1)})
+        if h >= PAUSE_H:
+            tags = sum(_beschnitten(a, b, a.date() + i * TAG) for i in range((b.date() - a.date()).days + 1) if werktag(a.date() + i * TAG))
+            if tags >= 1.0 or h > PAUSE_LANG_H:
+                pausen.append({"art": "pause", "von": a, "bis": b, "stunden": round(h, 1)})
         tag = a.date()
+        if tag == b.date() and h <= je_tag.get(tag, (0,))[0]:
+            continue  # der Teil im FENSTER ist nicht laenger als die ganze Luecke: kein neues Maximum des Tages
         while tag <= b.date():
             if werktag(tag):
                 lb = _beschnitten(a, b, tag)
@@ -160,14 +179,35 @@ def kandidaten(s):
         if umkreis and lb > max(umkreis):
             out.append({"art": "luecke", "von": a, "bis": b, "stunden": round((b - a).total_seconds() / 3600, 2),
                         "vorsprung_h": round(lb - max(umkreis), 2)})
+    # Luecken, in denen nach dem Verkehr davor oder danach viele Fahrzeuge zu erwarten waren
+    schon = {(k["von"], k["bis"]) for k in out}
+    for a, b in zip(zeiten, zeiten[1:]):
+        if (a, b) in schon or not MIN_STELLE_MIN * 60 <= (b - a).total_seconds() < PAUSE_H * 3600:
+            continue
+        if not werktag(a.date()) or _beschnitten(a, b, a.date()) * 60 < MIN_STELLE_MIN:
+            continue
+        e = erwartet(zeiten, a, b)
+        if e >= E_MIN:
+            out.append({"art": "luecke", "von": a, "bis": b, "stunden": round((b - a).total_seconds() / 3600, 2), "erwartet": round(e)})
     return sorted(out, key=lambda k: k["von"])
 
 
-def zusammenfassen(kand):
-    """Kandidaten, die weniger als ZUSAMMEN_TAGE auseinander liegen, sind ein Umbau (z.B. abends abgebaut, morgens aufgehaengt)."""
+def erwartet(zeiten, a, b):
+    """Zahl der Fahrzeuge, die in der Luecke (a, b) zu erwarten waren: Fahrzeuge in der Stunde davor bzw. danach (der groessere Wert) mal
+    Laenge der Luecke. Beim Umhaengen von einer lauten an eine ruhige Strasse ist die Stunde davor laut; eine natuerliche Luecke an einer
+    ruhigen Strasse hat auf beiden Seiten wenig Verkehr."""
+    vor = bisect.bisect_left(zeiten, a) - bisect.bisect_left(zeiten, a - UMGEBUNG)
+    nach = bisect.bisect_right(zeiten, b + UMGEBUNG) - bisect.bisect_right(zeiten, b)
+    return max(vor, nach) * (b - a).total_seconds() / UMGEBUNG.total_seconds()
+
+
+def zusammenfassen(kand, zeiten):
+    """Kandidaten, die weniger als ZUSAMMEN_TAGE auseinander liegen und zwischen denen hoechstens ZUSAMMEN_MAX_FZ Fahrzeuge liegen, sind ein
+    Umbau (z.B. abends abgebaut, morgens aufgehaengt, dazwischen Eintraege der Arbeiter). Liegt dazwischen Verkehr, bleiben sie getrennt."""
     out = []
     for k in kand:
-        if out and (k["von"] - out[-1]["bis"]).total_seconds() < ZUSAMMEN_TAGE * 86400:
+        zwischen = bisect.bisect_left(zeiten, k["von"]) - bisect.bisect_right(zeiten, out[-1]["bis"]) if out else 0
+        if out and (k["von"] - out[-1]["bis"]).total_seconds() < ZUSAMMEN_TAGE * 86400 and zwischen <= ZUSAMMEN_MAX_FZ:
             v = out[-1]
             out[-1] = dict(v, bis=max(v["bis"], k["bis"]), art="pause" if "pause" in (v["art"], k["art"]) else "luecke",
                            stunden=round((max(v["bis"], k["bis"]) - v["von"]).total_seconds() / 3600, 1), teile=v.get("teile", 1) + 1)
@@ -306,7 +346,7 @@ def montagetage(kand):
 def geraet_auswerten(x):
     """Kandidaten eines Geraets mit Aenderung, z und Stufe (x: dict mit s); ergaenzt x um agg, null, grenzen, kandidaten."""
     s = x["s"]
-    kand = zusammenfassen(kandidaten(s))
+    kand = zusammenfassen(kandidaten(s), [x[0] for x in s])
     agg = tagesaggregate(s)
     wochenmuster(kand)
     grenzen, null = [], []
@@ -314,8 +354,9 @@ def geraet_auswerten(x):
         for k in kand:  # der Tag (die Tage) des Kandidaten selbst bleiben aus dem Vergleich
             andere = [d for d in grenzen if not k["von"].date() <= d <= k["bis"].date()]
             neu = aenderung(agg, k["von"].date() - TAG, k["bis"].date() + TAG, andere)
-            # liegen zwei Kandidaten so dicht, dass die begrenzten Fenster zu kurz werden, gilt der unbegrenzte Vergleich
-            k["aenderung"] = neu if neu is not None or not grenzen else k.get("aenderung")
+            # liegen zwei Kandidaten so dicht, dass die begrenzten Fenster zu kurz werden, gilt der unbegrenzte Vergleich; nicht fuer Luecken,
+            # die nur ueber die Verkehrsmenge Kandidat sind (sonst erbt eine natuerliche Luecke kurz nach einem Umhaengen dessen Aenderung)
+            k["aenderung"] = neu if neu is not None or not grenzen or "erwartet" in k else k.get("aenderung")
         null = nullverteilung(agg, kand, grenzen)
         for k in kand:
             k.pop("null", None)
@@ -349,10 +390,12 @@ def schwache_pruefen(geraete, tage):
                     k["stufe"] = "moeglich"
 
 
-def laengste_luecke(s, tag):
+def laengste_luecke(x, tag):
     """(von, bis, Minuten) der laengsten Luecke im FENSTER eines Tages, wenn sie mindestens MIN_STELLE_MIN Minuten lang ist, sonst None."""
     a, b = dt.datetime.combine(tag, dt.time(FENSTER[0])), dt.datetime.combine(tag, dt.time(FENSTER[1]))
-    zeiten = [x[0] for x in s]
+    if "zeiten" not in x:
+        x["zeiten"] = [f[0] for f in x["s"]]
+    zeiten = x["zeiten"]
     reihe = [a] + zeiten[bisect.bisect_left(zeiten, a):bisect.bisect_left(zeiten, b)] + [b]
     x, y = max(zip(reihe, reihe[1:]), key=lambda p: p[1] - p[0])
     minuten = (y - x).total_seconds() / 60
@@ -373,7 +416,7 @@ def stufe2(geraete, tage):
             k["z"] = bewerten(k, x["null"])
             if k["z"] is None or k["z"] < Z_MOEGLICH:
                 continue
-            lu = laengste_luecke(x["s"], tag)
+            lu = laengste_luecke(x, tag)
             if not lu:  # ohne Unterbrechung laesst sich kein Display umhaengen
                 continue
             k.update(von=lu[0], bis=lu[1], stunden=round(lu[2] / 60, 2), stufe="aktionstag", mit=tage[tag])
@@ -392,11 +435,12 @@ def _verteilung(agg, tage):
     return {b: (h[b] + 0.5) / (n + 0.5 * k) for b in range(k)}
 
 
-def _stundenprofil(s, tage):
+def _stundenprofil(x, tage):
     """{Stunde: Fahrzeuge (ab KMIN) je Minute} im Mittel der Tage."""
-    tage = set(tage)
-    c = collections.Counter(t.hour for t, v, _i in s if t.date() in tage and v >= KMIN and FENSTER[0] <= t.hour < FENSTER[1])
-    return {h: (c[h] + 0.5) / (60.0 * len(tage)) for h in range(FENSTER[0], FENSTER[1])}
+    if "je_stunde" not in x:  # Fahrzeuge ab KMIN je (Tag, Stunde) im FENSTER, einmal je Geraet
+        x["je_stunde"] = collections.Counter((t.date(), t.hour) for t, v, _i in x["s"] if v >= KMIN and FENSTER[0] <= t.hour < FENSTER[1])
+    c = x["je_stunde"]
+    return {h: (sum(c[(d, h)] for d in tage) + 0.5) / (60.0 * len(tage)) for h in range(FENSTER[0], FENSTER[1])}
 
 
 def _integral(lv, ln, a, b, luecke):
@@ -421,11 +465,13 @@ def tagesprobe(x, k, rng):
     if not seiten:
         return None
     pv, pn = _verteilung(x["agg"], seiten[0]), _verteilung(x["agg"], seiten[1])
-    lv, ln = _stundenprofil(x["s"], seiten[0]), _stundenprofil(x["s"], seiten[1])
+    lv, ln = _stundenprofil(x, seiten[0]), _stundenprofil(x, seiten[1])
     a, b = dt.datetime.combine(tag, dt.time(FENSTER[0])), dt.datetime.combine(tag, dt.time(FENSTER[1]))
     luecke = (k["von"], k["bis"])
     fz, vorig = [], a
-    for t, v, _i in x["s"]:
+    if "zeiten" not in x:
+        x["zeiten"] = [f[0] for f in x["s"]]
+    for t, v, _i in x["s"][bisect.bisect_left(x["zeiten"], a):bisect.bisect_left(x["zeiten"], b)]:
         if not (a <= t < b and v >= KMIN):
             continue
         w = math.log(pv[min(v, KMAX) // KBIN] / pn[min(v, KMAX) // KBIN])
@@ -462,14 +508,22 @@ def tagesproben(geraete):
     wird zum Eingriff. Luecken ueber Nacht behalten ihre Einstufung."""
     rng = random.Random(1)
     for x in geraete:
+        offen = [k for k in x["kandidaten"] if k["stufe"] in ("umhaengen", "aktionstag") and k["von"].date() == k["bis"].date()]
+        weg = []
+        for _durchgang in range(3):  # wegfallende Kandidaten sind keine Grenzen der Vergleichsfenster mehr; die anderen werden neu geprueft
+            for k in offen:
+                k["tagesprobe"] = tagesprobe(x, k, rng)
+            weg = [k for k in offen if not (k["tagesprobe"] and k["tagesprobe"]["stimmig"])]
+            grenzen = montagetage([k for k in x["kandidaten"] if not any(k is w for w in weg)])
+            if grenzen == x["grenzen"]:
+                break
+            x["grenzen"] = grenzen
         behalten = []
         for k in x["kandidaten"]:
-            if k["stufe"] in ("umhaengen", "aktionstag") and k["von"].date() == k["bis"].date():
-                k["tagesprobe"] = tagesprobe(x, k, rng)
-                if not (k["tagesprobe"] and k["tagesprobe"]["stimmig"]):
-                    if k["stufe"] == "aktionstag":
-                        continue
-                    k["stufe"] = "eingriff"
+            if any(k is w for w in weg):
+                if k["stufe"] == "aktionstag":
+                    continue
+                k["stufe"] = "eingriff"
             behalten.append(k)
         x["kandidaten"] = behalten
 
@@ -558,19 +612,97 @@ def aufenthalte(x, limits):
         br = bruch.erkenne(fz, sp, max(10, int(round(0.5 * lim))) if lim else 15, lim, kalender.besonderer_tag)
         brueche = [{"datum": b_["datum"], "wahrscheinlichkeit": b_.get("wahrscheinlichkeit")} for b_ in br.get("brueche") or []] \
             if br.get("geprueft") else []
-        # Teile zwischen den Bruechen (Grenze: Mitternacht vor dem Bruchtag)
-        schnitte = [dt.datetime.combine(dt.date.fromisoformat(b_["datum"]), dt.time()) for b_ in brueche]
+        # Teile zwischen den Bruechen, getrennt am verfeinerten Zeitpunkt
+        tags = tagsueber(teil)
+        if (not br.get("geprueft") or tags < MIN_TAGSUEBER) and len(je_datei) > 1:  # ohne Bruchsuche: Dateigrenzen (erstes Fahrzeug je Datei)
+            anfang = sorted(min(t for t, _v, j in teil if j == i) for i in je_datei)[1:]
+            grund = br.get("grund") if not br.get("geprueft") else "tagsüber kaum Daten (%d %% der Werktagsstunden 9 bis 17 Uhr)" % round(100 * tags)
+            brueche = [{"datum": t.date().isoformat(), "zeit": t, "verfeinert": False, "art": "dateigrenze", "wahrscheinlichkeit": None,
+                        "grund": grund} for t in anfang]
+        tage = [dt.datetime.combine(dt.date.fromisoformat(b_["datum"]), dt.time()) for b_ in brueche]
+        schnitte = []
+        for k, (b_, mitternacht) in enumerate(zip(brueche, tage)):
+            if b_.get("art") == "dateigrenze":
+                schnitte.append(b_["zeit"])
+                continue
+            links = schnitte[-1] if schnitte else a
+            rechts = tage[k + 1] if k + 1 < len(tage) else b
+            fein = verfeinern(teil, mitternacht, links, rechts)
+            b_["zeit"], b_["verfeinert"] = fein or mitternacht, fein is not None
+            schnitte.append(b_["zeit"])
         teile = []
         for j, (p, q) in enumerate(zip([a] + schnitte, schnitte + [b])):
             tz = [(t, v, i) for t, v, i in teil if p <= t < q or (j == len(schnitte) and t == q)]
-            if tz:  # von, bis: erstes und letztes Fahrzeug
+            if tz:  # von, bis: erstes und letztes Fahrzeug; grenze: Art der Grenze davor (bruch, dateigrenze; None am Beginn)
                 teile.append({"von": tz[0][0], "bis": tz[-1][0], "tage": len({t.date() for t, _v, _i in tz}), "fahrzeuge": len(tz),
+                              "grenze": (brueche[j - 1].get("art") or "bruch") if j else None,
                               "dateien": _je_datei(tz, dateien, x["rekon"]), "merkmal": merkmal([(t, v) for t, v, _i in tz])})
         zeilen, leer = stunden(fz, sp, a, b)
         out.append({"nr": len(out) + 1, "von": a, "bis": b, "beginn": _bewegung(kb), "ende": _bewegung(ke), "konfidenz": konfidenz(kb),
                     "tage": len({t.date() for t, _v, _i in teil}), "fahrzeuge": len(teil), "limit": lim, "dateien": _je_datei(teil, dateien, x["rekon"]),
                     "brueche": brueche, "teile": teile, "zeilen": zeilen, "voll_ohne_fahrzeuge": leer})
     return out
+
+
+def tagsueber(teil):
+    """Anteil der Werktagsstunden von 9 bis 17 Uhr mit mindestens einem Fahrzeug (Werktage mit Daten)."""
+    tage = {t.date() for t, _v, _i in teil if werktag(t.date())}
+    stunden = {(t.date(), t.hour) for t, _v, _i in teil if 9 <= t.hour < 17 and werktag(t.date())}
+    return len(stunden) / (8 * len(tage)) if tage else 0.0
+
+
+def _profil(teil, von, bis):
+    """(Tempoverteilung ab KMIN in KBIN-Klassen, Fahrzeuge je Stunde nach (Tagtyp, Stunde)) der Fahrzeuge in [von, bis)."""
+    h, n, tage = collections.Counter(), collections.Counter(), collections.defaultdict(set)
+    for t, v, _i in teil:
+        if von <= t < bis and v >= KMIN:
+            h[min(v, KMAX) // KBIN] += 1
+            n[(bruch.TAGTYP(t.date()), t.hour)] += 1
+            tage[bruch.TAGTYP(t.date())].add(t.date())
+    m, k = sum(h.values()), KMAX // KBIN + 1
+    p = {b: (h[b] + 0.5) / (m + 0.5 * k) for b in range(k)}
+    lam = {(typ, std): (n[(typ, std)] + 0.5) / max(len(tage[typ]), 1) for typ in range(3) for std in range(24)}
+    return p, lam, m
+
+
+def _rate_integral(lv, ln, a, b):
+    """Integral von (lambda_vor - lambda_nach) ueber [a, b] in Fahrzeugen (Stundenraster nach Tagtyp)."""
+    out, t = 0.0, a
+    while t < b:
+        e = min(b, t.replace(minute=0, second=0, microsecond=0) + STUNDE)
+        schl = (bruch.TAGTYP(t.date()), t.hour)
+        out += (lv[schl] - ln[schl]) * (e - t).total_seconds() / 3600
+        t = e
+    return out
+
+
+def verfeinern(teil, mitternacht, links, rechts):
+    """Zeitpunkt des Wechsels nahe dem Bruchtag (siehe Modulkopf); None, wenn er am Rand des Suchfensters liegt oder die Daten nicht reichen.
+    teil: [(Zeit, v, Datei-Index)] des Aufenthalts; links, rechts: Grenzen der beiden Teile um den Bruch."""
+    w0, w1 = max(links, mitternacht - VERFEINERN_VOR * TAG), min(rechts, mitternacht + VERFEINERN_NACH * TAG)
+    tau = mitternacht
+    for _durchgang in range(2):
+        pv, lv, mv = _profil(teil, links, tau)
+        pn, ln, mn = _profil(teil, tau, rechts)
+        if mv < 200 or mn < 200:
+            return None
+        kum, best, beste, vorig = 0.0, 0.0, None, w0
+        for t, v, _i in teil:
+            if not (w0 <= t < w1) or v < KMIN:
+                continue
+            schl = (bruch.TAGTYP(t.date()), t.hour)
+            kum += (math.log(pv[min(v, KMAX) // KBIN] / pn[min(v, KMAX) // KBIN]) + math.log(lv[schl] / ln[schl])
+                    - _rate_integral(lv, ln, vorig, t))
+            vorig = t
+            if kum > best:
+                best, beste = kum, t
+        if beste is None:
+            return None
+        nach = next((t for t, v, _i in teil if t > beste and v >= KMIN), None)
+        if nach is None or nach >= w1 or beste <= w0:
+            return None
+        tau = nach
+    return tau
 
 
 def _je_datei(tz, dateien, rekon):
