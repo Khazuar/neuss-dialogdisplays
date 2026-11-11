@@ -29,6 +29,8 @@ in Teile.
    laengere Ereignisse, belege/ereignisse.json), unerklaert. Die Brueche in den Aufenthalten werden genauso erklaert, ohne die Bewegung.
 4. Je Einsatz (Durchgang C): je Einsatz-Abschnitt Rauschboden und Regenanteil, Kennzahlen, Gefaehrdung, Laerm, Naechte, Zellen,
    Verhaltensgruppen und das bereinigte Aggregat.
+5. Je Einsatz-Abschnitt das Einschwingen nach seinem Beginn (aus dem bereinigten Aggregat) und die Art der Aenderung an seiner Grenze (aus den
+   Rohdaten der Aufenthalte), siehe einschwingen.py.
 
 Messungen, deren Auswertung die Verwaltung selbst "defekt" oder "fehlerhaft" nennt (PDF im selben Ordner, bei Datum im Namen mit gleichem
 Datum wie die Datei), stehen unter "defekt"; ihre Daten gehen in die Einsaetze ein.
@@ -48,6 +50,7 @@ sys.path.insert(0, HIER)
 import bewegungen  # noqa: E402
 import bruch  # noqa: E402
 import dsd2csv  # noqa: E402
+import einschwingen  # noqa: E402
 import gruppen  # noqa: E402
 import kalender  # noqa: E402
 import seiten_bauen  # noqa: E402
@@ -674,6 +677,71 @@ def bilden(auswertung, metadaten, bew, wurzel=HIER, ereignisse=(), verwaltung=No
              "defekt": defekt(messungen, wurzel), "aktionstage": bew["aktionstage"], "geraete": geraete}, teile_von, messungen)
 
 
+MONTAGE_GENAU = ("transportluecke", "transportluecke_aktionstag", "aktionstag", "inbetriebnahme")
+
+
+def beginn_des_abschnitts(a):
+    """(Beginn, Ende der Daten davor, genau) eines Einsatz-Abschnitts aus seiner Grenze davor. genau: Montage mit Transportluecke, am
+    Aktionstag oder Inbetriebnahme nach Pause mit Vergleich (erstes Fahrzeug, spaetestens) oder verfeinerter Bruch."""
+    g = a["grenze_davor"]
+    if g["art"] == "bewegung" and g.get("bewegung"):
+        b = g["bewegung"]
+        return _zeit(b["bis"]), _zeit(b["von"]), b.get("konfidenz") in MONTAGE_GENAU
+    if g["art"] == "bruch" and g.get("zeit"):
+        t = _zeit(g["zeit"])
+        return t, t, bool(g.get("verfeinert"))
+    t = _zeit(a["von"])
+    return t, t, False
+
+
+def einschwingen_und_art(einsaetze, aggregate, geraete):
+    """Je Einsatz-Abschnitt "einschwingen" (einschwingen.einschwingen, aus dem bereinigten Aggregat des Einsatzes) und an seiner Grenze davor
+    "aenderung" (einschwingen.klassifizieren, aus den Rohdaten der Aufenthalte). Beginnt ein Einsatz mit einer Bewegung, ist das ein
+    Standortwechsel, ausser der Aufenthalt davor gehoert zu einem Einsatz am selben Standort (andere Fahrtrichtung, anderer Mast?): dann
+    wird wie bei einem Bruch verglichen."""
+    auf_von = {g["geraet"]: g["aufenthalte"] for g in geraete}
+    seite_von = {}  # (Geraet, Aufenthalt) -> Seite des Einsatzes mit dem letzten Abschnitt darin
+    for e in sorted(einsaetze, key=lambda x: x["von_zeit"]):
+        for a in e["abschnitte"]:
+            seite_von[(e["geraet"], a["aufenthalt"])] = e["seite"]
+    roh = {}
+
+    def stunden(geraet, nr):
+        if (geraet, nr) not in roh:
+            roh[(geraet, nr)] = einschwingen.stunden_aus(auf_von[geraet][nr - 1]["zeilen"])
+        return roh[(geraet, nr)]
+
+    def grenzen(geraet, nr):  # Beginn, Brueche und Ende des Aufenthalts
+        a = auf_von[geraet][nr - 1]
+        return sorted([_zeit(a["von"]), _zeit(a["bis"])] + [_zeit(b.get("zeit") or b["datum"]) for b in a["brueche"]])
+    for e in einsaetze:
+        agg = aggregate.get(e["id"]) or []
+        for a in e["abschnitte"]:
+            beginn, davor, genau = beginn_des_abschnitts(a)
+            ende = _zeit(a["bis"])
+            es = einschwingen.einschwingen(einschwingen.stunden_aus(agg, a["nr"]), beginn, ende)
+            if es:
+                es["zeit_genau"] = genau
+                a["einschwingen"] = es
+            g = a["grenze_davor"]
+            if g["art"] == "datenbeginn":
+                continue
+            nr = a["aufenthalt"]
+            neu = g["art"] == "bewegung" and a["nr"] == 1 and seite_von.get((e["geraet"], nr - 1)) != e["seite"]
+            if g["art"] == "bewegung":
+                vor_nr = nr - 1 if nr > 1 else None
+            else:
+                vor_nr = nr
+            if vor_nr is None and not neu:
+                g["aenderung"] = {"klasse": "unklar"}
+                continue
+            vor = stunden(e["geraet"], vor_nr) if vor_nr else []
+            gr_vor = [x for x in grenzen(e["geraet"], vor_nr) if x < davor] if vor_nr else []
+            g["aenderung"] = einschwingen.klassifizieren(vor, stunden(e["geraet"], nr), davor, beginn, montage_neu=neu,
+                                                       es=es, vor_von=gr_vor[-1] if gr_vor else None,
+                                                       nach_bis=ende, bewegung=g["art"] == "bewegung")
+
+
 def auswerten(auswertung, metadaten, wurzel=HIER, ereignisse_pfad=None, verwaltung_pfad=None, korrekturen_pfad=None, cache=None, jobs=1):
     """(einsaetze.json, Zellen je Einsatz, Aggregat je Einsatz)."""
     bew, benutzt_b = bewegungen.berechnen(auswertung, wurzel, cache)
@@ -694,6 +762,7 @@ def auswerten(auswertung, metadaten, wurzel=HIER, ereignisse_pfad=None, verwaltu
         if erg:
             e["kennzahlen"] = erg["kennzahlen"]
             zellen[e["id"]], aggregate[e["id"]] = erg["zellen"], erg["aggregat"]
+    einschwingen_und_art(out["einsaetze"], aggregate, bew["geraete"])
     if cache:  # nicht mehr benutzte Einsaetze, Bewegungen und Verhaltensgruppen entfernen (die Ebenen je Datei raeumt dsd2csv.py auf)
         zwischenspeicher.Zwischenspeicher(cache).aufraeumen(benutzt, ("datei", "datei-ohne-numpy"))
     return out, zellen, aggregate

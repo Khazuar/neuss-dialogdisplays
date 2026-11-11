@@ -25,6 +25,7 @@ dagegen nur ein exaktes Parsing der DSD-Dateien.
 | Warum gibt es einen Bruch (Umhängen, Ferien, unerklärt)? | `brueche.csv` |
 | Wann hat ein Gerät tatsächlich wo gemessen (Einsätze, unsere Zuordnung)? | `einsaetze.csv`, Kennzahlen mit `bereich` = `einsatz` |
 | Wann wurde ein Gerät umgehängt oder in Betrieb genommen (minutengenau)? | `bewegungen.csv` |
+| Wie schnell spielt sich der Verkehr nach einer Montage oder Änderung ein, und was hat sich geändert? | `einschwingen.csv`, `einschwingen-schritte.csv` |
 | Kennzahlen je Kalendertag (Ferien, Feiertage, Wochentag) | `tage.csv` |
 | Eigene Zeitfenster (zum Beispiel 7–8 Uhr, nur Dienstage, nur Ferien), Verteilungen, jede andere Frage nach Stunde und Geschwindigkeit | `stunden/<standort_seite>.csv.gz` oder `stunden.csv.gz` |
 | War in einer Stunde nichts los oder wurde nichts aufgezeichnet? | `luecken.csv` zusammen mit den Stundenzeilen |
@@ -158,6 +159,24 @@ Aus dem Gesamtstrom aller Dateien eines Geräts ([docs/einsaetze.md](docs/einsae
 `aktionstag`), `von`, `bis` (letztes Fahrzeug davor, erstes danach), `z` (Stärke der Änderung des Verkehrs), `fahrzeuge_je_stunde_vorher`,
 `fahrzeuge_je_stunde_nachher`, `tempo_diff_kmh`, `tvd` (Unterschied der Tempoverteilungen, Werktage 7–19 Uhr), `wechsel_im_tagesverlauf`
 (Zeitpunkt aus der Tagesprobe), `aktionstag_mit` (Geräte, die am selben Tag sicher umgehängt wurden).
+
+### `einschwingen.csv` (eine Zeile je Einsatz-Abschnitt)
+
+Wie sich der Verkehr nach dem Beginn eines Einsatz-Abschnitts (Montage, Bruch) einspielt, und welche Art von Änderung an seiner Grenze
+wahrscheinlich ist ([docs/einschwingen.md](docs/einschwingen.md)): `einsatz_id`, `abschnitt_nr`, `beginn` (erste volle Stunde),
+`zeit_genau` (Montage oder verfeinerter Bruch), `grenze` (Art der Grenze davor wie in `einsaetze.csv`), `aenderung` (`standortwechsel`,
+`fahrtrichtung`, `ausrichtung`, `ort_genau`, `strasse`, `keine`, `unklar`; ein Hinweis, kein Beweis), die Merkmale dazu aus den Werktagen davor
+und danach: `menge_ln` (ln des Verhältnisses der Fahrzeuge je Stunde), `tagesgang_tvd`, `spitze_vorher`, `spitze_nachher` (ln morgens 6–9 Uhr /
+abends 15–18 Uhr), `tempo_median_diff_kmh`, `tempo_faktor`, `anteil_sofort` (Anteil der Tempoänderung, der im ersten Schritt schon da ist),
+`werktage_vorher`, `werktage_nachher`; dann `schritt_tage`, `fahrzeuge_je_tag`, `urteil` (`einschwingen`, `sofort`, `zu_kurz`), `stabil_tage`
+(3τ) und je Größe (`mittel`, `v85`, `v95`) `stand` und `schwankung` ab Tag 21, `abweichung_erster` (erster Schritt gegen den Stand), `a`,
+`tau`, `dbic` (Einschwing-Kurve und ihr Vorteil gegenüber einem gleichbleibenden Stand; belegt ab 6).
+
+### `einschwingen-schritte.csv` (eine Zeile je Schritt)
+
+`einsatz_id`, `abschnitt_nr`, `von_tag`, `bis_tag` (Tage nach dem Beginn), `von`, `bis`, `fahrzeuge`, `mittel_kmh`, `v85_kmh`, `v95_kmh`
+(Werktag, Samstag und Sonntag herausgerechnet, Quantile in der km/h-Klasse interpoliert), `abdeckung` (Anteil vollständig aufgezeichneter
+Stunden).
 
 ### `luecken.csv`
 

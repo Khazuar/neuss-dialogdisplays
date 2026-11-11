@@ -9,7 +9,8 @@ Eingaben: auswertung.json (dsd2csv.py), die Zwischenstaende <Ordner>/<Standort>/
 belege/metadaten.json und belege/uhr-bewertung.json. Ausgabe in <ziel>:
   messungen.csv, abschnitte.csv, kennzahlen.csv, tage.csv, luecken.csv (Klartext) sowie stunden/<standort>.csv.gz je Standortseite und
   stunden.csv.gz (alle Standorte); die Stundendateien sind gzip-komprimiert (Klartext waere rund 280 MB). Mit einsaetze.json zusaetzlich
-  einsaetze.csv, brueche.csv, bewegungen.csv und einsaetze-stunden.csv.gz (docs/einsaetze.md).
+  einsaetze.csv, brueche.csv, bewegungen.csv und einsaetze-stunden.csv.gz (docs/einsaetze.md); einschwingen.csv und
+  einschwingen-schritte.csv (docs/einschwingen.md).
 Die Dateien enthalten nur, was dsd2csv.py ohnehin berechnet: Ortszeit, nur nutzbare Zeit, Rauschboden und Regenanteil abgezogen,
 Abschnitte nach den Bruechen. Reihenfolge und Format sind deterministisch (gleiche Eingabe, gleiche Bytes).
 """
@@ -149,7 +150,34 @@ def einsaetze_schreiben(ziel, einsaetze, auswertung, w_k):
             w_w.writerow([g["geraet"], k["stufe"], k["art"], k["von"], k["bis"], _zelle(k.get("z")), _zelle(fz[0]), _zelle(fz[1]),
                           _zelle(k.get("tempo_diff")), _zelle(k.get("tvd")), k.get("tagesprobe") or "", " ".join(k.get("mit") or [])])
     fh_w.close()
+    einschwingen_schreiben(ziel, einsaetze)
     return n_e, n_b, n_k
+
+
+def einschwingen_schreiben(ziel, einsaetze):
+    """einschwingen.csv (je Einsatz-Abschnitt: Beginn, Art der Aenderung, Urteil) und einschwingen-schritte.csv (je Schritt)."""
+    fh_a, w_a = _schreiber(os.path.join(ziel, "einschwingen.csv"), [
+        "einsatz_id", "abschnitt_nr", "beginn", "zeit_genau", "grenze", "aenderung", "menge_ln", "tagesgang_tvd", "spitze_vorher", "spitze_nachher",
+        "tempo_median_diff_kmh", "tempo_faktor", "anteil_sofort", "werktage_vorher", "werktage_nachher", "schritt_tage", "fahrzeuge_je_tag", "urteil",
+        "stabil_tage"] + [f"{g}_{k}" for g in ("mittel", "v85", "v95") for k in ("stand", "schwankung", "abweichung_erster", "a", "tau", "dbic")])
+    fh_s, w_s = _schreiber(os.path.join(ziel, "einschwingen-schritte.csv"), [
+        "einsatz_id", "abschnitt_nr", "von_tag", "bis_tag", "von", "bis", "fahrzeuge", "mittel_kmh", "v85_kmh", "v95_kmh", "abdeckung"])
+    for e in einsaetze.get("einsaetze", []):
+        for a in e["abschnitte"]:
+            es = a.get("einschwingen") or {}
+            g = a["grenze_davor"]
+            k = g.get("aenderung") or {}
+            w_a.writerow([e["id"], a["nr"], es.get("beginn", ""), _zelle(es.get("zeit_genau")), g["art"], k.get("klasse", "")]
+                         + [_zelle(k.get(x)) for x in ("menge", "tvd_profil", "spitze_vor", "spitze_nach", "tempo", "faktor", "sofort", "tage_vor",
+                                                        "tage_nach")]
+                         + [_zelle(es.get(x)) for x in ("schritt_tage", "fahrzeuge_je_tag", "urteil", "stabil_tage")]
+                         + [_zelle((es.get(gr) or {}).get(x)) for gr in ("mittel", "v85", "v95")
+                            for x in ("stand", "schwankung", "abweichung_erster", "a", "tau", "dbic")])
+            for s in es.get("schritte", []):
+                w_s.writerow([e["id"], a["nr"], _zelle(s["von_tag"]), _zelle(s["bis_tag"]), s["von"], s["bis"], s["fahrzeuge"], _zelle(s["mittel"]),
+                              _zelle(s["v85"]), _zelle(s["v95"]), _zelle(s["abdeckung"])])
+    fh_a.close()
+    fh_s.close()
 
 
 def _grenze(g):
