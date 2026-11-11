@@ -22,7 +22,16 @@
     if (window.history && window.history.replaceState && window.location.hash !== neu) { window.history.replaceState(null, "", neu); }
   }
 
+  function sichtbar() {  // Reiter, die es für die gewählte Messung gibt (data-ohne an der Option, siehe seiten_bauen.ohne_reiter)
+    var opt = messwahl ? messwahl.querySelector('option[value="' + String(messung).replace(/"/g, "") + '"]') : null;
+    var ohne = opt ? (opt.getAttribute("data-ohne") || "").split(" ") : [];
+    return knoepfe.filter(function (k) { return ohne.indexOf(k.getAttribute("data-ziel")) < 0; });
+  }
+
   function zeige() {
+    var da = sichtbar();
+    for (i = 0; i < knoepfe.length; i++) { knoepfe[i].hidden = da.indexOf(knoepfe[i]) < 0; }
+    if (da.length && !da.some(function (k) { return k.getAttribute("data-ziel") === reiter; })) { reiter = da[0].getAttribute("data-ziel"); }
     for (i = 0; i < knoepfe.length; i++) {
       var an = knoepfe[i].getAttribute("data-ziel") === reiter;
       knoepfe[i].setAttribute("aria-selected", an ? "true" : "false");
@@ -53,7 +62,7 @@
   for (i = 0; i < knoepfe.length; i++) {
     knoepfe[i].addEventListener("click", function () { reiter = this.getAttribute("data-ziel"); zeige(); });
     knoepfe[i].addEventListener("keydown", function (ev) {  // Pfeiltasten zwischen den Reitern
-      var liste = knoepfe, k = liste.indexOf(this);
+      var liste = sichtbar(), k = liste.indexOf(this);
       if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
         k = (k + (ev.key === "ArrowRight" ? 1 : liste.length - 1)) % liste.length;
         reiter = liste[k].getAttribute("data-ziel");

@@ -254,6 +254,33 @@ class Einsatz(unittest.TestCase):
         self.assertIn("Umhängen (Transportlücke) 13.12.2024 11:28–11:55, Änderung z = 23,4, Wechsel im Tagesverlauf um 11:50", h)
         self.assertIn('href="rosmarinstrasse.html#m-79-rosmarinstrasse-16"', h)
         self.assertIn("92 % der Tage in der Datei", h)
+        # Vergleich mit der Verwaltung nur an der Messung: der Einsatz hat keinen Teil im Reiter, seite.js blendet den Knopf aus
+        self.assertIn('<option value="e-07-2024-einsteinstrasse-15" data-ohne="vergleich">', h)
+        vergleich = h[h.index('id="r-vergleich"'):]
+        vergleich = vergleich[:vergleich.index("</section>")]
+        self.assertIn(f'data-messung="{m["id"]}"', vergleich)
+        self.assertNotIn('data-messung="e-07-2024-einsteinstrasse-15"', vergleich)
+
+    def test_einschwingen_je_abschnitt(self):
+        """Reiter Einschwingen: am Einsatz Urteil, Art der Änderung und Diagramm; an der Messung nur der Verweis auf den Einsatz."""
+        rel = "07_2024_ Einsteinstraße"
+        m = s.messung_eintrag(rel, zeile(), {"standorte": {rel: {"messungen": []}}}, {}, {})
+        ein = self.einsatz(m)
+        schritte = [{"von_tag": i, "bis_tag": i + 1, "von": f"2024-09-{5 + i:02d}T15:00:00", "bis": f"2024-09-{6 + i:02d}T15:00:00", "abdeckung": 1.0,
+                     "mittel": 30 + 4 * 0.7 ** i, "v85": 36 + 4 * 0.7 ** i, "v95": 40 + 4 * 0.7 ** i, "fahrzeuge": 1200} for i in range(24)]
+        stand = {"stand": 30.0, "schwankung": 0.3, "erster": 34.0, "abweichung_erster": 4.0, "tau": 3, "a": 4.0, "dbic": 40.0, "belegt": True}
+        ein["abschnitte"][0]["einschwingen"] = {"beginn": "2024-09-04T15:00:00", "schritt_tage": 1, "fahrzeuge_je_tag": 1200, "schritte": schritte,
+                                                "tagtyp_versatz": {"werktag": -0.2}, "urteil": "einschwingen", "stabil_tage": 9, "zeit_genau": True,
+                                                "mittel": stand, "v85": dict(stand, stand=36.0), "v95": dict(stand, stand=40.0)}
+        ein["abschnitte"][0]["grenze_davor"]["aenderung"] = {"klasse": "standortwechsel"}
+        m["einsatz_info"], m["einsatz_eintrag"] = ein, s.einsatz_eintrag(ein, m, {})
+        h = s.standortseite("Einsteinstraße", [m], index=self.index(m, ein))
+        self.assertIn('id="r-einschwingen"', h)
+        self.assertIn("<strong>Einschwingen:</strong> Zu Beginn fuhren die Fahrzeuge im Mittel etwa 4,0&nbsp;km/h schneller als später.", h)
+        self.assertIn("Standortwechsel (Montage: das Gerät kam von einem anderen Ort)", h)
+        self.assertEqual(h.count('class="es-linie es-mittel"'), 1)
+        self.assertIn("stabil nach ~9 Tagen", h)
+        self.assertIn("Das Einschwingen gibt es je Einsatz", h)
 
     def test_defekte_messung_nur_als_einsatz(self):
         """Eine Messung, die die Verwaltung selbst „defekt“ nennt, steht nur als Einsatz da, mit Hinweis."""
@@ -265,6 +292,8 @@ class Einsatz(unittest.TestCase):
         self.assertIn("bezeichnet die Verwaltung selbst als fehlerhaft", h)
         self.assertIn('data-messung="e-07-2024-einsteinstrasse-15"', h)
         self.assertNotIn(f'data-messung="{m["id"]}"', h)
+        self.assertNotIn('id="r-vergleich"', h)  # nur ein Einsatz, der nicht die Messung ist: kein Reiter Vergleich
+        self.assertNotIn('data-ziel="vergleich"', h)
         a = s.abschnitte_uebersicht({"standorte": [zeile()]}, {"07_2024_ Einsteinstraße/_15.dsd": {"seite": "x", "defekt": "d.pdf"}})
         self.assertEqual(a, [])
 

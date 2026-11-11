@@ -26,6 +26,7 @@ import sys
 import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # python -I nimmt das Skriptverzeichnis nicht auf
+import einschwingen  # noqa: E402
 import gruppen  # noqa: E402
 import standorte  # noqa: E402
 from dsd2csv import aufprall_kmh, standort_slug  # noqa: E402
@@ -822,7 +823,7 @@ def beginn_text(beginn):
 
 
 def bruch_uebersicht(row, meta_messung, gleich, standort_name, mid):
-    """Reiter Messung: Abschnitte der Messreihe mit Zeitraum, Fahrzeugen und der Begründung jedes Bruchs."""
+    """Reiter Daten (id "messung"): Abschnitte der Messreihe mit Zeitraum, Fahrzeugen und der Begründung jedes Bruchs."""
     a = row.get("abschnitte")
     if not a:
         return ""
@@ -982,7 +983,7 @@ def vergleich_teil(row, meta_messung):
         zu = v.get("zuordnung") or {}
         z.append(f'<p class="muted">Zuordnung zu dieser DSD-Datei {e(METHODE_TEXT.get(zu.get("methode"), zu.get("methode")))}.</p>')
     if (row.get("abschnitte") or {}).get("liste"):
-        z.append('<p class="muted">Diese Messreihe hat Abschnitte (Reiter „Messung“); der Vergleich gilt für die ganze Datei, wie die Verwaltung sie berichtet.</p>')
+        z.append('<p class="muted">Diese Messreihe hat Abschnitte (Reiter „Daten“); der Vergleich gilt für die ganze Datei, wie die Verwaltung sie berichtet.</p>')
     z.append(f'<p class="muted">Herkunft und Zuordnung der Angaben: <a href="{REPO}/blob/main/docs/metadaten.md">Metadaten</a>.</p>')
     return "".join(z)
 
@@ -1383,7 +1384,8 @@ def verhaltensgruppen_kurz(vg):
             for s in (vg or {}).get("stadt", [])]
 
 
-REITER = [("allgemein", "Allgemein"), ("verwaltung", "Verwaltung"), ("messung", "Messung"), ("analyse", "Analyse"), ("gruppen", "Gruppen"), ("vergleich", "Vergleich"),
+REITER = [("allgemein", "Allgemein"), ("verwaltung", "Verwaltung"), ("messung", "Daten"), ("analyse", "Analyse"), ("einschwingen", "Einschwingen"),
+          ("gruppen", "Gruppen"), ("vergleich", "Vergleich"),
           ("gefaehrdung", "Gefährdung"), ("laerm", "Lärm")]
 
 
@@ -1602,7 +1604,7 @@ def _messung_link(mid, index, text=None):
 
 
 def einsatz_teil(m, index):
-    """Reiter Messung fuer einen Einsatz: Beginn und Ende, Einsatz-Abschnitte mit ihren Grenzen, Herkunft der Daten, Belege der Zuordnung."""
+    """Reiter Daten (id "messung") fuer einen Einsatz: Beginn und Ende, Einsatz-Abschnitte mit ihren Grenzen, Herkunft der Daten, Belege der Zuordnung."""
     ein = m["einsatz"]
     host = index.get(ein["messung"]) or {}
     badge = "ok" if ein["status"] == "bestaetigt" else "bad" if ein["status"] == "unsicher" else "mid"
@@ -1754,6 +1756,175 @@ def einsaetze_uebersicht(ein, auswertung, uebersicht, slug_von):
 
 
 
+ES_REIHEN = (("mittel", "Mittel", "es-mittel"), ("v85", "V85", "es-v85"), ("v95", "V95", "es-v95"))
+ES_B, ES_H, ES_L, ES_R, ES_T, ES_U = 760, 310, 46, 58, 24, 40
+
+
+def einschwingen_svg(es, limit):
+    """Mittel, V85 und V95 je Schritt nach dem Beginn eines Einsatz-Abschnitts, mit dem spaeteren Stand (gestrichelt, Band: Schwankung)."""
+    sch = es["schritte"]
+    xmax = max(s["bis_tag"] for s in sch)
+    werte = [s[g] for s in sch for g, _, _ in ES_REIHEN]
+    for g, _, _ in ES_REIHEN:
+        if es.get(g):
+            werte += [es[g]["stand"] - es[g]["schwankung"], es[g]["stand"] + es[g]["schwankung"]]
+    unten, oben = math.floor(min(werte) - 1), math.ceil(max(werte) + 1)
+    if limit and unten - 8 <= limit <= oben + 8:
+        unten, oben = min(unten, limit - 1), max(oben, limit + 1)
+    schritt = schritt_nice(oben - unten)
+    unten, oben = int(unten // schritt * schritt), int(-(-oben // schritt) * schritt)
+    pw, ph = ES_B - ES_L - ES_R, ES_H - ES_T - ES_U
+
+    def x(tag):
+        return ES_L + pw * tag / xmax
+
+    def y(v):
+        return ES_T + ph * (1 - (v - unten) / (oben - unten))
+    s = [f'<svg class="hist" viewBox="0 0 {ES_B} {ES_H}" role="img" aria-label="Mittleres Tempo, V85 und V95 je Schritt nach dem Beginn">']
+    v = unten
+    while v <= oben + 1e-9:
+        s.append(f'<line class="hist-gitter" x1="{ES_L}" x2="{ES_L + pw}" y1="{y(v):.1f}" y2="{y(v):.1f}"/>'
+                 f'<text class="hist-text" x="{ES_L - 5}" y="{y(v) + 4:.1f}" text-anchor="end">{dez(v, 0)}</text>')
+        v += schritt
+    tick = 7 if xmax > 21 else 2 if xmax > 6 else 1
+    for tg in range(0, int(xmax) + 1, tick):
+        s.append(f'<line class="hist-gitter" x1="{x(tg):.1f}" x2="{x(tg):.1f}" y1="{ES_T + ph}" y2="{ES_T + ph + 4}"/>'
+                 f'<text class="hist-text" x="{x(tg):.1f}" y="{ES_T + ph + 17}" text-anchor="middle">{tg}</text>')
+    s.append(f'<text class="hist-text" x="{ES_L + pw / 2:.1f}" y="{ES_H - 6}" text-anchor="middle">Tage nach dem Beginn</text>'
+             f'<text class="hist-text" x="4" y="12">km/h</text>')
+    bezug = einschwingen.BEZUG_AB
+    if es.get("mittel") and bezug < xmax:
+        s.append(f'<rect class="es-bezug" x="{x(bezug):.1f}" y="{ES_T}" width="{x(xmax) - x(bezug):.1f}" height="{ph}"/>'
+                 f'<text class="hist-text" x="{x(bezug) + 4:.1f}" y="{ES_T + 12}">Stand ab Tag {bezug}</text>')
+    if limit and unten <= limit <= oben:
+        s.append(f'<line class="hist-limit" x1="{ES_L}" x2="{ES_L + pw}" y1="{y(limit):.1f}" y2="{y(limit):.1f}"/>'
+                 f'<text class="hist-text hist-limit-text" x="{ES_L + pw - 4}" y="{y(limit) - 4:.1f}" text-anchor="end">Limit {limit}</text>')
+    if es.get("urteil") == "einschwingen" and es.get("stabil_tage") and es["stabil_tage"] < xmax:
+        xs = x(es["stabil_tage"])
+        s.append(f'<line class="hist-v85" x1="{xs:.1f}" x2="{xs:.1f}" y1="{ES_T}" y2="{ES_T + ph}"/>'
+                 f'<text class="hist-text" x="{xs + 4:.1f}" y="{ES_T + ph - 6}">stabil nach ~{dez(es["stabil_tage"], 0)} Tagen</text>')
+    letzte = []
+    for g, name, klasse in ES_REIHEN:
+        if es.get(g):
+            st, sd = es[g]["stand"], es[g]["schwankung"]
+            s.append(f'<rect class="es-band {klasse}" x="{ES_L}" y="{y(st + sd):.1f}" width="{pw}" height="{max(0.5, y(st - sd) - y(st + sd)):.1f}"/>'
+                     f'<line class="es-stand {klasse}" x1="{ES_L}" x2="{ES_L + pw}" y1="{y(st):.1f}" y2="{y(st):.1f}"/>')
+        punkte = " ".join(f'{x((p["von_tag"] + p["bis_tag"]) / 2):.1f},{y(p[g]):.1f}' for p in sch)
+        s.append(f'<polyline class="es-linie {klasse}" points="{punkte}"/>')
+        for p in sch:
+            s.append(f'<circle class="es-punkt {klasse}" cx="{x((p["von_tag"] + p["bis_tag"]) / 2):.1f}" cy="{y(p[g]):.1f}" r="3.5">'
+                     f'<title>Tag {dez(p["von_tag"], 0)} bis {dez(p["bis_tag"], 0)}: {name} {dez(p[g], 1)} km/h ({ganz(p["fahrzeuge"])} Fahrzeuge)</title></circle>')
+        letzte.append([y(sch[-1][g]), name])
+    letzte.sort()
+    for i in range(1, len(letzte)):  # Beschriftungen am rechten Rand nicht uebereinander
+        letzte[i][0] = max(letzte[i][0], letzte[i - 1][0] + 13)
+    for ly, name in letzte:
+        s.append(f'<text class="hist-text es-name" x="{ES_L + pw + 6}" y="{ly + 4:.1f}">{name}</text>')
+    s.append("</svg>")
+    return "".join(s)
+
+
+def _vz(x, stellen=1):
+    return ("+" if x > 0 else "−" if x < 0 else "±") + dez(abs(x), stellen)
+
+
+def aenderung_text(a):
+    """Art der Aenderung an einer Grenze (einschwingen.klassifizieren) mit den Merkmalen, in Worten (HTML)."""
+    k = a.get("klasse")
+    if not k:
+        return ""
+    text = e(einschwingen.KLASSE_TEXT.get(k, k))
+    if k == "standortwechsel" and "menge" not in a:
+        return text + " (Montage: das Gerät kam von einem anderen Ort)"
+    if "menge" not in a:
+        return text + (f' (Werktage davor: {a.get("tage_vor", 0)}, danach: {a.get("tage_nach", 0)})' if "tage_vor" in a else "")
+    teile = [f'Verkehrsmenge {_vz(100 * (math.exp(a["menge"]) - 1), 0)}&nbsp;%',
+             f'Tagesgang {"ähnlich" if a["tvd_profil"] < einschwingen.KLASSE_SCHWELLEN["tvd"] else "anders"} '
+             f'({dez(100 * a["tvd_profil"], 0)}&nbsp;% der Fahrzeuge zu anderen Stunden)',
+             f'Tempo (Median) {_vz(a["tempo"])}&nbsp;km/h' + (f' (Faktor {dez(a["faktor"], 3)})' if a.get("faktor") else "")]
+    if a.get("sofort") is not None:
+        teile.append(f'davon im ersten Schritt {dez(100 * a["sofort"], 0)}&nbsp;%')
+    if any(a.get("ferien") or []):
+        teile.append("Ferientage auf " + ("beiden Seiten" if all(a["ferien"]) else "einer Seite"))
+    return f'{text}: verglichen mit {a["tage_vor"]} Werktagen davor und {a["tage_nach"]} danach ' + ", ".join(teile)
+
+
+def einschwingen_urteil(es):
+    if es.get("urteil") == "zu_kurz":
+        return (f'Der Abschnitt ist zu kurz für einen späteren Stand (dafür braucht es mindestens {einschwingen.MIN_BEZUG} Schritte ab Tag '
+                f'{einschwingen.BEZUG_AB}).')
+    m = es["mittel"]
+    if es["urteil"] == "einschwingen":
+        g = "mittel" if es["mittel"].get("belegt") else "v85"
+        x = es[g]
+        name = "im Mittel" if g == "mittel" else "beim V85"
+        richtung = "schneller" if x["a"] > 0 else "langsamer"
+        return (f'<strong>Einschwingen:</strong> Zu Beginn fuhren die Fahrzeuge {name} etwa {dez(abs(x["a"]), 1)}&nbsp;km/h {richtung} als später. '
+                f'Der Unterschied baute sich mit einer Zeitkonstante von {dez(x["tau"], 1)} Tagen ab; der stabile Stand war nach etwa '
+                f'{dez(es["stabil_tage"], 0)} Tagen erreicht.')
+    return (f'<strong>Kein Einschwingen messbar:</strong> Die Schritte weichen nicht stärker vom späteren Stand ab als üblich '
+            f'(erster Schritt im Mittel {_vz(m["abweichung_erster"])}&nbsp;km/h, Schwankung der Schritte ±{dez(m["schwankung"], 1)}&nbsp;km/h).')
+
+
+def einschwingen_einleitung():
+    return ('<p>Nach jeder Montage und nach jeder Änderung vor Ort (ein Bruch) kann der Verkehr eine Weile brauchen, bis er sich eingespielt hat. '
+            'Für jeden Abschnitt eines Einsatzes zeigen wir, wie sich das mittlere Tempo, der V85 und der V95 nach seinem Beginn entwickeln, bis ein '
+            f'stabiler Stand erreicht ist. Die Schritte sind einen bis sieben Tage lang, so dass jeder rund {ganz(einschwingen.N_SCHRITT)} Fahrzeuge hat. '
+            'Unterschiede zwischen Werktagen und Wochenenden sind herausgerechnet. Als stabiler Stand gilt der Verkehr ab Tag '
+            f'{einschwingen.BEZUG_AB}; das Band zeigt, wie stark die Schritte dort schwanken. Ein Einschwingen nennen wir belegt, wenn ein '
+            'abklingender Verlauf die Schritte deutlich besser beschreibt als ein gleichbleibender Stand. Vor der Montage gibt es keine Daten: '
+            'Messbar ist nur, ob sich der Verkehr nach dem Beginn noch ändert, nicht wie er ohne Display wäre.</p>'
+            f'<p class="muted">Verfahren: <a href="{REPO}/blob/main/docs/einschwingen.md">Einschwingen und Art der Änderung</a>.</p>')
+
+
+def einschwingen_teil(m):
+    """Reiter Einschwingen: je Einsatz-Abschnitt Beginn, Art der Aenderung, Urteil, Diagramm und Schritte."""
+    if m.get("einsatz_eintrag"):
+        return "<p>Das Einschwingen gibt es je Einsatz (Auswahl oben unter „Einsätze“).</p>"
+    ein = m.get("einsatz") or m.get("einsatz_daten")
+    if not ein:
+        return "<p>Zu dieser Messung gibt es keinen Einsatz und damit kein Einschwingen.</p>"
+    z = []
+    for a in ein["abschnitte"]:
+        es = a.get("einschwingen")
+        g = a["grenze_davor"]
+        ab = zeit_de(es["beginn"] if es else a["von"])
+        titel = f'Abschnitt {a["nr"]}: ab {ab}' if len(ein["abschnitte"]) > 1 else f"Ab {ab}"
+        z.append(f"<h4>{e(titel)}</h4>")
+        fakten = [("Beginn", e(grenze_text(g)))]
+        if es:
+            inbetrieb = g["art"] == "bewegung" and (g.get("bewegung") or {}).get("stufe", "").startswith("inbetriebnahme")
+            fakten.append(("Zeitpunkt", "spätestens (erstes Fahrzeug nach der Pause; montiert vielleicht schon früher)" if inbetrieb and es.get("zeit_genau")
+                           else "minutengenau (Transportlücke oder verfeinerter Bruch)" if es.get("zeit_genau") else
+                           "ungefähr (erstes Fahrzeug, Datenbeginn oder Dateigrenze)"))
+        if g.get("aenderung"):
+            fakten.append(("Art der Änderung", aenderung_text(g["aenderung"])))
+        if es:
+            fakten.append(("Schritte", f'{es["schritt_tage"]} {"Tag" if es["schritt_tage"] == 1 else "Tage"} '
+                                       f'(im Mittel {ganz(es["fahrzeuge_je_tag"])} Fahrzeuge je Tag)'))
+        z.append('<dl class="facts">' + "".join(f"<dt>{e(k)}</dt><dd>{v}</dd>" for k, v in fakten) + "</dl>")
+        if not es:
+            z.append("<p>Zu wenige vollständig aufgezeichnete Stunden für eine Auswertung.</p>")
+            continue
+        z.append(f"<p>{einschwingen_urteil(es)}</p>")
+        z.append(f'<figure class="histfig">{einschwingen_svg(es, ein["limit"])}<figcaption class="muted">Je Schritt ein Punkt (Mitte des Schritts). '
+                 f'Gestrichelt: stabiler Stand ab Tag {einschwingen.BEZUG_AB}, Band: übliche Schwankung der Schritte dort.</figcaption></figure>')
+        zeilen = "".join(f'<tr><td class="num">{dez(s["von_tag"], 0)}–{dez(s["bis_tag"], 0)}</td><td>{zeit_de(s["von"])} bis {zeit_de(s["bis"])}</td>'
+                         f'<td class="num">{ganz(s["fahrzeuge"])}</td><td class="num">{dez(s["mittel"], 1)}</td><td class="num">{dez(s["v85"], 1)}</td>'
+                         f'<td class="num">{dez(s["v95"], 1)}</td><td class="num">{dez(100 * s["abdeckung"], 0)}&nbsp;%</td></tr>' for s in es["schritte"])
+        stand = ""
+        if es.get("mittel"):
+            stand = (f'<tfoot><tr><td>ab {einschwingen.BEZUG_AB}</td><td>stabiler Stand (± Schwankung)</td><td></td>'
+                     + "".join(f'<td class="num">{dez(es[g_]["stand"], 1)} ± {dez(es[g_]["schwankung"], 1)}</td>' for g_, _, _ in ES_REIHEN)
+                     + "<td></td></tr></tfoot>")
+        z.append('<details><summary>Schritte als Tabelle</summary><div class="tablewrap"><table><thead><tr><th class="num">Tag</th><th>Zeitraum</th>'
+                 '<th class="num">Fahrzeuge</th><th class="num">Mittel</th><th class="num">V85</th><th class="num">V95</th>'
+                 '<th class="num">Stunden aufgezeichnet</th></tr></thead><tbody>' + zeilen + "</tbody>" + stand + "</table></div>"
+                 '<p class="muted">km/h; Unterschiede zwischen Werktag, Samstag und Sonntag herausgerechnet (Verschiebung: '
+                 + ", ".join(f'{k} {_vz(v, 2)}' for k, v in es["tagtyp_versatz"].items()) + ').</p></details>')
+    return "".join(z)
+
+
 def verwaltung_teil(m):
     verw = (m["meta_messung"] or {}).get("verwaltung", [])
     vorspann = (f'<p class="muted">Angaben der Verwaltung zur Messung {e(m["row"]["datei"])}, auf der dieser Einsatz beruht.</p>'
@@ -1762,7 +1933,8 @@ def verwaltung_teil(m):
         return ("<p>Zu dieser Messung hat die Verwaltung (soweit auffindbar) keine Einschätzung veröffentlicht. Sie berichtet Ergebnisse je Messstelle "
                 "seit Februar 2024; für frühere Messungen gibt es nur den Namen des Ordners.</p>")
     z = [vorspann + '<p class="muted">Auszüge aus den Mitteilungen der Verwaltung an die Bezirksausschüsse. Die Sätze stehen im Wortlaut da (Trennfehler des '
-         'PDF-Textes repariert); maßgeblich ist das verlinkte Dokument. Den Vergleich mit den Daten zeigt der Reiter „Vergleich“.</p>']
+         'PDF-Textes repariert); maßgeblich ist das verlinkte Dokument.'
+         + ("" if m.get("einsatz") else " Den Vergleich mit den Daten zeigt der Reiter „Vergleich“.") + '</p>']
     for v in verw:
         z.append(verwaltung_karte(v, mit_abgleich=False))
     return "".join(z)
@@ -1788,17 +1960,27 @@ def messung_teil(m, gleich, index=None, brueche=None):
 LABOR_REITER = {"gruppen"}  # Forschungsstand: nur im Labor-Modus sichtbar (site/labor.js)
 
 
+def ohne_reiter(m):
+    """Reiter, die es fuer diesen Eintrag nicht gibt: Ein Einsatz, der nicht mit der Messung zusammenfaellt, hat keinen Vergleich mit der
+    Verwaltung (der gilt fuer die Messung, wie geliefert)."""
+    return ["vergleich"] if m.get("einsatz") else []
+
+
 def reiter_html(reiter_id, titel, teile, messungen):
-    """Ein Reiter. teile: Funktion (Messung) -> HTML oder fester Text (Standort)."""
+    """Ein Reiter. teile: Funktion (Messung) -> HTML oder fester Text (Standort). Gibt die Funktion None zurueck, fehlt der Reiter fuer diese
+    Messung (seite.js blendet ihn aus, siehe ohne_reiter)."""
     labor = " labor" if reiter_id in LABOR_REITER else ""
     z = [f'<section class="reiter-inhalt{labor}" id="r-{reiter_id}" role="tabpanel" aria-labelledby="t-{reiter_id}" data-reiter="{reiter_id}"><h2>{e(titel)}</h2>']
     if isinstance(teile, str):
         z.append(teile)
     else:
         for m in messungen:
+            inhalt = teile(m)
+            if inhalt is None:
+                continue
             titel = einsatz_label(m) if m.get("einsatz") else messung_label(m)
             z.append(f'<div class="messung-teil" data-messung="{e(m["id"])}">' +
-                     (f'<h3 class="messung-titel">{e(titel)}</h3>' if len(messungen) > 1 else "") + teile(m) + "</div>")
+                     (f'<h3 class="messung-titel">{e(titel)}</h3>' if len(messungen) > 1 else "") + inhalt + "</div>")
     z.append("</section>")
     return "".join(z)
 
@@ -1846,7 +2028,9 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None, i
             opt_e, opt_m = [], []
             for m in messungen:
                 if m.get("einsatz_eintrag"):
-                    opt_e.append(f'<option value="{e(m["einsatz_eintrag"]["id"])}">{e(einsatz_label(m["einsatz_eintrag"]))}</option>')
+                    ohne = " ".join(ohne_reiter(m["einsatz_eintrag"]))
+                    opt_e.append(f'<option value="{e(m["einsatz_eintrag"]["id"])}"' + (f' data-ohne="{ohne}"' if ohne else "")
+                                 + f'>{e(einsatz_label(m["einsatz_eintrag"]))}</option>')
                     if not m.get("ausblenden"):
                         opt_m.append(f'<option value="{e(m["id"])}">{e(messung_label(m))}</option>')
                 elif m.get("ausblenden"):
@@ -1862,21 +2046,24 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None, i
         teile.append(f'<div class="controls messwahl"><div><label for="messwahl">{beschriftung}</label><select id="messwahl" data-messwahl>' +
                      optionen + "</select></div></div>"
                      f'<p class="muted" data-ohne-skript>An diesem Standort gibt es {len(alle)} Einsätze und Messungen; ohne JavaScript stehen sie in jedem Reiter untereinander.</p>')
+    keiner = {rid for rid, _ in REITER if all(rid in ohne_reiter(m) for m in alle)}  # Reiter, die es fuer keinen Eintrag gibt
     teile.append('<nav class="reiter" role="tablist" aria-label="Themen" hidden>' + "".join(
         f'<button type="button" role="tab" id="t-{rid}" aria-controls="r-{rid}" data-ziel="{rid}"'
-        + (' class="labor"' if rid in LABOR_REITER else "") + f'>{e(t)}</button>' for rid, t in REITER) + "</nav>")
+        + (' class="labor"' if rid in LABOR_REITER else "") + f'>{e(t)}</button>' for rid, t in REITER if rid not in keiner) + "</nav>")
     teile.append(reiter_html("allgemein", "Allgemein", allgemein_teil(name, messungen, verz), alle))
     teile.append(reiter_html("verwaltung", "Verwaltung", verwaltung_teil, alle))
-    teile.append(reiter_html("messung", "Messung", lambda m: messung_teil(m, gleich, index, brueche), alle))
+    teile.append(reiter_html("messung", "Daten", lambda m: messung_teil(m, gleich, index, brueche), alle))
     teile.append(reiter_html("analyse", "Analyse", lambda m: analyse_teil(m["row"], m["zellen"], m["id"],
                                                                          None if m.get("einsatz_eintrag") else vg_namen(vg, m["rel"], m["row"]["datei"])), alle))
+    teile.append(reiter_html("einschwingen", "Einschwingen", einschwingen_teil, alle).replace(
+        "<h2>Einschwingen</h2>", "<h2>Einschwingen</h2>" + einschwingen_einleitung(), 1))
     teile.append(reiter_html("gruppen", "Verhaltensgruppen", lambda m: ("<p>Verhaltensgruppen gibt es je Einsatz (Auswahl oben unter „Einsätze“).</p>"
                                                                        if m.get("einsatz_eintrag") else gruppen_teil(m, vg)), alle)
                  .replace("<h2>Verhaltensgruppen</h2>", "<h2>Verhaltensgruppen</h2>" + (gruppen_einleitung() if vg else ""), 1)
                  .replace("</section>", standort_gruppen(vg, slug, messungen) + "</section>"))
-    teile.append(reiter_html("vergleich", "Vergleich mit der Verwaltung", lambda m: (
-        "<p>Der Vergleich mit den Angaben der Verwaltung bezieht sich auf die Messung, wie geliefert (Auswahl oben unter „Messungen“).</p>"
-        if m.get("einsatz") else vergleich_teil(m["row"], m["meta_messung"])), alle))
+    if "vergleich" not in keiner:
+        teile.append(reiter_html("vergleich", "Vergleich mit der Verwaltung", lambda m: (
+            None if "vergleich" in ohne_reiter(m) else vergleich_teil(m["row"], m["meta_messung"])), alle))
     teile.append(reiter_html("gefaehrdung", "Gefährdung", lambda m: je_abschnitt(m["row"], gefaehrdung_teil, m["id"], "gefaehrdung"), alle))
     teile.append(reiter_html("laerm", "Lärm", lambda m: je_abschnitt(m["row"], laerm_tabelle, m["id"], "laerm"), alle))
     mit_filter = any((m["zellen"] or {}).get("z") for m in alle)
@@ -2026,6 +2213,8 @@ def bauen(auswertung, metadaten, uhr, ziel, zellen_ordner=None, adressen=None, v
         messungen.sort(key=_beginn)
         for m in messungen:
             x = ein_von.get(m["id"])
+            if x:
+                m["einsatz_daten"] = x
             if m["id"] in defekt:
                 m["ausblenden"] = defekt[m["id"]]
             if m["id"] in ohne_von:

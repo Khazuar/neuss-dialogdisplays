@@ -129,6 +129,19 @@ svg.karte .karte-mitte { fill: none; stroke: var(--h-ueber); stroke-width: 2; }
 details.abschnitt { margin: 8px 0; }
 .abschnitt-titel { margin-bottom: 0; }
 
+/* Einschwingen (seiten_bauen.py: einschwingen_svg): Mittel, V85, V95 mit spaeterem Stand und Band */
+:root { --es-1: #3b82c4; --es-2: #d9622b; --es-3: #7a3fc4; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --es-1: #5c9ad6; --es-2: #d96a2e; --es-3: #7e5ad1; }
+}
+svg.hist .es-mittel { --es: var(--es-1); } svg.hist .es-v85 { --es: var(--es-2); } svg.hist .es-v95 { --es: var(--es-3); }
+svg.hist .es-linie { fill: none; stroke: var(--es); stroke-width: 2; stroke-linejoin: round; }
+svg.hist .es-punkt { fill: var(--es); stroke: var(--bg); stroke-width: 1.5; }
+svg.hist .es-stand { stroke: var(--es); stroke-width: 1.2; stroke-dasharray: 5 4; opacity: 0.8; }
+svg.hist .es-band { fill: var(--es); fill-opacity: 0.1; }
+svg.hist .es-bezug { fill: var(--fg); fill-opacity: 0.04; }
+svg.hist .es-name { fill: var(--fg); font-weight: 600; }
+
 /* Verhaltensgruppen: Linien und Marken (seiten_bauen.py: vg_profil_svg) */
 :root { --vg-1: #3b82c4; --vg-2: #d9622b; --vg-3: #2f9e5b; --vg-4: #7a3fc4; --vg-5: #8a8f96; }
 @media (prefers-color-scheme: dark) {

@@ -45,11 +45,12 @@ werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Date
 - `docs/verhalten.md` – Verhaltensgruppen (Gruppen mit eigener Reaktion auf Tageszeit, Licht, Wetter, Ferien und Verkehrsmenge) mit Placebo-Prüfung,
   drei Ebenen (Abschnitt, Standort, Stadt), Namen, Deutungen und Stadt-Vorlagen; Forschungsstand
 - `docs/einsaetze.md` – Einsätze: Brüche erklären (Umhängen, Ereignisse) und Messungen nach dem tatsächlichen Einsatzort abgrenzen
+- `docs/einschwingen.md` – Einschwingen nach Montage und Brüchen (spielt sich der Verkehr erst ein?) und Art der Änderung an jeder Grenze
 - `docs/verdeckt.md` – Villestraße: offene gegen verdeckte Messung (Display ohne Anzeige), Befund und Grenzen
 - `docs/raten.md` – Raten statt Anteile: warum zu schnelle Fahrzeuge je Tag gezählt werden und was daraus folgt
 - `docs/gefaehrdung.md` – Modelle und Annahmen für Gefährdung (Nilsson, Restgeschwindigkeit), Lärm und Ereignisse pro Nacht
 - `docs/wetter.md` – Wetterdaten des DWD (Quelle, Lizenz, Stationswahl, Zeitangabe) und der Befund, dass Regen das Radar stört
-- `seiten_bauen.py` – baut je Standort (gleiche Straße, sich überlappende Lage; alle Messungen und Fahrtrichtungen zusammen) eine Detailseite für die GitHub Pages (`standorte/<name>.html`) mit den Reitern Allgemein, Verwaltung, Messung, Analyse, Gruppen, Vergleich, Gefährdung und Lärm, dazu Weiterleitungen von den alten Seiten je Ordner, `uebersicht.json` für die Übersicht und die Übersicht der Verhaltensgruppen (`verhaltensgruppen.html`);
+- `seiten_bauen.py` – baut je Standort (gleiche Straße, sich überlappende Lage; alle Messungen und Fahrtrichtungen zusammen) eine Detailseite für die GitHub Pages (`standorte/<name>.html`) mit den Reitern Allgemein, Verwaltung, Daten, Analyse, Einschwingen, Gruppen, Vergleich, Gefährdung und Lärm, dazu Weiterleitungen von den alten Seiten je Ordner, `uebersicht.json` für die Übersicht und die Übersicht der Verhaltensgruppen (`verhaltensgruppen.html`);
   Geschwindigkeits-Histogrammen als Inline-SVG
 - `DATEN.md` – Datenwörterbuch der bereinigten Daten (welche Datei für welche Frage, Spalten, Bereinigung, Berechnung von V85 und Einhaltung, Grenzen); `site/llms.txt` verweist darauf
 - `aggregat.py` – fasst die Fahrzeuge einer Datei je Tag, Stunde und km/h zusammen (Ortszeit, nutzbare Zeit, Rauschboden abgezogen, Abschnitte); `daten_bauen.py` schreibt daraus und aus der Auswertung die CSV-Dateien unter `daten/` (`messungen.csv`, `abschnitte.csv`, `kennzahlen.csv`, `tage.csv`, `luecken.csv`, `stunden/<standort>.csv.gz`, `stunden.csv.gz`)
