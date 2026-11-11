@@ -61,9 +61,17 @@ def bauen(eingabe, ziel, cache, jobs, ausgabe=sys.stderr):
     return os.path.join(ziel, "index.html")
 
 
+class OhneCache(http.server.SimpleHTTPRequestHandler):
+    """Der Browser fragt bei jedem Laden nach, ob sich eine Datei geaendert hat; sonst haelt er nach einem Neubau alte Skripte (seite.js)."""
+
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
+
+
 def starte_server(ziel, port, oeffnen):
     """Liefert den Ordner auf 127.0.0.1 aus (nur dieser Rechner), bis Strg+C gedrueckt wird."""
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=ziel)
+    handler = functools.partial(OhneCache, directory=ziel)
     with http.server.ThreadingHTTPServer(("127.0.0.1", port), handler) as server:
         adresse = f"http://127.0.0.1:{port}/"
         print(f"Seite unter {adresse} (beenden mit Strg+C)", file=sys.stderr)
