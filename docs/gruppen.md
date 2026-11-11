@@ -51,7 +51,8 @@ JavaScript bleibt der Abschnitt verborgen, und die Seite zeigt die Tabelle der K
 Fahrzeuge, bei vorhandenem Rauschboden auch dessen Bild (alles entfällt mit JavaScript, weil die Auswahl es ersetzt).
 
 **Gesamtkurve und Auswahl:** Das Histogramm zeigt immer alle Fahrzeuge der ganzen Messung grau (alle Abschnitte, Tageszeiten, Tage und
-Wetter) und die Auswahl farbig, in derselben Höhenskala (Anteil an allen Fahrzeugen). So sieht man, wie klein oder groß eine Auswahl ist: Ein
+Wetter) und die Auswahl farbig, in derselben Höhenskala. Die Höhe ist die Zahl der Fahrzeuge je Stunde in der Klasse (Autos / h), bezogen auf alle vollständig aufgezeichneten
+Stunden der Messung. So sieht man, wie klein oder groß eine Auswahl ist: Ein
 Abschnitt, eine Nacht oder trockene Stunden erscheinen entsprechend niedriger. Mit dem Kästchen „Auswahl isoliert darstellen“ (standardmäßig aus)
 bezieht sich die Höhe auf die Auswahl selbst, ohne Gesamtkurve; das ist besser lesbar, wenn die Auswahl sehr klein ist. Die Kennzahlen darüber
 gelten immer für die Auswahl.

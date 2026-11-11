@@ -110,12 +110,14 @@
     return 100;
   }
 
-  // Histogramm als SVG-Text (gleiche Klassen wie auf den uebrigen Seiten); Hoehe = Anteil der Fahrzeuge je km/h.
+  // Histogramm als SVG-Text (gleiche Klassen wie auf den uebrigen Seiten); Hoehe = Fahrzeuge je Stunde in der Klasse (Autos / h),
+  // bezogen auf opt.stunden; ohne Stunden Anteil der Fahrzeuge je km/h in %.
   // hist: alle Fahrzeuge der Auswahl; opt.vorder: Teil davon (Gruppe oder Rest), farbig bis zur Hoehe seiner Werte, der Rest grau;
   // opt.linie: Kurve der Gruppe als Linie; opt.v85: Marke (Standard: V85 der Fahrzeuge).
   function histogrammSvg(hist, kz, limit, opt) {
     opt = opt || {};
-    var vs = sortiert(hist), n = kz.n, breite = klassenbreite(hist, n);
+    var vs = sortiert(hist), n = kz.n, breite = klassenbreite(hist, n), stunden = opt.stunden > 0 ? opt.stunden : 0;
+    function hoehe(c) { return stunden ? c / stunden : 100 * c / n / breite; }
     var oben = quantilWert(hist, vs, n, 0.9999) + 3;
     oben = Math.min(Math.max(oben, limit ? limit + 15 : 0), vs[vs.length - 1]);
     var von = Math.floor(vs[0] / 10) * 10, bis = Math.max(Math.ceil(oben / 10) * 10, von + 10);
@@ -133,7 +135,7 @@
     var klassen = nachKlassen(hist), vorder = opt.vorder ? nachKlassen(opt.vorder) : null, linie = opt.linie ? nachKlassen(opt.linie) : null;
     var erster = von - (((von - versatz) % breite) + breite) % breite, liste = [], ymax = 0;
     for (start = erster; start <= bis; start += breite) {
-      a = 100 * (klassen[start] || 0) / n / breite;
+      a = hoehe(klassen[start] || 0);
       ymax = Math.max(ymax, a);
       liste.push([start, klassen[start] || 0, a]);
     }
@@ -146,7 +148,10 @@
     for (i = 0; i <= k; i++) {
       a = i * schritt;
       s.push('<line class="hist-gitter" x1="' + HIST.L + '" x2="' + (HIST.B - HIST.R) + '" y1="' + y(a).toFixed(1) + '" y2="' + y(a).toFixed(1) + '"/>' +
-             '<text class="hist-text" x="' + (HIST.L - 5) + '" y="' + (y(a) + 4).toFixed(1) + '" text-anchor="end">' + (schritt < 1 ? de(a, 1) : Math.round(a)) + ' %</text>');
+             '<text class="hist-text" x="' + (HIST.L - 5) + '" y="' + (y(a) + 4).toFixed(1) + '" text-anchor="end">' + (schritt < 1 ? de(a, 1) : Math.round(a)) + (stunden ? '' : ' %') + '</text>');
+      if (i === k && stunden) {
+        s.push('<text class="hist-text" x="' + HIST.L + '" y="' + (HIST.T - 8) + '" text-anchor="start">Autos / h</text>');
+      }
     }
     var tick = bis - von <= 130 ? 10 : 20;
     for (v = von; v <= bis; v += tick) {
@@ -158,9 +163,9 @@
       if (!liste[i][1]) { continue; }
       var bisw = liste[i][0] + breite - 1, bereich = breite === 1 ? liste[i][0] : liste[i][0] + "–" + bisw;
       var breiteX = Math.max(0.5, breite * sc - 0.6).toFixed(1), farbe = limit && liste[i][0] > limit ? "hist-ueber" : "hist-ok";
-      var titel = bereich + ' km/h: ' + de(liste[i][1], 0) + ' Fahrzeuge (' + de(100 * liste[i][1] / n, 2) + ' %)';
+      var titel = bereich + ' km/h: ' + de(liste[i][1], 0) + ' Fahrzeuge (' + (stunden ? de(liste[i][2], 2) + ' Autos / h' : de(100 * liste[i][1] / n, 2) + ' %') + ')';
       if (vorder) {  // alle Fahrzeuge grau, der Teil der Auswahl farbig bis zur Hoehe seiner Werte
-        var teil = Math.min(vorder[liste[i][0]] || 0, liste[i][1]), at = 100 * teil / n / breite;
+        var teil = Math.min(vorder[liste[i][0]] || 0, liste[i][1]), at = hoehe(teil);
         s.push('<rect class="hist-grau" x="' + x(liste[i][0]).toFixed(1) + '" y="' + y(liste[i][2]).toFixed(1) + '" width="' + breiteX +
                '" height="' + (HIST.T + ph - y(liste[i][2])).toFixed(1) + '"><title>' + titel + '</title></rect>');
         if (teil > 0) {
@@ -175,7 +180,7 @@
     if (linie) {
       var punkte = [];
       for (start = erster; start <= bis; start += breite) {
-        punkte.push((x(start) + breite * sc / 2).toFixed(1) + "," + y(100 * (linie[start] || 0) / n / breite).toFixed(1));
+        punkte.push((x(start) + breite * sc / 2).toFixed(1) + "," + y(hoehe(linie[start] || 0)).toFixed(1));
       }
       s.push('<polyline class="hist-modell" points="' + punkte.join(" ") + '"/>');
     }
@@ -269,14 +274,18 @@
       gesamtN = summe(gh);
       if (gesamtN > nBasis * 1.0005 || (vorder && gesamtN > 0)) { gesamt = gh; }
     }
-    var h;
+    var bezug = gesamt ? waehle(gesamtQuelle, "alle", "alle", false).stunden : basis.stunden, h;
     if (gesamt) {
-      h = histogrammSvg(gesamt, kennzahlen(gesamt, limit), limit, { vorder: vorder || basis.hist, linie: linie, v85: kz.v85 });
+      h = histogrammSvg(gesamt, kennzahlen(gesamt, limit), limit, { vorder: vorder || basis.hist, linie: linie, v85: kz.v85, stunden: bezug });
     } else {
-      h = histogrammSvg(basis.hist, kzAlle, limit, { vorder: vorder, linie: linie, v85: vorder ? kz.v85 : undefined });
+      h = histogrammSvg(basis.hist, kzAlle, limit, { vorder: vorder, linie: linie, v85: vorder ? kz.v85 : undefined, stunden: bezug });
     }
-    var unterschrift = (gesamt ? 'Anteil an allen Fahrzeugen der ganzen Messung je km/h' : 'Anteil der Fahrzeuge der Auswahl je km/h') + ' (Klassenbreite ' + h.breite +
-      ' km/h' + (limit ? ", blau bis zum Tempolimit, orange darüber" : "") + '). "je Stunde": Fahrzeuge je vollständig aufgezeichneter Stunde der Auswahl.';
+    var hoeheText = bezug > 0 ?
+      'Fahrzeuge je Stunde (Autos / h) in der Klasse, bezogen auf ' + (gesamt ? 'alle' : 'die') + ' ' + de(bezug, 0) + ' vollständig aufgezeichneten Stunden ' +
+        (gesamt ? 'der ganzen Messung' : 'der Auswahl') :
+      (gesamt ? 'Anteil an allen Fahrzeugen der ganzen Messung je km/h' : 'Anteil der Fahrzeuge der Auswahl je km/h');
+    var unterschrift = hoeheText + ' (Klassenbreite ' + h.breite +
+      ' km/h' + (limit ? ", blau bis zum Tempolimit, orange darüber" : "") + '). "je Stunde" in der Tabelle: Fahrzeuge je vollständig aufgezeichneter Stunde der Auswahl.';
     if (gesamt && !vorder) {
       unterschrift += ' Grau: alle Fahrzeuge der ganzen Messung (alle Abschnitte, Tageszeiten, Tage und Wetter). Farbig: die Auswahl; ihre Höhe ist im Vergleich ' +
         'zu allen Fahrzeugen zu lesen. Mit „Auswahl isoliert darstellen“ bezieht sich die Höhe auf die Auswahl selbst.';

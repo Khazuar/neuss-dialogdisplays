@@ -209,9 +209,11 @@ class FilterJs(unittest.TestCase):
             out = json.loads(subprocess.run([NODE, "-e", skript, os.path.join(HIER, "site", "filter.js"), p], stdout=subprocess.PIPE, check=True,
                                             timeout=60).stdout.decode("utf-8"))
         self.assertIn("hist-grau", out["std"])  # die Gesamtkurve bleibt sichtbar
-        self.assertIn("Anteil an allen Fahrzeugen der ganzen Messung", out["std"])
+        self.assertIn("Autos / h) in der Klasse, bezogen auf alle 672 vollständig aufgezeichneten Stunden der ganzen Messung", out["std"])
+        self.assertIn(">Autos / h</text>", out["std"])  # Achsenbeschriftung statt %
         self.assertNotIn("hist-grau", out["iso"])  # isoliert wie bisher: nur die Auswahl
-        self.assertIn("Anteil der Fahrzeuge der Auswahl je km/h", out["iso"])
+        self.assertIn("bezogen auf die", out["iso"])
+        self.assertIn("vollständig aufgezeichneten Stunden der Auswahl", out["iso"])
         self.assertNotIn("hist-grau", out["alle"])  # Auswahl = alles: nichts zu vergleichen
 
         def hoehen(html, klasse):
