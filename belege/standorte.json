@@ -189,10 +189,10 @@
    "sicherheit": "benannt"
   },
   "116_Martinstraße": {
-   "breite": 51.161682,
-   "laenge": 6.66977,
-   "unsicherheit_m": 122,
-   "sicherheit": "benannt"
+   "breite": 51.16225,
+   "laenge": 6.670312,
+   "unsicherheit_m": 10,
+   "sicherheit": "manuell korrigiert"
   },
   "117_Euskirchener Straße": {
    "breite": 51.168494,

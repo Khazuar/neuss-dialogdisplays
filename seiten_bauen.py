@@ -1028,7 +1028,7 @@ def gefaehrdung_teil(row):
 
 QUELLE_TEXT = {"ordnername": "Ordnername", "mitteilung": "Mitteilung der Verwaltung", "ris": "Ratsinformationssystem",
                "datacollect": "Bericht der Messsoftware (DataCollect)", "manuell": "von Hand korrigiert"}
-LAGE_METHODE_TEXT = {"adresse": "Hausnummer", "zwischen_nr": "zwischen zwei Hausnummern", "kreuzung": "Kreuzung",
+LAGE_METHODE_TEXT = {"punkt": "Koordinaten des Masts", "adresse": "Hausnummer", "zwischen_nr": "zwischen zwei Hausnummern", "kreuzung": "Kreuzung",
                 "zwischen_strassen": "Abschnitt zwischen zwei Querstraßen", "strasse": "nur die Straße"}
 
 
@@ -1081,6 +1081,11 @@ def standort_abschnitt(st, verz):
     fr = st.get("fahrtrichtung")
     for f in ([fr] if isinstance(fr, dict) else fr or []):
         t.append(f'<p class="muted">Fahrtrichtung zur {e(f["ziel"])}: Kompassrichtung etwa {ganz(f["peilung_grad"])}° (±{ganz(f["unsicherheit_grad"])}°).</p>')
+    au = st.get("ausrichtung")
+    if au:
+        t.append(f'<p class="muted">Ausrichtung (von Hand angegeben): Das Display blickt Richtung {e(au["blick_zu"])}, Kompassrichtung etwa '
+                 f'{ganz(au["blick_grad"])}° (±{ganz(au["unsicherheit_grad"])}°); erfasst wird der Verkehr aus dieser Richtung '
+                 f'(Fahrtrichtung etwa {ganz(au["verkehr_grad"])}°).</p>')
     zeilen = []
     for b in st["belege"]:
         q = b.get("quelle") or {}

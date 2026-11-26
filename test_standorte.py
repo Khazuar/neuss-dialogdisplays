@@ -245,6 +245,25 @@ class Entscheidung(unittest.TestCase):
         self.assertEqual(e["unsicherheit_m"], s.ANNAHMEN["adresse_m"])
         self.assertEqual([b["verwendet"] for b in e["belege"] if b["stufe"] == "manuell"], [True])
 
+    def test_punkt_mit_blickrichtung(self):
+        # Mast bei Nr. 10 (Ost 1010, Nord 100) als WGS84; Blick zur Querstrasse (Nord 200), also nach Norden
+        breite, laenge = s.utm32_zu_wgs84(1005.0, 100.0)
+        h = [{"art": "punkt", "strasse": "Teststraße", "breite": breite, "laenge": laenge, "blick_zu": "Querstraße", "stufe": "manuell",
+              "text": "von Hand", "quelle": {"typ": "manuell"}}]
+        e = s.bestimme("05_Teststraße", self.v, h)
+        self.assertEqual((e["methode"], e["sicherheit"]), ("punkt", "manuell korrigiert"))
+        self.assertEqual((e["utm32_ost"], e["utm32_nord"], e["unsicherheit_m"]), (1005, 100, s.ANNAHMEN["punkt_m"]))
+        self.assertEqual(e["ausrichtung"]["blick_zu"], "Querstraße")
+        self.assertLess(min(e["ausrichtung"]["blick_grad"], 360 - e["ausrichtung"]["blick_grad"]), 25)  # nach Norden
+        self.assertLess(abs(e["ausrichtung"]["verkehr_grad"] - 180), 25)  # erfasst wird der Verkehr nach Sueden
+
+    def test_punkt_abseits_der_strasse_wird_verworfen(self):
+        breite, laenge = s.utm32_zu_wgs84(3000.0, 3000.0)
+        h = [{"art": "punkt", "strasse": "Teststraße", "breite": breite, "laenge": laenge, "stufe": "manuell", "text": "x", "quelle": {"typ": "manuell"}}]
+        e = s.bestimme("05_Teststraße", self.v, h)
+        self.assertEqual(e["methode"], "strasse")
+        self.assertIn("nicht an der Straße", e["nicht_verwendet"][0]["grund"])
+
     def test_vorschlag_ausserhalb_wird_ignoriert(self):
         h = [{"art": "adresse", "strasse": "Fernweg", "nr": "3", "stufe": "vorschlag", "text": "x", "quelle": {"typ": "ris"}}]
         e = s.bestimme("05_Teststraße", self.v, h)
@@ -354,7 +373,8 @@ class EchteDaten(unittest.TestCase):
                 self.fail("kein Standort: " + rel)
             self.assertTrue(51.05 < st["standort"]["breite"] < 51.30, rel)
             self.assertTrue(6.55 < st["standort"]["laenge"] < 6.85, rel)
-            self.assertGreaterEqual(st["standort"]["unsicherheit_m"], s.ANNAHMEN["adresse_m"], rel)
+            mindestens = s.ANNAHMEN["punkt_m"] if st["standort"]["methode"] == "punkt" else s.ANNAHMEN["adresse_m"]
+            self.assertGreaterEqual(st["standort"]["unsicherheit_m"], mindestens, rel)
             o, n = s.wgs84_zu_utm32(st["standort"]["breite"], st["standort"]["laenge"])
             self.assertLess(math.hypot(o - st["standort"]["utm32_ost"], n - st["standort"]["utm32_nord"]), 1.5, rel)
 

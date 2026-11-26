@@ -9,6 +9,7 @@ Als Karte dienen die Hauskoordinaten der Stadt Neuss (belege/neuss-adressen.csv,
 dl-de/zero-2-0; tools/adressen_laden.py). Eine Strassenachse liegt nicht vor, nur die Punkte der Haeuser.
 
 Hinweise (je Ordner), nach Genauigkeit:
+  punkt              Koordinaten des Masts, von Hand angegeben (nur Stufe "manuell"), optional mit Blickrichtung des Displays
   adresse            Hausnummer ("Hauptstrasse 13a", "Hoehe Nr. 4", "ggue. Nr. 3", "Nr. 86-88")
   zwischen_nr        zwischen zwei Hausnummern
   kreuzung           Ecke oder Hoehe einer Querstrasse
@@ -43,6 +44,7 @@ from uhr_belege import messort_namen, schluessel  # noqa: E402
 # Angenommene Unsicherheiten (Radius in Metern, ungefaehr 90 %-Bereich). Sie stammen aus der Anordnung der Haeuser
 # (Abstand benachbarter Hausnummern, Haus zur Strassenmitte), nicht aus einem Vergleich mit bekannten Standorten.
 ANNAHMEN = {
+    "punkt_m": 10,               # Mast mit von Hand angegebenen Koordinaten (abgelesen auf einer Karte)
     "adresse_m": 30,             # Laterne in der Naehe des Hauses; die Hauskoordinate liegt im Gebaeude
     "gegenueber_zuschlag_m": 15,  # "ggue. Nr.": andere Strassenseite
     "luecke_anteil": 0.5,        # fehlende Hausnummer: halber Abstand der Nachbarnummern kommt dazu
@@ -326,7 +328,23 @@ def bewerte_strasse(h, verz):
                      abschnitte=n, punkte=[(a.ost, a.nord) for a in adr]), None
 
 
-BEWERTER = {"adresse": bewerte_adresse, "zwischen_nr": bewerte_zwischen_nr, "kreuzung": bewerte_kreuzung,
+def bewerte_punkt(h, verz):
+    """Koordinaten (WGS84) des Masts, an dem das Display hing. Die Strasse muss angegeben sein und am Punkt liegen."""
+    try:
+        xy = wgs84_zu_utm32(float(h["breite"]), float(h["laenge"]))
+    except (KeyError, TypeError, ValueError):
+        return None, "Koordinaten nicht lesbar"
+    adr, name, abw = verz.strasse(h.get("strasse") or "")
+    if not adr:
+        return None, "Straße nicht im Adressverzeichnis"
+    d = min(abstand((a.ost, a.nord), xy) for a in adr)
+    if d > ANNAHMEN["anschluss_max_m"]:
+        return None, "Punkt liegt nicht an der Straße (nächstes Haus %d m entfernt)" % round(d)
+    return _ergebnis("punkt", xy, int(h.get("radius_m", ANNAHMEN["punkt_m"])), h.get("ort") or "Koordinaten des Masts",
+                     strasse=name, abweichung=abw, blick_zu=h.get("blick_zu")), None
+
+
+BEWERTER = {"punkt": bewerte_punkt, "adresse": bewerte_adresse, "zwischen_nr": bewerte_zwischen_nr, "kreuzung": bewerte_kreuzung,
             "zwischen_strassen": bewerte_zwischen_strassen, "strasse": bewerte_strasse}
 
 
@@ -565,6 +583,16 @@ def bestimme(rel, verz, hinweise=(), fahrtrichtungen=(), texte=()):
         erg["widerspruch"] = "Angaben schließen sich aus (%s); der Kreis umfasst beide" % "; ".join([haupt["text"]] + widerspruch)
     if gewaehlt.get("mehrdeutig") or gewaehlt.get("abschnitte", 1) > 1:
         erg["mehrdeutig"] = "Straße besteht aus getrennten Abschnitten; der Standort kann in jedem liegen"
+    if gewaehlt.get("blick_zu") and not beidseitig:
+        # Blickrichtung des Displays (von Hand angegeben, "Blick Richtung X"): zur Querstrasse X; erfasst wird der Verkehr von dort
+        b = fahrtrichtung(gewaehlt["blick_zu"], gewaehlt.get("strasse") or "", (gewaehlt["ost"], gewaehlt["nord"]), verz)
+        if b:
+            erg["ausrichtung"] = collections.OrderedDict([("blick_zu", b["ziel"]), ("blick_grad", b["peilung_grad"]),
+                                                          ("verkehr_grad", (b["peilung_grad"] + 180) % 360),
+                                                          ("unsicherheit_grad", b["unsicherheit_grad"])])
+        else:
+            verworfen.append({"hinweis": "Blick Richtung %s" % gewaehlt["blick_zu"], "art": "blick",
+                              "grund": "Richtung lässt sich aus den Hauskoordinaten nicht bestimmen"})
     if beidseitig:
         erg["beidseitige_messung"] = True
     elif gewaehlt["radius_m"] <= ANNAHMEN["peilung_max_radius_m"]:

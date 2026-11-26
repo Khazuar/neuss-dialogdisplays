@@ -28,6 +28,7 @@ Jeder Hinweis wird zu einem **Kreis** (Mittelpunkt, Radius). Der Radius ist die 
 
 | Hinweis (`methode`) | Mittelpunkt | Radius |
 |---------------------|-------------|--------|
+| `punkt` – Koordinaten des Masts, von Hand (nur Stufe `manuell`) | der angegebene Punkt | 10 m (Ablesen auf einer Karte), siehe [unten](#von-hand-angegebene-koordinaten-punkt) |
 | `adresse` – Hausnummer („Höhe Nr. 4“, „Nr. 86-88“) | die Hauskoordinate (bei mehreren Nummern ihr Mittel) | 30 m, bei „ggü.“ 45 m, plus die halbe Spanne mehrerer Nummern. Fehlt die Nummer im Verzeichnis: Mitte der beiden Nachbarnummern, der Radius wächst um den Abstand der Nachbarn |
 | `zwischen_nr` – „zwischen Nr. 116 und 126“ | Mittel der Häuser dazwischen | 25 m plus halbe Spanne |
 | `kreuzung` – „Ecke“, „Höhe“ einer Querstraße | Mitte des nächsten Häuserpaars der beiden Straßen | 40 m plus halber Abstand dieses Paars |
@@ -50,8 +51,8 @@ eine Abweichung um einen Buchstaben („Eichendorfstraße“ statt „Eichendorf
 
 - `benannt` – die Verwaltung (Ordnername, Mitteilung, Bericht der Messsoftware) nennt den Ort.
 - `manuell korrigiert` – der Betreiber dieses Repositories hat die Lage von Hand angegeben (Stufe `manuell` in `belege/standort-hinweise.json`); sie geht
-  allen anderen Angaben vor. Bisher ein Ordner: `38_Konrad-Adenauer-Ring (Görresschule)`, Konrad-Adenauer-Ring 67 (die Anschrift der Schule; die
-  Unterlagen der Verwaltung nennen sie nicht).
+  allen anderen Angaben vor. Bisher zwei Ordner: `38_Konrad-Adenauer-Ring (Görresschule)`, Konrad-Adenauer-Ring 67 (die Anschrift der Schule; die
+  Unterlagen der Verwaltung nennen sie nicht), und `116_Martinstraße`, Koordinaten der Laterne mit Blickrichtung (Hinweis `punkt`, siehe unten).
 - `vermutet` – nur ein Standortvorschlag oder Antrag nennt die Hausnummer, und sie liegt auf der Straße des Ordners. Der Radius ist dann
   mindestens 60 m. Das trifft sieben Ordner; ob der Vorschlag umgesetzt wurde, steht nirgends.
 - `widersprüchlich` – zwei gleichrangige Angaben schließen sich aus. Das ist nur `07_Lupinen_Nierenhofstraße`: der Ordner nennt beide Straßen,
@@ -78,6 +79,7 @@ nur bei der Feldstraße, bei den anderen beiden ist die ganze Straße genauer.
 
 | Hinweis | Ordner | `sicherheit` |
 |---------|--------|--------------|
+| `punkt` | 1 | manuell korrigiert |
 | `adresse` | 13 | 6 benannt (Hausnummer im Ordnernamen oder Bericht), 1 manuell korrigiert, 6 vermutet (Vorschlag) |
 | `zwischen_nr` | 1 | vermutet |
 | `kreuzung` | 3 | benannt |
@@ -112,6 +114,7 @@ standort:
   mehrdeutig: "…"            # nur wenn die Straße aus getrennten Abschnitten besteht
   beidseitige_messung: true  # nur wenn so berichtet
   fahrtrichtung: {ziel: "Neumarkt", peilung_grad: 159, unsicherheit_grad: 29}
+  ausrichtung: {blick_zu: "Vereinsstraße", blick_grad: 43, verkehr_grad: 223, unsicherheit_grad: 11}  # nur bei Hinweis punkt mit blick_zu
   belege:                    # alle Hinweise, auch die nicht verwendeten, mit Quelle
     - art: "adresse"
       text: "Hauptstraße 13a"
@@ -168,3 +171,12 @@ enthält davon nur Straße, Hausnummer, Zusatz, Lage und Qualitätsstufe der Adr
   sich „zwischen zwei Querstraßen“ und „Ende der Straße“ genau rechnen, und der Mast läge auf der Straße. Daten aus OpenStreetMap (Straßenlaternen,
   Orte) stehen unter der ODbL und passen nicht zu CC0.
 - Wer einzelne Standorte kennt (oder prüft), kann die Radien an echten Positionen eichen; ohne solche Vergleichswerte bleibt `ANNAHMEN` eine Annahme.
+
+## Von Hand angegebene Koordinaten (`punkt`)
+
+Ist bekannt, an welchem Mast das Display hing, steht in `belege/standort-hinweise.json` ein Hinweis der Art `punkt` mit Stufe `manuell`:
+`breite` und `laenge` (WGS 84), `strasse` (der Punkt muss höchstens 60 m vom nächsten Haus dieser Straße liegen, sonst wird er verworfen), optional
+`radius_m` (Standard 10 m: Ablesen auf einer Karte), `ort` (kurze Beschreibung) und `blick_zu`: die Querstraße, in deren Richtung das Display blickt.
+Daraus wird wie bei der Fahrtrichtung die Kompassrichtung der Straße an dieser Stelle bestimmt (`ausrichtung.blick_grad`); erfasst wird der Verkehr,
+der aus dieser Richtung kommt (`ausrichtung.verkehr_grad`, Gegenrichtung). Die Angabe gilt für den ganzen Ordner; hing das Gerät während der Messung
+an mehreren Orten (Brüche, [einsaetze.md](einsaetze.md)), sagt der Hinweis in `quelle.angabe`, wofür sie belegt ist.

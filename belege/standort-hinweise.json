@@ -14,6 +14,12 @@
     "text": "Rtg. kommend: Jülicher Straße, Rtg. gehend: Rheydter Straße",
     "quelle": {"typ": "datacollect", "datei": "2023_07_27_Auswertung.dsd.pdf"}}
   ],
+  "116_Martinstraße": [
+   {"art": "punkt", "strasse": "Martinstraße", "breite": 51.1622501, "laenge": 6.6703125, "blick_zu": "Vereinsstraße", "stufe": "manuell",
+    "text": "Laterne bei 51,1622501, 6,6703125, Display über dem Gefahrzeichen „Kinder“, Blick Richtung Vereinsstraße",
+    "ort": "Laterne, Display über dem Gefahrzeichen „Kinder“",
+    "quelle": {"typ": "manuell", "angabe": "Betreiber dieses Repositories, 2026-11-26, nach einem Hinweis zum Aufhängeort; die Unterlagen der Verwaltung nennen nur die Straße. gilt für den Einsatz ab dem Umhängen am 21.04.2026 (e-116-martinstrasse-dsd16734-tempo30-8); der Anfang der Datei davor gehört zur Deichstraße (docs/einsaetze.md)"}}
+  ],
   "53_Feldstraße": [
    {"art": "zwischen_strassen", "strasse": "Feldstraße", "a": "Lange Hecke", "b": "Lauvenburger Straße", "stufe": "benannt",
     "text": "Rtg. kommend: Lange Hecke, Rtg. gehend: Lauvenburger Str",
