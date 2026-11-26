@@ -43,12 +43,16 @@ ZEITRAUM_BLOCK = re.compile(
     r"Erfassungs\s*zeitraum\s*(?:\(|vom\s+)(?P<von>\d\d\.\d\d\.(?:\d{4})?)\s*bis\s*(?P<bis>\d\d\.\d\d\.\d{4})")
 ZEITRAUM_IM = re.compile(rf"Im Zeitraum vom (?P<von>{DATUM}) bis (?P<bis>{DATUM})")
 NEBENSTRASSE = re.compile(r"[A-ZÄÖÜ][\wäöüß]+, Nebenstraße Hausnummer \d+")
-OHNE_DATEN = re.compile(r"Für die Messstelle (?P<ort>[^.]{2,60}?) liegen [^.]*keine Daten vor")
-SATZENDE = re.compile(r"(?<=[a-zäöü\d)%/]{3})\.\s+(?=[A-ZÄÖÜ])")  # nicht nach "ca.", "o. g.", "Nr."
+OHNE_DATEN = [  # Messstellen, zu denen die Mitteilung keine Werte nennt
+    re.compile(r"Für die Messstelle (?P<ort>[^.]{2,60}?) liegen [^.]*keine Daten vor"),
+    re.compile(r"Für die (?:anschließende )?Messstelle (?P<ort>[^.]{2,60}?) konnten [^.]*?Defekt[^.]*?keine Daten ausgewertet werden"),
+    re.compile(r"Dialog\s?-?\s?Display am Mess?\s?standort\s?:?\s*(?P<ort>[^.:]{2,60}?) musste [^.]*?Defekt\w* abgebaut werden"),
+]
+SATZENDE = re.compile(r"(?:(?<=[a-zäöü\d)%/]{3})|(?<=Tag))\.\s+(?=[A-ZÄÖÜ])")  # nicht nach "ca.", "o. g.", "Nr."
 
 EINSTUFUNG = [  # Reihenfolge: spezifischere Formulierungen zuerst; verglichen wird ohne Leerzeichen
     ("völligunkritisch", "voellig_unkritisch"), ("unkritisch", "unkritisch"), ("unauffällig", "unauffaellig"),
-    ("nochakzeptabel", "noch_akzeptabel"), ("überdurchschnittlichhoch", "ueberdurchschnittlich_hoch"),
+    ("nochakzeptabel", "noch_akzeptabel"), ("grenzwertig", "grenzwertig"),("überdurchschnittlichhoch", "ueberdurchschnittlich_hoch"),
     ("überdurchschnittlich", "ueberdurchschnittlich_hoch"), ("deutlichzuhoch", "deutlich_zu_hoch"),
     ("überhöht", "ueberhoeht"),
 ]
@@ -180,7 +184,7 @@ def kopf_zerlegen(kopf):
 
 
 NACHREPARATUREN = {  # Trennfehler, die im Wortschatz nicht vorkommen (jeweils nur in einer Mitteilung)
-    "üb erhöht": "überhöht", "überdu rchschnittlich": "überdurchschnittlich", "Kr aftfahrzeugen": "Kraftfahrzeugen", "begrenz t": "begrenzt",
+    "üb erhöht": "überhöht", "überdu rchschnittlich": "überdurchschnittlich", "Kr aftfahrzeugen": "Kraftfahrzeugen", "Kra ftfahrzeuge": "Kraftfahrzeuge","begrenz t": "begrenzt",
 }
 
 
@@ -317,6 +321,15 @@ def zerlege(text, voc=None):
     # Zeitraum-Saetze "Der Erfassungszeitraum war ..." gelten fuer die folgenden Messstellen
     saetze = [(m.start(), zeitraum(m.group("von"), m.group("bis"))) for m in ZEITRAUM_SATZ.finditer(inhalt)]
 
+    # Abschnitte ohne Daten, mit Beginn bei der Zwischenueberschrift ("Kreuzstraße Für die anschließende Messstelle ...")
+    ohne = []
+    for muster in OHNE_DATEN:
+        for m in muster.finditer(inhalt):
+            davor = inhalt[:m.start()].rstrip()
+            ort = m.group("ort").strip()
+            ohne.append((len(davor) - len(ort) if davor.endswith(ort) else m.start(), ort))
+    ohne.sort()
+
     bloecke, offen = [], []
     for n, (start, kopf_ende, art, m) in enumerate(marken):
         ende = marken[n + 1][0] if n + 1 < len(marken) else len(inhalt)
@@ -324,6 +337,7 @@ def zerlege(text, voc=None):
         stuecke = [(s, z) for s, z in saetze if kopf_ende <= s < ende]
         if stuecke:
             ende = stuecke[0][0]
+        ende = next((s for s, _ in ohne if kopf_ende <= s < ende), ende)
         text_block = inhalt[kopf_ende:ende]
         satz_zeitraum = next((z for s, z in reversed(saetze) if s < start), None)
         kopf = m.group("kopf")
@@ -356,8 +370,8 @@ def zerlege(text, voc=None):
                     offen.append({"kopf": b["bezeichnung"], "grund": "keine Messwerte erkannt"})
                     continue
                 bloecke.append(b)
-    for m in OHNE_DATEN.finditer(inhalt):
-        offen.append({"kopf": sauber(m.group("ort")), "grund": "technischer Defekt, keine Daten vorhanden"})
+    for _, ort in ohne:
+        offen.append({"kopf": repariere(sauber(ort)), "grund": "technischer Defekt, keine Daten vorhanden"})
     if neben:
         offen.append({"kopf": sauber(neben.group(0)), "grund": "keine Messung möglich oder ausgewertet",
                       "stellungnahme_verwaltung": stellungnahme(nebenteil)})

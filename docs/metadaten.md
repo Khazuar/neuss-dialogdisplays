@@ -68,27 +68,28 @@ der Abgleich ist dann nicht unabhängig. Alles, was sich nicht eindeutig zuordne
 Die Verwaltung berichtet Ergebnisse je Messstelle seit Februar 2024. Zu Messungen davor (Ende 2022 bis Sommer 2023)
 gibt es im Ratsinformationssystem keine Mitteilung je Messstelle, nur einen allgemeinen Bericht (30.01.2024) zum
 Stand der Geräte. Für die Dateien aus dieser Zeit ist `verwaltung` daher leer. Auch später fehlen Messungen, wenn die
-Verwaltung nicht darüber berichtet hat. Zwei Messstellen der Mitteilungen haben keine Daten: `Further Straße`
-(technischer Defekt) und `Berghäuschensweg, Nebenstraße Hausnummer 323` (Messung auf der Nebenfahrbahn nicht möglich,
+Verwaltung nicht darüber berichtet hat. Fünf Messstellen der Mitteilungen haben keine Daten: `Further Straße`,
+`Kreuzstraße`, `Elisabeth-Kadow-Straße` und `Rheinfährstraße` (technischer Defekt; die letzten drei laut Mitteilungen
+vom November 2026) sowie `Berghäuschensweg, Nebenstraße Hausnummer 323` (Messung auf der Nebenfahrbahn nicht möglich,
 das Gerät erfasst auch die Hauptfahrbahn). Sie stehen in `belege/ris-zuordnung.json` unter `nicht_ausgewertet`.
 
 ## Abgleich mit der DSD
 
 `abgleich_dsd` rechnet V85, mittleres Tempo und Fahrzeuge je Tag aus der DSD über denselben Zeitraum, nur mit Fahrzeugen
 mit nutzbarer Zeit, aber mit **allen** Geschwindigkeiten und ohne Abzug des Rauschbodens ([rauschen.md](rauschen.md)). So
-ist der Vergleich unabhängig davon, wie die Auswertung des Repositories sehr langsame Werte behandelt. Bei den 32 Zuordnungen
+ist der Vergleich unabhängig davon, wie die Auswertung des Repositories sehr langsame Werte behandelt. Bei den 39 Zuordnungen
 über den Zeitraum (`name_zeitraum`, unabhängig von den Werten) gilt:
 
-- **V85:** In 28 von 32 Fällen weicht die DSD höchstens 1 km/h von der Mitteilung ab, in 4 Fällen um 2 bis 3 km/h. Wo sie
-  abweicht, liegt die DSD meist niedriger (12 von 14 Fällen).
-- **Mittleres Tempo:** Die DSD liegt in 26 von 31 Fällen niedriger (Median −1,3 km/h), in Einzelfällen um mehr als
+- **V85:** In 34 von 39 Fällen weicht die DSD höchstens 1 km/h von der Mitteilung ab, in 5 Fällen um 2 bis 3 km/h. Wo sie
+  abweicht, liegt die DSD meist niedriger (17 von 19 Fällen).
+- **Mittleres Tempo:** Die DSD liegt in 32 von 38 Fällen niedriger (Median −1,5 km/h), in Einzelfällen um mehr als
   10 km/h (`Villestraße (FR Norf)`: DSD 45 bis 47 km/h, Mitteilung 58 km/h, siehe unten).
-- **Fahrzeuge je Tag:** Sie weichen in beide Richtungen ab, bei 17 von 23 um mehr als 5 % (9 nach oben, 8 nach unten). Bei
+- **Fahrzeuge je Tag:** Sie weichen in beide Richtungen ab, bei 23 von 30 um mehr als 5 % (15 nach oben, 8 nach unten). Bei
   Messungen, für die die Mitteilung zwei Richtungen nennt, gibt es eine Erklärung, siehe unten.
 - **Bauerbahn:** Hier stimmt alles überein, wenn man alle Fahrzeuge zählt: V85 17 gleich 17, mittleres Tempo 8,5 gegen 8 km/h,
   527 Fahrzeuge je Tag gleich 527. Rund die Hälfte der Werte dieser Datei liegt unter 5 km/h, die Verwaltung zählt sie also mit.
-- **Nicht überall:** Bei `Quinheimer Straße`, `Ruhrstraße` (109) und `Lupinen` liegt das mittlere Tempo der Verwaltung 6 bis
-  11 km/h über dem der DSD bei fast gleicher V85. Dort hat die Verwaltung das Mittel vermutlich ohne die langsamen Werte
+- **Nicht überall:** Bei `Quinheimer Straße`, `Ruhrstraße` (109 und 118), `Martinstraße` (116) und `Lupinen` liegt das
+  mittlere Tempo der Verwaltung 5 bis 11 km/h über dem der DSD bei ähnlicher V85. Dort hat die Verwaltung das Mittel vermutlich ohne die langsamen Werte
   gerechnet. Die Software der Verwaltung behandelt sehr langsame Werte also nicht überall gleich.
 
 Wo die Abweichung groß ist, kann auch die Mitteilung selbst Fehler enthalten: Bei `Villestraße (FR Norf)` nennt sie als
@@ -119,20 +120,22 @@ sich statistisch deutlich unterscheiden: `10_Holzbüttgener Straße` 19.198 Fahr
 `07_Lupinen_Nierenhofstraße` 20.721 Fahrzeuge vom 16.11. bis 17.12.2023 (V85 30, Ø 15,4) gegenüber V85 32 und Ø 21,7 im
 Zeitraum. Woher sie stammen, lässt sich aus den Daten nicht belegen; ein früherer Einsatz des Geräts ist möglich. Die
 Verwaltung hat sie offenbar bewusst nicht berücksichtigt. `metadaten.py` schreibt deshalb die Erfassungszeiträume aller über den
-Zeitraum zugeordneten Mitteilungen (`name_zeitraum`, 31 Dateien) nach `belege/korrekturen.json` (Teil `zeitraum`). `dsd2csv.py`
+Zeitraum zugeordneten Mitteilungen (`name_zeitraum`, 38 Dateien) nach `belege/korrekturen.json` (Teil `zeitraum`). `dsd2csv.py`
 setzt an deren Grenzen künstliche Abschnittsgrenzen ([abschnitte.md](abschnitte.md)): Die Daten außerhalb bleiben als eigene,
 gekennzeichnete Abschnitte auswählbar, gehen aber nicht in die Kennzahlen der ganzen Messung und den Vergleich mit der
 Verwaltung ein. Die Einsätze entscheiden selbst, ob sie diese Daten nutzen ([einsaetze.md](einsaetze.md)). Zeiträume, die nur
 über die Werte zugeordnet sind (`name_werte_zeitraum_abweichend`) oder als Tippfehler gelten, verwendet das Verfahren nicht. Die
-Abgleichszahlen in `abgleich_dsd` gelten wie bisher nur für den genannten Zeitraum. Bei acht
+Abgleichszahlen in `abgleich_dsd` gelten wie bisher nur für den genannten Zeitraum. Bei neun
 weiteren Messungen decken die Daten nur einen Teil des genannten Zeitraums ab (Beginn 18 bis 38 Tage später oder Ende 26 bis 71
 Tage früher), vermutlich Ausfälle der Geräte. Die beiden Dateien `Villestraße/FR Norf` teilen sich einen Zeitraum der
 Mitteilung und sind hier nicht mitgezählt.
 
 **3. Eine statt zwei Richtungen.** Nennt die Mitteilung Fahrzeuge je Tag für „kommend“ und „gehend“, liegt die DSD bei
-11 von 13 Messungen zwischen 41 und 63 % der Summe beider Richtungen, im Median bei 108 % der stärkeren Richtung. Die Datei
-enthält also offenbar nur eine Richtung, die Datei der Gegenrichtung liegt nicht vor (Ausnahmen: `110_Rosellener Kirchstraße`
-147 %, `84_Am Alten Bach` 88 %). Die Seiten weisen darauf hin.
+11 von 16 Messungen zwischen 41 und 63 % der Summe beider Richtungen, also etwa bei einer Richtung. Dort enthält die Datei
+offenbar nur eine Richtung, die Datei der Gegenrichtung liegt nicht vor; die Seiten weisen darauf hin. Ausnahmen:
+`84_Am Alten Bach` 88 %, `115_Breite Straße` 96 %, `116_Martinstraße` 112 %, `110_Rosellener Kirchstraße` 147 % und
+`118_Ruhrstraße` 240 % (ohne Werte unter 8 km/h noch 184 %). Zur Breiten Straße schreibt die Verwaltung, sie sei Einbahnstraße
+für Kraftfahrzeuge, der Radverkehr aus der Gegenrichtung werde mitgemessen.
 
 **4. Doppelte Dateien.** `06_Rosellener Schulstraße/_7.dsd` und `48_Lanzerather Dorfstraße/_7.dsd` enthalten dieselben 34.609
 Fahrzeuge, `12_Berghäuschensweg/DSD_16735_7.dsd` ist vollständig in `_8.dsd` enthalten. Wohin die Daten tatsächlich gehören, ist

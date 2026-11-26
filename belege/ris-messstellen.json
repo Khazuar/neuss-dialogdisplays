@@ -747,6 +747,7 @@
      ],
      "stellungnahme_verwaltung": [
       "Der maßgebliche V85-Wert mit 38 km/h ist, bei vorgeschriebenen 30 km/h, noch akzeptabel.",
+      "Für diesen hohen Wert habe ich keine Erklärung.",
       "Verkehrslenkende Maßnahmen sind nicht erforderlich."
      ]
     }
@@ -1717,6 +1718,293 @@
     }
    ],
    "nicht_ausgewertet": []
+  },
+  {
+   "vorlage": "69/0484/2026",
+   "ris_vorlage_id": 30242,
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss I - Innenstadt",
+   "sitzung": "2026-12-03",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255434&type=do",
+   "messstellen": [
+    {
+     "bezeichnung": "Breite Straße",
+     "strasse": "Breite Straße",
+     "zeitraum": [
+      "2026-03-29",
+      "2026-08-02"
+     ],
+     "tempolimit_kmh": 30,
+     "v85_kmh": 36,
+     "mittel_kmh": 27,
+     "fahrzeuge_je_tag": {
+      "kommend": 1728,
+      "gehend": 240
+     },
+     "anteil_unter": {
+      "prozent": 95.0,
+      "kmh": 40
+     },
+     "einstufung_verwaltung": "unkritisch",
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "hinweise_verwaltung": [
+      "Bereich soll weiter beobachtet werden"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 36 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch.",
+      "Hier sollte erwähnt werden, dass die Breite Straße zwar eine Einbahnstraße für Kraftfahrzeuge ist, aber der Radverkehr aus der Gegenrichtung kommend auch gemessen wird.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich.",
+      "Der Bereich bleibt aber unter Beobachtung, da viele Kraftfahrer zwischen 30 km/h und 40 km/h unterwegs sind."
+     ]
+    }
+   ],
+   "nicht_ausgewertet": []
+  },
+  {
+   "vorlage": "69/0485/2026",
+   "ris_vorlage_id": 30243,
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss II - Nordstadt",
+   "sitzung": "2026-11-12",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253874&type=do",
+   "messstellen": [
+    {
+     "bezeichnung": "Am Leuchtenhof",
+     "strasse": "Am Leuchtenhof",
+     "zeitraum": [
+      "2026-03-29",
+      "2026-08-02"
+     ],
+     "tempolimit_kmh": 30,
+     "v85_kmh": 29,
+     "mittel_kmh": 23,
+     "fahrzeuge_je_tag": {
+      "gesamt": 145
+     },
+     "anteil_unter": {
+      "prozent": 88.0,
+      "kmh": 40
+     },
+     "einstufung_verwaltung": "voellig_unkritisch",
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 29 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenke Maßnahmen sind nicht erforderlich."
+     ]
+    },
+    {
+     "bezeichnung": "Niederdonker Weg",
+     "strasse": "Niederdonker Weg",
+     "zeitraum": [
+      "2026-03-29",
+      "2026-08-02"
+     ],
+     "tempolimit_kmh": 30,
+     "v85_kmh": 32,
+     "mittel_kmh": 25,
+     "fahrzeuge_je_tag": {
+      "gesamt": 341
+     },
+     "anteil_unter": {
+      "prozent": 80.0,
+      "kmh": 40
+     },
+     "einstufung_verwaltung": "voellig_unkritisch",
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 32 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
+    }
+   ],
+   "nicht_ausgewertet": []
+  },
+  {
+   "vorlage": "69/0486/2026",
+   "ris_vorlage_id": 30244,
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+   "sitzung": "2026-11-04",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253414&type=do",
+   "messstellen": [
+    {
+     "bezeichnung": "Weckhovener Straße (Tempo 30)",
+     "strasse": "Weckhovener Straße",
+     "tempo_im_kopf_kmh": 30,
+     "zeitraum": [
+      "2025-10-26",
+      "2026-03-29"
+     ],
+     "tempolimit_kmh": 30,
+     "v85_kmh": 39,
+     "mittel_kmh": 33,
+     "fahrzeuge_je_tag": {
+      "gesamt": 760
+     },
+     "anteil_unter": {
+      "prozent": 91.0,
+      "kmh": 40
+     },
+     "einstufung_verwaltung": "grenzwertig",
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "hinweise_verwaltung": [
+      "Bereich soll weiter beobachtet werden"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 39 km/h ist, bei vorgeschriebenen 30 km/h, grenzwertig.",
+      "Die Geschwindigkeit wurde von 40 km/h auf 30 km/h herabgesenkt.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich.",
+      "Der Bereich sollte aber weiterhin unter Beobachtung bleiben."
+     ]
+    }
+   ],
+   "nicht_ausgewertet": [
+    {
+     "kopf": "Kreuzstraße",
+     "grund": "technischer Defekt, keine Daten vorhanden"
+    }
+   ]
+  },
+  {
+   "vorlage": "69/0487/2026",
+   "ris_vorlage_id": 30245,
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss VIII - Rosellen",
+   "sitzung": "2026-11-24",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255225&type=do",
+   "messstellen": [],
+   "nicht_ausgewertet": [
+    {
+     "kopf": "Elisabeth-Kadow-Straße",
+     "grund": "technischer Defekt, keine Daten vorhanden"
+    }
+   ]
+  },
+  {
+   "vorlage": "69/0488/2026",
+   "ris_vorlage_id": 30279,
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss IV - Holzheim",
+   "sitzung": "2026-12-02",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255803&type=do",
+   "messstellen": [
+    {
+     "bezeichnung": "Martinstraße",
+     "strasse": "Martinstraße",
+     "zeitraum": [
+      "2026-03-29",
+      "2026-08-02"
+     ],
+     "tempolimit_kmh": 30,
+     "v85_kmh": 27,
+     "mittel_kmh": 22,
+     "fahrzeuge_je_tag": {
+      "kommend": 610,
+      "gehend": 467
+     },
+     "anteil_unter": {
+      "prozent": 96.0,
+      "kmh": 40
+     },
+     "einstufung_verwaltung": "voellig_unkritisch",
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 27 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
+    }
+   ],
+   "nicht_ausgewertet": []
+  },
+  {
+   "vorlage": "69/0489/2026",
+   "ris_vorlage_id": 30280,
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss V - Norf",
+   "sitzung": "2026-11-26",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255396&type=do",
+   "messstellen": [
+    {
+     "bezeichnung": "Ruhrstraße",
+     "strasse": "Ruhrstraße",
+     "zeitraum": [
+      "2026-03-29",
+      "2026-08-02"
+     ],
+     "tempolimit_kmh": 30,
+     "v85_kmh": 34,
+     "mittel_kmh": 27,
+     "fahrzeuge_je_tag": {
+      "kommend": 353,
+      "gehend": 222
+     },
+     "anteil_unter": {
+      "prozent": 68.0,
+      "kmh": 30
+     },
+     "einstufung_verwaltung": "unkritisch",
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 34 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+     ]
+    }
+   ],
+   "nicht_ausgewertet": []
+  },
+  {
+   "vorlage": "69/0490/2026",
+   "ris_vorlage_id": 30281,
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss VI - Gnadental, Grimlinghausen, Erfttal",
+   "sitzung": "2026-11-05",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253417&type=do",
+   "messstellen": [
+    {
+     "bezeichnung": "Euskirchener Straße",
+     "strasse": "Euskirchener Straße",
+     "zeitraum": [
+      "2026-03-29",
+      "2026-08-02"
+     ],
+     "tempolimit_kmh": 30,
+     "v85_kmh": 38,
+     "mittel_kmh": 31,
+     "fahrzeuge_je_tag": {
+      "gesamt": 1059
+     },
+     "anteil_unter": {
+      "prozent": 92.0,
+      "kmh": 40
+     },
+     "einstufung_verwaltung": "noch_akzeptabel",
+     "massnahmen_verwaltung": "nicht erforderlich",
+     "hinweise_verwaltung": [
+      "Bereich soll weiter beobachtet werden"
+     ],
+     "stellungnahme_verwaltung": [
+      "Der maßgebliche V85-Wert mit 38 km/h, bei vorgeschriebenen 30 km/h, ist noch akzeptabel.",
+      "Verkehrslenkende Maßnahmen sind nicht erforderlich.",
+      "Der Bereich bleibt aber unter Beobachtung, da viele Kraftfahrende zwischen 30 km/h und 40 km/h unterwegs sind."
+     ]
+    }
+   ],
+   "nicht_ausgewertet": []
+  },
+  {
+   "vorlage": "69/0491/2026",
+   "ris_vorlage_id": 30282,
+   "betreff": "Ergebnisse von Verkehrsmessungen durch Dialog Displays",
+   "gremium": "Bezirksausschuss VII - Uedesheim",
+   "sitzung": "2026-11-18",
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=254460&type=do",
+   "messstellen": [],
+   "nicht_ausgewertet": [
+    {
+     "kopf": "Rheinfährstraße",
+     "grund": "technischer Defekt, keine Daten vorhanden"
+    }
+   ]
   }
  ]
 }

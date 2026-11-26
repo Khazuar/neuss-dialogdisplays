@@ -979,6 +979,7 @@
        ],
        "stellungnahme_verwaltung": [
         "Der maßgebliche V85-Wert mit 38 km/h ist, bei vorgeschriebenen 30 km/h, noch akzeptabel.",
+        "Für diesen hohen Wert habe ich keine Erklärung.",
         "Verkehrslenkende Maßnahmen sind nicht erforderlich."
        ],
        "quellen": [
@@ -2255,7 +2256,62 @@
       "erfassung_ab_kmh": 7,
       "verdeckte_messung": false
      },
-     "verwaltung": []
+     "verwaltung": [
+      {
+       "bezeichnung": "Weckhovener Straße (Tempo 30)",
+       "strasse": "Weckhovener Straße",
+       "zeitraum": [
+        "2025-10-26",
+        "2026-03-29"
+       ],
+       "tempolimit_kmh": 30,
+       "fahrzeuge_je_tag": {
+        "gesamt": 760
+       },
+       "v85_kmh": 39,
+       "mittel_kmh": 33,
+       "anteil_unter": {
+        "prozent": 91.0,
+        "kmh": 40
+       },
+       "einstufung_verwaltung": "grenzwertig",
+       "massnahmen_verwaltung": "nicht erforderlich",
+       "hinweise_verwaltung": [
+        "Bereich soll weiter beobachtet werden"
+       ],
+       "stellungnahme_verwaltung": [
+        "Der maßgebliche V85-Wert mit 39 km/h ist, bei vorgeschriebenen 30 km/h, grenzwertig.",
+        "Die Geschwindigkeit wurde von 40 km/h auf 30 km/h herabgesenkt.",
+        "Verkehrslenkende Maßnahmen sind nicht erforderlich.",
+        "Der Bereich sollte aber weiterhin unter Beobachtung bleiben."
+       ],
+       "quellen": [
+        {
+         "vorlage": "69/0486/2026",
+         "ris_vorlage_id": 30244,
+         "gremium": "Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten",
+         "sitzung": "2026-11-04",
+         "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253414&type=do"
+        }
+       ],
+       "zuordnung": {
+        "methode": "name_zeitraum",
+        "zeitraum_ueberlappung_tage": 155
+       },
+       "abgleich_dsd": {
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung",
+        "fahrzeuge": 204014,
+        "v85_kmh": 38,
+        "mittel_kmh": 29.6,
+        "fahrzeuge_je_tag": 1325,
+        "abweichung_dsd_minus_verwaltung": {
+         "v85_kmh": -1,
+         "mittel_kmh": -3.4,
+         "fahrzeuge_je_tag_prozent": 74
+        }
+       }
+      }
+     ]
     }
    ]
   },
@@ -2391,7 +2447,57 @@
       "erfassung_ab_kmh": 10,
       "verdeckte_messung": false
      },
-     "verwaltung": []
+     "verwaltung": [
+      {
+       "bezeichnung": "Am Leuchtenhof",
+       "strasse": "Am Leuchtenhof",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ],
+       "tempolimit_kmh": 30,
+       "fahrzeuge_je_tag": {
+        "gesamt": 145
+       },
+       "v85_kmh": 29,
+       "mittel_kmh": 23,
+       "anteil_unter": {
+        "prozent": 88.0,
+        "kmh": 40
+       },
+       "einstufung_verwaltung": "voellig_unkritisch",
+       "massnahmen_verwaltung": "nicht erforderlich",
+       "stellungnahme_verwaltung": [
+        "Der maßgebliche V85-Wert mit 29 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+        "Verkehrslenke Maßnahmen sind nicht erforderlich."
+       ],
+       "quellen": [
+        {
+         "vorlage": "69/0485/2026",
+         "ris_vorlage_id": 30243,
+         "gremium": "Bezirksausschuss II - Nordstadt",
+         "sitzung": "2026-11-12",
+         "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253874&type=do"
+        }
+       ],
+       "zuordnung": {
+        "methode": "name_zeitraum",
+        "zeitraum_ueberlappung_tage": 123
+       },
+       "abgleich_dsd": {
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung",
+        "fahrzeuge": 20698,
+        "v85_kmh": 29,
+        "mittel_kmh": 21.9,
+        "fahrzeuge_je_tag": 168,
+        "abweichung_dsd_minus_verwaltung": {
+         "v85_kmh": 0,
+         "mittel_kmh": -1.1,
+         "fahrzeuge_je_tag_prozent": 16
+        }
+       }
+      }
+     ]
     }
    ]
   },
@@ -2452,7 +2558,57 @@
       "erfassung_ab_kmh": 9,
       "verdeckte_messung": false
      },
-     "verwaltung": []
+     "verwaltung": [
+      {
+       "bezeichnung": "Niederdonker Weg",
+       "strasse": "Niederdonker Weg",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ],
+       "tempolimit_kmh": 30,
+       "fahrzeuge_je_tag": {
+        "gesamt": 341
+       },
+       "v85_kmh": 32,
+       "mittel_kmh": 25,
+       "anteil_unter": {
+        "prozent": 80.0,
+        "kmh": 40
+       },
+       "einstufung_verwaltung": "voellig_unkritisch",
+       "massnahmen_verwaltung": "nicht erforderlich",
+       "stellungnahme_verwaltung": [
+        "Der maßgebliche V85-Wert mit 32 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+        "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+       ],
+       "quellen": [
+        {
+         "vorlage": "69/0485/2026",
+         "ris_vorlage_id": 30243,
+         "gremium": "Bezirksausschuss II - Nordstadt",
+         "sitzung": "2026-11-12",
+         "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253874&type=do"
+        }
+       ],
+       "zuordnung": {
+        "methode": "name_zeitraum",
+        "zeitraum_ueberlappung_tage": 109
+       },
+       "abgleich_dsd": {
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung",
+        "fahrzeuge": 50042,
+        "v85_kmh": 31,
+        "mittel_kmh": 21.2,
+        "fahrzeuge_je_tag": 459,
+        "abweichung_dsd_minus_verwaltung": {
+         "v85_kmh": -1,
+         "mittel_kmh": -3.8,
+         "fahrzeuge_je_tag_prozent": 35
+        }
+       }
+      }
+     ]
     }
    ]
   },
@@ -2495,7 +2651,63 @@
       "erfassung_ab_kmh": 9,
       "verdeckte_messung": false
      },
-     "verwaltung": []
+     "verwaltung": [
+      {
+       "bezeichnung": "Breite Straße",
+       "strasse": "Breite Straße",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ],
+       "tempolimit_kmh": 30,
+       "fahrzeuge_je_tag": {
+        "kommend": 1728,
+        "gehend": 240
+       },
+       "v85_kmh": 36,
+       "mittel_kmh": 27,
+       "anteil_unter": {
+        "prozent": 95.0,
+        "kmh": 40
+       },
+       "einstufung_verwaltung": "unkritisch",
+       "massnahmen_verwaltung": "nicht erforderlich",
+       "hinweise_verwaltung": [
+        "Bereich soll weiter beobachtet werden"
+       ],
+       "stellungnahme_verwaltung": [
+        "Der maßgebliche V85-Wert mit 36 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch.",
+        "Hier sollte erwähnt werden, dass die Breite Straße zwar eine Einbahnstraße für Kraftfahrzeuge ist, aber der Radverkehr aus der Gegenrichtung kommend auch gemessen wird.",
+        "Verkehrslenkende Maßnahmen sind nicht erforderlich.",
+        "Der Bereich bleibt aber unter Beobachtung, da viele Kraftfahrer zwischen 30 km/h und 40 km/h unterwegs sind."
+       ],
+       "quellen": [
+        {
+         "vorlage": "69/0484/2026",
+         "ris_vorlage_id": 30242,
+         "gremium": "Bezirksausschuss I - Innenstadt",
+         "sitzung": "2026-12-03",
+         "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255434&type=do"
+        }
+       ],
+       "zuordnung": {
+        "methode": "name_zeitraum",
+        "zeitraum_ueberlappung_tage": 127
+       },
+       "abgleich_dsd": {
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung",
+        "fahrzeuge": 237194,
+        "v85_kmh": 35,
+        "mittel_kmh": 28.2,
+        "fahrzeuge_je_tag": 1882,
+        "abweichung_dsd_minus_verwaltung": {
+         "v85_kmh": -1,
+         "mittel_kmh": 1.2,
+         "fahrzeuge_je_tag_prozent": -4
+        }
+       }
+      }
+     ]
     }
    ]
   },
@@ -2558,7 +2770,58 @@
       "erfassung_ab_kmh": 9,
       "verdeckte_messung": false
      },
-     "verwaltung": []
+     "verwaltung": [
+      {
+       "bezeichnung": "Martinstraße",
+       "strasse": "Martinstraße",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ],
+       "tempolimit_kmh": 30,
+       "fahrzeuge_je_tag": {
+        "kommend": 610,
+        "gehend": 467
+       },
+       "v85_kmh": 27,
+       "mittel_kmh": 22,
+       "anteil_unter": {
+        "prozent": 96.0,
+        "kmh": 40
+       },
+       "einstufung_verwaltung": "voellig_unkritisch",
+       "massnahmen_verwaltung": "nicht erforderlich",
+       "stellungnahme_verwaltung": [
+        "Der maßgebliche V85-Wert mit 27 km/h ist, bei vorgeschriebenen 30 km/h, völlig unkritisch.",
+        "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+       ],
+       "quellen": [
+        {
+         "vorlage": "69/0488/2026",
+         "ris_vorlage_id": 30279,
+         "gremium": "Bezirksausschuss IV - Holzheim",
+         "sitzung": "2026-12-02",
+         "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255803&type=do"
+        }
+       ],
+       "zuordnung": {
+        "methode": "name_zeitraum",
+        "zeitraum_ueberlappung_tage": 127
+       },
+       "abgleich_dsd": {
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung",
+        "fahrzeuge": 151706,
+        "v85_kmh": 24,
+        "mittel_kmh": 16.5,
+        "fahrzeuge_je_tag": 1204,
+        "abweichung_dsd_minus_verwaltung": {
+         "v85_kmh": -3,
+         "mittel_kmh": -5.5,
+         "fahrzeuge_je_tag_prozent": 12
+        }
+       }
+      }
+     ]
     }
    ]
   },
@@ -2601,7 +2864,61 @@
       "erfassung_ab_kmh": 9,
       "verdeckte_messung": false
      },
-     "verwaltung": []
+     "verwaltung": [
+      {
+       "bezeichnung": "Euskirchener Straße",
+       "strasse": "Euskirchener Straße",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ],
+       "tempolimit_kmh": 30,
+       "fahrzeuge_je_tag": {
+        "gesamt": 1059
+       },
+       "v85_kmh": 38,
+       "mittel_kmh": 31,
+       "anteil_unter": {
+        "prozent": 92.0,
+        "kmh": 40
+       },
+       "einstufung_verwaltung": "noch_akzeptabel",
+       "massnahmen_verwaltung": "nicht erforderlich",
+       "hinweise_verwaltung": [
+        "Bereich soll weiter beobachtet werden"
+       ],
+       "stellungnahme_verwaltung": [
+        "Der maßgebliche V85-Wert mit 38 km/h, bei vorgeschriebenen 30 km/h, ist noch akzeptabel.",
+        "Verkehrslenkende Maßnahmen sind nicht erforderlich.",
+        "Der Bereich bleibt aber unter Beobachtung, da viele Kraftfahrende zwischen 30 km/h und 40 km/h unterwegs sind."
+       ],
+       "quellen": [
+        {
+         "vorlage": "69/0490/2026",
+         "ris_vorlage_id": 30281,
+         "gremium": "Bezirksausschuss VI - Gnadental, Grimlinghausen, Erfttal",
+         "sitzung": "2026-11-05",
+         "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253417&type=do"
+        }
+       ],
+       "zuordnung": {
+        "methode": "name_zeitraum",
+        "zeitraum_ueberlappung_tage": 127
+       },
+       "abgleich_dsd": {
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung",
+        "fahrzeuge": 144277,
+        "v85_kmh": 38,
+        "mittel_kmh": 29.5,
+        "fahrzeuge_je_tag": 1145,
+        "abweichung_dsd_minus_verwaltung": {
+         "v85_kmh": 0,
+         "mittel_kmh": -1.5,
+         "fahrzeuge_je_tag_prozent": 8
+        }
+       }
+      }
+     ]
     }
    ]
   },
@@ -2644,7 +2961,58 @@
       "erfassung_ab_kmh": 9,
       "verdeckte_messung": false
      },
-     "verwaltung": []
+     "verwaltung": [
+      {
+       "bezeichnung": "Ruhrstraße",
+       "strasse": "Ruhrstraße",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ],
+       "tempolimit_kmh": 30,
+       "fahrzeuge_je_tag": {
+        "kommend": 353,
+        "gehend": 222
+       },
+       "v85_kmh": 34,
+       "mittel_kmh": 27,
+       "anteil_unter": {
+        "prozent": 68.0,
+        "kmh": 30
+       },
+       "einstufung_verwaltung": "unkritisch",
+       "massnahmen_verwaltung": "nicht erforderlich",
+       "stellungnahme_verwaltung": [
+        "Der maßgebliche V85-Wert mit 34 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch.",
+        "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+       ],
+       "quellen": [
+        {
+         "vorlage": "69/0489/2026",
+         "ris_vorlage_id": 30280,
+         "gremium": "Bezirksausschuss V - Norf",
+         "sitzung": "2026-11-26",
+         "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255396&type=do"
+        }
+       ],
+       "zuordnung": {
+        "methode": "name_zeitraum",
+        "zeitraum_ueberlappung_tage": 127
+       },
+       "abgleich_dsd": {
+        "hinweis": "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung",
+        "fahrzeuge": 173793,
+        "v85_kmh": 33,
+        "mittel_kmh": 21.8,
+        "fahrzeuge_je_tag": 1379,
+        "abweichung_dsd_minus_verwaltung": {
+         "v85_kmh": -1,
+         "mittel_kmh": -5.2,
+         "fahrzeuge_je_tag_prozent": 140
+        }
+       }
+      }
+     ]
     }
    ]
   },

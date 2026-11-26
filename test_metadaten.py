@@ -69,6 +69,30 @@ class Zerlegen(unittest.TestCase):
         self.assertEqual(bloecke, [])
         self.assertEqual(offen[0]["kopf"], "Further Straße")
 
+    def test_defekt_unter_eigener_zwischenueberschrift(self):
+        t = ("Inhalt der Mitteilung: Der Erfassungszeitraum war vom 26.10.2025 bis 29.03.2026. Weckhovener Straße (Tempo 30): "
+             "Der maßgebliche V85-Wert mit 39 km/h ist, bei vorgeschriebenen 30 km/h, grenzwertig. Der Bereich sollte aber "
+             "weiterhin unter Beobachtung bleiben. Kreuzstraße Für die anschließende Messstelle Kreuzstraße konnten aufgrund "
+             "eines technischen Defektes des GIS-Gerätes keine Daten ausgewertet werden. Die Messungen an der Kreuzstraße werden "
+             "zu einem späteren Zeitpunkt nachgeholt.")
+        bloecke, offen = r.zerlege(t)
+        self.assertEqual([(b["strasse"], b["einstufung_verwaltung"]) for b in bloecke], [("Weckhovener Straße", "grenzwertig")])
+        self.assertNotIn("Kreuzstraße", " ".join(bloecke[0]["stellungnahme_verwaltung"]))
+        self.assertEqual([o["kopf"] for o in offen], ["Kreuzstraße"])
+
+    def test_defekt_ohne_jede_messung(self):
+        t = ("Inhalt der Mitteilung: Das Dialog Display am Messtandort: Elisabeth -Kadow -Straße musste aufgrund eines "
+             "Defektes abgebaut werden. Verwertbare Messungen fanden nicht statt.")
+        bloecke, offen = r.zerlege(t)
+        self.assertEqual((bloecke, [o["kopf"] for o in offen]), ([], ["Elisabeth-Kadow-Straße"]))
+
+    def test_satzende_nach_pro_tag(self):
+        t = ("Inhalt der Mitteilung: Breite Straße: Der maßgebliche V85-Wert mit 36 km/h ist, bei vorgeschriebenen 30 km/h, "
+             "unkritisch. Im Erfassungszeitraum gab es ca. 240 Fahrzeugbewegungen (gehend) pro Tag. Hier sollte erwähnt werden, "
+             "dass der Radverkehr aus der Gegenrichtung auch gemessen wird.")
+        st = r.zerlege(t)[0][0]["stellungnahme_verwaltung"]
+        self.assertIn("Hier sollte erwähnt werden, dass der Radverkehr aus der Gegenrichtung auch gemessen wird.", st)
+
     def test_datum_ohne_jahr_im_ersten_datum(self):
         self.assertEqual(r.zeitraum("16.09.", "04.12.2024"), ["2024-09-16", "2024-12-04"])
         self.assertEqual(r.zeitraum("16.11.", "19.03.2024"), ["2023-11-16", "2024-03-19"])

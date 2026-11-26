@@ -287,6 +287,21 @@
     }
    }
   ],
+  "111_Weckhovener Straße/DSD17385 Tempo30_8.dsd": [
+   {
+    "messstelle": "Weckhovener Straße (Tempo 30)",
+    "zeitraum": [
+     "2025-10-26",
+     "2026-03-29"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -3.4,
+     "fahrzeuge_je_tag_prozent": 74
+    }
+   }
+  ],
   "112_Liedberger Straße/DSD14178 Tempo30_5.dsd": [
    {
     "messstelle": "Liedberger Straße (Tempo 30)",
@@ -299,6 +314,96 @@
      "v85_kmh": -1,
      "mittel_kmh": -0.6,
      "fahrzeuge_je_tag_prozent": 5
+    }
+   }
+  ],
+  "113_Am Leuchtenhof/DSD14178 Tempo30_6.dsd": [
+   {
+    "messstelle": "Am Leuchtenhof",
+    "zeitraum": [
+     "2026-03-29",
+     "2026-08-02"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -1.1,
+     "fahrzeuge_je_tag_prozent": 16
+    }
+   }
+  ],
+  "114_Niederdonker Weg/DSD17386 Tempo30_6.dsd": [
+   {
+    "messstelle": "Niederdonker Weg",
+    "zeitraum": [
+     "2026-03-29",
+     "2026-08-02"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -3.8,
+     "fahrzeuge_je_tag_prozent": 35
+    }
+   }
+  ],
+  "115_Breite Straße/_20.dsd": [
+   {
+    "messstelle": "Breite Straße",
+    "zeitraum": [
+     "2026-03-29",
+     "2026-08-02"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": 1.2,
+     "fahrzeuge_je_tag_prozent": -4
+    }
+   }
+  ],
+  "116_Martinstraße/DSD16734 Tempo30_8.dsd": [
+   {
+    "messstelle": "Martinstraße",
+    "zeitraum": [
+     "2026-03-29",
+     "2026-08-02"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -3,
+     "mittel_kmh": -5.5,
+     "fahrzeuge_je_tag_prozent": 12
+    }
+   }
+  ],
+  "117_Euskirchener Straße/DSD17350 Tempo30_7.dsd": [
+   {
+    "messstelle": "Euskirchener Straße",
+    "zeitraum": [
+     "2026-03-29",
+     "2026-08-02"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": 0,
+     "mittel_kmh": -1.5,
+     "fahrzeuge_je_tag_prozent": 8
+    }
+   }
+  ],
+  "118_Ruhrstraße/_11.dsd": [
+   {
+    "messstelle": "Ruhrstraße",
+    "zeitraum": [
+     "2026-03-29",
+     "2026-08-02"
+    ],
+    "methode": "name_zeitraum",
+    "abweichung": {
+     "v85_kmh": -1,
+     "mittel_kmh": -5.2,
+     "fahrzeuge_je_tag_prozent": 140
     }
    }
   ],
@@ -760,6 +865,21 @@
   {
    "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=240218&type=do",
    "kopf": "Further Straße",
+   "grund": "technischer Defekt, keine Daten vorhanden"
+  },
+  {
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253414&type=do",
+   "kopf": "Kreuzstraße",
+   "grund": "technischer Defekt, keine Daten vorhanden"
+  },
+  {
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255225&type=do",
+   "kopf": "Elisabeth-Kadow-Straße",
+   "grund": "technischer Defekt, keine Daten vorhanden"
+  },
+  {
+   "dokument": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=254460&type=do",
+   "kopf": "Rheinfährstraße",
    "grund": "technischer Defekt, keine Daten vorhanden"
   }
  ]

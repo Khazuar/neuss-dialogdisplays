@@ -37,4 +37,42 @@ messungen:
       tempolimit_anzeige_kmh: 30
       erfassung_ab_kmh: 9
       verdeckte_messung: false
-    verwaltung: []
+    verwaltung:
+      - bezeichnung: "Ruhrstraße"
+        strasse: "Ruhrstraße"
+        zeitraum:
+          - "2026-03-29"
+          - "2026-08-02"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          kommend: 353
+          gehend: 222
+        v85_kmh: 34
+        mittel_kmh: 27
+        anteil_unter:
+          prozent: 68.0
+          kmh: 30
+        einstufung_verwaltung: "unkritisch"
+        massnahmen_verwaltung: "nicht erforderlich"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert mit 34 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch."
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+        quellen:
+          - vorlage: "69/0489/2026"
+            ris_vorlage_id: 30280
+            gremium: "Bezirksausschuss V - Norf"
+            sitzung: "2026-11-26"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255396&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 127
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung"
+          fahrzeuge: 173793
+          v85_kmh: 33
+          mittel_kmh: 21.8
+          fahrzeuge_je_tag: 1379
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: -5.2
+            fahrzeuge_je_tag_prozent: 140

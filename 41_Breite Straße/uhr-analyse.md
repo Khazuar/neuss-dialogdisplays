@@ -19,5 +19,5 @@ Eigene Berechnung, nicht amtlich; Fehler in der Auswertung können nicht ausgesc
   - Wochenrhythmus: bestätigt. Wochenmuster passt zu den Kalendertagen (Korrelation 0.99)
   - Tagesgang: bestätigt. Tagesgang entspricht dem typischen Verlauf (+15 min, Korrelation 0.99)
   - Zeitumstellung: offen. keine Zeitumstellung im Segment mit genug Daten davor und danach
-  - Mitteilungen der Verwaltung: offen. Ort in keiner Mitteilung mit Erfassungszeitraum genannt
+  - Mitteilungen der Verwaltung: offen. Ort in 1 Mitteilung(en) genannt, aber kein Zeitraum passt zum Segment
   - Kontinuität: bestätigt. Heartbeat lückenlos, keine Uhrsprünge

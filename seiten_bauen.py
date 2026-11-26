@@ -37,7 +37,7 @@ MIN_FAHRZEUGE_ABSCHNITT = 2000  # kleinere Uhr-Abschnitte werden zusammengefasst
 
 EINSTUFUNG = {
     "voellig_unkritisch": ("völlig unkritisch", "ok"), "unkritisch": ("unkritisch", "ok"), "unauffaellig": ("unauffällig", "ok"),
-    "noch_akzeptabel": ("noch akzeptabel", "mid"), "ueberdurchschnittlich_hoch": ("überdurchschnittlich hoch", "bad"),
+    "noch_akzeptabel": ("noch akzeptabel", "mid"), "grenzwertig": ("grenzwertig", "mid"), "ueberdurchschnittlich_hoch": ("überdurchschnittlich hoch", "bad"),
     "deutlich_zu_hoch": ("deutlich zu hoch", "bad"), "ueberhoeht": ("überhöht", "bad"),
 }
 URTEIL = {"plausibel": "ok", "eingeschraenkt": "mid", "unbrauchbar": "bad"}

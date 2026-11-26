@@ -37,4 +37,44 @@ messungen:
       tempolimit_anzeige_kmh: 30
       erfassung_ab_kmh: 9
       verdeckte_messung: false
-    verwaltung: []
+    verwaltung:
+      - bezeichnung: "Euskirchener Straße"
+        strasse: "Euskirchener Straße"
+        zeitraum:
+          - "2026-03-29"
+          - "2026-08-02"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          gesamt: 1059
+        v85_kmh: 38
+        mittel_kmh: 31
+        anteil_unter:
+          prozent: 92.0
+          kmh: 40
+        einstufung_verwaltung: "noch_akzeptabel"
+        massnahmen_verwaltung: "nicht erforderlich"
+        hinweise_verwaltung:
+          - "Bereich soll weiter beobachtet werden"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert mit 38 km/h, bei vorgeschriebenen 30 km/h, ist noch akzeptabel."
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+          - "Der Bereich bleibt aber unter Beobachtung, da viele Kraftfahrende zwischen 30 km/h und 40 km/h unterwegs sind."
+        quellen:
+          - vorlage: "69/0490/2026"
+            ris_vorlage_id: 30281
+            gremium: "Bezirksausschuss VI - Gnadental, Grimlinghausen, Erfttal"
+            sitzung: "2026-11-05"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253417&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 127
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung"
+          fahrzeuge: 144277
+          v85_kmh: 38
+          mittel_kmh: 29.5
+          fahrzeuge_je_tag: 1145
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: 0
+            mittel_kmh: -1.5
+            fahrzeuge_je_tag_prozent: 8

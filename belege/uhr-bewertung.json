@@ -17,7 +17,9 @@
   "anker_max_tage": 2,
   "ris_toleranz_tage": 1,
   "werksdatum_min_fahrzeuge": 500,
-  "hb_abdeckung_ok": 0.8
+  "hb_abdeckung_ok": 0.8,
+  "gesamt_plausibel_min": 0.99,
+  "gesamt_unbrauchbar_min": 0.5
  },
  "referenz": {
   "segmente": 71,
@@ -31,7 +33,7 @@
    0.72
   ]
  },
- "ris_dokumente": 17,
+ "ris_dokumente": 23,
  "dateien": {
   "02_2024_Bauerbahn, ggü. Nr. 3/20 km.dsd": {
    "standort": "02_2024_Bauerbahn, ggü. Nr. 3",
@@ -1895,7 +1897,8 @@
      "urteil": "eingeschraenkt",
      "art": "unzureichend_belegt",
      "begruendung": [
-      "nur 0 von 4 unabhängigen Belegen bestätigt, mindestens 2 nötig; nichts widerspricht"
+      "nur 1 von 4 unabhängigen Belegen bestätigt, mindestens 2 nötig; nichts widerspricht",
+      "ris: Mitteilung 69/0486/2026 (Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten, 2026-11-04) nennt den Ort und den Zeitraum 2025-10-26 bis 2026-03-29; Beginn des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -1922,8 +1925,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in keiner Mitteilung mit Erfassungszeitraum genannt"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/0486/2026 (Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten, 2026-11-04) nennt den Ort und den Zeitraum 2025-10-26 bis 2026-03-29; Beginn des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253414&type=do",
+       "zeitraum": [
+        "2025-10-26",
+        "2026-03-29"
+       ]
       }
      }
     },
@@ -1935,7 +1943,8 @@
      "art": null,
      "begruendung": [
       "wochenrhythmus: Wochenmuster passt zu den Kalendertagen (Korrelation 0.96)",
-      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+30 min, Korrelation 0.98)"
+      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+30 min, Korrelation 0.98)",
+      "ris: Mitteilung 69/0486/2026 (Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten, 2026-11-04) nennt den Ort und den Zeitraum 2025-10-26 bis 2026-03-29; Beginn und Ende des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -1971,8 +1980,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in keiner Mitteilung mit Erfassungszeitraum genannt"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/0486/2026 (Bezirksausschuss III - Selikum, Reuschenberg, Weckhoven, Hoisten, 2026-11-04) nennt den Ort und den Zeitraum 2025-10-26 bis 2026-03-29; Beginn und Ende des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253414&type=do",
+       "zeitraum": [
+        "2025-10-26",
+        "2026-03-29"
+       ]
       }
      }
     }
@@ -2050,7 +2064,8 @@
      "art": null,
      "begruendung": [
       "wochenrhythmus: Wochenmuster passt zu den Kalendertagen (Korrelation 0.90)",
-      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+0 min, Korrelation 0.96)"
+      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+0 min, Korrelation 0.96)",
+      "ris: Mitteilung 69/0485/2026 (Bezirksausschuss II - Nordstadt, 2026-11-12) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -2085,8 +2100,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in keiner Mitteilung mit Erfassungszeitraum genannt"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/0485/2026 (Bezirksausschuss II - Nordstadt, 2026-11-12) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253874&type=do",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ]
       }
      }
     }
@@ -2104,7 +2124,8 @@
      "art": null,
      "begruendung": [
       "wochenrhythmus: Wochenmuster passt zu den Kalendertagen (Korrelation 0.97)",
-      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+0 min, Korrelation 0.96)"
+      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+0 min, Korrelation 0.96)",
+      "ris: Mitteilung 69/0485/2026 (Bezirksausschuss II - Nordstadt, 2026-11-12) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Ende des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -2140,8 +2161,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in keiner Mitteilung mit Erfassungszeitraum genannt"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/0485/2026 (Bezirksausschuss II - Nordstadt, 2026-11-12) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Ende des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253874&type=do",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ]
       }
      }
     }
@@ -2159,7 +2185,8 @@
      "art": null,
      "begruendung": [
       "wochenrhythmus: Wochenmuster passt zu den Kalendertagen (Korrelation 0.99)",
-      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+0 min, Korrelation 0.99)"
+      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+0 min, Korrelation 0.99)",
+      "ris: Mitteilung 69/0484/2026 (Bezirksausschuss I - Innenstadt, 2026-12-03) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn und Ende des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -2195,8 +2222,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in keiner Mitteilung mit Erfassungszeitraum genannt"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/0484/2026 (Bezirksausschuss I - Innenstadt, 2026-12-03) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn und Ende des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255434&type=do",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ]
       }
      }
     }
@@ -2214,7 +2246,8 @@
      "art": null,
      "begruendung": [
       "wochenrhythmus: Wochenmuster passt zu den Kalendertagen (Korrelation 0.96)",
-      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+0 min, Korrelation 0.99)"
+      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+0 min, Korrelation 0.99)",
+      "ris: Mitteilung 69/0488/2026 (Bezirksausschuss IV - Holzheim, 2026-12-02) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn und Ende des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -2250,8 +2283,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in keiner Mitteilung mit Erfassungszeitraum genannt"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/0488/2026 (Bezirksausschuss IV - Holzheim, 2026-12-02) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn und Ende des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255803&type=do",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ]
       }
      }
     }
@@ -2269,7 +2307,8 @@
      "art": null,
      "begruendung": [
       "wochenrhythmus: Wochenmuster passt zu den Kalendertagen (Korrelation 1.00)",
-      "tagesgang: Tagesgang entspricht dem typischen Verlauf (-15 min, Korrelation 0.97)"
+      "tagesgang: Tagesgang entspricht dem typischen Verlauf (-15 min, Korrelation 0.97)",
+      "ris: Mitteilung 69/0490/2026 (Bezirksausschuss VI - Gnadental, Grimlinghausen, Erfttal, 2026-11-05) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn und Ende des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -2305,8 +2344,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in keiner Mitteilung mit Erfassungszeitraum genannt"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/0490/2026 (Bezirksausschuss VI - Gnadental, Grimlinghausen, Erfttal, 2026-11-05) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn und Ende des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=253417&type=do",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ]
       }
      }
     }
@@ -2324,7 +2368,8 @@
      "art": null,
      "begruendung": [
       "wochenrhythmus: Wochenmuster passt zu den Kalendertagen (Korrelation 0.92)",
-      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+30 min, Korrelation 0.99)"
+      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+30 min, Korrelation 0.99)",
+      "ris: Mitteilung 69/0489/2026 (Bezirksausschuss V - Norf, 2026-11-26) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -2360,8 +2405,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in 1 Mitteilung(en) genannt, aber kein Zeitraum passt zum Segment"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/0489/2026 (Bezirksausschuss V - Norf, 2026-11-26) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Beginn des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255396&type=do",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ]
       }
      }
     },
@@ -2408,11 +2458,11 @@
      "start": "2026-07-20 18:08:23",
      "ende": "2026-08-02 10:43:22",
      "fahrzeuge": 17979,
-     "urteil": "eingeschraenkt",
-     "art": "unzureichend_belegt",
+     "urteil": "plausibel",
+     "art": null,
      "begruendung": [
-      "nur 1 von 4 unabhängigen Belegen bestätigt, mindestens 2 nötig; nichts widerspricht",
-      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+30 min, Korrelation 0.99)"
+      "tagesgang: Tagesgang entspricht dem typischen Verlauf (+30 min, Korrelation 0.99)",
+      "ris: Mitteilung 69/0489/2026 (Bezirksausschuss V - Norf, 2026-11-26) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Ende des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -2443,8 +2493,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in 1 Mitteilung(en) genannt, aber kein Zeitraum passt zum Segment"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/0489/2026 (Bezirksausschuss V - Norf, 2026-11-26) nennt den Ort und den Zeitraum 2026-03-29 bis 2026-08-02; Ende des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255396&type=do",
+       "zeitraum": [
+        "2026-03-29",
+        "2026-08-02"
+       ]
       }
      }
     }
@@ -51929,11 +51984,11 @@
      "start": "2024-05-06 07:08:32",
      "ende": "2024-07-24 09:24:44",
      "fahrzeuge": 19669,
-     "urteil": "eingeschraenkt",
-     "art": "unzureichend_belegt",
+     "urteil": "plausibel",
+     "art": null,
      "begruendung": [
-      "nur 1 von 4 unabhängigen Belegen bestätigt, mindestens 2 nötig; nichts widerspricht",
-      "wochenrhythmus: Wochenmuster passt zu den Kalendertagen (Korrelation 0.83)"
+      "wochenrhythmus: Wochenmuster passt zu den Kalendertagen (Korrelation 0.83)",
+      "ris: Mitteilung 69/313/2024 (Bezirksausschuss I - Innenstadt, 2024-12-04) nennt den Ort und den Zeitraum 2024-04-23 bis 2024-07-23; Ende des Abschnitts stimmt(en) auf den Tag überein"
      ],
      "belege": {
       "datum": {
@@ -51965,8 +52020,13 @@
        "text": "keine Zeitumstellung im Segment mit genug Daten davor und danach"
       },
       "ris": {
-       "status": "offen",
-       "text": "Ort in keiner Mitteilung mit Erfassungszeitraum genannt"
+       "status": "bestaetigt",
+       "text": "Mitteilung 69/313/2024 (Bezirksausschuss I - Innenstadt, 2024-12-04) nennt den Ort und den Zeitraum 2024-04-23 bis 2024-07-23; Ende des Abschnitts stimmt(en) auf den Tag überein",
+       "quelle": "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=217893&type=do",
+       "zeitraum": [
+        "2024-04-23",
+        "2024-07-23"
+       ]
       }
      }
     }
@@ -54771,7 +54831,7 @@
       },
       "ris": {
        "status": "offen",
-       "text": "Ort in keiner Mitteilung mit Erfassungszeitraum genannt"
+       "text": "Ort in 1 Mitteilung(en) genannt, aber kein Zeitraum passt zum Segment"
       }
      }
     }
@@ -57519,7 +57579,7 @@
       },
       "ris": {
        "status": "offen",
-       "text": "Ort in 1 Mitteilung(en) genannt, aber kein Zeitraum passt zum Segment"
+       "text": "Ort in 2 Mitteilung(en) genannt, aber kein Zeitraum passt zum Segment"
       }
      }
     }

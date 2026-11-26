@@ -37,4 +37,46 @@ messungen:
       tempolimit_anzeige_kmh: 30
       erfassung_ab_kmh: 9
       verdeckte_messung: false
-    verwaltung: []
+    verwaltung:
+      - bezeichnung: "Breite Straße"
+        strasse: "Breite Straße"
+        zeitraum:
+          - "2026-03-29"
+          - "2026-08-02"
+        tempolimit_kmh: 30
+        fahrzeuge_je_tag:
+          kommend: 1728
+          gehend: 240
+        v85_kmh: 36
+        mittel_kmh: 27
+        anteil_unter:
+          prozent: 95.0
+          kmh: 40
+        einstufung_verwaltung: "unkritisch"
+        massnahmen_verwaltung: "nicht erforderlich"
+        hinweise_verwaltung:
+          - "Bereich soll weiter beobachtet werden"
+        stellungnahme_verwaltung:
+          - "Der maßgebliche V85-Wert mit 36 km/h ist, bei vorgeschriebenen 30 km/h, unkritisch."
+          - "Hier sollte erwähnt werden, dass die Breite Straße zwar eine Einbahnstraße für Kraftfahrzeuge ist, aber der Radverkehr aus der Gegenrichtung kommend auch gemessen wird."
+          - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
+          - "Der Bereich bleibt aber unter Beobachtung, da viele Kraftfahrer zwischen 30 km/h und 40 km/h unterwegs sind."
+        quellen:
+          - vorlage: "69/0484/2026"
+            ris_vorlage_id: 30242
+            gremium: "Bezirksausschuss I - Innenstadt"
+            sitzung: "2026-12-03"
+            dokument: "https://ris-neuss.itk-rheinland.de/sessionnetneubi/getfile.asp?id=255434&type=do"
+        zuordnung:
+          methode: "name_zeitraum"
+          zeitraum_ueberlappung_tage: 127
+        abgleich_dsd:
+          hinweis: "aus der DSD berechnet (Gerätezeit, nur Fahrzeuge mit nutzbarer Zeit, alle Geschwindigkeiten, ohne Abzug des Rauschbodens), keine Angabe der Verwaltung"
+          fahrzeuge: 237194
+          v85_kmh: 35
+          mittel_kmh: 28.2
+          fahrzeuge_je_tag: 1882
+          abweichung_dsd_minus_verwaltung:
+            v85_kmh: -1
+            mittel_kmh: 1.2
+            fahrzeuge_je_tag_prozent: -4

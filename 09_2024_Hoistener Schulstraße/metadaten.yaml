@@ -55,6 +55,7 @@ messungen:
           - "Verwaltung hat für das Verkehrsaufkommen keine Erklärung"
         stellungnahme_verwaltung:
           - "Der maßgebliche V85-Wert mit 38 km/h ist, bei vorgeschriebenen 30 km/h, noch akzeptabel."
+          - "Für diesen hohen Wert habe ich keine Erklärung."
           - "Verkehrslenkende Maßnahmen sind nicht erforderlich."
         quellen:
           - vorlage: "69/340/2025"
