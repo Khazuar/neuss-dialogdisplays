@@ -17,8 +17,15 @@ dagegen nur ein exaktes Parsing der DSD-Dateien.
 
 ## Welche Datei für welche Frage
 
+**Für Fragen zu einem Standort die Einsätze nehmen, nicht die Messungen.** Eine Messung ist eine Datei der Verwaltung; ihr Anfang gehört oft
+noch zum vorigen Standort, weil das Gerät erst ausgelesen und später umgehängt wurde. Kennzahlen eines Standorts stehen in `kennzahlen.csv`
+mit `bereich` = `einsatz` (dort ist `messung_id` die Einsatz-ID aus `einsaetze.csv`), Stunden in `einsaetze-stunden.csv.gz`. Die Einsatz-ID
+steht auch in der Adresse der Detailseite (`#e-…`). `bereich` = `messung` und `abschnitt` sind die Sicht der Verwaltung.
+
 | Frage | Datei |
 | --- | --- |
+| Wie schnell wird an einem Standort gefahren (V85, Einhaltung, Raten, nach Tageszeit)? | `kennzahlen.csv` mit `bereich` = `einsatz` |
+| Eigene Zeitfenster und Verteilungen für einen Standort | `einsaetze-stunden.csv.gz` |
 | Welche Messungen gibt es, wo, mit welchem Tempolimit und wie verlässlich ist die Uhr? | `messungen.csv` |
 | V85, Mittel, Einhaltung je Messung oder Abschnitt, auch nach Tageszeit | `kennzahlen.csv` |
 | Wurde ein Gerät umgehängt (Brüche), wann beginnt ein Abschnitt? | `abschnitte.csv` |

@@ -2014,6 +2014,7 @@ def standortseite(name, messungen, verz=None, gleich=None, vg=None, slug=None, i
 <title>{e(name)} – Neuss Dialogdisplays</title>
 <meta name="description" content="Geschwindigkeitsmessungen der Dialogdisplays: {e(name)} – Standort, Angaben der Verwaltung, Messung und Auswertung.">
 <link rel="stylesheet" href="../style.css">
+<link rel="help" type="text/plain" href="../llms.txt" title="Hinweise für Sprachmodelle: Daten je Einsatz unter /daten/, nicht je Messung">
 <script src="../labor.js"></script>
 </head>
 <body>

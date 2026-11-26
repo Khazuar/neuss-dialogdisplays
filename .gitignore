@@ -6,6 +6,8 @@
 !.gitignore
 !README.md
 !/DATEN.md
+!/AGENTS.md
+!/CLAUDE.md
 !LICENSE
 !LICENSE-DATEN
 !*.py

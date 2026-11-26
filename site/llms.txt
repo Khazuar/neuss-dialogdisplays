@@ -5,7 +5,19 @@
 > geprüfte Uhr, Rauschboden und Regenanteil abgezogen, Messreihen an erkannten Brüchen in Abschnitte geteilt.
 
 Für Fragen nach Datum, Tageszeit oder Stunde die bereinigten Dateien unter /daten/ verwenden, nicht die rohen CSV-Dateien aus dem Release
-(Gerätezeit ohne Sommerzeit, keine Uhrprüfung, mit Rauschen).
+(Gerätezeit ohne Sommerzeit, keine Uhrprüfung, mit Rauschen) und nicht die DSD-Dateien selbst auswerten.
+
+## Einstieg: Einsätze, nicht Messungen
+
+Eine Messung ist eine Datei der Verwaltung, kein Standort: Der Anfang einer Datei gehört oft noch zum vorigen Standort (erst ausgelesen,
+später umgehängt). Für alle Fragen zu einem Standort die **Einsätze** nehmen (wann ein Gerät tatsächlich wo gemessen hat):
+
+- Kennzahlen eines Standorts: [kennzahlen.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/kennzahlen.csv), Zeilen mit `bereich` = `einsatz`; `messung_id` ist dort die Einsatz-ID
+- Zeitraum und Herkunft der Daten: [einsaetze.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/einsaetze.csv)
+- eigene Zeitfenster und Verteilungen: [einsaetze-stunden.csv.gz](https://khazuar.github.io/neuss-dialogdisplays/daten/einsaetze-stunden.csv.gz)
+- Die Einsatz-ID steht in der Adresse der Detailseite: `standorte/<seite>.html#<einsatz_id>/allgemein`
+
+Zeilen mit `bereich` = `messung` oder `abschnitt`, `summary.csv` und `auswertung.yaml` sind die Sicht der Verwaltung (je Datei) und nur dafür gedacht.
 
 ## Datenwörterbuch
 
@@ -15,7 +27,7 @@ Für Fragen nach Datum, Tageszeit oder Stunde die bereinigten Dateien unter /dat
 
 - [messungen.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/messungen.csv): eine Zeile je Messung (DSD-Datei) mit Standort, Tempolimit, Messzeitraum, Uhr-Bewertung, Abzügen
 - [einsaetze.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/einsaetze.csv): Einsätze (wann ein Gerät tatsächlich wo gemessen hat, unsere Zuordnung) und [brueche.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/brueche.csv): Brüche mit Erklärung
-- [kennzahlen.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/kennzahlen.csv): Fahrzeuge, Mittel, V85, V95, V99, Einhaltung und Raten (Fahrzeuge, zu schnelle Fahrzeuge und Zusatzrisiko je Stunde) je Messung/Abschnitt und Zeitraum (alle, Nacht, Vormittag, Nachmittag, Abend, Schulweg)
+- [kennzahlen.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/kennzahlen.csv) (für Standorte: `bereich` = `einsatz`): Fahrzeuge, Mittel, V85, V95, V99, Einhaltung und Raten (Fahrzeuge, zu schnelle Fahrzeuge und Zusatzrisiko je Stunde) je Messung/Abschnitt und Zeitraum (alle, Nacht, Vormittag, Nachmittag, Abend, Schulweg)
 - [abschnitte.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/abschnitte.csv): Abschnitte der Messreihen mit Wahrscheinlichkeit des Bruchs davor
 - [tage.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/tage.csv): Kennzahlen je Kalendertag mit Wochentag, Ferien, Feiertag
 - [luecken.csv](https://khazuar.github.io/neuss-dialogdisplays/daten/luecken.csv): nicht vollständig aufgezeichnete Stunden
@@ -23,14 +35,14 @@ Für Fragen nach Datum, Tageszeit oder Stunde die bereinigten Dateien unter /dat
 
 ## Auswertungen je Messung
 
-- [summary.csv](https://khazuar.github.io/neuss-dialogdisplays/summary.csv): Kennzahlen aller Messungen in einer Tabelle
+- [summary.csv](https://khazuar.github.io/neuss-dialogdisplays/summary.csv): Kennzahlen aller Messungen (je Datei, nicht je Einsatz) in einer Tabelle
 - [auswertung.yaml](https://khazuar.github.io/neuss-dialogdisplays/auswertung.yaml): alle Blöcke je Messung (Rauschboden, Uhr, Gefährdung, Lärm, Abschnitte)
 - [uebersicht.json](https://khazuar.github.io/neuss-dialogdisplays/uebersicht.json): Zuordnung der Messungen zu Standortseiten und Messstellen laut Verwaltung
 
 ## Dokumentation
 
 - [README](https://github.com/Khazuar/neuss-dialogdisplays#readme): Überblick, Benutzung, Lizenzen
-- [Rauschboden](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/rauschen.md), [Wetterdaten](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/wetter.md), [Abschnitte](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/abschnitte.md), [Uhr-Bewertung](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/uhr-bewertung.md), [DSD-Format](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/dsd-format.md)
+- [Rauschboden](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/rauschen.md), [Wetterdaten](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/wetter.md), [Abschnitte](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/abschnitte.md), [Uhr-Bewertung](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/uhr-bewertung.md), [DSD-Format](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/dsd-format.md), [Einsätze](https://github.com/Khazuar/neuss-dialogdisplays/blob/main/docs/einsaetze.md)
 
 ## Optional
 

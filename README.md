@@ -10,6 +10,9 @@ Messstelle auswertet.
 > (Skripte, Annahmen, Zuordnung der Angaben zu den Messungen) können nicht ausgeschlossen werden; alle Angaben
 > sind ohne Gewähr.** Gefährdung, Lärm und Ereignisse pro Nacht sind Schätzungen und kein Gutachten. – Fabian Grewing
 
+**Fertige, bereinigte Daten** (je Einsatz, nicht je Datei) liegen unter <https://khazuar.github.io/neuss-dialogdisplays/daten/>,
+beschrieben in [DATEN.md](DATEN.md). Hinweise für KI-Assistenten: [AGENTS.md](AGENTS.md).
+
 **Im Repository liegen nur die DSD-Rohdaten und die Skripte.** Die abgeleiteten Daten (CSV und YAML)
 werden aus den DSDs erzeugt und separat veröffentlicht, siehe [Abgeleitete Daten](#abgeleitete-daten).
 
